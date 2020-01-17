@@ -14,6 +14,7 @@
 """
 AWS PennyLane plugin
 """
+# pylint: disable=invalid-name
 import numpy as np
 
 from braket.circuits import Circuit, gates
@@ -42,7 +43,7 @@ class BraketDevice(QubitDevice):
         s3 (tuple[str, str[]): Name of the S3 bucket and folder as a tuple
     """
     name = "Braket PennyLane plugin"
-    pennylane_requires = ">=0.7.0"
+    pennylane_requires = ">=0.8.0"
     version = __version__
     author = "Xanadu"
 
@@ -59,7 +60,6 @@ class BraketDevice(QubitDevice):
         super().__init__(wires, shots)
         self._capabilities.update({"model": "qubit"})
         self._aws_device = aws_device
-
 
         self._s3_folder = kwargs.get("s3", None)
 
