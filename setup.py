@@ -47,7 +47,9 @@ info = {
             # it corresponds to in the plugin. This allows
             # the device to be imported automatically via the
             # `pennylane.device` device loader.
-            "braket.simulator = pennylane_braket:AWSSimulatorDevice"
+            "braket.simulator = pennylane_braket:AWSSimulatorDevice",
+            "braket.ionq = pennylane_braket:AWSIonQDevice",
+            "braket.rigetti = pennylane_braket:AWSRigettiDevice",
         ]
     },
     # Place a one line description here. This will be shown by pip

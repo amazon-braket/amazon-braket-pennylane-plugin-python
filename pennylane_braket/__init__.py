@@ -15,6 +15,5 @@
 Plugin overview
 ===============
 """
-from .aws_simulator import AWSSimulatorDevice
-from .ops import S, T, CCNOT, CPHASE, CSWAP, ISWAP, PSWAP
+from .braket_device import AWSSimulatorDevice, AWSIonQDevice, AWSRigettiDevice
 from ._version import __version__
