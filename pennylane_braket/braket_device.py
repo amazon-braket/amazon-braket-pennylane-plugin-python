@@ -37,6 +37,9 @@ class BraketDevice(QubitDevice):
         wires (int): the number of modes to initialize the device in
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables.
+
+    Keyword Args:
+        s3 (tuple[str, str[]): Name of the S3 bucket and folder as a tuple
     """
     name = "Braket PennyLane plugin"
     pennylane_requires = ">=0.7.0"
@@ -51,14 +54,14 @@ class BraketDevice(QubitDevice):
     }
     observables = {"PauliX", "PauliY", "PauliZ", "Identity", "Hadamard", "Hermitian"}
 
-    def __init__(self, wires, aws_device, *, shots=1000):  # Note: `shots` currently has no effect
+    def __init__(self, wires, aws_device, *, shots=1000, **kwargs):
+        # TODO: `shots` currently has no effect
         super().__init__(wires, shots)
         self._capabilities.update({"model": "qubit"})
         self._aws_device = aws_device
-        self._s3_folder = (
-            "braket-output-355401967590",
-            "test1",
-        )  # likely should be argument, or pulled from config
+
+
+        self._s3_folder = kwargs.get("s3", None)
 
         self.circuit = None
         self.result = None
@@ -108,6 +111,9 @@ class AWSSimulatorDevice(BraketDevice):
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables.
         backend (str): the simulator backend to target.
+
+    Keyword Args:
+        s3 (tuple[str, str[]): Name of the S3 bucket and folder as a tuple
     """
     name = "Braket AWSSimulatorDevice for PennyLane"
     short_name = "braket.simulator"
@@ -118,8 +124,8 @@ class AWSSimulatorDevice(BraketDevice):
         "QS3": AwsQuantumSimulator(AwsQuantumSimulatorArns.QS3),
     }
 
-    def __init__(self, wires, *, backend="QS1", shots=1000):
-        super().__init__(wires, aws_device=self.backends[backend], shots=shots)
+    def __init__(self, wires, *, backend="QS1", shots=1000, **kwargs):
+        super().__init__(wires, aws_device=self.backends[backend], shots=shots, **kwargs)
 
 
 class AWSIonQDevice(BraketDevice):
@@ -129,12 +135,15 @@ class AWSIonQDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables.
+
+    Keyword Args:
+        s3 (tuple[str, str[]): Name of the S3 bucket and folder as a tuple
     """
     name = "Braket AWSIonQDevice for PennyLane"
     short_name = "braket.ionq"
 
-    def __init__(self, wires, *, shots=1000):
-        super().__init__(wires, aws_device=AwsQpu(AwsQpuArns.IONQ), shots=shots)
+    def __init__(self, wires, *, shots=1000, **kwargs):
+        super().__init__(wires, aws_device=AwsQpu(AwsQpuArns.IONQ), shots=shots, **kwargs)
 
 
 class AWSRigettiDevice(BraketDevice):
@@ -144,9 +153,12 @@ class AWSRigettiDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables.
+
+    Keyword Args:
+        s3 (tuple[str, str[]): Name of the S3 bucket and folder as a tuple
     """
     name = "Braket AWSRigettiDevice for PennyLane"
     short_name = "braket.rigetti"
 
-    def __init__(self, wires, *, shots=1000):
-        super().__init__(wires, aws_device=AwsQpu(AwsQpuArns.RIGETTI), shots=shots)
+    def __init__(self, wires, *, shots=1000, **kwargs):
+        super().__init__(wires, aws_device=AwsQpu(AwsQpuArns.RIGETTI), shots=shots, **kwargs)
