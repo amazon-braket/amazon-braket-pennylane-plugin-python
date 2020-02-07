@@ -56,7 +56,7 @@ class BraketDevice(QubitDevice):
 
     def __init__(self, wires, aws_device, *, shots=1000, **kwargs):
         # TODO: `shots` currently has no effect
-        super().__init__(wires, shots)
+        super().__init__(wires, shots, analytic=False)
         self._capabilities.update({"model": "qubit"})
         self._aws_device = aws_device
 
