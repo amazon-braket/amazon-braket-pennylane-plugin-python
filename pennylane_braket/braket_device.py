@@ -53,7 +53,6 @@ class BraketDevice(QubitDevice):
         "CNOT": gates.CNot,
         "RX": gates.Rx,
     }
-    observables = {"PauliX", "PauliY", "PauliZ", "Identity", "Hadamard", "Hermitian"}
 
     def __init__(self, wires, aws_device, *, shots=1000, **kwargs):
         # TODO: `shots` currently has no effect
@@ -94,7 +93,7 @@ class BraketDevice(QubitDevice):
     def generate_samples(self):
         ret = self._aws_device.run(self.circuit, self._s3_folder)
         self.result = ret.result()
-        self._samples = self.result.measurements
+        return self.result.measurements
 
     def probability(self, wires=None):
         probs = self.result.measurement_probabilities
