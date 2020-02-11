@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Plugin overview
-===============
+AWS PennyLane-braket plugin
 """
 from .braket_device import AWSSimulatorDevice, AWSIonQDevice, AWSRigettiDevice
 from ._version import __version__

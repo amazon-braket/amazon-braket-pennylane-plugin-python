@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-AWS PennyLane plugin
+AWS PennyLane plugin devices
 """
 # pylint: disable=invalid-name
 import numpy as np
@@ -20,11 +20,9 @@ import numpy as np
 from braket.circuits import Circuit, gates
 from braket.circuits import Instruction
 
-from braket.aws import AwsQuantumSimulator
-from braket.aws.aws_quantum_simulator_arns import AwsQuantumSimulatorArns
-
-from braket.aws import AwsQpu
+from braket.aws import AwsQuantumSimulator, AwsQpu
 from braket.aws.aws_qpu_arns import AwsQpuArns
+from braket.aws.aws_quantum_simulator_arns import AwsQuantumSimulatorArns
 
 from pennylane import QubitDevice
 
@@ -50,16 +48,27 @@ class BraketDevice(QubitDevice):
     short_name = "braket"
     _operation_map = {
         "Hadamard": gates.H,
+        "PauliX": gates.X,
+        "PauliY": gates.Y,
+        "PauliZ": gates.Z,
+        "S": gates.S,
+        "S.inv": gates.Si,
+        "T": gates.T,
+        "T.inv": gates.Ti,
         "CNOT": gates.CNot,
+        "CZ": gates.CZ,
         "RX": gates.Rx,
+        "RY": gates.Ry,
+        "RZ": gates.Rz,
+        "PhaseShift": gates.PhaseShift,
+        "SWAP": gates.Swap,
+        "CSWAP": gates.CSwap,
+        "Toffoli": gates.CCNot,
     }
 
     def __init__(self, wires, aws_device, *, shots=1000, **kwargs):
-        # TODO: `shots` currently has no effect
         super().__init__(wires, shots, analytic=False)
-        self._capabilities.update({"model": "qubit"})
         self._aws_device = aws_device
-
         self._s3_folder = kwargs.get("s3", None)
 
         self.circuit = None
@@ -91,7 +100,9 @@ class BraketDevice(QubitDevice):
             self.circuit.add_instruction(ins)
 
     def generate_samples(self):
-        ret = self._aws_device.run(self.circuit, self._s3_folder)
+        ret = self._aws_device.run(
+            task_specification=self.circuit, s3_destination_folder=self._s3_folder, shots=self.shots
+        )
         self.result = ret.result()
         return self.result.measurements
 

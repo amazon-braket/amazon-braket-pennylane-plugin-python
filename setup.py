@@ -24,14 +24,18 @@ with open("pennylane_braket/_version.py") as f:
 # Requirements should be as minimal as possible.
 # Avoid pinning, and use minimum version numbers
 # only where required.
-requirements = ["pennylane"]
+requirements = [
+    "pennylane>=0.8",
+    "braket-ir",
+    "braket-sdk"
+]
 
 info = {
     # 'name' is the name that will be used by pip for installation
     "name": "PennyLane-Braket",
     "version": version,
     "maintainer": "Xanadu Inc.",
-    "maintainer_email": "name@xanadu.ai",
+    "maintainer_email": "software@xanadu.ai",
     "url": "http://xanadu.ai",
     "license": "Apache License 2.0",
     "packages": [
@@ -73,9 +77,8 @@ classifiers = [
     "Programming Language :: Python",
     # Make sure to specify here the versions of Python supported
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: Physics",
 ]

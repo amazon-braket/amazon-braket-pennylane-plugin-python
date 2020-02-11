@@ -1,1 +1,3 @@
-pennylane>=0.4
+pennylane>=0.8
+braket-ir
+braket-sdk
