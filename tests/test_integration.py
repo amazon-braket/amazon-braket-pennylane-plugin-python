@@ -23,9 +23,9 @@ class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
     @pytest.mark.parametrize("d", shortnames)
-    def test_load_device(self, d, backend):
+    def test_load_device(self, d):
         """Test that the QVM device loads correctly"""
-        dev = qml.device(d, wires=2, backend=backend, shots=1024)
+        dev = qml.device(d, wires=2, shots=1024)
         assert dev.num_wires == 2
         assert dev.shots == 1024
         assert dev.short_name == d
@@ -33,24 +33,13 @@ class TestDeviceIntegration:
     def test_args(self):
         """Test that the device requires correct arguments"""
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
-            qml.device("pluginname.device1")
-
-        # a hardware device will not allow shots=0
-        with pytest.raises(ValueError, match="must be a positive integer"):
-            qml.device("pluginname.device2", wires=1, shots=0)
-
-        # a state simulator will allow shots=0
-        qml.device("pluginname.device1", wires=1, shots=0)
-        qml.device("pluginname.device1", wires=1, shots=0)
+            qml.device("braket.simulator")
 
     @pytest.mark.parametrize("d", shortnames)
     @pytest.mark.parametrize("shots", [0, 8192])
-    def test_one_qubit_circuit(self, shots, d, backend, tol):
+    def test_one_qubit_circuit(self, shots, d, tol):
         """Test that devices provide correct result for a simple circuit"""
-        if backend not in state_backends and shots == 0:
-            pytest.skip("Hardware simulators do not support analytic mode")
-
-        dev = qml.device(d, wires=1, backend=backend, shots=shots)
+        dev = qml.device(d, wires=1, shots=shots)
 
         a = 0.543
         b = 0.123

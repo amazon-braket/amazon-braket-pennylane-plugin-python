@@ -1,4 +1,4 @@
-# Copyright 2018 Xanadu Quantum Technologies Inc.
+# 2018 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,32 +17,34 @@ import pytest
 import numpy as np
 import pennylane as qml
 
-from conftest import U, U2, A
+from conftest import U, U2, A, rotations
 
 
 np.random.seed(42)
 
 
-@pytest.mark.parametrize("shots", [0, 8192])
+@pytest.mark.parametrize("shots", [8192])
 class TestVar:
     """Tests for the variance"""
 
     def test_var(self, device, shots, tol):
         """Tests for variance calculation"""
         dev = device(2)
-        dev.active_wires = {0}
 
         phi = 0.543
         theta = 0.6543
 
         # test correct variance for <Z> of a rotated state
-        dev.apply("RX", wires=[0], par=[phi])
-        dev.apply("RY", wires=[0], par=[theta])
+        ops = [
+            qml.RX(phi, wires=[0]),
+            qml.RY(theta, wires=[0]),
+        ]
 
-        dev._obs_queue = [qml.PauliZ(wires=[0], do_queue=False)]
-        dev.pre_measure()
+        ob = qml.PauliZ(wires=[0])
+        dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
 
-        var = dev.var("PauliZ", [0], [])
+        var = dev.var(ob)
         expected = 0.25 * (3 - np.cos(2 * theta) - 2 * np.cos(theta) ** 2 * np.cos(2 * phi))
 
         assert np.allclose(var, expected, **tol)
@@ -50,20 +52,22 @@ class TestVar:
     def test_var_hermitian(self, device, shots, tol):
         """Tests for variance calculation using an arbitrary Hermitian observable"""
         dev = device(2)
-        dev.active_wires = {0}
 
         phi = 0.543
         theta = 0.6543
 
         # test correct variance for <H> of a rotated state
         H = np.array([[4, -1 + 6j], [-1 - 6j, 2]])
-        dev.apply("RX", wires=[0], par=[phi])
-        dev.apply("RY", wires=[0], par=[theta])
+        ops = [
+            qml.RX(phi, wires=[0]),
+            qml.RY(theta, wires=[0]),
+        ]
 
-        dev._obs_queue = [qml.Hermitian(H, wires=[0], do_queue=False)]
-        dev.pre_measure()
+        ob = qml.Hermitian(H, wires=[0])
+        dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
 
-        var = dev.var("Hermitian", [0], [H])
+        var = dev.var(ob)
         expected = 0.5 * (
             2 * np.sin(2 * theta) * np.cos(phi) ** 2
             + 24 * np.sin(phi) * np.cos(phi) * (np.sin(theta) - np.cos(theta))
@@ -74,7 +78,7 @@ class TestVar:
         assert np.allclose(var, expected, **tol)
 
 
-@pytest.mark.parametrize("shots", [0, 8192])
+@pytest.mark.parametrize("shots", [8192])
 class TestTensorVar:
     """Tests for variance of tensor observables"""
 
@@ -85,18 +89,19 @@ class TestTensorVar:
         varphi = -0.543
 
         dev = device(3)
-        dev.apply("RX", wires=[0], par=[theta])
-        dev.apply("RX", wires=[1], par=[phi])
-        dev.apply("RX", wires=[2], par=[varphi])
-        dev.apply("CNOT", wires=[0, 1], par=[])
-        dev.apply("CNOT", wires=[1, 2], par=[])
-
-        dev._obs_queue = [
-            qml.PauliX(wires=[0], do_queue=False) @ qml.PauliY(wires=[2], do_queue=False)
+        ops = [
+            qml.RX(theta, wires=[0]),
+            qml.RX(phi, wires=[1]),
+            qml.RX(varphi, wires=[2]),
+            qml.CNOT(wires=[0, 1]),
+            qml.CNOT(wires=[1, 2]),
         ]
-        res = dev.pre_measure()
 
-        res = dev.var(["PauliX", "PauliY"], [[0], [2]], [[], [], []])
+        ob = qml.PauliX(0) @ qml.PauliY(2)
+        dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
+
+        res = dev.var(ob)
 
         expected = (
             8 * np.sin(theta) ** 2 * np.cos(2 * varphi) * np.sin(phi) ** 2
@@ -116,20 +121,19 @@ class TestTensorVar:
         varphi = -0.543
 
         dev = device(3)
-        dev.apply("RX", wires=[0], par=[theta])
-        dev.apply("RX", wires=[1], par=[phi])
-        dev.apply("RX", wires=[2], par=[varphi])
-        dev.apply("CNOT", wires=[0, 1], par=[])
-        dev.apply("CNOT", wires=[1, 2], par=[])
-
-        dev._obs_queue = [
-            qml.PauliZ(wires=[0], do_queue=False)
-            @ qml.Hadamard(wires=[1], do_queue=False)
-            @ qml.PauliY(wires=[2], do_queue=False)
+        ops = [
+            qml.RX(theta, wires=[0]),
+            qml.RX(phi, wires=[1]),
+            qml.RX(varphi, wires=[2]),
+            qml.CNOT(wires=[0, 1]),
+            qml.CNOT(wires=[1, 2]),
         ]
-        res = dev.pre_measure()
 
-        res = dev.var(["PauliZ", "Hadamard", "PauliY"], [[0], [1], [2]], [[], [], []])
+        ob = qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
+        dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
+
+        res = dev.var(ob)
 
         expected = (
             3
@@ -147,11 +151,13 @@ class TestTensorVar:
         varphi = -0.543
 
         dev = device(3)
-        dev.apply("RX", wires=[0], par=[theta])
-        dev.apply("RX", wires=[1], par=[phi])
-        dev.apply("RX", wires=[2], par=[varphi])
-        dev.apply("CNOT", wires=[0, 1], par=[])
-        dev.apply("CNOT", wires=[1, 2], par=[])
+        ops = [
+            qml.RX(theta, wires=[0]),
+            qml.RX(phi, wires=[1]),
+            qml.RX(varphi, wires=[2]),
+            qml.CNOT(wires=[0, 1]),
+            qml.CNOT(wires=[1, 2]),
+        ]
 
         A = np.array(
             [
@@ -162,12 +168,11 @@ class TestTensorVar:
             ]
         )
 
-        dev._obs_queue = [
-            qml.PauliZ(wires=[0], do_queue=False) @ qml.Hermitian(A, wires=[1, 2], do_queue=False)
-        ]
-        res = dev.pre_measure()
+        ob = qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2])
+        dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
 
-        res = dev.var(["PauliZ", "Hermitian"], [[0], [1, 2]], [[], [A]])
+        res = dev.var(ob)
 
         expected = (
             1057
