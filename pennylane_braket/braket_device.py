@@ -63,6 +63,8 @@ class BraketDevice(QubitDevice):
         "PhaseShift": gates.PhaseShift,
         "SWAP": gates.Swap,
         "CSWAP": gates.CSwap,
+        "PSWAP": gates.PSwap,
+        "ISWAP": gates.ISwap,
         "Toffoli": gates.CCNot,
     }
 

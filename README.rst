@@ -15,9 +15,8 @@ Features
 ========
 
 * Provides three devices to be used with PennyLane: ``braket.simulator``, ``braket.ionq``,
-and ``braket.rigetti``. These provide access to the AWS Quantum Simulator, IonQ QPUs, and
-Rigetti QPUs respectively.
-
+  and ``braket.rigetti``. These provide access to the AWS Quantum Simulator, IonQ QPUs, and
+  Rigetti QPUs respectively.
 
 * All provided devices support most core qubit PennyLane operations.
 
