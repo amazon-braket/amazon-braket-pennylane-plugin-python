@@ -51,7 +51,7 @@ You can instantiate these devices for PennyLane as follows:
 
     import pennylane as qml
     dev_qs1 = qml.device('braket.simulator', backend='QS1' wires=2)
-    dev_qpu = qml.device('braket.ionq', shots=1000)
+    dev_qpu = qml.device('braket.ionq', shots=1000, wires=3)
 
 These devices can then be used just like other devices for the definition and evaluation of
 QNodes within PennyLane. For more details, refer to the PennyLane documentation.

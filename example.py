@@ -2,8 +2,8 @@ import pennylane as qml
 
 bucket = ("braket-output-355401967590", "test1")
 
-dev1 = qml.device("braket.simulator", wires=2, s3=bucket)
-dev2 = qml.device("braket.simulator", wires=2, backend="QS3", s3=bucket)
+dev1 = qml.device("braket.simulator", wires=2, s3_destination_folder=bucket)
+dev2 = qml.device("braket.simulator", wires=2, backend="QS3", s3_destination_folder=bucket)
 
 @qml.qnode(dev1)
 def circuit(a):
