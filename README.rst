@@ -68,6 +68,25 @@ We also encourage bug reports, suggestions for new features and enhancements, an
 projects or applications built on PennyLane and Braket.
 
 
+Testing
+=======
+
+Before making a pull request, verify the unit tests still pass by running
+
+.. code-block:: bash
+
+    make unit-test
+
+Integration tests that make a full roundtrip through AWS can be run with
+
+.. code-block:: bash
+
+    make integ-test
+
+Note: You may need to edit ``s3_destination_folder`` in ``device`` inside ``conftest.py``
+to be a real S3 location to run the integ tests successfully.
+
+
 Support
 =======
 

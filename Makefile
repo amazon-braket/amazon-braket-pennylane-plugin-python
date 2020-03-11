@@ -2,7 +2,8 @@ PYTHON3 := $(shell which python3 2>/dev/null)
 
 PYTHON := python3
 COVERAGE := --cov=pennylane_braket --cov-report term-missing --cov-report=html:coverage_html_report
-TESTRUNNER := -m pytest tests
+UNIT := -m pytest tests/unit_tests
+INTEG := -m pytest tests/integ_tests
 
 .PHONY: help
 help:
@@ -47,9 +48,11 @@ clean-docs:
 	make -C doc clean
 
 
-test:
-	$(PYTHON) $(TESTRUNNER)
+unit-test:
+	@echo "Generating coverage report for unit tests..."
+	$(PYTHON) $(UNIT) $(COVERAGE)
 
-coverage:
-	@echo "Generating coverage report..."
-	$(PYTHON) $(TESTRUNNER) $(COVERAGE)
+
+integ-test:
+	@echo "Generating coverage report for integ tests..."
+	$(PYTHON) $(INTEG) $(COVERAGE)

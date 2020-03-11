@@ -1,3 +1,5 @@
 pennylane_braket/__pycache__/*
 PennyLane_Braket.egg-info/*
 *.pyc
+.coverage
+coverage_html_report/

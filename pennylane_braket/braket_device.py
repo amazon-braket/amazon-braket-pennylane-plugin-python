@@ -116,7 +116,7 @@ class BraketDevice(QubitDevice):
     def generate_samples(self):
         ret = self._aws_device.run(
             self.circuit,
-            s3_destination_folder=self._s3_folder,
+            self._s3_folder,
             shots=self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds
         )
@@ -190,8 +190,8 @@ class AWSIonQDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 120,
-            shots=3600,
+            poll_timeout_seconds: int = 3600,
+            shots=1000,
             **kwargs):
         super().__init__(
             wires,
@@ -222,8 +222,8 @@ class AWSRigettiDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 120,
-            shots=3600,
+            poll_timeout_seconds: int = 3600,
+            shots=1000,
             **kwargs):
         super().__init__(
             wires,
