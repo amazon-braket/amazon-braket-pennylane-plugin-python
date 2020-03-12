@@ -146,10 +146,10 @@ class AWSSimulatorDevice(BraketDevice):
     name = "Braket AWSSimulatorDevice for PennyLane"
     short_name = "braket.simulator"
 
-    backends = {
-        "QS1": AwsQuantumSimulator(AwsQuantumSimulatorArns.QS1),
-        "QS2": AwsQuantumSimulator(AwsQuantumSimulatorArns.QS2),
-        "QS3": AwsQuantumSimulator(AwsQuantumSimulatorArns.QS3),
+    simulator_arns = {
+        "QS1": AwsQuantumSimulatorArns.QS1,
+        "QS2": AwsQuantumSimulatorArns.QS2,
+        "QS3": AwsQuantumSimulatorArns.QS3,
     }
 
     def __init__(
@@ -163,7 +163,7 @@ class AWSSimulatorDevice(BraketDevice):
             **kwargs):
         super().__init__(
             wires,
-            aws_device=self.backends[backend],
+            aws_device=AwsQuantumSimulator(self.simulator_arns[backend]),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
             shots=shots,
