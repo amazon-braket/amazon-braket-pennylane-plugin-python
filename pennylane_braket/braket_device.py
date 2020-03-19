@@ -15,18 +15,12 @@
 AWS PennyLane plugin devices
 """
 # pylint: disable=invalid-name
-from typing import Set, Tuple
+from typing import Optional, Set, Tuple
 
 import numpy as np
-
-from braket.circuits import Circuit, gates
-from braket.circuits import Instruction
-
-from braket.aws import AwsQuantumSimulator, AwsQpu
-from braket.aws.aws_qpu_arns import AwsQpuArns
-from braket.aws.aws_quantum_simulator_arns import AwsQuantumSimulatorArns
+from braket.aws import AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsSession
+from braket.circuits import Circuit, Instruction, gates
 from braket.devices import Device
-
 from pennylane import QubitDevice
 
 from ._version import __version__
@@ -142,6 +136,9 @@ class AWSSimulatorDevice(BraketDevice):
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         backend (str): the simulator backend to target.
+        aws_session (Optional[AwsSession]): An AwsSession object to managed
+            interactions with AWS services, to be supplied if extra control
+            is desired. Default: None
     """
     name = "Braket AWSSimulatorDevice for PennyLane"
     short_name = "braket.simulator"
@@ -158,12 +155,13 @@ class AWSSimulatorDevice(BraketDevice):
             s3_destination_folder: Tuple[str, str],
             *,
             poll_timeout_seconds: int = 120,
-            backend="QS1",
-            shots=1000,
+            shots: int = 1000,
+            backend: str = "QS1",
+            aws_session: Optional[AwsSession] = None,
             **kwargs):
         super().__init__(
             wires,
-            aws_device=AwsQuantumSimulator(self.simulator_arns[backend]),
+            aws_device=AwsQuantumSimulator(self.simulator_arns[backend], aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
             shots=shots,
@@ -181,6 +179,9 @@ class AWSIonQDevice(BraketDevice):
             before timing out. Default: 3600
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
+        aws_session (Optional[AwsSession]): An AwsSession object to managed
+            interactions with AWS services, to be supplied if extra control
+            is desired. Default: None
     """
     name = "Braket AWSIonQDevice for PennyLane"
     short_name = "braket.ionq"
@@ -191,11 +192,12 @@ class AWSIonQDevice(BraketDevice):
             s3_destination_folder: Tuple[str, str],
             *,
             poll_timeout_seconds: int = 3600,
-            shots=1000,
+            shots: int = 1000,
+            aws_session: Optional[AwsSession] = None,
             **kwargs):
         super().__init__(
             wires,
-            aws_device=AwsQpu(AwsQpuArns.IONQ),
+            aws_device=AwsQpu(AwsQpuArns.IONQ, aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
             shots=shots,
@@ -213,6 +215,9 @@ class AWSRigettiDevice(BraketDevice):
             before timing out. Default: 3600
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
+        aws_session (Optional[AwsSession]): An AwsSession object to managed
+            interactions with AWS services, to be supplied if extra control
+            is desired. Default: None
     """
     name = "Braket AWSRigettiDevice for PennyLane"
     short_name = "braket.rigetti"
@@ -223,11 +228,12 @@ class AWSRigettiDevice(BraketDevice):
             s3_destination_folder: Tuple[str, str],
             *,
             poll_timeout_seconds: int = 3600,
-            shots=1000,
+            shots: int = 1000,
+            aws_session: Optional[AwsSession] = None,
             **kwargs):
         super().__init__(
             wires,
-            aws_device=AwsQpu(AwsQpuArns.RIGETTI),
+            aws_device=AwsQpu(AwsQpuArns.RIGETTI, aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
             shots=shots,
