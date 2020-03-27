@@ -5,38 +5,41 @@ PennyLane Target Framework Plugin
 :Date: |today|
 
 
-This PennyLane plugin allows the Target Framework simulators/hardware to be used as PennyLane devices.
+Contains the PennyLane-Braket plugin. This plugin allows three AWS quantum devices to work with PennyLane:
+the AWS quantum simulator, as well as Rigetti and IonQ Quantum Processing Units (QPUs).
 
+The `Amazon Braket Python SDK  <https://github.com/aws/braket-python-sdk>`_ is an open source
+library that provides a framework that you can use to interact with quantum computing hardware
+devices through Amazon Braket.
 
-`Target framework <https://targetframework.readthedocs.io>`_ is a full-stack Python library
-for doing things.
-
-`PennyLane <https://pennylane.readthedocs.io>`_ is a machine learning library for optimization
-and automatic differentiation of hybrid quantum-classical computations.
-
+`PennyLane <https://pennylane.readthedocs.io>`_ is a machine learning library for optimization and automatic differentiation of hybrid quantum-classical computations.
 
 
 Features
 ========
 
-* List the features provided by the plugin here. This can include:
+* Provides three devices to be used with PennyLane: ``braket.simulator``, ``braket.ionq``,
+  and ``braket.rigetti``. These devices provide access to the AWS Quantum Simulator, IonQ QPUs, and
+  Rigetti QPUs respectively.
 
-* The devices made available to PennyLane, as well as any special features of the devices
+* All provided devices support most core qubit PennyLane operations.
 
-* The core PennyLane operations and observables supported
+* All PennyLane observables are supported with the exception of ``qml.Hermitian``.
 
-* Any additional operations and observables provided by the plugin
+* Provides custom PennyLane operations to cover additional Braket operations: ``V``, ``Vi``,
+  ``ISWAP``, ``CCNOT``, ``PSWAP``, and many more. Every custom operation supports analytic
+  differentiation.
 
+* Combine Amazon Braket with PennyLane's automatic differentiation and optimization.
 
-To get started with the PennyLane Strawberry Fields plugin, follow the :ref:`installation steps <installation>`, then see the :ref:`usage <usage>` page.
-
+To get started with the PennyLane Braket plugin, follow the :ref:`installation steps <installation>`, then see the :ref:`usage <usage>` page.
 
 Authors
 =======
 
-John Smith.
+`Josh Izaac <https://github.com/josh146>`_, `Nathan Killoran <https://github.com/co9olguy>`_
 
-If you are doing research using PennyLane, please cite our papers:
+If you are doing research using PennyLane, please cite these papers:
 
     Ville Bergholm, Josh Izaac, Maria Schuld, Christian Gogolin, and Nathan Killoran.
     *PennyLane: Automatic differentiation of hybrid quantum-classical computations.* 2018.
@@ -56,7 +59,7 @@ Contents
    :maxdepth: 2
    :caption: Getting started
 
-   installing
+   installation
    usage
 
 
@@ -66,8 +69,7 @@ Contents
    :maxdepth: 2
    :caption: Tutorials (external links)
 
-   Photon redirection <https://pennylane.readthedocs.io/en/latest/tutorials/plugins_hybrid.html>
-   Notebook downloads <https://pennylane.readthedocs.io/en/latest/tutorials/notebooks.html>
+   Demonstrations <https://pennylane.ai/qml/demonstrations.html>
 
 .. rst-class:: contents local topic
 
@@ -76,6 +78,4 @@ Contents
    :caption: Code details
 
    code/ops
-   code/framework_device
-   code/device1
-   code/device2
+   code/braket_device

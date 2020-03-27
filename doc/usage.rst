@@ -3,25 +3,26 @@
 Plugin usage
 ############
 
-PennyLane-Plugin provides two Target Framework devices for PennyLane:
+PennyLane-Braket provides three Braket devices for PennyLane:
 
-* :class:`name.device1 <~Device1>`: provides an PennyLane device for the Target Framework Device1
+* :class:`pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides an PennyLane device for the Braket simulators
 
-* :class:`name.device2 <~Device2>`: provides an PennyLane device for the Target Framework Device2
+* :class:`pennylane_braket.AWSIonQDevice <~AWSIonQDevice>`: provides an PennyLane device for the Braket IonQ QPU
+
+* :class:`pennylane_braket.AWSRigettiDevice <~AWSRigettiDevice>`: provides an PennyLane device for the Braket Rigetti QPU
 
 
 Using the devices
 =================
 
-Once Target Framework and the plugin are installed, the two Target Framework devices
+Once the Braket SDK and the PennyLane-Braket plugin are installed, the devices
 can be accessed straight away in PennyLane.
 
 You can instantiate these devices in PennyLane as follows:
 
 >>> import pennylane as qml
->>> from pennylane import numpy as np
->>> dev1 = qml.device('name.device1', wires=2, specific_option_for_device1=10)
->>> dev2 = qml.device('name.device2', wires=2)
+>>> dev_qs1 = qml.device('braket.simulator', backend='QS1' wires=2)
+>>> dev_qpu = qml.device('braket.ionq', shots=1000, wires=3)
 
 These devices can then be used just like other devices for the definition and evaluation of QNodes within PennyLane.
 
@@ -42,17 +43,13 @@ List available device options here.
 Supported operations
 ====================
 
-All devices support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/latest/code/ops/qubit.html>`_, with the exception of the PennyLane ``QubitStateVector`` state preparation operation.
+All devices support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_, with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``QubitStateVector`` state preparation operation.
 
-In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`plugin_name.ops <.ops>`.
+In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`pennylane_braket.ops <.ops>`.
 
 These operations include:
 
 .. autosummary::
-    plugin_name.ops.S
-    plugin_name.ops.T
-    plugin_name.ops.CCNOT
-    plugin_name.ops.CPHASE
-    plugin_name.ops.CSWAP
-    plugin_name.ops.ISWAP
-    plugin_name.ops.PSWAP
+    pennylane_braket.CPHASE
+    pennylane_braket.ISWAP
+    pennylane_braket.PSWAP

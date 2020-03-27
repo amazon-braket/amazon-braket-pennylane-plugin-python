@@ -1,2 +1,3 @@
 sphinxcontrib-bibtex
 pygments-github-lexers
+pennylane>=0.8

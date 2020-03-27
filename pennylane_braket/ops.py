@@ -12,7 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Custom operations to be used with PennyLane-Braket.
+Custom operations for Pennylane-Braket
+======================================
+
+**Module name:** :mod:`pennylane_braket.ops`
+
+.. currentmodule:: pennylane_braket.ops
+
+Contains some additional PennyLane qubit operations.
+
+These operations can be imported via
+
+.. code-block:: python
+
+    from pennylane_braket.ops import CPHASE, ISWAP, PSWAP
+
+Operations
+----------
+
+.. autosummary::
+    CPHASE
+    ISWAP
+    PSWAP
+
+
+Code details
+~~~~~~~~~~~~
 """
 import pennylane as qml
 from pennylane.operation import Operation

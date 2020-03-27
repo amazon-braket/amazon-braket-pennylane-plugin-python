@@ -13,6 +13,24 @@
 # limitations under the License.
 """
 AWS PennyLane plugin devices
+============================
+
+**Module name:** :mod:`pennylane_braket.braket_device`
+
+.. currentmodule:: pennylane_braket.braket_device
+
+Braket devices to be used with PennyLane
+
+Classes
+-------
+
+.. autosummary::
+   AWSSimulatorDevice
+   AWSIonQDevice
+   AWSRigettiDevice
+
+Code details
+~~~~~~~~~~~~
 """
 # pylint: disable=invalid-name
 from typing import Optional, Set, Tuple

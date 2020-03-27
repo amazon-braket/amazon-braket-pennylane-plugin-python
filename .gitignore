@@ -3,3 +3,4 @@ PennyLane_Braket.egg-info/*
 *.pyc
 .coverage
 coverage_html_report/
+doc/_build/
