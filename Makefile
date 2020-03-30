@@ -55,4 +55,4 @@ unit-test:
 
 integ-test:
 	@echo "Generating coverage report for integ tests..."
-	$(PYTHON) $(INTEG) $(COVERAGE)
+	$(PYTHON) $(INTEG) --bucket $(S3_BUCKET) --prefix $(S3_PREFIX) $(COVERAGE)

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Tests that plugin devices are accessible and integrate with PennyLane"""
 import numpy as np
 import pennylane as qml
@@ -22,24 +23,25 @@ from conftest import shortnames
 class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
+
     @pytest.mark.parametrize("d", shortnames)
-    def test_load_device(self, d):
+    def test_load_device(self, d, s3):
         """Test that the QVM device loads correctly"""
-        dev = qml.device(d, wires=2, shots=1024)
+        dev = qml.device(d, wires=2, shots=1024, s3_destination_folder=s3)
         assert dev.num_wires == 2
         assert dev.shots == 1024
         assert dev.short_name == d
 
     def test_args(self):
         """Test that the device requires correct arguments"""
-        with pytest.raises(TypeError, match="missing 1 required positional argument"):
+        with pytest.raises(TypeError, match="missing 2 required positional arguments"):
             qml.device("braket.simulator")
 
     @pytest.mark.parametrize("d", shortnames)
-    @pytest.mark.parametrize("shots", [0, 8192])
-    def test_one_qubit_circuit(self, shots, d, tol):
+    @pytest.mark.parametrize("shots", [8192])
+    def test_one_qubit_circuit(self, shots, d, tol, s3):
         """Test that devices provide correct result for a simple circuit"""
-        dev = qml.device(d, wires=1, shots=shots)
+        dev = qml.device(d, wires=1, shots=shots, s3_destination_folder=s3)
 
         a = 0.543
         b = 0.123

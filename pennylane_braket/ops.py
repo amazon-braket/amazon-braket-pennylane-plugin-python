@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 Custom operations for Pennylane-Braket
 ======================================
@@ -39,9 +40,9 @@ Operations
 Code details
 ~~~~~~~~~~~~
 """
+import numpy as np
 import pennylane as qml
 from pennylane.operation import Operation
-import numpy as np
 
 
 class CPHASE(Operation):

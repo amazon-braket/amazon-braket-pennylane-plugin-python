@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests that variances are correctly computed in the plugin devices"""
-import pytest
 
+"""Tests that variances are correctly computed in the plugin devices"""
 import numpy as np
 import pennylane as qml
+import pytest
 
-from conftest import U, U2, A, rotations
-
+from conftest import rotations
 
 np.random.seed(42)
 
@@ -49,6 +48,7 @@ class TestVar:
 
         assert np.allclose(var, expected, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_var_hermitian(self, device, shots, tol):
         """Tests for variance calculation using an arbitrary Hermitian observable"""
         dev = device(2)
@@ -144,6 +144,7 @@ class TestTensorVar:
 
         assert np.allclose(res, expected, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
         theta = 0.432

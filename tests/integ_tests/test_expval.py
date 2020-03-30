@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests that exectation values are correctly computed in the plugin devices"""
-import pytest
 
+"""Tests that exectation values are correctly computed in the plugin devices"""
 import numpy as np
 import pennylane as qml
+import pytest
 
-from conftest import U, U2, A, rotations
-
+from conftest import A, rotations
 
 np.random.seed(42)
 
@@ -121,6 +120,7 @@ class TestExpval:
         ) / np.sqrt(2)
         assert np.allclose(res, expected, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian_expectation(self, device, shots, tol):
         """Test that arbitrary Hermitian expectation values are correct"""
         theta = 0.432
@@ -148,6 +148,7 @@ class TestExpval:
 
         assert np.allclose(res, expected, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_multi_mode_hermitian_expectation(self, device, shots, tol):
         """Test that arbitrary multi-mode Hermitian expectation values are correct"""
         theta = 0.432
@@ -178,11 +179,11 @@ class TestExpval:
         # below is the analytic expectation value for this circuit with arbitrary
         # Hermitian observable A
         expected = 0.5 * (
-            6 * np.cos(theta) * np.sin(phi)
-            - np.sin(theta) * (8 * np.sin(phi) + 7 * np.cos(phi) + 3)
-            - 2 * np.sin(phi)
-            - 6 * np.cos(phi)
-            - 6
+                6 * np.cos(theta) * np.sin(phi)
+                - np.sin(theta) * (8 * np.sin(phi) + 7 * np.cos(phi) + 3)
+                - 2 * np.sin(phi)
+                - 6 * np.cos(phi)
+                - 6
         )
 
         assert np.allclose(res, expected, **tol)
@@ -233,12 +234,14 @@ class TestTensorExpval:
 
         ob = qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
         dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
         res = dev.expval(ob)
 
         expected = -(np.cos(varphi) * np.sin(phi) + np.sin(varphi) * np.cos(theta)) / np.sqrt(2)
 
         assert np.allclose(res, expected, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
         theta = 0.432
@@ -268,10 +271,10 @@ class TestTensorExpval:
         res = dev.expval(ob)
 
         expected = 0.5 * (
-            -6 * np.cos(theta) * (np.cos(varphi) + 1)
-            - 2 * np.sin(varphi) * (np.cos(theta) + np.sin(phi) - 2 * np.cos(phi))
-            + 3 * np.cos(varphi) * np.sin(phi)
-            + np.sin(phi)
+                -6 * np.cos(theta) * (np.cos(varphi) + 1)
+                - 2 * np.sin(varphi) * (np.cos(theta) + np.sin(phi) - 2 * np.cos(phi))
+                + 3 * np.cos(varphi) * np.sin(phi)
+                + np.sin(phi)
         )
 
         assert np.allclose(res, expected, **tol)

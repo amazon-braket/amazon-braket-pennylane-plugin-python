@@ -39,7 +39,6 @@ List available device options here.
 	The default value of 0 means that the exact expectation value is returned.
 
 
-
 Supported operations
 ====================
 

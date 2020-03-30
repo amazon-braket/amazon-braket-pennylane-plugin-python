@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 AWS PennyLane plugin devices
 ============================
@@ -119,9 +120,16 @@ class BraketDevice(QubitDevice):
         rotations = rotations or []
         self.circuit = Circuit()
 
+        for i in range(self.num_wires):
+            # Braket ignores unused qubits
+            self.circuit.i(i)
+
         # Add operations to Braket Circuit object
         for operation in operations + rotations:
-            op = self._operation_map[operation.name]
+            try:
+                op = self._operation_map[operation.name]
+            except KeyError:
+                raise NotImplementedError(f"PennyLane-Braket does not support operation {operation.name}.")
             ins = Instruction(op(*operation.parameters), operation.wires)
             self.circuit.add_instruction(ins)
 
@@ -136,10 +144,9 @@ class BraketDevice(QubitDevice):
         return self.result.measurements
 
     def probability(self, wires=None):
-        probs = self.result.measurement_probabilities
-        probs = {tuple(int(i) for i in s): p for s, p in probs.items()}
-        probs = np.array([p[1] for p in sorted(probs.items())])
-        return self.marginal_prob(probs, wires=wires)
+        probs = {int(s, 2): p for s, p in self.result.measurement_probabilities.items()}
+        probs_list = np.array([probs[i] if i in probs else 0 for i in range(2 ** self.num_wires)])
+        return self.marginal_prob(probs_list, wires=wires)
 
 
 class AWSSimulatorDevice(BraketDevice):
@@ -153,7 +160,8 @@ class AWSSimulatorDevice(BraketDevice):
             before timing out. Default: 120
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
-        backend (str): the simulator backend to target.
+        backend (str): The simulator backend to target;
+            can be one of "QS1", "QS2" or "QS3". Default: "QS3"
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -174,7 +182,7 @@ class AWSSimulatorDevice(BraketDevice):
             *,
             poll_timeout_seconds: int = 120,
             shots: int = 1000,
-            backend: str = "QS1",
+            backend: str = "QS3",
             aws_session: Optional[AwsSession] = None,
             **kwargs):
         super().__init__(

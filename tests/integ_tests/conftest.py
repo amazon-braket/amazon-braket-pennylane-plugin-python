@@ -11,15 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import numpy as np
 import pytest
 
-from pennylane_braket import AWSSimulatorDevice, AWSIonQDevice, AWSRigettiDevice
-from pennylane.plugins import DefaultQubit
-
+from pennylane_braket import AWSSimulatorDevice
 
 np.random.seed(42)
-
 
 # ==========================================================
 # Some useful global variables
@@ -49,14 +47,31 @@ analytic_devices = []
 # List of all devices that do *not* support analytic expectation
 # value computation. This generally includes hardware devices
 # and hardware simulators.
-hw_devices = [AWSSimulatorDevice, AWSIonQDevice, AWSRigettiDevice]
+hw_devices = [AWSSimulatorDevice]
 
 # List of all device shortnames
 shortnames = [d.short_name for d in analytic_devices + hw_devices]
 
 
 # ==========================================================
+# pytest options
+
+def pytest_addoption(parser):
+    parser.addoption("--bucket", action="store")
+    parser.addoption("--prefix", action="store")
+
+
+# ==========================================================
 # pytest fixtures
+
+@pytest.fixture
+def s3(request):
+    """
+    S3 bucket and prefix, supplied as pytest arguments
+    """
+    config = request.config
+    return config.getoption("--bucket"), config.getoption("--prefix")
+
 
 @pytest.fixture
 def tol(shots):
@@ -84,7 +99,7 @@ def init_state(scope="session"):
 
 
 @pytest.fixture(params=analytic_devices+hw_devices)
-def device(request, shots):
+def device(request, shots, s3):
     """Fixture to initialize and return a PennyLane device"""
     device = request.param
 
@@ -92,7 +107,11 @@ def device(request, shots):
         pytest.skip("Hardware simulators do not support analytic mode")
 
     def _device(n):
-        return device(wires=n, shots=shots, s3_destination_folder=("foo", "bar"))
+        return device(
+            wires=n,
+            shots=shots,
+            s3_destination_folder=s3,
+        )
 
     return _device
 

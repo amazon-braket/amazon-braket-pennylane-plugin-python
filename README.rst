@@ -94,10 +94,10 @@ Integration tests that make a full roundtrip through AWS can be run with
 
 .. code-block:: bash
 
-    make integ-test
+    make integ-test S3_BUCKET=my-s3-bucket S3_PREFIX=my-s3-prefix
 
-Note: You may need to edit ``s3_destination_folder`` in ``device`` inside ``conftest.py``
-to be a real S3 location to run the integ tests successfully.
+replacing my-s3-bucket and my-s3-prefix with the name of your S3 bucket and the S3 key prefix
+where you want to save results, respectively.
 
 
 Support

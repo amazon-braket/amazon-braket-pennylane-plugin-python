@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests that samples are correctly computed in the plugin devices"""
-import pytest
 
+"""Tests that samples are correctly computed in the plugin devices"""
 import numpy as np
 import pennylane as qml
+import pytest
 
-from conftest import U, U2, A, rotations
-
+from conftest import rotations
 
 np.random.seed(42)
 
@@ -40,6 +39,7 @@ class TestSample:
         # s1 should only contain 1 and -1
         assert np.allclose(s1 ** 2, 1, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_sample_values_hermitian(self, device, shots, tol):
         """Tests if the samples of a Hermitian observable returned by sample have
         the correct values
@@ -68,6 +68,7 @@ class TestSample:
         # the analytic variance is 0.25*(sin(theta)-4*cos(theta))^2
         assert np.allclose(np.var(s1), 0.25 * (np.sin(theta) - 4 * np.cos(theta)) ** 2, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_sample_values_hermitian_multi_qubit(self, device, shots, tol):
         """Tests if the samples of a multi-qubit Hermitian observable returned by sample have
         the correct values
@@ -193,6 +194,7 @@ class TestTensorSample:
         ) / 4
         assert np.allclose(var, expected, **tol)
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
         theta = 0.432
