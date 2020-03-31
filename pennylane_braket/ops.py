@@ -46,7 +46,7 @@ from pennylane.operation import Operation
 
 
 class CPHASE(Operation):
-    r"""CHPASE(phi, q, wires)
+    r"""CPHASE(phi, q, wires)
     Controlled-phase gate.
 
     .. math::
