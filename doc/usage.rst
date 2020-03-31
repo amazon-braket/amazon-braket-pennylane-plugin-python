@@ -30,14 +30,17 @@ These devices can then be used just like other devices for the definition and ev
 Device options
 ==============
 
-The Target Framework simulators accept additional arguments beyond the PennyLane default device arguments.
+The Braket devices accept additional arguments beyond the PennyLane default device arguments:
 
-List available device options here.
+* **s3_destination_folder** (*Tuple[str, str]*) -- A tuple of the S3 bucket and prefix where the results of the run will be stored. This must be provided.
 
-``shots=0``
-	The number of circuit evaluations/random samples used to estimate expectation values of observables.
-	The default value of 0 means that the exact expectation value is returned.
+* **poll_timeout_seconds** (*int*) -- Time in seconds to poll for results before timing out. Defaults to 120 for simulators and 3600 for QPUs.
 
+* **shots=1000** (*int*) -- The number of circuit evaluations/random samples used to estimate expectation values of observables. Defaults to 1000.
+
+Additionally, ``AWSSimulatorDevice`` accepts
+
+* **backend** (*str*) -- The simulator backend to target; can be one of "QS1", "QS2" or "QS3". Defaults to "QS3".
 
 Supported operations
 ====================
