@@ -12,8 +12,8 @@
 # language governing permissions and limitations under the License.
 
 """
-Custom operations for Pennylane-Braket
-======================================
+Custom Operations
+=================
 
 **Module name:** :mod:`pennylane_braket.ops`
 
