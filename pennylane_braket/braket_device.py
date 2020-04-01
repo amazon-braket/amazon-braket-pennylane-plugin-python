@@ -12,8 +12,8 @@
 # language governing permissions and limitations under the License.
 
 """
-AWS PennyLane plugin devices
-============================
+Devices
+=======
 
 **Module name:** :mod:`pennylane_braket.braket_device`
 
