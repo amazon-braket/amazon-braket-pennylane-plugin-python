@@ -3,7 +3,7 @@
 Plugin usage
 ############
 
-PennyLane-Braket provides three Braket devices for PennyLane:
+This plugin provides three Braket devices for PennyLane:
 
 * :class:`pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides an PennyLane device for the Braket simulators
 
@@ -15,7 +15,7 @@ PennyLane-Braket provides three Braket devices for PennyLane:
 Using the devices
 =================
 
-Once the Braket SDK and the PennyLane-Braket plugin are installed, the devices
+Once the Braket SDK and the plugin are installed, the devices
 can be accessed straight away in PennyLane.
 
 You can instantiate these devices in PennyLane as follows:

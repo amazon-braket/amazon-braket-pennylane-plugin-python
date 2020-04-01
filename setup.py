@@ -11,11 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 #!/usr/bin/env python3
 
-import sys
-import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("pennylane_braket/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
@@ -25,26 +24,20 @@ with open("pennylane_braket/_version.py") as f:
 # Avoid pinning, and use minimum version numbers
 # only where required.
 requirements = [
-    "pennylane>=0.8",
-    "braket-ir",
-    "braket-sdk"
+    "braket-sdk @ git+https://github.com/aws/braket-python-sdk.git",
+    "braket-ir @ git+https://github.com/aws/braket-python-ir.git",
+    "pennylane>=0.8"
 ]
 
-info = {
-    # 'name' is the name that will be used by pip for installation
-    "name": "PennyLane-Braket",
-    "version": version,
-    "maintainer": "Xanadu Inc.",
-    "maintainer_email": "software@xanadu.ai",
-    "url": "http://xanadu.ai",
-    "license": "Apache License 2.0",
-    "packages": [
-        # The name of the folder containing the plugin.
-        # This is the name that will be used when importing
-        # the plugin in Python.
-        "pennylane_braket"
-    ],
-    "entry_points": {
+setup(
+    name="amazon-braket-pennyLane-plugin-python",
+    version=version,
+    license="Apache License 2.0",
+    python_requires=">= 3.7.2",
+    packages=find_packages(where="pennylane_braket", exclude=("tests",)),
+    package_dir={"": "pennylane_braket"},
+    install_requires=requirements,
+    entry_points={
         "pennylane.plugins": [
             # List the short name of each device provided by
             # the plugin, as well as the path to the Device class
@@ -56,31 +49,9 @@ info = {
             "braket.rigetti = pennylane_braket:AWSRigettiDevice",
         ]
     },
-    # Place a one line description here. This will be shown by pip
-    "description": "Plugin description",
-    "long_description": open("README.rst").read(),
-    # The name of the folder containing the plugin
-    "provides": ["plugin_name"],
-    "install_requires": requirements,
-}
-
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Environment :: Console",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Natural Language :: English",
-    "Operating System :: POSIX",
-    "Operating System :: MacOS :: MacOS X",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: Microsoft :: Windows",
-    "Programming Language :: Python",
-    # Make sure to specify here the versions of Python supported
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3 :: Only",
-    "Topic :: Scientific/Engineering :: Physics",
-]
-
-setup(classifiers=classifiers, **(info))
+    extras_require={
+        "test": [
+            "pytest-cov",
+        ]
+    },
+)

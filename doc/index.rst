@@ -1,11 +1,11 @@
-PennyLane Target Framework Plugin
-#################################
+Amazon Braket PennyLane Plugin
+##############################
 
 :Release: |release|
 :Date: |today|
 
 
-Contains the PennyLane-Braket plugin. This plugin allows three AWS quantum devices to work with PennyLane:
+The Amazon Braket PennyLane plugin allows three AWS quantum devices to work with PennyLane:
 the AWS quantum simulator, as well as Rigetti and IonQ Quantum Processing Units (QPUs).
 
 The `Amazon Braket Python SDK  <https://github.com/aws/braket-python-sdk>`_ is an open source
@@ -26,18 +26,17 @@ Features
 
 * All PennyLane observables are supported with the exception of ``qml.Hermitian``.
 
-* Provides custom PennyLane operations to cover additional Braket operations: ``V``, ``Vi``,
-  ``ISWAP``, ``CCNOT``, ``PSWAP``, and many more. Every custom operation supports analytic
+* Provides custom PennyLane operations to cover additional Braket operations: ``ISWAP``, ``PSWAP``, and many more. Every custom operation supports analytic
   differentiation.
 
 * Combine Amazon Braket with PennyLane's automatic differentiation and optimization.
 
-To get started with the PennyLane Braket plugin, follow the :ref:`installation steps <installation>`, then see the :ref:`usage <usage>` page.
+To get started with the plugin, follow the :ref:`installation steps <installation>`, then see the :ref:`usage <usage>` page.
 
 Authors
 =======
 
-`Josh Izaac <https://github.com/josh146>`_, `Nathan Killoran <https://github.com/co9olguy>`_
+`Amazon Braket <https://aws.amazon.com/braket/>`_, `Xanadu <https://www.xanadu.ai/>`_
 
 If you are doing research using PennyLane, please cite these papers:
 
@@ -62,15 +61,6 @@ Contents
    installation
    usage
 
-
-.. rst-class:: contents local topic
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials (external links)
-
-   Demonstrations <https://pennylane.ai/qml/demonstrations.html>
-
 .. rst-class:: contents local topic
 
 .. toctree::
@@ -79,3 +69,11 @@ Contents
 
    code/ops
    code/braket_device
+
+.. rst-class:: contents local topic
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials (external links)
+
+   Demonstrations <https://pennylane.ai/qml/demonstrations.html>
