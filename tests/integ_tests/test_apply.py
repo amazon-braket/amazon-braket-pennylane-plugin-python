@@ -158,7 +158,7 @@ class TestHardwareApply:
         expected = np.abs(mat @ state) ** 2
         assert np.allclose(res, expected, **tol)
 
-    @pytest.mark.xfail(raises=AttributeError)
+    @pytest.mark.xfail()
     @pytest.mark.parametrize("op", three_qubit)
     def test_three_qubit_no_parameters(self, init_state, device, op, tol):
         dev = device(3)
@@ -174,7 +174,7 @@ class TestHardwareApply:
         expected = np.abs(op._matrix() @ state) ** 2
         assert np.allclose(res, expected, **tol)
 
-    @pytest.mark.xfail(raises=AttributeError)
+    @pytest.mark.xfail()
     @pytest.mark.parametrize("theta", [0.5432, -0.232])
     @pytest.mark.parametrize("op", two_qubit_param)
     def test_two_qubit_parameters(self, init_state, device, op, theta, tol):
