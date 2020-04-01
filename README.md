@@ -60,7 +60,14 @@ pip install -e amazon-braket-pennylane-plugin-python
 
 ## Documentation
 
-You can generate the documentation for the plugin by running
+To download the documentation for the plugin, use the following command:
+```bash
+aws s3 cp s3://braket-external-assets-prod-us-west-2/sdk-docs/amazon-braket-pennylane-plugin-python-docs.zip amazon-braket-pennylane-plugin-python-docs.zip
+``` 
+
+Extract the downloaded .zip file, and then open ..\html\index.html in a browser.
+
+You can also generate the documentation for the plugin with the following command:
 
 ```bash
 make docs
