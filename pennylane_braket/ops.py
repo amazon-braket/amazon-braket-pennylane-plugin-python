@@ -143,7 +143,7 @@ class ISWAP(Operation):
 
     **Details:**
 
-    * Number of wires: 3
+    * Number of wires: 2
     * Number of parameters: 0
 
     Args:
@@ -179,7 +179,7 @@ class PSWAP(Operation):
 
     **Details:**
 
-    * Number of wires: 3
+    * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe: :math:`\frac{d}{d\phi}PSWAP(\phi) = \frac{1}{2}\left[PSWAP(\phi+\pi/2)+PSWAP(\phi-\pi/2)\right]`
 
