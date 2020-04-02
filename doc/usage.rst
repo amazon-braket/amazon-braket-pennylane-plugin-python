@@ -21,8 +21,9 @@ can be accessed straight away in PennyLane.
 You can instantiate these devices in PennyLane as follows:
 
 >>> import pennylane as qml
->>> dev_qs1 = qml.device('braket.simulator', backend='QS1' wires=2)
->>> dev_qpu = qml.device('braket.ionq', shots=1000, wires=3)
+>>> dev_qs1 = qml.device("braket.simulator", s3_destination_folder=("my-bucket", "my-prefix"), backend="QS1", wires=2)
+>>> dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=("my-bucket", "my-prefix"), shots=1000, wires=3)
+>>> dev_ionq= qml.device("braket.ionq", s3_destination_folder=("my-bucket", "my-prefix"), poll_timeout_seconds=3600, shots=1000, wires=3)
 
 These devices can then be used just like other devices for the definition and evaluation of QNodes within PennyLane.
 
@@ -43,7 +44,7 @@ Additionally, ``AWSSimulatorDevice`` accepts
 Supported operations
 ====================
 
-All devices support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_, with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``QubitStateVector`` state preparation operation.
+All devices support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_, with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``Hermitian`` observable.
 
 In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`pennylane_braket.ops <.ops>`.
 

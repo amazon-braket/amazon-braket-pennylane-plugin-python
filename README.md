@@ -83,8 +83,9 @@ You can instantiate these devices for PennyLane as follows:
 
 ```python
 import pennylane as qml
-dev_qs1 = qml.device('braket.simulator', backend='QS1', wires=2)
-dev_qpu = qml.device('braket.ionq', shots=1000, wires=3)
+dev_qs1 = qml.device("braket.simulator", s3_destination_folder=("my-bucket", "my-prefix"), backend="QS1", wires=2)
+dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=("my-bucket", "my-prefix"), shots=1000, wires=3)
+dev_ionq = qml.device("braket.ionq", s3_destination_folder=("my-bucket", "my-prefix"), poll_timeout_seconds=3600, shots=1000, wires=3)
 ```
 
 You can use these devices just like other devices for the definition and evaluation of
