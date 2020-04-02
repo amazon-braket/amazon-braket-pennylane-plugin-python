@@ -6,7 +6,7 @@ Setup
 Installation
 ============
 
-The Amazon Braket PennyLane plugin requires both `PennyLane <https://pennylane.readthedocs.io>`_ and the `Amazon Braket Python SDK  <https://github.com/aws/braket-python-sdk/tree/stable/latest>`_. You should use only the stable/latest branch of the braket-python-sdk repository. Instructions for installing the Amazon Braket SDK are included in the Readme file for the repo.
+The Amazon Braket PennyLane plugin requires both `PennyLane <https://pennylane.readthedocs.io>`_ and the `Amazon Braket Python SDK  <https://github.com/aws/braket-python-sdk/tree/stable/latest>`_. You should use only the stable/latest branch of the braket-python-sdk repository. Instructions for installing the Amazon Braket SDK are included in the README file for the repo.
 
 After you install the Amazon Braket SDK, either clone or download the amazon-braket-pennylane-plugin-python repo to your local environment. You must clone or download the repo into a folder in the same virtual environment where you are using the Amazon Braket SDK.
 
@@ -33,7 +33,7 @@ Software tests
 To ensure that the plugin is working correctly after installation, the test suites can be run by navigating to the source code folder and running
 ::
 
-	$ make unit-test
+    $ make unit-test
 
 for the unit tests and
 ::
