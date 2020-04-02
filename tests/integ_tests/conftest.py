@@ -11,6 +11,10 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import os
+
+from botocore.exceptions import ClientError
+import boto3
 import numpy as np
 import pytest
 
@@ -61,15 +65,34 @@ def pytest_addoption(parser):
 
 
 # ==========================================================
+# AWS resources
+
+session = boto3.session.Session(profile_name=os.environ["AWS_PROFILE"])
+account_id = session.client("sts").get_caller_identity()["Account"]
+bucket_name = f"braket-sdk-integ-tests-{account_id}"
+s3_bucket = session.resource("s3").Bucket(bucket_name)
+
+# Create bucket if it doesn't exist
+try:
+    s3_bucket.create(ACL="private", CreateBucketConfiguration={"LocationConstraint": session.region_name})
+except ClientError as e:
+    if e.response["Error"]["Code"] == "BucketAlreadyOwnedByYou":
+        pass
+    else:
+        raise e
+
+
+# ==========================================================
 # pytest fixtures
 
 @pytest.fixture
-def s3(request):
+def s3():
     """
     S3 bucket and prefix, supplied as pytest arguments
     """
-    config = request.config
-    return config.getoption("--bucket"), config.getoption("--prefix")
+    current_test_path = os.environ.get("PYTEST_CURRENT_TEST")
+    s3_prefix = current_test_path.rsplit(".py")[0].replace("test/", "")
+    return bucket_name, s3_prefix
 
 
 @pytest.fixture

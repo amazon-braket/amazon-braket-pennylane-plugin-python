@@ -77,6 +77,7 @@ class CPHASE(Operation):
     par_domain = "R"
     grad_method = "A"
 
+    @staticmethod
     def decomposition(phi, q, wires):
         if q == 0:
             return [
@@ -153,6 +154,7 @@ class ISWAP(Operation):
     num_wires = 2
     par_domain = None
 
+    @staticmethod
     def decomposition(wires):
         return [
             qml.SWAP(wires=wires),
@@ -167,7 +169,7 @@ class ISWAP(Operation):
 
 
 class PSWAP(Operation):
-    r"""PSWAP(wires)
+    r"""PSWAP(phi, wires)
     Phase-SWAP gate.
 
     .. math:: PSWAP(\phi) = \begin{bmatrix}
@@ -185,14 +187,15 @@ class PSWAP(Operation):
 
 
     Args:
-        wires (int): the subsystem the gate acts on
         phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
     """
     num_params = 1
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
 
+    @staticmethod
     def decomposition(phi, wires):
         return [
             qml.SWAP(wires=wires),

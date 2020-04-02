@@ -103,11 +103,12 @@ make unit-test
 Integration tests that make a full roundtrip through AWS can be run with
 
 ```bash
-make integ-test S3_BUCKET=my-s3-bucket S3_PREFIX=my-s3-prefix
+make integ-test
 ```
 
-replacing `my-s3-bucket` and `my-s3-prefix` with the name of your S3 bucket and the S3 key prefix
-where you want to save results, respectively.
+To run the integ tests, the `AWS_PROFILE` environment variable has to be set to your desired [AWS profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html).
+
+**Warning**: Running the integ tests will create an S3 bucket in your account.
 
 ## License
 
