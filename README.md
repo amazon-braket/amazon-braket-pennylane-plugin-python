@@ -108,6 +108,8 @@ make integ-test
 
 To run the integ tests, the `AWS_PROFILE` environment variable has to be set to your desired [AWS profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html).
 
+**Warning**: Running the integ tests will create an S3 bucket in your account.
+
 ## License
 
 This project is licensed under the Apache-2.0 License.

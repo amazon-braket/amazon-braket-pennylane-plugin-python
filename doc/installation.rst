@@ -42,6 +42,9 @@ for the unit tests and
 
 To run the integ tests, the ``AWS_PROFILE`` environment variable has to be set to your desired `AWS profile <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html>`_.
 
+.. warning::
+
+    Running the integ tests will create an S3 bucket in your account.
 
 Documentation
 =============
