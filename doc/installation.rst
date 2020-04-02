@@ -38,10 +38,9 @@ To ensure that the plugin is working correctly after installation, the test suit
 for the unit tests and
 ::
 
-    $ make integ-test S3_BUCKET=my-s3-bucket S3_PREFIX=my-s3-prefix
+    $ make integ-test
 
-for the integ tests, replacing ``my-s3-bucket`` and ``my-s3-prefix`` with the name of your S3 bucket and the S3 key prefix
-where you want to save results, respectively.
+To run the integ tests, the ``AWS_PROFILE`` environment variable has to be set to your desired `AWS profile <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html>`_.
 
 
 Documentation

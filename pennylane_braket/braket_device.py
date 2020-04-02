@@ -201,7 +201,7 @@ class AWSIonQDevice(BraketDevice):
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
         poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 3600
+            before timing out. Default: 86400
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
@@ -216,7 +216,7 @@ class AWSIonQDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 3600,
+            poll_timeout_seconds: int = 86400,
             shots: int = 1000,
             aws_session: Optional[AwsSession] = None,
             **kwargs):
@@ -237,7 +237,7 @@ class AWSRigettiDevice(BraketDevice):
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
         poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 3600
+            before timing out. Default: 86400
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
@@ -252,7 +252,7 @@ class AWSRigettiDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 3600,
+            poll_timeout_seconds: int = 86400,
             shots: int = 1000,
             aws_session: Optional[AwsSession] = None,
             **kwargs):

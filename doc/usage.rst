@@ -35,7 +35,7 @@ The Braket devices accept additional arguments beyond the PennyLane default devi
 
 * **s3_destination_folder** (*Tuple[str, str]*) -- A tuple of the S3 bucket and prefix where the results of the run will be stored. This must be provided.
 
-* **poll_timeout_seconds** (*int*) -- Time in seconds to poll for results before timing out. Defaults to 120 for simulators and 3600 for QPUs.
+* **poll_timeout_seconds** (*int*) -- Time in seconds to poll for results before timing out. Defaults to 120 for simulators and 86400 (1 day) for QPUs.
 
 Additionally, ``AWSSimulatorDevice`` accepts
 
