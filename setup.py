@@ -13,9 +13,9 @@
 
 #!/usr/bin/env python3
 
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
-with open("pennylane_braket/_version.py") as f:
+with open("src/pennylane_braket/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 # Put pip installation requirements here.
@@ -33,7 +33,8 @@ setup(
     version=version,
     license="Apache License 2.0",
     python_requires=">= 3.7.2",
-    packages=["pennylane_braket"],
+    packages=find_namespace_packages(where="src", exclude=("test",)),
+    package_dir={"": "src"},
     install_requires=requirements,
     entry_points={
         "pennylane.plugins": [

@@ -109,7 +109,7 @@ def test_generate_samples_ionq(mock_create):
         BELL_STATE,
         ("foo", "bar"),
         10000,
-        poll_timeout_seconds=3600
+        poll_timeout_seconds=86400
     )
 
 
@@ -133,7 +133,7 @@ def test_generate_samples_rigetti(mock_create):
         BELL_STATE,
         ("foo", "bar"),
         10000,
-        poll_timeout_seconds=3600
+        poll_timeout_seconds=86400
     )
 
 

@@ -57,14 +57,6 @@ shortnames = [d.short_name for d in analytic_devices + hw_devices]
 
 
 # ==========================================================
-# pytest options
-
-def pytest_addoption(parser):
-    parser.addoption("--bucket", action="store")
-    parser.addoption("--prefix", action="store")
-
-
-# ==========================================================
 # AWS resources
 
 session = boto3.session.Session(profile_name=os.environ["AWS_PROFILE"])

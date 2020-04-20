@@ -2,8 +2,8 @@ PYTHON3 := $(shell which python3 2>/dev/null)
 
 PYTHON := python3
 COVERAGE := --cov=pennylane_braket --cov-report term-missing --cov-report=html:coverage_html_report
-UNIT := -m pytest tests/unit_tests
-INTEG := -m pytest tests/integ_tests
+UNIT := -m pytest test/unit_tests
+INTEG := -m pytest test/integ_tests
 
 .PHONY: help
 help:
