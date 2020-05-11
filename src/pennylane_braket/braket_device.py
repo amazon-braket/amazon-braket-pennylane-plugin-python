@@ -39,6 +39,7 @@ import numpy as np
 from braket.aws import AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsSession
 from braket.circuits import Circuit, Instruction, gates
 from braket.devices import Device
+from braket.tasks import QuantumTask, GateModelQuantumTaskResult
 from pennylane import QubitDevice
 
 from ._version import __version__
@@ -97,56 +98,70 @@ class BraketDevice(QubitDevice):
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
 
-        self.circuit = None
-        self.result = None
+        self._circuit = None
+        self._task = None
 
     def reset(self):
         super().reset()
-        self.circuit = None
-        self.result = None
+        self._circuit = None
+        self._task = None
 
     @property
-    def operations(self):
-        """Get the supported set of operations.
-
-        Returns:
-            Set[str]: the set of PennyLane operation names the device supports
+    def operations(self) -> Set[str]:
+        """ Set[str]: The set of PennyLane operation names the device supports.
         """
         return set(self._operation_map.keys())
+
+    @property
+    def circuit(self) -> Circuit:
+        """ Circuit: The last circuit run on this device.
+        """
+        return self._circuit
+
+    @property
+    def task(self) -> QuantumTask:
+        """ QuantumTask: The task corresponding to the last run circuit.
+        """
+        return self._task
 
     def apply(self, operations, rotations=None, **kwargs):
         """Instantiate Braket Circuit object."""
         rotations = rotations or []
-        self.circuit = Circuit()
-
-        for i in range(self.num_wires):
-            # Braket ignores unused qubits
-            self.circuit.i(i)
+        circuit = Circuit()
 
         # Add operations to Braket Circuit object
         for operation in operations + rotations:
             try:
                 op = self._operation_map[operation.name]
             except KeyError:
-                raise NotImplementedError(f"PennyLane-Braket does not support operation {operation.name}.")
+                raise NotImplementedError(
+                    f"PennyLane-Braket does not support operation {operation.name}."
+                )
             ins = Instruction(op(*operation.parameters), operation.wires)
-            self.circuit.add_instruction(ins)
+            circuit.add_instruction(ins)
+
+        unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}
+        for qubit in sorted(unused):
+            circuit.i(qubit)
+
+        self._circuit = circuit
 
     def generate_samples(self):
-        ret = self._aws_device.run(
+        self._task = self._aws_device.run(
             self.circuit,
             self._s3_folder,
             shots=self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds
         )
-        self.result = ret.result()
-        return self.result.measurements
+        return self._task.result().measurements
 
     def probability(self, wires=None):
-        probs = {int(s, 2): p for s, p in self.result.measurement_probabilities.items()}
+        probs = {
+            int(s, 2): p
+            for s, p in self._task.result().measurement_probabilities.items()
+        }
         probs_list = np.array([probs[i] if i in probs else 0 for i in range(2 ** self.num_wires)])
         return self.marginal_prob(probs_list, wires=wires)
-
 
 class AWSSimulatorDevice(BraketDevice):
     r"""AWSSimulatorDevice for PennyLane.

@@ -36,7 +36,9 @@ RESULT = GateModelQuantumTaskResult.from_string(
         }
     )
 )
-BELL_STATE = Circuit().i(0).i(1).h(0).cnot(0, 1)
+TASK = Mock()
+TASK.result.return_value = RESULT
+BELL_STATE = Circuit().h(0).cnot(0, 1)
 
 
 def test_reset():
@@ -47,12 +49,12 @@ def test_reset():
         s3_destination_folder=("foo", "bar"),
         shots=10000,
     )
-    dev.circuit = BELL_STATE
-    dev.result = RESULT
+    dev._circuit = BELL_STATE
+    dev._task = TASK
 
     dev.reset()
     assert dev.circuit is None
-    assert dev.result is None
+    assert dev.task is None
 
 
 def test_apply():
@@ -67,7 +69,22 @@ def test_apply():
     rotations = [qml.RY(np.pi, wires=0)]
     dev.apply(operations, rotations)
 
-    assert dev.circuit == Circuit().i(0).i(1).h(0).cnot(0, 1).rx(1, np.pi/2).ry(0, np.pi)
+    assert dev.circuit == Circuit().h(0).cnot(0, 1).rx(1, np.pi/2).ry(0, np.pi)
+
+
+def test_apply_unused_qubits():
+    """ Tests that the correct circuit is created when not all qires in the dievce are used.
+    """
+    dev = AWSSimulatorDevice(
+        wires=4,
+        s3_destination_folder=("foo", "bar"),
+        shots=10000,
+    )
+    operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi/2, wires=2)]
+    rotations = [qml.RY(np.pi, wires=1)]
+    dev.apply(operations, rotations)
+
+    assert dev.circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi/2).ry(1, np.pi).i(0).i(3)
 
 
 @pytest.mark.xfail(raises=NotImplementedError)
@@ -92,9 +109,7 @@ def test_apply_unsupported():
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_ionq(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
     dev = AWSIonQDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
@@ -103,6 +118,7 @@ def test_generate_samples_ionq(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQpuArns.IONQ,
@@ -115,9 +131,7 @@ def test_generate_samples_ionq(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_rigetti(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSRigettiDevice(
         wires=2,
@@ -127,6 +141,7 @@ def test_generate_samples_rigetti(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQpuArns.RIGETTI,
@@ -139,9 +154,7 @@ def test_generate_samples_rigetti(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs1(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSSimulatorDevice(
         wires=2,
@@ -152,6 +165,7 @@ def test_generate_samples_qs1(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQuantumSimulatorArns.QS1,
@@ -164,9 +178,7 @@ def test_generate_samples_qs1(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs2(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSSimulatorDevice(
         wires=2,
@@ -177,6 +189,7 @@ def test_generate_samples_qs2(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQuantumSimulatorArns.QS2,
@@ -189,9 +202,7 @@ def test_generate_samples_qs2(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs3(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSSimulatorDevice(
         wires=2,
@@ -201,6 +212,7 @@ def test_generate_samples_qs3(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQuantumSimulatorArns.QS3,
@@ -219,6 +231,6 @@ def test_probability():
         s3_destination_folder=("foo", "bar"),
         shots=10000,
     )
-    dev.result = RESULT
+    dev._task = TASK
     probs = np.array([0.25, 0, 0, 0.75])
     assert (dev.probability() == dev.marginal_prob(probs)).all()
