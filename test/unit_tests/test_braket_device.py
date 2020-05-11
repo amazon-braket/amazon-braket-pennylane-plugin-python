@@ -36,6 +36,8 @@ RESULT = GateModelQuantumTaskResult.from_string(
         }
     )
 )
+TASK = Mock()
+TASK.result.return_value = RESULT
 BELL_STATE = Circuit().h(0).cnot(0, 1)
 
 
@@ -48,11 +50,11 @@ def test_reset():
         shots=10000,
     )
     dev._circuit = BELL_STATE
-    dev._result = RESULT
+    dev._task = TASK
 
     dev.reset()
     assert dev.circuit is None
-    assert dev.result is None
+    assert dev.task is None
 
 
 def test_apply():
@@ -107,9 +109,7 @@ def test_apply_unsupported():
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_ionq(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
     dev = AWSIonQDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
@@ -118,7 +118,7 @@ def test_generate_samples_ionq(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == task
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQpuArns.IONQ,
@@ -131,9 +131,7 @@ def test_generate_samples_ionq(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_rigetti(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSRigettiDevice(
         wires=2,
@@ -143,7 +141,7 @@ def test_generate_samples_rigetti(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == task
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQpuArns.RIGETTI,
@@ -156,9 +154,7 @@ def test_generate_samples_rigetti(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs1(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSSimulatorDevice(
         wires=2,
@@ -169,7 +165,7 @@ def test_generate_samples_qs1(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == task
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQuantumSimulatorArns.QS1,
@@ -182,9 +178,7 @@ def test_generate_samples_qs1(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs2(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSSimulatorDevice(
         wires=2,
@@ -195,7 +189,7 @@ def test_generate_samples_qs2(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == task
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQuantumSimulatorArns.QS2,
@@ -208,9 +202,7 @@ def test_generate_samples_qs2(mock_create):
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs3(mock_create):
-    task = Mock()
-    task.result.return_value = RESULT
-    mock_create.return_value = task
+    mock_create.return_value = TASK
 
     dev = AWSSimulatorDevice(
         wires=2,
@@ -220,7 +212,7 @@ def test_generate_samples_qs3(mock_create):
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == task
+    assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         AwsQuantumSimulatorArns.QS3,
@@ -239,6 +231,6 @@ def test_probability():
         s3_destination_folder=("foo", "bar"),
         shots=10000,
     )
-    dev._result = RESULT
+    dev._task = TASK
     probs = np.array([0.25, 0, 0, 0.75])
     assert (dev.probability() == dev.marginal_prob(probs)).all()

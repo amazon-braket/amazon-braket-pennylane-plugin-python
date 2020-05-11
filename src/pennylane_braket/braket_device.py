@@ -100,13 +100,11 @@ class BraketDevice(QubitDevice):
 
         self._circuit = None
         self._task = None
-        self._result = None
 
     def reset(self):
         super().reset()
         self._circuit = None
         self._task = None
-        self._result = None
 
     @property
     def operations(self) -> Set[str]:
@@ -125,12 +123,6 @@ class BraketDevice(QubitDevice):
         """ QuantumTask: The task corresponding to the last run circuit.
         """
         return self._task
-
-    @property
-    def result(self) -> GateModelQuantumTaskResult:
-        """ GateModelQuantumTaskResult: The result of the last run task.
-        """
-        return self._result
 
     def apply(self, operations, rotations=None, **kwargs):
         """Instantiate Braket Circuit object."""
@@ -161,11 +153,13 @@ class BraketDevice(QubitDevice):
             shots=self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds
         )
-        self._result = self._task.result()
-        return self._result.measurements
+        return self._task.result().measurements
 
     def probability(self, wires=None):
-        probs = {int(s, 2): p for s, p in self._result.measurement_probabilities.items()}
+        probs = {
+            int(s, 2): p
+            for s, p in self._task.result().measurement_probabilities.items()
+        }
         probs_list = np.array([probs[i] if i in probs else 0 for i in range(2 ** self.num_wires)])
         return self.marginal_prob(probs_list, wires=wires)
 
