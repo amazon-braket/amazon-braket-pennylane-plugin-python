@@ -175,15 +175,18 @@ class AWSSimulatorDevice(BraketDevice):
             before timing out. Default: 120
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
-        arn (str): The ARN of the quantum simulator to use. See AwsQuantumSimulator
-            in the Braket SDK for more details.
-            Default: "arn:aws:aqx:::quantum-simulator:aqx:qs1"
+        backend (str): The simulator backend to target; only "QS1" is
+            supported at the moment. Default: "QS1"
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
     """
     name = "Braket AWSSimulatorDevice for PennyLane"
     short_name = "braket.simulator"
+
+    simulator_arns = {
+        "QS1": AwsQuantumSimulatorArns.QS1,
+    }
 
     def __init__(
             self,
@@ -192,12 +195,12 @@ class AWSSimulatorDevice(BraketDevice):
             *,
             poll_timeout_seconds: int = 120,
             shots: int = 1000,
-            arn: str = AwsQuantumSimulatorArns.QS1,
+            backend: str = "QS1",
             aws_session: Optional[AwsSession] = None,
             **kwargs):
         super().__init__(
             wires,
-            aws_device=AwsQuantumSimulator(arn, aws_session=aws_session),
+            aws_device=AwsQuantumSimulator(self.simulator_arns[backend], aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
             shots=shots,

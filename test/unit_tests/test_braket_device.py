@@ -162,7 +162,7 @@ def test_generate_samples_qs1(mock_create):
         wires=2,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
-        arn=AwsQuantumSimulatorArns.QS1
+        arn="QS1"
     )
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
