@@ -39,7 +39,7 @@ import numpy as np
 from braket.aws import AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsSession
 from braket.circuits import Circuit, Instruction, gates
 from braket.devices import Device
-from braket.tasks import QuantumTask, GateModelQuantumTaskResult
+from braket.tasks import QuantumTask
 from pennylane import QubitDevice
 
 from ._version import __version__
@@ -163,6 +163,7 @@ class BraketDevice(QubitDevice):
         probs_list = np.array([probs[i] if i in probs else 0 for i in range(2 ** self.num_wires)])
         return self.marginal_prob(probs_list, wires=wires)
 
+
 class AWSSimulatorDevice(BraketDevice):
     r"""AWSSimulatorDevice for PennyLane.
 
@@ -174,8 +175,8 @@ class AWSSimulatorDevice(BraketDevice):
             before timing out. Default: 120
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
-        backend (str): The simulator backend to target;
-            can be one of "QS1", "QS2" or "QS3". Default: "QS3"
+        backend (str): The simulator backend to target; only "QS1" is
+            supported at the moment. Default: "QS1"
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -185,8 +186,6 @@ class AWSSimulatorDevice(BraketDevice):
 
     simulator_arns = {
         "QS1": AwsQuantumSimulatorArns.QS1,
-        "QS2": AwsQuantumSimulatorArns.QS2,
-        "QS3": AwsQuantumSimulatorArns.QS3,
     }
 
     def __init__(
@@ -196,7 +195,7 @@ class AWSSimulatorDevice(BraketDevice):
             *,
             poll_timeout_seconds: int = 120,
             shots: int = 1000,
-            backend: str = "QS3",
+            backend: str = "QS1",
             aws_session: Optional[AwsSession] = None,
             **kwargs):
         super().__init__(

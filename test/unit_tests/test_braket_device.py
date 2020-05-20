@@ -23,15 +23,17 @@ from braket.circuits import Circuit
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane_braket import AWSIonQDevice, AWSRigettiDevice, AWSSimulatorDevice
 
+SHOTS = 10000
 RESULT = GateModelQuantumTaskResult.from_string(
     json.dumps(
         {
             "Measurements": [[0, 0], [1, 1], [1, 1], [1, 1]],
+            "MeasuredQubits": [0, 1],
             "TaskMetadata": {
                 "Id": "UUID_blah_1",
                 "Status": "COMPLETED",
-                "CwLogGroupArn": "blah",
-                "Program": "....",
+                "Ir": "{}",
+                "Shots": SHOTS
             },
         }
     )
@@ -47,7 +49,7 @@ def test_reset():
     dev = AWSSimulatorDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     dev._circuit = BELL_STATE
     dev._task = TASK
@@ -63,7 +65,7 @@ def test_apply():
     dev = AWSSimulatorDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), qml.RX(np.pi/2, wires=1)]
     rotations = [qml.RY(np.pi, wires=0)]
@@ -78,7 +80,7 @@ def test_apply_unused_qubits():
     dev = AWSSimulatorDevice(
         wires=4,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi/2, wires=2)]
     rotations = [qml.RY(np.pi, wires=1)]
@@ -94,7 +96,7 @@ def test_apply_unsupported():
     dev = AWSSimulatorDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     mock_op = Mock()
     mock_op.name = "foo"
@@ -113,7 +115,7 @@ def test_generate_samples_ionq(mock_create):
     dev = AWSIonQDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
@@ -124,7 +126,7 @@ def test_generate_samples_ionq(mock_create):
         AwsQpuArns.IONQ,
         BELL_STATE,
         ("foo", "bar"),
-        10000,
+        SHOTS,
         poll_timeout_seconds=86400
     )
 
@@ -136,7 +138,7 @@ def test_generate_samples_rigetti(mock_create):
     dev = AWSRigettiDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
@@ -147,7 +149,7 @@ def test_generate_samples_rigetti(mock_create):
         AwsQpuArns.RIGETTI,
         BELL_STATE,
         ("foo", "bar"),
-        10000,
+        SHOTS,
         poll_timeout_seconds=86400
     )
 
@@ -159,8 +161,8 @@ def test_generate_samples_qs1(mock_create):
     dev = AWSSimulatorDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
-        backend="QS1"
+        shots=SHOTS,
+        arn="QS1"
     )
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
@@ -171,54 +173,7 @@ def test_generate_samples_qs1(mock_create):
         AwsQuantumSimulatorArns.QS1,
         BELL_STATE,
         ("foo", "bar"),
-        10000,
-        poll_timeout_seconds=120
-    )
-
-
-@patch.object(AwsQuantumTask, "create")
-def test_generate_samples_qs2(mock_create):
-    mock_create.return_value = TASK
-
-    dev = AWSSimulatorDevice(
-        wires=2,
-        s3_destination_folder=("foo", "bar"),
-        shots=10000,
-        backend="QS2"
-    )
-    dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
-
-    assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == TASK
-    mock_create.assert_called_with(
-        mock.ANY,
-        AwsQuantumSimulatorArns.QS2,
-        BELL_STATE,
-        ("foo", "bar"),
-        10000,
-        poll_timeout_seconds=120
-    )
-
-
-@patch.object(AwsQuantumTask, "create")
-def test_generate_samples_qs3(mock_create):
-    mock_create.return_value = TASK
-
-    dev = AWSSimulatorDevice(
-        wires=2,
-        s3_destination_folder=("foo", "bar"),
-        shots=10000,
-    )
-    dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
-
-    assert (dev.generate_samples() == RESULT.measurements).all()
-    assert dev.task == TASK
-    mock_create.assert_called_with(
-        mock.ANY,
-        AwsQuantumSimulatorArns.QS3,
-        BELL_STATE,
-        ("foo", "bar"),
-        10000,
+        SHOTS,
         poll_timeout_seconds=120
     )
 
@@ -229,7 +184,7 @@ def test_probability():
     dev = AWSSimulatorDevice(
         wires=2,
         s3_destination_folder=("foo", "bar"),
-        shots=10000,
+        shots=SHOTS,
     )
     dev._task = TASK
     probs = np.array([0.25, 0, 0, 0.75])
