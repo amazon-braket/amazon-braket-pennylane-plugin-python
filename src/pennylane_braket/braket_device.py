@@ -171,8 +171,8 @@ class AWSSimulatorDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 432000 (5 days)
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out. Default: 432000 (5 days)
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         backend (str): The simulator backend to target; only "QS1" is
@@ -214,8 +214,8 @@ class AWSIonQDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 432000 (5 days)
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out. Default: 432000 (5 days)
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
@@ -250,8 +250,8 @@ class AWSRigettiDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 432000 (5 days)
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out. Default: 432000 (5 days)
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
