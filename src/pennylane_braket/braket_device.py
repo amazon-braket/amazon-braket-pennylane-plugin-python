@@ -179,9 +179,9 @@ class AWSSimulatorDevice(BraketDevice):
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
         poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 120
+            before timing out. Default: 432000 (5 days)
         poll_interval_seconds (int): Time interval in seconds to poll
-            for results. Default: 0.25
+            for results. Default: 1
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         backend (str): The simulator backend to target; only "QS1" is
