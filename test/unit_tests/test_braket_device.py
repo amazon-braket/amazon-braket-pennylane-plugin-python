@@ -18,7 +18,9 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pennylane as qml
 import pytest
-from braket.aws import AwsQpu, AwsQpuArns, AwsQuantumSimulatorArns, AwsQuantumTask
+from braket.aws import (
+    AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsQuantumTask
+)
 from braket.circuits import Circuit
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane_braket import AWSIonQDevice, AWSRigettiDevice, AWSSimulatorDevice
@@ -176,8 +178,8 @@ def test_generate_samples_qs1(mock_create):
         BELL_STATE,
         ("foo", "bar"),
         SHOTS,
-        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
-        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL
+        poll_timeout_seconds=AwsQuantumSimulator.DEFAULT_RESULTS_POLL_TIMEOUT_SIMULATOR,
+        poll_interval_seconds=AwsQuantumSimulator.DEFAULT_RESULTS_POLL_INTERVAL_SIMULATOR
     )
 
 

@@ -36,9 +36,7 @@ Code details
 from typing import Optional, Set, Tuple
 
 import numpy as np
-from braket.aws import (
-    AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsQuantumTask, AwsSession,
-)
+from braket.aws import AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsSession
 from braket.circuits import Circuit, Instruction, gates
 from braket.devices import Device
 from braket.tasks import QuantumTask
@@ -56,8 +54,6 @@ class BraketDevice(QubitDevice):
             and folder as a tuple
         poll_timeout_seconds (int): Total time in seconds to wait for
             results before timing out
-        poll_interval_seconds (int): Time interval in seconds to poll
-            for results
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
     """
@@ -95,14 +91,12 @@ class BraketDevice(QubitDevice):
             s3_destination_folder: Tuple[str, str],
             *,
             poll_timeout_seconds: int,
-            poll_interval_seconds: int,
             shots: int = 1000,
             **kwargs):
         super().__init__(wires, shots, analytic=False)
         self._aws_device = aws_device
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
-        self._poll_interval_seconds = poll_interval_seconds
 
         self._circuit = None
         self._task = None
@@ -157,8 +151,7 @@ class BraketDevice(QubitDevice):
             self.circuit,
             self._s3_folder,
             shots=self.shots,
-            poll_timeout_seconds=self._poll_timeout_seconds,
-            poll_interval_seconds=self._poll_interval_seconds
+            poll_timeout_seconds=self._poll_timeout_seconds
         )
         return self._task.result().measurements
 
@@ -180,8 +173,6 @@ class AWSSimulatorDevice(BraketDevice):
             and folder as a tuple
         poll_timeout_seconds (int): Time in seconds to poll for results
             before timing out. Default: 432000 (5 days)
-        poll_interval_seconds (int): Time interval in seconds to poll
-            for results. Default: 1
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         backend (str): The simulator backend to target; only "QS1" is
@@ -202,8 +193,7 @@ class AWSSimulatorDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
-            poll_interval_secounds: int = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+            poll_timeout_seconds: int = AwsQuantumSimulator.DEFAULT_RESULTS_POLL_TIMEOUT_SIMULATOR,
             shots: int = 1000,
             backend: str = "QS1",
             aws_session: Optional[AwsSession] = None,
@@ -213,7 +203,6 @@ class AWSSimulatorDevice(BraketDevice):
             aws_device=AwsQuantumSimulator(self.simulator_arns[backend], aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
-            poll_interval_seconds=poll_interval_secounds,
             shots=shots,
             **kwargs)
 
@@ -227,8 +216,6 @@ class AWSIonQDevice(BraketDevice):
             and folder as a tuple
         poll_timeout_seconds (int): Time in seconds to poll for results
             before timing out. Default: 432000 (5 days)
-        poll_interval_seconds (int): Time interval in seconds to poll
-            for results. Default: 1
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
@@ -244,7 +231,6 @@ class AWSIonQDevice(BraketDevice):
             s3_destination_folder: Tuple[str, str],
             *,
             poll_timeout_seconds: int = AwsQpu.DEFAULT_RESULTS_POLL_TIMEOUT_QPU,
-            poll_interval_secounds: int = AwsQpu.DEFAULT_RESULTS_POLL_INTERVAL_QPU,
             shots: int = 1000,
             aws_session: Optional[AwsSession] = None,
             **kwargs):
@@ -253,7 +239,6 @@ class AWSIonQDevice(BraketDevice):
             aws_device=AwsQpu(AwsQpuArns.IONQ, aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
-            poll_interval_seconds=poll_interval_secounds,
             shots=shots,
             **kwargs)
 
@@ -284,7 +269,6 @@ class AWSRigettiDevice(BraketDevice):
             s3_destination_folder: Tuple[str, str],
             *,
             poll_timeout_seconds: int = AwsQpu.DEFAULT_RESULTS_POLL_TIMEOUT_QPU,
-            poll_interval_secounds: int = AwsQpu.DEFAULT_RESULTS_POLL_INTERVAL_QPU,
             shots: int = 1000,
             aws_session: Optional[AwsSession] = None,
             **kwargs):
@@ -293,6 +277,5 @@ class AWSRigettiDevice(BraketDevice):
             aws_device=AwsQpu(AwsQpuArns.RIGETTI, aws_session=aws_session),
             s3_destination_folder=s3_destination_folder,
             poll_timeout_seconds=poll_timeout_seconds,
-            poll_interval_seconds=poll_interval_secounds,
             shots=shots,
             **kwargs)
