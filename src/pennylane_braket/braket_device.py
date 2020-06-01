@@ -52,8 +52,8 @@ class BraketDevice(QubitDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
     """
@@ -171,8 +171,8 @@ class AWSSimulatorDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 120
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out. Default: 432000 (5 days)
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         backend (str): The simulator backend to target; only "QS1" is
@@ -193,7 +193,7 @@ class AWSSimulatorDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 120,
+            poll_timeout_seconds: int = AwsQuantumSimulator.DEFAULT_RESULTS_POLL_TIMEOUT_SIMULATOR,
             shots: int = 1000,
             backend: str = "QS1",
             aws_session: Optional[AwsSession] = None,
@@ -214,8 +214,8 @@ class AWSIonQDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 86400
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out. Default: 432000 (5 days)
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
@@ -230,7 +230,7 @@ class AWSIonQDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 86400,
+            poll_timeout_seconds: int = AwsQpu.DEFAULT_RESULTS_POLL_TIMEOUT_QPU,
             shots: int = 1000,
             aws_session: Optional[AwsSession] = None,
             **kwargs):
@@ -250,8 +250,8 @@ class AWSRigettiDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in
         s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
             and folder as a tuple
-        poll_timeout_seconds (int): Time in seconds to poll for results
-            before timing out. Default: 86400
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out. Default: 432000 (5 days)
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
         aws_session (Optional[AwsSession]): An AwsSession object to managed
@@ -266,7 +266,7 @@ class AWSRigettiDevice(BraketDevice):
             wires,
             s3_destination_folder: Tuple[str, str],
             *,
-            poll_timeout_seconds: int = 86400,
+            poll_timeout_seconds: int = AwsQpu.DEFAULT_RESULTS_POLL_TIMEOUT_QPU,
             shots: int = 1000,
             aws_session: Optional[AwsSession] = None,
             **kwargs):
