@@ -59,4 +59,4 @@ To build the HTML documentation, go to the top-level directory and run
 
     $ tox -e docs
 
-The documentation can then be found in the :file:`doc/_build/html/` directory.
+The documentation can then be found in the :file:`build/documentation/html/` directory.

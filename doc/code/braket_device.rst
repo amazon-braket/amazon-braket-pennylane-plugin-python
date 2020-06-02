@@ -1,3 +1,3 @@
-.. automodule:: braket.pennylane_braket.braket_device
+.. automodule:: braket.pennylane_plugin.braket_device
    :members:
    :show-inheritance:

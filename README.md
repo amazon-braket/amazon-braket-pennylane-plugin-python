@@ -73,7 +73,7 @@ You can also generate the documentation for the plugin with the following comman
 tox -e docs
 ```
 
-To view the generated documentation, open the following file in a browser: `PLUGIN_ROOT/doc/_build/html/index.html`
+To view the generated documentation, open the following file in a browser: `PLUGIN_ROOT/build/documentation/html/index.html`
 
 ## Getting started
 
@@ -83,9 +83,11 @@ You can instantiate these devices for PennyLane as follows:
 
 ```python
 import pennylane as qml
-dev_qs1 = qml.device("braket.simulator", s3_destination_folder=("my-bucket", "my-prefix"), backend="QS1", wires=2)
-dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=("my-bucket", "my-prefix"), shots=1000, wires=3)
-dev_ionq = qml.device("braket.ionq", s3_destination_folder=("my-bucket", "my-prefix"), poll_timeout_seconds=3600, shots=1000, wires=3)
+
+s3 = ("my-bucket", "my-prefix")
+dev_qs1 = qml.device("braket.simulator", s3_destination_folder=s3, wires=2)
+dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=s3, shots=1000, wires=3)
+dev_ionq = qml.device("braket.ionq", s3_destination_folder=s3, poll_timeout_seconds=3600, shots=1000, wires=3)
 ```
 
 You can use these devices just like other devices for the definition and evaluation of

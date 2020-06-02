@@ -5,11 +5,11 @@ Plugin usage
 
 This plugin provides three Braket devices for PennyLane:
 
-* :class:`braket.pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides an PennyLane device for the Braket simulators
+* :class:`braket.pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides a PennyLane device for the Braket simulators
 
-* :class:`braket.pennylane_braket.AWSIonQDevice <~AWSIonQDevice>`: provides an PennyLane device for the Braket IonQ QPU
+* :class:`braket.pennylane_braket.AWSIonQDevice <~AWSIonQDevice>`: provides a PennyLane device for the Braket IonQ QPU
 
-* :class:`braket.pennylane_braket.AWSRigettiDevice <~AWSRigettiDevice>`: provides an PennyLane device for the Braket Rigetti QPU
+* :class:`braket.pennylane_braket.AWSRigettiDevice <~AWSRigettiDevice>`: provides a PennyLane device for the Braket Rigetti QPU
 
 
 Using the devices
@@ -21,9 +21,10 @@ can be accessed straight away in PennyLane.
 You can instantiate these devices in PennyLane as follows:
 
 >>> import pennylane as qml
->>> dev_qs1 = qml.device("braket.simulator", s3_destination_folder=("my-bucket", "my-prefix"), backend="QS1", wires=2)
->>> dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=("my-bucket", "my-prefix"), shots=1000, wires=3)
->>> dev_ionq= qml.device("braket.ionq", s3_destination_folder=("my-bucket", "my-prefix"), poll_timeout_seconds=3600, shots=1000, wires=3)
+>>> s3 = ("my-bucket", "my-prefix")
+>>> dev_qs1 = qml.device("braket.simulator", s3_destination_folder=s3, wires=2)
+>>> dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=s3, shots=1000, wires=3)
+>>> dev_ionq= qml.device("braket.ionq", s3_destination_folder=s3, poll_timeout_seconds=86400, shots=1000, wires=3)
 
 These devices can then be used just like other devices for the definition and evaluation of QNodes within PennyLane.
 
@@ -35,11 +36,11 @@ The Braket devices accept additional arguments beyond the PennyLane default devi
 
 * **s3_destination_folder** (*Tuple[str, str]*) -- A tuple of the S3 bucket and prefix where the results of the run will be stored. This must be provided.
 
-* **poll_timeout_seconds** (*int*) -- Time in seconds to poll for results before timing out. Defaults to 120 for simulators and 86400 (1 day) for QPUs.
+* **poll_timeout_seconds** (*int*) -- Time in seconds to poll for results before timing out. Defaults to 432000 (5 days).
 
 Additionally, ``AWSSimulatorDevice`` accepts
 
-* **backend** (*str*) -- The simulator backend to target; can be one of "QS1", "QS2" or "QS3". Defaults to "QS3".
+* **backend** (*str*) -- The simulator backend to target; only "QS1" is supported at the moment. Defaults to "QS1".
 
 Supported operations
 ====================
