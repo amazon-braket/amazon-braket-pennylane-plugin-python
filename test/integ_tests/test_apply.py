@@ -15,9 +15,8 @@
 import numpy as np
 import pennylane as qml
 import pytest
-
-from pennylane_braket import PSWAP
-from conftest import U, U2
+from braket.pennylane_plugin import PSWAP
+from conftest import U2, U
 
 np.random.seed(42)
 
@@ -43,6 +42,7 @@ two_qubit = [qml.CZ, qml.CNOT, qml.SWAP]
 three_qubit = [qml.CSWAP, qml.Toffoli]
 # list of all parametrized two-qubit gates
 two_qubit_param = [PSWAP]
+
 
 @pytest.mark.parametrize("shots", [8192])
 class TestHardwareApply:

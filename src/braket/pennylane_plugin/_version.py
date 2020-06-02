@@ -11,9 +11,8 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+"""Version information.
+   Version number (major.minor.patch[-label])
 """
-AWS PennyLane-braket plugin
-"""
-from .braket_device import AWSSimulatorDevice, AWSIonQDevice, AWSRigettiDevice
-from .ops import PSWAP, ISWAP, CPHASE
-from ._version import __version__
+
+__version__ = "0.1.3"

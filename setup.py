@@ -11,22 +11,10 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-#!/usr/bin/env python3
+from setuptools import find_namespace_packages, setup
 
-from setuptools import setup, find_namespace_packages
-
-with open("src/pennylane_braket/_version.py") as f:
+with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
-
-# Put pip installation requirements here.
-# Requirements should be as minimal as possible.
-# Avoid pinning, and use minimum version numbers
-# only where required.
-requirements = [
-    "braket-sdk @ git+https://github.com/aws/braket-python-sdk.git",
-    "braket-ir @ git+https://github.com/aws/braket-python-ir.git",
-    "pennylane>=0.8"
-]
 
 setup(
     name="amazon-braket-pennyLane-plugin-python",
@@ -35,7 +23,10 @@ setup(
     python_requires=">= 3.7.2",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
-    install_requires=requirements,
+    install_requires=[
+        "braket-sdk @ git+https://github.com/aws/braket-python-sdk.git",
+        "pennylane>=0.8",
+    ],
     entry_points={
         "pennylane.plugins": [
             # List the short name of each device provided by
@@ -43,14 +34,25 @@ setup(
             # it corresponds to in the plugin. This allows
             # the device to be imported automatically via the
             # `pennylane.device` device loader.
-            "braket.simulator = pennylane_braket:AWSSimulatorDevice",
-            "braket.ionq = pennylane_braket:AWSIonQDevice",
-            "braket.rigetti = pennylane_braket:AWSRigettiDevice",
+            "braket.simulator = braket.pennylane_plugin:AWSSimulatorDevice",
+            "braket.ionq = braket.pennylane_plugin:AWSIonQDevice",
+            "braket.rigetti = braket.pennylane_plugin:AWSRigettiDevice",
         ]
     },
     extras_require={
         "test": [
+            "black",
+            "flake8",
+            "isort",
+            "pre-commit",
+            "pylint",
+            "pytest",
             "pytest-cov",
+            "pytest-rerunfailures",
+            "pytest-xdist",
+            "sphinx",
+            "sphinx-rtd-theme",
+            "tox",
         ]
     },
 )

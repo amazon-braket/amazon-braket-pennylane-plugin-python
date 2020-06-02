@@ -11,8 +11,14 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-"""Version information.
-   Version number (major.minor.patch[-label])
 """
+AWS PennyLane-braket plugin
+"""
+from braket.pennylane_plugin.braket_device import (  # noqa: F401
+    AWSIonQDevice,
+    AWSRigettiDevice,
+    AWSSimulatorDevice,
+)
+from braket.pennylane_plugin.ops import CPHASE, ISWAP, PSWAP  # noqa: F401
 
-__version__ = "0.1.1"
+from ._version import __version__  # noqa: F401

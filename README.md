@@ -70,10 +70,10 @@ Extract the downloaded .zip file, and then open ..\html\index.html in a browser.
 You can also generate the documentation for the plugin with the following command:
 
 ```bash
-make docs
+tox -e docs
 ```
 
-To view the generated documentation, open the following file in a browser: `PLUGIN_ROOT/doc/_build/html/index.html`
+To view the generated documentation, open the following file in a browser: `PLUGIN_ROOT/build/documentation/html/index.html`
 
 ## Getting started
 
@@ -83,9 +83,11 @@ You can instantiate these devices for PennyLane as follows:
 
 ```python
 import pennylane as qml
-dev_qs1 = qml.device("braket.simulator", s3_destination_folder=("my-bucket", "my-prefix"), backend="QS1", wires=2)
-dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=("my-bucket", "my-prefix"), shots=1000, wires=3)
-dev_ionq = qml.device("braket.ionq", s3_destination_folder=("my-bucket", "my-prefix"), poll_timeout_seconds=3600, shots=1000, wires=3)
+
+s3 = ("my-bucket", "my-prefix")
+dev_qs1 = qml.device("braket.simulator", s3_destination_folder=s3, wires=2)
+dev_rigetti = qml.device("braket.rigetti", s3_destination_folder=s3, shots=1000, wires=3)
+dev_ionq = qml.device("braket.ionq", s3_destination_folder=s3, poll_timeout_seconds=3600, shots=1000, wires=3)
 ```
 
 You can use these devices just like other devices for the definition and evaluation of
@@ -94,21 +96,43 @@ QNodes within PennyLane. For more details, refer to the PennyLane documentation.
 
 ## Testing
 
-Before making a pull request, verify the unit tests still pass by running
-
+Make sure to install test dependencies first:
 ```bash
-make unit-test
+pip install -e "amazon-braket-pennyLane-plugin-python[test]"
 ```
 
-Integration tests that make a full roundtrip through AWS can be run with
-
+### Unit Tests
 ```bash
-make integ-test
+tox -e unit-tests
 ```
 
-To run the integ tests, the `AWS_PROFILE` environment variable has to be set to your desired [AWS profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html).
+To run an individual test
+```
+tox -e unit-tests -- -k 'your_test'
+```
 
-**Warning**: Running the integ tests will create an S3 bucket in your account.
+To run linters and doc generators and unit tests
+```bash
+tox
+```
+
+### Integration Tests
+Set the `AWS_PROFILE`, similar to in the braket-python-sdk [README](https://github.com/aws/braket-python-sdk/blob/stable/latest/README.md).
+```bash
+export AWS_PROFILE=Your_Profile_Name
+```
+
+Running the integration tests will create an S3 bucket in the same account as the `AWS_PROFILE` with the following naming convention `braket-pennylane-plugin-integ-tests-{account_id}`.
+
+Run the tests
+```bash
+tox -e integ-tests
+```
+
+To run an individual test
+```bash
+tox -e integ-tests -- -k 'your_test'
+```
 
 ## License
 

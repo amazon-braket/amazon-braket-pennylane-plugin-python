@@ -15,7 +15,6 @@
 import numpy as np
 import pennylane as qml
 import pytest
-
 from conftest import rotations
 
 np.random.seed(42)
@@ -31,7 +30,7 @@ class TestSample:
         """
         dev = device(1)
 
-        dev.apply([qml.RX(np.pi/4, wires=0)])
+        dev.apply([qml.RX(np.pi / 4, wires=0)])
         dev._samples = dev.generate_samples()
         s1 = dev.sample(qml.PauliZ(wires=[0]))
 
@@ -86,7 +85,7 @@ class TestSample:
 
         ops = [
             qml.RX(theta, wires=0),
-            qml.RY(2*theta, wires=1),
+            qml.RY(2 * theta, wires=1),
             qml.CNOT(wires=[0, 1]),
         ]
         ob = qml.Hermitian(A, wires=[0, 1])
