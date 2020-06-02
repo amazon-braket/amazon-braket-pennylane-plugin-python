@@ -30,15 +30,20 @@ After you add the repo to your local environment, install the plugin with the fo
 Software tests
 ==============
 
-To ensure that the plugin is working correctly after installation, the test suites can be run by navigating to the source code folder and running
+To ensure that the plugin is working correctly after installation, you can run the test suites. Before you can run them, though, you need to install the test dependencies:
 ::
 
-    $ make unit-test
+    $ pip install -e "amazon-braket-pennyLane-plugin-python[test]"
 
-for the unit tests and
+Run the unit tests with
 ::
 
-    $ make integ-test
+    $ tox -e unit-tests
+
+and the integ tests with
+::
+
+    $ tox -e integ-tests
 
 To run the integ tests, the ``AWS_PROFILE`` environment variable has to be set to your desired `AWS profile <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html>`_.
 
@@ -52,6 +57,6 @@ Documentation
 To build the HTML documentation, go to the top-level directory and run
 ::
 
-    $ make docs
+    $ tox -e docs
 
 The documentation can then be found in the :file:`doc/_build/html/` directory.

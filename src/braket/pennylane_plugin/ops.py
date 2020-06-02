@@ -15,9 +15,9 @@
 Custom Operations
 =================
 
-**Module name:** :mod:`pennylane_braket.ops`
+**Module name:** :mod:`braket.pennylane_braket.ops`
 
-.. currentmodule:: pennylane_braket.ops
+.. currentmodule:: braket.pennylane_braket.ops
 
 Contains some additional PennyLane qubit operations.
 
@@ -25,7 +25,7 @@ These operations can be imported via
 
 .. code-block:: python
 
-    from pennylane_braket.ops import CPHASE, ISWAP, PSWAP
+    from braket.pennylane_braket.ops import CPHASE, ISWAP, PSWAP
 
 Operations
 ----------
@@ -60,10 +60,14 @@ class CPHASE(Operation):
 
     * Number of wires: 2
     * Number of parameters: 2
-    * Gradient recipe: :math:`\frac{d}{d\phi}CPHASE(\phi) = \frac{1}{2}\left[CPHASE(\phi+\pi/2)+CPHASE(\phi-\pi/2)\right]`
-      Note that the gradient recipe only applies to parameter :math:`\phi`.
-      Parameter :math:`q\in\mathbb{N}_0` and thus ``CPHASE`` can not be differentiated
-      with respect to :math:`q`.
+    * Gradient recipe:
+    .. math::
+        \frac{d}{d\phi}CPHASE(\phi) = \frac{1}{2}\left[CPHASE(\phi+\pi/2)+CPHASE(\phi-\pi/2)\right]
+
+    Note:
+        The gradient recipe only applies to parameter :math:`\phi`.
+        Parameter :math:`q\in\mathbb{N}_0` and thus ``CPHASE`` can not be differentiated
+        with respect to :math:`q`.
 
     Args:
         phi (float): the controlled phase angle
@@ -127,7 +131,7 @@ class CPHASE(Operation):
     def _matrix(*params):
         phi, q = params
         mat = np.identity(4)
-        mat[q, q] = np.exp(1j*phi)
+        mat[q, q] = np.exp(1j * phi)
         return mat
 
 
@@ -183,8 +187,9 @@ class PSWAP(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe: :math:`\frac{d}{d\phi}PSWAP(\phi) = \frac{1}{2}\left[PSWAP(\phi+\pi/2)+PSWAP(\phi-\pi/2)\right]`
-
+    * Gradient recipe:
+    .. math::
+        \frac{d}{d\phi}PSWAP(\phi) = \frac{1}{2}\left[PSWAP(\phi+\pi/2)+PSWAP(\phi-\pi/2)\right]
 
     Args:
         phi (float): the phase angle
@@ -207,4 +212,4 @@ class PSWAP(Operation):
     @staticmethod
     def _matrix(*params):
         phi = params[0]
-        return np.diag([1, np.exp(1j*phi), np.exp(1j*phi), 1])[[0, 2, 1, 3]]
+        return np.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]

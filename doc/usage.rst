@@ -5,11 +5,11 @@ Plugin usage
 
 This plugin provides three Braket devices for PennyLane:
 
-* :class:`pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides an PennyLane device for the Braket simulators
+* :class:`braket.pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides an PennyLane device for the Braket simulators
 
-* :class:`pennylane_braket.AWSIonQDevice <~AWSIonQDevice>`: provides an PennyLane device for the Braket IonQ QPU
+* :class:`braket.pennylane_braket.AWSIonQDevice <~AWSIonQDevice>`: provides an PennyLane device for the Braket IonQ QPU
 
-* :class:`pennylane_braket.AWSRigettiDevice <~AWSRigettiDevice>`: provides an PennyLane device for the Braket Rigetti QPU
+* :class:`braket.pennylane_braket.AWSRigettiDevice <~AWSRigettiDevice>`: provides an PennyLane device for the Braket Rigetti QPU
 
 
 Using the devices
@@ -46,11 +46,11 @@ Supported operations
 
 All devices support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_, with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``Hermitian`` observable.
 
-In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`pennylane_braket.ops <.ops>`.
+In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`braket.pennylane_braket.ops <.ops>`.
 
 These operations include:
 
 .. autosummary::
-    pennylane_braket.CPHASE
-    pennylane_braket.ISWAP
-    pennylane_braket.PSWAP
+    braket.pennylane_braket.CPHASE
+    braket.pennylane_braket.ISWAP
+    braket.pennylane_braket.PSWAP

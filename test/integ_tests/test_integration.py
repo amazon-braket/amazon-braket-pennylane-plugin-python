@@ -15,17 +15,15 @@
 import numpy as np
 import pennylane as qml
 import pytest
-
 from conftest import shortnames
 
 
 class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
-
     @pytest.mark.parametrize("d", shortnames)
     def test_load_device(self, d, s3):
-        """Test that the QVM device loads correctly"""
+        """Test that the device loads correctly"""
         dev = qml.device(d, wires=2, shots=1024, s3_destination_folder=s3)
         assert dev.num_wires == 2
         assert dev.shots == 1024

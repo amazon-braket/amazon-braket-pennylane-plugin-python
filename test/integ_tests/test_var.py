@@ -15,7 +15,6 @@
 import numpy as np
 import pennylane as qml
 import pytest
-
 from conftest import rotations
 
 np.random.seed(42)

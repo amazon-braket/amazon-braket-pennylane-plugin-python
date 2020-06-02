@@ -70,7 +70,7 @@ Extract the downloaded .zip file, and then open ..\html\index.html in a browser.
 You can also generate the documentation for the plugin with the following command:
 
 ```bash
-make docs
+tox -e docs
 ```
 
 To view the generated documentation, open the following file in a browser: `PLUGIN_ROOT/doc/_build/html/index.html`
@@ -94,21 +94,43 @@ QNodes within PennyLane. For more details, refer to the PennyLane documentation.
 
 ## Testing
 
-Before making a pull request, verify the unit tests still pass by running
-
+Make sure to install test dependencies first:
 ```bash
-make unit-test
+pip install -e "amazon-braket-pennyLane-plugin-python[test]"
 ```
 
-Integration tests that make a full roundtrip through AWS can be run with
-
+### Unit Tests
 ```bash
-make integ-test
+tox -e unit-tests
 ```
 
-To run the integ tests, the `AWS_PROFILE` environment variable has to be set to your desired [AWS profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html).
+To run an individual test
+```
+tox -e unit-tests -- -k 'your_test'
+```
 
-**Warning**: Running the integ tests will create an S3 bucket in your account.
+To run linters and doc generators and unit tests
+```bash
+tox
+```
+
+### Integration Tests
+Set the `AWS_PROFILE`, similar to in the braket-python-sdk [README](https://github.com/aws/braket-python-sdk/blob/stable/latest/README.md).
+```bash
+export AWS_PROFILE=Your_Profile_Name
+```
+
+Running the integration tests will create an S3 bucket in the same account as the `AWS_PROFILE` with the following naming convention `braket-pennylane-plugin-integ-tests-{account_id}`.
+
+Run the tests
+```bash
+tox -e integ-tests
+```
+
+To run an individual test
+```bash
+tox -e integ-tests -- -k 'your_test'
+```
 
 ## License
 

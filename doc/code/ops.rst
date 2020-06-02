@@ -1,3 +1,3 @@
-.. automodule:: pennylane_braket.ops
+.. automodule:: braket.pennylane_braket.ops
    :members:
    :show-inheritance:

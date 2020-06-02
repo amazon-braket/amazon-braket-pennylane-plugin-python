@@ -13,12 +13,11 @@
 
 import os
 
-from botocore.exceptions import ClientError
 import boto3
 import numpy as np
 import pytest
-
-from pennylane_braket import AWSSimulatorDevice
+from botocore.exceptions import ClientError
+from braket.pennylane_plugin import AWSSimulatorDevice
 
 np.random.seed(42)
 
@@ -26,18 +25,18 @@ np.random.seed(42)
 # Some useful global variables
 
 # single qubit unitary matrix
-U = np.array([[0.83645892 - 0.40533293j, -0.20215326 + 0.30850569j],
-              [-0.23889780 - 0.28101519j, -0.88031770 - 0.29832709j]])
+U = np.array(
+    [
+        [0.83645892 - 0.40533293j, -0.20215326 + 0.30850569j],
+        [-0.23889780 - 0.28101519j, -0.88031770 - 0.29832709j],
+    ]
+)
 
 # two qubit unitary matrix
-U2 = np.array([[0, 1, 1, 1],
-               [1, 0, 1, -1],
-               [1, -1, 0, 1],
-               [1, 1, -1, 0]]) / np.sqrt(3)
+U2 = np.array([[0, 1, 1, 1], [1, 0, 1, -1], [1, -1, 0, 1], [1, 1, -1, 0]]) / np.sqrt(3)
 
 # single qubit Hermitian observable
-A = np.array([[1.02789352, 1.61296440 - 0.3498192j],
-              [1.61296440 + 0.3498192j, 1.23920938 + 0j]])
+A = np.array([[1.02789352, 1.61296440 - 0.3498192j], [1.61296440 + 0.3498192j, 1.23920938 + 0j]])
 
 
 # ==========================================================
@@ -61,12 +60,14 @@ shortnames = [d.short_name for d in analytic_devices + hw_devices]
 
 session = boto3.session.Session(profile_name=os.environ["AWS_PROFILE"])
 account_id = session.client("sts").get_caller_identity()["Account"]
-bucket_name = f"braket-sdk-integ-tests-{account_id}"
+bucket_name = f"braket-pennylane-plugin-integ-tests-{account_id}"
 s3_bucket = session.resource("s3").Bucket(bucket_name)
 
 # Create bucket if it doesn't exist
 try:
-    s3_bucket.create(ACL="private", CreateBucketConfiguration={"LocationConstraint": session.region_name})
+    s3_bucket.create(
+        ACL="private", CreateBucketConfiguration={"LocationConstraint": session.region_name}
+    )
 except ClientError as e:
     if e.response["Error"]["Code"] == "BucketAlreadyOwnedByYou":
         pass
@@ -76,6 +77,7 @@ except ClientError as e:
 
 # ==========================================================
 # pytest fixtures
+
 
 @pytest.fixture
 def s3():
@@ -104,6 +106,7 @@ def tol(shots):
 @pytest.fixture
 def init_state(scope="session"):
     """Fixture to create an n-qubit initial state"""
+
     def _init_state(n):
         state = np.random.random([2 ** n]) + np.random.random([2 ** n]) * 1j
         state /= np.linalg.norm(state)
@@ -112,7 +115,7 @@ def init_state(scope="session"):
     return _init_state
 
 
-@pytest.fixture(params=analytic_devices+hw_devices)
+@pytest.fixture(params=analytic_devices + hw_devices)
 def device(request, shots, s3):
     """Fixture to initialize and return a PennyLane device"""
     device = request.param
@@ -121,11 +124,7 @@ def device(request, shots, s3):
         pytest.skip("Hardware simulators do not support analytic mode")
 
     def _device(n):
-        return device(
-            wires=n,
-            shots=shots,
-            s3_destination_folder=s3,
-        )
+        return device(wires=n, shots=shots, s3_destination_folder=s3,)
 
     return _device
 

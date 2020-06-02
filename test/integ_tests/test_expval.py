@@ -15,7 +15,6 @@
 import numpy as np
 import pennylane as qml
 import pytest
-
 from conftest import A, rotations
 
 np.random.seed(42)
@@ -66,11 +65,7 @@ class TestExpval:
         phi = 0.123
 
         dev = device(2)
-        ops = [
-            qml.RY(theta, wires=[0]),
-            qml.RY(phi, wires=[1]),
-            qml.CNOT(wires=[0, 1])
-        ]
+        ops = [qml.RY(theta, wires=[0]), qml.RY(phi, wires=[1]), qml.CNOT(wires=[0, 1])]
 
         obs = [qml.PauliX(i) for i in range(2)]
 
@@ -103,11 +98,7 @@ class TestExpval:
         phi = 0.123
 
         dev = device(2)
-        ops = [
-            qml.RY(theta, wires=[0]),
-            qml.RY(phi, wires=[1]),
-            qml.CNOT(wires=[0, 1])
-        ]
+        ops = [qml.RY(theta, wires=[0]), qml.RY(phi, wires=[1]), qml.CNOT(wires=[0, 1])]
         obs = [qml.Hadamard(i) for i in range(2)]
 
         dev.apply(ops, rotations=rotations(obs))
@@ -126,11 +117,7 @@ class TestExpval:
         phi = 0.123
 
         dev = device(2)
-        ops = [
-            qml.RY(theta, wires=[0]),
-            qml.RY(phi, wires=[1]),
-            qml.CNOT(wires=[0, 1])
-        ]
+        ops = [qml.RY(theta, wires=[0]), qml.RY(phi, wires=[1]), qml.CNOT(wires=[0, 1])]
 
         obs = [qml.Hermitian(A, i) for i in range(2)]
 
@@ -178,11 +165,11 @@ class TestExpval:
         # below is the analytic expectation value for this circuit with arbitrary
         # Hermitian observable A
         expected = 0.5 * (
-                6 * np.cos(theta) * np.sin(phi)
-                - np.sin(theta) * (8 * np.sin(phi) + 7 * np.cos(phi) + 3)
-                - 2 * np.sin(phi)
-                - 6 * np.cos(phi)
-                - 6
+            6 * np.cos(theta) * np.sin(phi)
+            - np.sin(theta) * (8 * np.sin(phi) + 7 * np.cos(phi) + 3)
+            - 2 * np.sin(phi)
+            - 6 * np.cos(phi)
+            - 6
         )
 
         assert np.allclose(res, expected, **tol)
@@ -228,7 +215,7 @@ class TestTensorExpval:
             qml.RX(phi, wires=[1]),
             qml.RX(varphi, wires=[2]),
             qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2])
+            qml.CNOT(wires=[1, 2]),
         ]
 
         ob = qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
@@ -270,10 +257,10 @@ class TestTensorExpval:
         res = dev.expval(ob)
 
         expected = 0.5 * (
-                -6 * np.cos(theta) * (np.cos(varphi) + 1)
-                - 2 * np.sin(varphi) * (np.cos(theta) + np.sin(phi) - 2 * np.cos(phi))
-                + 3 * np.cos(varphi) * np.sin(phi)
-                + np.sin(phi)
+            -6 * np.cos(theta) * (np.cos(varphi) + 1)
+            - 2 * np.sin(varphi) * (np.cos(theta) + np.sin(phi) - 2 * np.cos(phi))
+            + 3 * np.cos(varphi) * np.sin(phi)
+            + np.sin(phi)
         )
 
         assert np.allclose(res, expected, **tol)

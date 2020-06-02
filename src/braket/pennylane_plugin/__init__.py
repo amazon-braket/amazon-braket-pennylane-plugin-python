@@ -14,6 +14,11 @@
 """
 AWS PennyLane-braket plugin
 """
-from .braket_device import AWSSimulatorDevice, AWSIonQDevice, AWSRigettiDevice
-from .ops import PSWAP, ISWAP, CPHASE
-from ._version import __version__
+from braket.pennylane_plugin.braket_device import (  # noqa: F401
+    AWSIonQDevice,
+    AWSRigettiDevice,
+    AWSSimulatorDevice,
+)
+from braket.pennylane_plugin.ops import CPHASE, ISWAP, PSWAP  # noqa: F401
+
+from ._version import __version__  # noqa: F401
