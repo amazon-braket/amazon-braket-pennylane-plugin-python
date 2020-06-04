@@ -39,7 +39,7 @@ The Braket devices accept additional arguments beyond the PennyLane default devi
 
 Additionally, ``AWSSimulatorDevice`` accepts
 
-* **backend** (*str*) -- The simulator backend to target; can be one of "QS1", "QS2" or "QS3". Defaults to "QS3".
+* **backend** (*str*) -- The simulator backend to target; "QS1". Defaults to "QS1".
 
 Supported operations
 ====================

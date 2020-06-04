@@ -5,7 +5,7 @@ s3 = ("my-bucket", "my-prefix")
 dev_qs2 = qml.device(
 	"braket.simulator",
 	s3_destination_folder=s3,
-	backend="QS2",
+	backend="QS1",
 	wires=2
 )
 dev_qpu = qml.device(
