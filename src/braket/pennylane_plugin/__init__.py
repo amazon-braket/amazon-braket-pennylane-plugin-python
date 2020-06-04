@@ -19,6 +19,19 @@ from braket.pennylane_plugin.braket_device import (  # noqa: F401
     AWSRigettiDevice,
     AWSSimulatorDevice,
 )
-from braket.pennylane_plugin.ops import CPHASE, ISWAP, PSWAP  # noqa: F401
+from braket.pennylane_plugin.ops import (  # noqa: F401
+    CY,
+    ISWAP,
+    PSWAP,
+    XX,
+    XY,
+    YY,
+    ZZ,
+    CPhaseShift,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+    V,
+)
 
 from ._version import __version__  # noqa: F401

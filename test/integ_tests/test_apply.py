@@ -15,7 +15,20 @@
 import numpy as np
 import pennylane as qml
 import pytest
-from braket.pennylane_plugin import PSWAP
+from braket.pennylane_plugin import (
+    CY,
+    ISWAP,
+    PSWAP,
+    XX,
+    XY,
+    YY,
+    ZZ,
+    CPhaseShift,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+    V,
+)
 from conftest import U2, U
 
 np.random.seed(42)
@@ -25,23 +38,19 @@ np.random.seed(42)
 
 # list of all non-parametrized single-qubit gates,
 # along with the PennyLane operation name
-single_qubit = [
-    qml.PauliX,
-    qml.PauliY,
-    qml.PauliZ,
-    qml.Hadamard,
-    qml.S,
-    qml.T,
-]
+single_qubit = [qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.S, qml.T, V]
 
 # list of all parametrized single-qubit gates
 single_qubit_param = [qml.PhaseShift, qml.RX, qml.RY, qml.RZ]
+
 # list of all non-parametrized two-qubit gates
-two_qubit = [qml.CZ, qml.CNOT, qml.SWAP]
+two_qubit = [qml.CNOT, qml.CZ, qml.SWAP, CY, ISWAP]
+
 # list of all three-qubit gates
 three_qubit = [qml.CSWAP, qml.Toffoli]
+
 # list of all parametrized two-qubit gates
-two_qubit_param = [PSWAP]
+two_qubit_param = [CPhaseShift, CPhaseShift00, CPhaseShift01, CPhaseShift10, PSWAP, XY, XX, YY, ZZ]
 
 
 @pytest.mark.parametrize("shots", [8192])
