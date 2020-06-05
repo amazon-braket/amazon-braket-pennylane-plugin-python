@@ -73,11 +73,10 @@ class V(Operation):
     num_params = 0
     num_wires = 1
     par_domain = None
-    matrix = np.array([[0.5 + 0.5j, 0.5 - 0.5j], [0.5 - 0.5j, 0.5 + 0.5j]], dtype=complex)
 
     @classmethod
     def _matrix(cls, *params):
-        return cls.matrix
+        return np.array([[0.5 + 0.5j, 0.5 - 0.5j], [0.5 - 0.5j, 0.5 + 0.5j]], dtype=complex)
 
 
 class CY(Operation):
@@ -103,19 +102,18 @@ class CY(Operation):
     num_params = 0
     num_wires = 2
     par_domain = None
-    matrix = np.array(
-        [
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, -1.0j],
-            [0.0, 0.0, +1.0j, 0.0],
-        ],
-        dtype=complex,
-    )
 
     @classmethod
     def _matrix(cls, *params):
-        return cls.matrix
+        return np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, -1.0j],
+                [0.0, 0.0, +1.0j, 0.0],
+            ],
+            dtype=complex,
+        )
 
 
 class CPhaseShift(Operation):

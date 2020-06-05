@@ -46,7 +46,6 @@ class TestVar:
 
         assert np.allclose(var, expected, **tol)
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     def test_var_hermitian(self, device, shots, tol):
         """Tests for variance calculation using an arbitrary Hermitian observable"""
         dev = device(2)
@@ -142,7 +141,6 @@ class TestTensorVar:
 
         assert np.allclose(res, expected, **tol)
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
         theta = 0.432
