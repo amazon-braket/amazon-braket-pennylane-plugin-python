@@ -25,8 +25,24 @@ from braket.aws import (
     AwsQuantumSimulatorArns,
     AwsQuantumTask,
 )
-from braket.circuits import Circuit
-from braket.pennylane_plugin import AWSIonQDevice, AWSRigettiDevice, AWSSimulatorDevice
+from braket.circuits import Circuit, Instruction, gates
+from braket.pennylane_plugin import (
+    CY,
+    ISWAP,
+    PSWAP,
+    XX,
+    XY,
+    YY,
+    ZZ,
+    AWSIonQDevice,
+    AWSRigettiDevice,
+    AWSSimulatorDevice,
+    CPhaseShift,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+    V,
+)
 from braket.tasks import GateModelQuantumTaskResult
 
 SHOTS = 10000
@@ -48,11 +64,49 @@ TASK = Mock()
 TASK.result.return_value = RESULT
 BELL_STATE = Circuit().h(0).cnot(0, 1)
 
+testdata = [
+    (qml.Identity, gates.I, [0], []),
+    (qml.Hadamard, gates.H, [0], []),
+    (qml.PauliX, gates.X, [0], []),
+    (qml.PauliY, gates.Y, [0], []),
+    (qml.PauliZ, gates.Z, [0], []),
+    (qml.S, gates.S, [0], []),
+    (qml.T, gates.T, [0], []),
+    (qml.CNOT, gates.CNot, [0, 1], []),
+    (qml.CZ, gates.CZ, [0, 1], []),
+    (qml.PhaseShift, gates.PhaseShift, [0], [np.pi]),
+    (qml.RX, gates.Rx, [0], [np.pi]),
+    (qml.RY, gates.Ry, [0], [np.pi]),
+    (qml.RZ, gates.Rz, [0], [np.pi]),
+    (qml.SWAP, gates.Swap, [0, 1], []),
+    (qml.CSWAP, gates.CSwap, [0, 1, 2], []),
+    (qml.Toffoli, gates.CCNot, [0, 1, 2], []),
+    (qml.QubitUnitary, gates.Unitary, [0], [np.array([[0, 1], [1, 0]])]),
+    (V, gates.V, [0], []),
+    (CY, gates.CY, [0, 1], []),
+    (CPhaseShift, gates.CPhaseShift, [0, 1], [np.pi]),
+    (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi]),
+    (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi]),
+    (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi]),
+    (ISWAP, gates.ISwap, [0, 1], []),
+    (PSWAP, gates.PSwap, [0, 1], [np.pi]),
+    (XY, gates.XY, [0, 1], [np.pi]),
+    (XX, gates.XX, [0, 1], [np.pi]),
+    (YY, gates.YY, [0, 1], [np.pi]),
+    (ZZ, gates.ZZ, [0, 1], [np.pi]),
+]
+
+testdata_inverses = [
+    (qml.S, gates.Si),
+    (qml.T, gates.Ti),
+    (V, gates.Vi),
+]
+
 
 def test_reset():
     """ Tests that the members of the device are cleared on reset.
     """
-    dev = AWSSimulatorDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(2)
     dev._circuit = BELL_STATE
     dev._task = TASK
 
@@ -61,10 +115,30 @@ def test_reset():
     assert dev.task is None
 
 
-def test_apply():
-    """ Tests that the device's circuit member is set after apply is called.
+@pytest.mark.parametrize("pl_op, braket_gate, qubits, params", testdata)
+def test_apply(pl_op, braket_gate, qubits, params):
+    """ Tests that the correct Braket gate is applied for each PennyLane operation.
     """
-    dev = AWSSimulatorDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(wires=len(qubits))
+    dev.apply([pl_op(*params, wires=qubits)])
+    assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", testdata_inverses)
+def test_apply_inverse_gates(pl_op, braket_gate):
+    """
+    Tests that the correct Braket gate is applied for the inverse of each PennyLane operations
+    where the inverse is defined.
+    """
+    dev = _device(1)
+    dev.apply([pl_op(wires=0).inv()])
+    assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
+
+
+def test_apply_with_rotations():
+    """ Tests that the device's circuit member is set properly after apply is called.
+    """
+    dev = _device(2)
     operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), qml.RX(np.pi / 2, wires=1)]
     rotations = [qml.RY(np.pi, wires=0)]
     dev.apply(operations, rotations)
@@ -75,7 +149,7 @@ def test_apply():
 def test_apply_unused_qubits():
     """ Tests that the correct circuit is created when not all qires in the dievce are used.
     """
-    dev = AWSSimulatorDevice(wires=4, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(4)
     operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi / 2, wires=2)]
     rotations = [qml.RY(np.pi, wires=1)]
     dev.apply(operations, rotations)
@@ -87,7 +161,7 @@ def test_apply_unused_qubits():
 def test_apply_unsupported():
     """ Tests that apply() throws NotImplementedError when it encounters an unknown gate.
     """
-    dev = AWSSimulatorDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(2)
     mock_op = Mock()
     mock_op.name = "foo"
 
@@ -103,7 +177,7 @@ def test_apply_unsupported():
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_ionq(mock_create):
     mock_create.return_value = TASK
-    dev = AWSIonQDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(2, AWSIonQDevice)
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
@@ -122,8 +196,7 @@ def test_generate_samples_ionq(mock_create):
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_rigetti(mock_create):
     mock_create.return_value = TASK
-
-    dev = AWSRigettiDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(2, AWSRigettiDevice)
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
@@ -142,8 +215,7 @@ def test_generate_samples_rigetti(mock_create):
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs1(mock_create):
     mock_create.return_value = TASK
-
-    dev = AWSSimulatorDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS, arn="QS1")
+    dev = _device(2, AWSSimulatorDevice, arn="QS1")
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
@@ -162,7 +234,11 @@ def test_generate_samples_qs1(mock_create):
 def test_probability():
     """ Tests that the right probabilities are passed into marginal_prob.
     """
-    dev = AWSSimulatorDevice(wires=2, s3_destination_folder=("foo", "bar"), shots=SHOTS,)
+    dev = _device(2)
     dev._task = TASK
     probs = np.array([0.25, 0, 0, 0.75])
     assert (dev.probability() == dev.marginal_prob(probs)).all()
+
+
+def _device(wires, device_class=AWSSimulatorDevice, **kwargs):
+    return device_class(wires=wires, s3_destination_folder=("foo", "bar"), shots=SHOTS, **kwargs)

@@ -67,8 +67,7 @@ Contents
    :maxdepth: 1
    :caption: Code details
 
-   code/ops
-   code/braket_device
+   _apidoc/modules
 
 .. rst-class:: contents local topic
 

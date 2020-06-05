@@ -5,11 +5,11 @@ Plugin usage
 
 This plugin provides three Braket devices for PennyLane:
 
-* :class:`braket.pennylane_braket.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides a PennyLane device for the Braket simulators
+* :class:`braket.pennylane_plugin.AWSSimulatorDevice <~AWSSimulatorDevice>`: provides a PennyLane device for the Braket simulators
 
-* :class:`braket.pennylane_braket.AWSIonQDevice <~AWSIonQDevice>`: provides a PennyLane device for the Braket IonQ QPU
+* :class:`braket.pennylane_plugin.AWSIonQDevice <~AWSIonQDevice>`: provides a PennyLane device for the Braket IonQ QPU
 
-* :class:`braket.pennylane_braket.AWSRigettiDevice <~AWSRigettiDevice>`: provides a PennyLane device for the Braket Rigetti QPU
+* :class:`braket.pennylane_plugin.AWSRigettiDevice <~AWSRigettiDevice>`: provides a PennyLane device for the Braket Rigetti QPU
 
 
 Using the devices
@@ -47,11 +47,20 @@ Supported operations
 
 All devices support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_, with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``Hermitian`` observable.
 
-In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`braket.pennylane_braket.ops <.ops>`.
+In addition, the plugin provides the following framework-specific operations for PennyLane. These are all importable from :mod:`braket.pennylane_plugin.ops <.ops>`.
 
 These operations include:
 
 .. autosummary::
-    braket.pennylane_braket.CPHASE
-    braket.pennylane_braket.ISWAP
-    braket.pennylane_braket.PSWAP
+    braket.pennylane_plugin.V
+    braket.pennylane_plugin.CY
+    braket.pennylane_plugin.CPhaseShift
+    braket.pennylane_plugin.CPhaseShift00
+    braket.pennylane_plugin.CPhaseShift01
+    braket.pennylane_plugin.CPhaseShift10
+    braket.pennylane_plugin.ISWAP
+    braket.pennylane_plugin.PSWAP
+    braket.pennylane_plugin.XY
+    braket.pennylane_plugin.XX
+    braket.pennylane_plugin.YY
+    braket.pennylane_plugin.ZZ

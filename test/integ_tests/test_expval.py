@@ -110,7 +110,6 @@ class TestExpval:
         ) / np.sqrt(2)
         assert np.allclose(res, expected, **tol)
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian_expectation(self, device, shots, tol):
         """Test that arbitrary Hermitian expectation values are correct"""
         theta = 0.432
@@ -134,7 +133,6 @@ class TestExpval:
 
         assert np.allclose(res, expected, **tol)
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     def test_multi_mode_hermitian_expectation(self, device, shots, tol):
         """Test that arbitrary multi-mode Hermitian expectation values are correct"""
         theta = 0.432
@@ -227,7 +225,6 @@ class TestTensorExpval:
 
         assert np.allclose(res, expected, **tol)
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
         theta = 0.432
@@ -254,6 +251,8 @@ class TestTensorExpval:
 
         ob = qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2])
         dev.apply(ops, rotations=rotations([ob]))
+        dev._samples = dev.generate_samples()
+
         res = dev.expval(ob)
 
         expected = 0.5 * (
