@@ -18,6 +18,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pennylane as qml
 import pytest
+
 from braket.aws import (
     AwsQpu,
     AwsQpuArns,
@@ -49,13 +50,19 @@ SHOTS = 10000
 RESULT = GateModelQuantumTaskResult.from_string(
     json.dumps(
         {
-            "Measurements": [[0, 0], [1, 1], [1, 1], [1, 1]],
-            "MeasuredQubits": [0, 1],
-            "TaskMetadata": {
-                "Id": "UUID_blah_1",
-                "Status": "COMPLETED",
-                "Ir": "{}",
-                "Shots": SHOTS,
+            "measurements": [[0, 0], [1, 1], [1, 1], [1, 1]],
+            "measuredQubits": [0, 1],
+            "taskMetadata": {
+                "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+                "id": "task_arn",
+                "shots": SHOTS,
+                "deviceId": "default",
+            },
+            "additionalMetadata": {
+                "action": {
+                    "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
+                    "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+                },
             },
         }
     )
