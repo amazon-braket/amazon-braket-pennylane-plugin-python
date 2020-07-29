@@ -17,6 +17,7 @@ import boto3
 import numpy as np
 import pytest
 from botocore.exceptions import ClientError
+
 from braket.pennylane_plugin import AWSSimulatorDevice
 
 np.random.seed(42)

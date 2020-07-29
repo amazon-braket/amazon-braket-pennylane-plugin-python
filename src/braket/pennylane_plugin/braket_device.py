@@ -36,11 +36,12 @@ Code details
 from typing import Optional, Set, Tuple
 
 import numpy as np
+from pennylane import QubitDevice
+
 from braket.aws import AwsQpu, AwsQpuArns, AwsQuantumSimulator, AwsQuantumSimulatorArns, AwsSession
 from braket.circuits import Circuit, Instruction, gates
 from braket.devices import Device
 from braket.tasks import QuantumTask
-from pennylane import QubitDevice
 
 from ._version import __version__
 

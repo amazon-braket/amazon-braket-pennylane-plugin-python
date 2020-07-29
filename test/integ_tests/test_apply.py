@@ -15,6 +15,8 @@
 import numpy as np
 import pennylane as qml
 import pytest
+from conftest import U2, U
+
 from braket.pennylane_plugin import (
     CY,
     ISWAP,
@@ -29,7 +31,6 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
     V,
 )
-from conftest import U2, U
 
 np.random.seed(42)
 
