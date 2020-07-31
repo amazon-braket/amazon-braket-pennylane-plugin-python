@@ -5,7 +5,7 @@
 The Amazon Braket PennyLane plugin allows three AWS quantum devices to work with PennyLane:
 the AWS quantum simulator, as well as Rigetti and IonQ Quantum Processing Units (QPUs).
 
-The [Amazon Braket Python SDK](https://github.com/aws/braket-python-sdk) is an open source
+The [Amazon Braket Python SDK](https://github.com/aws/amazon-braket-sdk-python) is an open source
 library that provides a framework that you can use to interact with quantum computing hardware
 devices through Amazon Braket.
 
@@ -38,7 +38,7 @@ If you **Star**, **Watch**, or submit a pull request for this repository, other 
 
 ## Installation
 
-The PennyLane-Braket plugin requires both [PennyLane](https://pennylane.readthedocs.io) and the [Amazon Braket Python SDK](https://github.com/aws/braket-python-sdk/tree/stable/latest). You should use only the stable/latest branch of the braket-python-sdk repository. Instructions for installing the Amazon Braket SDK are included in the Readme file for the repo.
+The PennyLane-Braket plugin requires both [PennyLane](https://pennylane.readthedocs.io) and the [Amazon Braket Python SDK](https://github.com/aws/amazon-braket-sdk-python/). Instructions for installing the Amazon Braket SDK are included in the Readme file for the repo.
 
 After you install the Amazon Braket SDK, either clone or download the amazon-braket-pennylane-plugin-python repo to your local environment. You must clone or download the repo into a folder in the same virtual environment where you are using the Amazon Braket SDK.
 
@@ -117,7 +117,7 @@ tox
 ```
 
 ### Integration Tests
-Set the `AWS_PROFILE`, similar to in the braket-python-sdk [README](https://github.com/aws/braket-python-sdk/blob/stable/latest/README.md).
+Set the `AWS_PROFILE`, similar to in the amazon-braket-sdk-python [README](https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md).
 ```bash
 export AWS_PROFILE=Your_Profile_Name
 ```
