@@ -19,13 +19,7 @@ import numpy as np
 import pennylane as qml
 import pytest
 
-from braket.aws import (
-    AwsQpu,
-    AwsQpuArns,
-    AwsQuantumSimulator,
-    AwsQuantumSimulatorArns,
-    AwsQuantumTask,
-)
+from braket.aws import AwsDevice, AwsQuantumTask
 from braket.circuits import Circuit, Instruction, gates
 from braket.pennylane_plugin import (
     CY,
@@ -70,6 +64,11 @@ RESULT = GateModelQuantumTaskResult.from_string(
 TASK = Mock()
 TASK.result.return_value = RESULT
 BELL_STATE = Circuit().h(0).cnot(0, 1)
+
+# TODO: replace hard-coded ARNs with API call
+IONQ_ARN = "arn:aws:braket:::device/qpu/ionq/ionQdevice"
+RIGETTI_ARN = "arn:aws:braket:::device/qpu/rigetti/Aspen-8"
+SIMULATOR_ARN = "arn:aws:braket:::device/quantum-simulator/amazon/sv1"
 
 testdata = [
     (qml.Identity, gates.I, [0], []),
@@ -191,12 +190,12 @@ def test_generate_samples_ionq(mock_create):
     assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
-        AwsQpuArns.IONQ,
+        IONQ_ARN,
         BELL_STATE,
         ("foo", "bar"),
         SHOTS,
-        poll_timeout_seconds=AwsQpu.DEFAULT_RESULTS_POLL_TIMEOUT_QPU,
-        poll_interval_seconds=AwsQpu.DEFAULT_RESULTS_POLL_INTERVAL_QPU,
+        poll_timeout_seconds=AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
     )
 
 
@@ -210,31 +209,31 @@ def test_generate_samples_rigetti(mock_create):
     assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
-        AwsQpuArns.RIGETTI,
+        RIGETTI_ARN,
         BELL_STATE,
         ("foo", "bar"),
         SHOTS,
-        poll_timeout_seconds=AwsQpu.DEFAULT_RESULTS_POLL_TIMEOUT_QPU,
-        poll_interval_seconds=AwsQpu.DEFAULT_RESULTS_POLL_INTERVAL_QPU,
+        poll_timeout_seconds=AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
     )
 
 
 @patch.object(AwsQuantumTask, "create")
 def test_generate_samples_qs1(mock_create):
     mock_create.return_value = TASK
-    dev = _device(2, AWSSimulatorDevice, arn="QS1")
+    dev = _device(2, AWSSimulatorDevice, arn="SV1")
     dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
 
     assert (dev.generate_samples() == RESULT.measurements).all()
     assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
-        AwsQuantumSimulatorArns.QS1,
+        SIMULATOR_ARN,
         BELL_STATE,
         ("foo", "bar"),
         SHOTS,
-        poll_timeout_seconds=AwsQuantumSimulator.DEFAULT_RESULTS_POLL_TIMEOUT_SIMULATOR,
-        poll_interval_seconds=AwsQuantumSimulator.DEFAULT_RESULTS_POLL_INTERVAL_SIMULATOR,
+        poll_timeout_seconds=AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
     )
 
 
