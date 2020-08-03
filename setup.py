@@ -24,7 +24,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "braket-sdk @ git+https://github.com/aws/braket-python-sdk.git",
+        "amazon-braket-sdk @ git+https://github.com/aws/amazon-braket-sdk-python.git",
         "pennylane>=0.8",
     ],
     entry_points={

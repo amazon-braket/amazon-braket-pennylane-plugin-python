@@ -8,7 +8,7 @@ Amazon Braket PennyLane Plugin
 The Amazon Braket PennyLane plugin allows three AWS quantum devices to work with PennyLane:
 the AWS quantum simulator, as well as Rigetti and IonQ Quantum Processing Units (QPUs).
 
-The `Amazon Braket Python SDK  <https://github.com/aws/braket-python-sdk>`_ is an open source
+The `Amazon Braket Python SDK  <https://github.com/aws/amazon-braket-sdk-python>`_ is an open source
 library that provides a framework that you can use to interact with quantum computing hardware
 devices through Amazon Braket.
 
