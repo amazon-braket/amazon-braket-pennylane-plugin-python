@@ -2,6 +2,8 @@
 
 # PennyLane Braket plugin
 
+[![Code Style: Black](https://img.shields.io/badge/code_style-black-000000.svg)](https://github.com/psf/black)
+
 The Amazon Braket PennyLane plugin allows three AWS quantum devices to work with PennyLane:
 the AWS quantum simulator, as well as Rigetti and IonQ Quantum Processing Units (QPUs).
 

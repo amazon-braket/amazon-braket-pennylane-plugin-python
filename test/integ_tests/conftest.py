@@ -56,7 +56,7 @@ shortnames = [d.short_name for d in analytic_devices + hw_devices]
 
 session = boto3.session.Session(profile_name=os.environ["AWS_PROFILE"])
 account_id = session.client("sts").get_caller_identity()["Account"]
-bucket_name = f"braket-pennylane-plugin-integ-tests-{account_id}"
+bucket_name = f"amazon-braket-pennylane-plugin-integ-tests-{account_id}"
 s3_bucket = session.resource("s3").Bucket(bucket_name)
 
 # Create bucket if it doesn't exist

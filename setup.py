@@ -13,6 +13,9 @@
 
 from setuptools import find_namespace_packages, setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
@@ -23,10 +26,7 @@ setup(
     python_requires=">= 3.7.2",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
-    install_requires=[
-        "amazon-braket-sdk @ git+https://github.com/aws/amazon-braket-sdk-python.git",
-        "pennylane>=0.8",
-    ],
+    install_requires=["amazon-braket-sdk", "pennylane>=0.10"],
     entry_points={
         "pennylane.plugins": [
             # List the short name of each device provided by
@@ -42,7 +42,7 @@ setup(
     extras_require={
         "test": [
             "black",
-            "flake8",
+            "docutils<0.16,>=0.10" "flake8",
             "isort",
             "pre-commit",
             "pylint",
@@ -52,7 +52,25 @@ setup(
             "pytest-xdist",
             "sphinx",
             "sphinx-rtd-theme",
+            "sphinxcontrib-apidoc",
             "tox",
         ]
     },
+    url="https://github.com/aws/amazon-braket-default-simulator-python",
+    author="Amazon Web Services",
+    description=(
+        "An open source quantum circuit simulator to be run locally with the Amazon Braket SDK"
+    ),
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    keywords="Amazon AWS Quantum",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Natural Language :: English",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+    ],
 )

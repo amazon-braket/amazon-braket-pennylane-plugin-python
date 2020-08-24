@@ -152,7 +152,7 @@ class BraketDevice(QubitDevice):
                 raise NotImplementedError(
                     f"PennyLane-Braket does not support operation {operation.name}."
                 )
-            ins = Instruction(op(*operation.parameters), operation.wires)
+            ins = Instruction(op(*operation.parameters), operation.wires.toarray())
             circuit.add_instruction(ins)
 
         unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}
@@ -164,7 +164,7 @@ class BraketDevice(QubitDevice):
     def generate_samples(self):
         self._task = self._aws_device.run(
             self.circuit,
-            self._s3_folder,
+            s3_destination_folder=self._s3_folder,
             shots=self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds,
         )
