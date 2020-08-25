@@ -42,7 +42,8 @@ setup(
     extras_require={
         "test": [
             "black",
-            "docutils<0.16,>=0.10" "flake8",
+            "docutils<0.16,>=0.10",
+            "flake8",
             "isort",
             "pre-commit",
             "pylint",
