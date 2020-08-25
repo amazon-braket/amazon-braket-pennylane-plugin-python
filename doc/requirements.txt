@@ -1,3 +1,6 @@
+sphinx
+sphinx-rtd-theme
+sphinxcontrib-apidoc
 sphinxcontrib-bibtex
 pygments-github-lexers
-pennylane>=0.8
+pennylane>=0.11
