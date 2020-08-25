@@ -60,7 +60,8 @@ setup(
     url="https://github.com/aws/amazon-braket-pennyLane-plugin-python",
     author="Amazon Web Services",
     description=(
-        "An open source quantum circuit simulator to be run locally with the Amazon Braket SDK"
+        "An open source framework for using Amazon Braket devices with the PennyLane"
+        " quantum machine learning library"
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
