@@ -247,4 +247,7 @@ def test_probability():
 
 
 def _device(wires, device_class=AWSSimulatorDevice, **kwargs):
-    return device_class(wires=wires, s3_destination_folder=("foo", "bar"), shots=SHOTS, **kwargs)
+    with patch.object(AwsDevice, "refresh_metadata", return_value=None):
+        return device_class(
+            wires=wires, s3_destination_folder=("foo", "bar"), shots=SHOTS, **kwargs
+        )
