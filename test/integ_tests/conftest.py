@@ -126,7 +126,11 @@ def device(request, shots, s3):
         pytest.skip("Hardware simulators do not support analytic mode")
 
     def _device(n):
-        return device(wires=n, shots=shots, s3_destination_folder=s3,)
+        return device(
+            wires=n,
+            shots=shots,
+            s3_destination_folder=s3,
+        )
 
     return _device
 

@@ -123,20 +123,17 @@ class BraketDevice(QubitDevice):
 
     @property
     def operations(self) -> Set[str]:
-        """ Set[str]: The set of PennyLane operation names the device supports.
-        """
+        """Set[str]: The set of PennyLane operation names the device supports."""
         return set(self._operation_map.keys())
 
     @property
     def circuit(self) -> Circuit:
-        """ Circuit: The last circuit run on this device.
-        """
+        """Circuit: The last circuit run on this device."""
         return self._circuit
 
     @property
     def task(self) -> QuantumTask:
-        """ QuantumTask: The task corresponding to the last run circuit.
-        """
+        """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
     def apply(self, operations, rotations=None, **kwargs):

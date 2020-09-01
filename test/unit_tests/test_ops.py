@@ -37,6 +37,5 @@ testdata = [
 
 @pytest.mark.parametrize("pl_op, braket_gate, params", testdata)
 def test_matrices(pl_op, braket_gate, params):
-    """ Tests that the matrices of the custom operations are correct.
-    """
+    """Tests that the matrices of the custom operations are correct."""
     assert np.allclose(pl_op._matrix(*params), braket_gate(*params).to_matrix())
