@@ -110,8 +110,7 @@ testdata_inverses = [
 
 
 def test_reset():
-    """ Tests that the members of the device are cleared on reset.
-    """
+    """Tests that the members of the device are cleared on reset."""
     dev = _device(2)
     dev._circuit = BELL_STATE
     dev._task = TASK
@@ -123,8 +122,7 @@ def test_reset():
 
 @pytest.mark.parametrize("pl_op, braket_gate, qubits, params", testdata)
 def test_apply(pl_op, braket_gate, qubits, params):
-    """ Tests that the correct Braket gate is applied for each PennyLane operation.
-    """
+    """Tests that the correct Braket gate is applied for each PennyLane operation."""
     dev = _device(wires=len(qubits))
     dev.apply([pl_op(*params, wires=qubits)])
     assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
@@ -142,8 +140,7 @@ def test_apply_inverse_gates(pl_op, braket_gate):
 
 
 def test_apply_with_rotations():
-    """ Tests that the device's circuit member is set properly after apply is called.
-    """
+    """Tests that the device's circuit member is set properly after apply is called."""
     dev = _device(2)
     operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), qml.RX(np.pi / 2, wires=1)]
     rotations = [qml.RY(np.pi, wires=0)]
@@ -153,8 +150,7 @@ def test_apply_with_rotations():
 
 
 def test_apply_unused_qubits():
-    """ Tests that the correct circuit is created when not all qires in the dievce are used.
-    """
+    """Tests that the correct circuit is created when not all qires in the dievce are used."""
     dev = _device(4)
     operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi / 2, wires=2)]
     rotations = [qml.RY(np.pi, wires=1)]
@@ -165,8 +161,7 @@ def test_apply_unused_qubits():
 
 @pytest.mark.xfail(raises=NotImplementedError)
 def test_apply_unsupported():
-    """ Tests that apply() throws NotImplementedError when it encounters an unknown gate.
-    """
+    """Tests that apply() throws NotImplementedError when it encounters an unknown gate."""
     dev = _device(2)
     mock_op = Mock()
     mock_op.name = "foo"
@@ -238,8 +233,7 @@ def test_generate_samples_qs1(mock_create):
 
 
 def test_probability():
-    """ Tests that the right probabilities are passed into marginal_prob.
-    """
+    """Tests that the right probabilities are passed into marginal_prob."""
     dev = _device(2)
     dev._task = TASK
     probs = np.array([0.25, 0, 0, 0.75])
