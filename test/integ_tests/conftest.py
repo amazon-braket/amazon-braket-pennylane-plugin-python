@@ -18,7 +18,9 @@ import numpy as np
 import pytest
 from botocore.exceptions import ClientError
 
-from braket.pennylane_plugin import AWSSimulatorDevice
+from braket.pennylane_plugin import BraketDevice
+
+DEVICE_ARN = "arn:aws:braket:::device/quantum-simulator/amazon/sv1"
 
 np.random.seed(42)
 
@@ -45,7 +47,7 @@ analytic_devices = []
 # List of all devices that do *not* support analytic expectation
 # value computation. This generally includes hardware devices
 # and hardware simulators.
-hw_devices = [AWSSimulatorDevice]
+hw_devices = [BraketDevice]
 
 # List of all device shortnames
 shortnames = [d.short_name for d in analytic_devices + hw_devices]
@@ -117,6 +119,11 @@ def init_state(scope="session"):
     return _init_state
 
 
+@pytest.fixture
+def device_arn():
+    return DEVICE_ARN
+
+
 @pytest.fixture(params=analytic_devices + hw_devices)
 def device(request, shots, s3):
     """Fixture to initialize and return a PennyLane device"""
@@ -128,6 +135,7 @@ def device(request, shots, s3):
     def _device(n):
         return device(
             wires=n,
+            device_arn=DEVICE_ARN,
             shots=shots,
             s3_destination_folder=s3,
         )

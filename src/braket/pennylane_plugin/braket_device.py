@@ -33,35 +33,43 @@ Code details
 ~~~~~~~~~~~~
 """
 # pylint: disable=invalid-name
-from typing import Optional, Set, Tuple
+from typing import Optional, Set
 
 import numpy as np
 from pennylane import QubitDevice
 
 from braket.aws import AwsDevice, AwsSession
 from braket.circuits import Circuit, Instruction, gates
-from braket.devices import Device
+from braket.device_schema import DeviceActionType
 from braket.tasks import QuantumTask
 
 from ._version import __version__
 
 
 class BraketDevice(QubitDevice):
-    r"""Abstract Braket device for PennyLane.
+    r"""AWS Braket device for PennyLane.
 
     Args:
-        wires (int): the number of modes to initialize the device in
-        s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
-            and folder as a tuple
+        wires (int): the number of modes to initialize the device in.
+        device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
+            run circuits; The corresponding AwsDevice must support quantum
+            circuits via JAQCD. You can get device ARNs using ``AwsDevice.get_devices``,
+            from the Amazon Braket console or from the Amazon Braket Developer Guide.
+        s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
+            and folder as a tuple.
         poll_timeout_seconds (int): Total time in seconds to wait for
-            results before timing out
+            results before timing out.
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. Default: 1000
+        aws_session (Optional[AwsSession]): An AwsSession object to managed
+            interactions with AWS services, to be supplied if extra control
+            is desired. Default: None
     """
     name = "Braket PennyLane plugin"
-    pennylane_requires = ">=0.8.0"
+    short_name = "braket.device"
+    pennylane_requires = ">=0.11.0"
     version = __version__
-    author = "Xanadu"
+    author = "Amazon Web Services"
 
     _operation_map = {
         "Identity": gates.I,
@@ -101,15 +109,21 @@ class BraketDevice(QubitDevice):
     def __init__(
         self,
         wires: int,
-        aws_device: Device,
-        s3_destination_folder: Tuple[str, str],
+        device_arn: str,
+        s3_destination_folder: AwsSession.S3DestinationFolder,
         *,
-        poll_timeout_seconds: int,
         shots: int = 1000,
+        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
+        aws_session: Optional[AwsSession] = None,
         **kwargs,
     ):
         super().__init__(wires, shots, analytic=False)
-        self._aws_device = aws_device
+        self._aws_device = AwsDevice(device_arn, aws_session=aws_session)
+        if DeviceActionType.JAQCD not in self._aws_device.properties.action:
+            raise ValueError(
+                f"Device {self._aws_device.name} does not support running quantum circuits"
+            )
+
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
 
@@ -147,12 +161,14 @@ class BraketDevice(QubitDevice):
                 op = self._operation_map[operation.name]
             except KeyError:
                 raise NotImplementedError(
-                    f"PennyLane-Braket does not support operation {operation.name}."
+                    f"Braket PennyLane plugin does not support operation {operation.name}."
                 )
             ins = Instruction(op(*operation.parameters), operation.wires.toarray())
             circuit.add_instruction(ins)
 
         unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}
+
+        # To ensure the results have the right number of qubits
         for qubit in sorted(unused):
             circuit.i(qubit)
 
@@ -171,131 +187,3 @@ class BraketDevice(QubitDevice):
         probs = {int(s, 2): p for s, p in self._task.result().measurement_probabilities.items()}
         probs_list = np.array([probs[i] if i in probs else 0 for i in range(2 ** self.num_wires)])
         return self.marginal_prob(probs_list, wires=wires)
-
-
-# TODO: remove hard-coded ARNs when APIs are done
-
-
-class AWSSimulatorDevice(BraketDevice):
-    r"""AWSSimulatorDevice for PennyLane.
-
-    Args:
-        wires (int): the number of modes to initialize the device in
-        s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
-            and folder as a tuple
-        poll_timeout_seconds (int): Total time in seconds to wait for
-            results before timing out. Default: 432000 (5 days)
-        shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. Default: 1000
-        backend (str): The simulator backend to target; only "SV1" is
-            supported at the moment. Default: "SV1"
-        aws_session (Optional[AwsSession]): An AwsSession object to managed
-            interactions with AWS services, to be supplied if extra control
-            is desired. Default: None
-    """
-    name = "Braket AWSSimulatorDevice for PennyLane"
-    short_name = "braket.simulator"
-
-    simulator_arns = {
-        "SV1": "arn:aws:braket:::device/quantum-simulator/amazon/sv1",
-    }
-
-    def __init__(
-        self,
-        wires,
-        s3_destination_folder: Tuple[str, str],
-        *,
-        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
-        shots: int = 1000,
-        backend: str = "SV1",
-        aws_session: Optional[AwsSession] = None,
-        **kwargs,
-    ):
-        super().__init__(
-            wires,
-            aws_device=AwsDevice(self.simulator_arns[backend], aws_session=aws_session),
-            s3_destination_folder=s3_destination_folder,
-            poll_timeout_seconds=poll_timeout_seconds,
-            shots=shots,
-            **kwargs,
-        )
-
-
-class AWSIonQDevice(BraketDevice):
-    r"""AWSIonQDevice for PennyLane.
-
-    Args:
-        wires (int): the number of modes to initialize the device in
-        s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
-            and folder as a tuple
-        poll_timeout_seconds (int): Total time in seconds to wait for
-            results before timing out. Default: 432000 (5 days)
-        shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. Default: 1000
-        aws_session (Optional[AwsSession]): An AwsSession object to managed
-            interactions with AWS services, to be supplied if extra control
-            is desired. Default: None
-    """
-    name = "Braket AWSIonQDevice for PennyLane"
-    short_name = "braket.ionq"
-
-    def __init__(
-        self,
-        wires,
-        s3_destination_folder: Tuple[str, str],
-        *,
-        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
-        shots: int = 1000,
-        aws_session: Optional[AwsSession] = None,
-        **kwargs,
-    ):
-        super().__init__(
-            wires,
-            aws_device=AwsDevice(
-                "arn:aws:braket:::device/qpu/ionq/ionQdevice", aws_session=aws_session
-            ),
-            s3_destination_folder=s3_destination_folder,
-            poll_timeout_seconds=poll_timeout_seconds,
-            shots=shots,
-            **kwargs,
-        )
-
-
-class AWSRigettiDevice(BraketDevice):
-    r"""AWSRigettiDevice for PennyLane.
-
-    Args:
-        wires (int): the number of modes to initialize the device in
-        s3_destination_folder (Tuple[str, str]): Name of the S3 bucket
-            and folder as a tuple
-        poll_timeout_seconds (int): Total time in seconds to wait for
-            results before timing out. Default: 432000 (5 days)
-        shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. Default: 1000
-        aws_session (Optional[AwsSession]): An AwsSession object to managed
-            interactions with AWS services, to be supplied if extra control
-            is desired. Default: None
-    """
-    name = "Braket AWSRigettiDevice for PennyLane"
-    short_name = "braket.rigetti"
-
-    def __init__(
-        self,
-        wires,
-        s3_destination_folder: Tuple[str, str],
-        *,
-        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
-        shots: int = 1000,
-        aws_session: Optional[AwsSession] = None,
-        **kwargs,
-    ):
-        super().__init__(
-            wires,
-            aws_device=AwsDevice(
-                "arn:aws:braket:::device/qpu/rigetti/Aspen-8", aws_session=aws_session
-            ),
-            s3_destination_folder=s3_destination_folder,
-            poll_timeout_seconds=poll_timeout_seconds,
-            shots=shots,
-            **kwargs,
-        )

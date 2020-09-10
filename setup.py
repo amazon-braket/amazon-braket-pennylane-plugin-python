@@ -20,7 +20,7 @@ with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 setup(
-    name="amazon-braket-pennyLane-plugin-python",
+    name="amazon-braket-pennyLane-plugin",
     version=version,
     license="Apache License 2.0",
     python_requires=">= 3.7.2",
@@ -34,9 +34,7 @@ setup(
             # it corresponds to in the plugin. This allows
             # the device to be imported automatically via the
             # `pennylane.device` device loader.
-            "braket.simulator = braket.pennylane_plugin:AWSSimulatorDevice",
-            "braket.ionq = braket.pennylane_plugin:AWSIonQDevice",
-            "braket.rigetti = braket.pennylane_plugin:AWSRigettiDevice",
+            "braket.device = braket.pennylane_plugin:BraketDevice"
         ]
     },
     extras_require={
@@ -58,7 +56,7 @@ setup(
         ]
     },
     url="https://github.com/aws/amazon-braket-pennyLane-plugin-python",
-    author="Amazon Web Services",
+    author=" ",
     description=(
         "An open source framework for using Amazon Braket devices with the PennyLane"
         " quantum machine learning library"
