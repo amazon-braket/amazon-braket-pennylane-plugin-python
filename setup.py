@@ -56,7 +56,7 @@ setup(
         ]
     },
     url="https://github.com/aws/amazon-braket-pennyLane-plugin-python",
-    author=" ",
+    author="Amazon Web Services",
     description=(
         "An open source framework for using Amazon Braket devices with the PennyLane"
         " quantum machine learning library"
