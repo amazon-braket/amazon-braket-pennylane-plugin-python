@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.0 (2020-09-15)
+
+### Features
+
+ * One device to rule them all
+
 ## v0.1.4.post1 (2020-09-10)
 
 ### Testing and Release Infrastructure
