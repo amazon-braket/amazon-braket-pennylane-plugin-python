@@ -40,17 +40,11 @@ A = np.array([[1.02789352, 1.61296440 - 0.3498192j], [1.61296440 + 0.3498192j, 1
 # ==========================================================
 # PennyLane devices
 
-# List of all devices that support analytic expectation value
-# computation. This generally includes statevector/wavefunction simulators.
-analytic_devices = []
-
-# List of all devices that do *not* support analytic expectation
-# value computation. This generally includes hardware devices
-# and hardware simulators.
-hw_devices = [BraketDevice]
+# List of all devices.
+devices = [BraketDevice]
 
 # List of all device shortnames
-shortnames = [d.short_name for d in analytic_devices + hw_devices]
+shortnames = [d.short_name for d in devices]
 
 
 # ==========================================================
@@ -124,13 +118,10 @@ def device_arn():
     return DEVICE_ARN
 
 
-@pytest.fixture(params=analytic_devices + hw_devices)
+@pytest.fixture(params=devices)
 def device(request, shots, s3):
     """Fixture to initialize and return a PennyLane device"""
     device = request.param
-
-    if device not in analytic_devices and shots == 0:
-        pytest.skip("Hardware simulators do not support analytic mode")
 
     def _device(n):
         return device(
@@ -141,18 +132,3 @@ def device(request, shots, s3):
         )
 
     return _device
-
-
-def rotations(ops):
-    """Returns the gates that diagonalize the measured wires such that they
-    are in the eigenbasis of the circuit observables.
-
-    Returns:
-        List[~.Operation]: the operations that diagonalize the observables
-    """
-    rotation_gates = []
-
-    for observable in ops:
-        rotation_gates.extend(observable.diagonalizing_gates())
-
-    return rotation_gates
