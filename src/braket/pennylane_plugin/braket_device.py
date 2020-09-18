@@ -67,7 +67,7 @@ class BraketDevice(QubitDevice):
             to estimate expectation values of observables. If this is set to 0
             and the device ARN points to a simulator, then the device will run
             in analytic mode (calculations will be exact), and the device's
-            ``shots`` property will be set to 1 and ignored; trying use 0 shots
+            ``shots`` property will be set to 1 and ignored; trying to use 0 shots
             with QPUs will fail.
             Defaults to 1000 for QPUs and 1 with analytic mode for simulators.
         aws_session (Optional[AwsSession]): An AwsSession object to managed
