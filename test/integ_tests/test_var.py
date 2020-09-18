@@ -11,16 +11,15 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-"""Tests that variances are correctly computed in the plugin devices"""
+"""Tests that variances are correctly computed in the plugin device"""
 import numpy as np
 import pennylane as qml
 import pytest
-from conftest import rotations
 
 np.random.seed(42)
 
 
-@pytest.mark.parametrize("shots", [8192])
+@pytest.mark.parametrize("shots", [0, 8192])
 class TestVar:
     """Tests for the variance"""
 
@@ -31,20 +30,14 @@ class TestVar:
         phi = 0.543
         theta = 0.6543
 
-        # test correct variance for <Z> of a rotated state
-        ops = [
-            qml.RX(phi, wires=[0]),
-            qml.RY(theta, wires=[0]),
-        ]
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(phi, wires=[0])
+            qml.RY(theta, wires=[0])
+            return qml.var(qml.PauliZ(wires=[0]))
 
-        ob = qml.PauliZ(wires=[0])
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
-
-        var = dev.var(ob)
         expected = 0.25 * (3 - np.cos(2 * theta) - 2 * np.cos(theta) ** 2 * np.cos(2 * phi))
-
-        assert np.allclose(var, expected, **tol)
+        assert np.allclose(circuit(), expected, **tol)
 
     def test_var_hermitian(self, device, shots, tol):
         """Tests for variance calculation using an arbitrary Hermitian observable"""
@@ -52,53 +45,43 @@ class TestVar:
 
         phi = 0.543
         theta = 0.6543
-
-        # test correct variance for <H> of a rotated state
         H = np.array([[4, -1 + 6j], [-1 - 6j, 2]])
-        ops = [
-            qml.RX(phi, wires=[0]),
-            qml.RY(theta, wires=[0]),
-        ]
 
-        ob = qml.Hermitian(H, wires=[0])
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(phi, wires=[0])
+            qml.RY(theta, wires=[0])
+            return qml.var(qml.Hermitian(H, wires=[0]))
 
-        var = dev.var(ob)
         expected = 0.5 * (
             2 * np.sin(2 * theta) * np.cos(phi) ** 2
             + 24 * np.sin(phi) * np.cos(phi) * (np.sin(theta) - np.cos(theta))
             + 35 * np.cos(2 * phi)
             + 39
         )
+        assert np.allclose(circuit(), expected, **tol)
 
-        assert np.allclose(var, expected, **tol)
 
-
-@pytest.mark.parametrize("shots", [8192])
+@pytest.mark.parametrize("shots", [0, 8192])
 class TestTensorVar:
     """Tests for variance of tensor observables"""
 
     def test_paulix_pauliy(self, device, shots, tol):
         """Test that a tensor product involving PauliX and PauliY works correctly"""
+        dev = device(3)
+
         theta = 0.432
         phi = 0.123
         varphi = -0.543
 
-        dev = device(3)
-        ops = [
-            qml.RX(theta, wires=[0]),
-            qml.RX(phi, wires=[1]),
-            qml.RX(varphi, wires=[2]),
-            qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2]),
-        ]
-
-        ob = qml.PauliX(0) @ qml.PauliY(2)
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
-
-        res = dev.var(ob)
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.RX(varphi, wires=[2])
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.var(qml.PauliX(0) @ qml.PauliY(2))
 
         expected = (
             8 * np.sin(theta) ** 2 * np.cos(2 * varphi) * np.sin(phi) ** 2
@@ -108,29 +91,24 @@ class TestTensorVar:
             + 2 * np.cos(2 * phi)
             + 14
         ) / 16
-
-        assert np.allclose(res, expected, **tol)
+        assert np.allclose(circuit(), expected, **tol)
 
     def test_pauliz_hadamard(self, device, shots, tol):
         """Test that a tensor product involving PauliZ and PauliY and hadamard works correctly"""
+        dev = device(3)
+
         theta = 0.432
         phi = 0.123
         varphi = -0.543
 
-        dev = device(3)
-        ops = [
-            qml.RX(theta, wires=[0]),
-            qml.RX(phi, wires=[1]),
-            qml.RX(varphi, wires=[2]),
-            qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2]),
-        ]
-
-        ob = qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
-
-        res = dev.var(ob)
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.RX(varphi, wires=[2])
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.var(qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2]))
 
         expected = (
             3
@@ -139,23 +117,15 @@ class TestTensorVar:
             - 2 * np.cos(theta) * np.sin(phi) * np.sin(2 * varphi)
         ) / 4
 
-        assert np.allclose(res, expected, **tol)
+        assert np.allclose(circuit(), expected, **tol)
 
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
+        dev = device(3)
+
         theta = 0.432
         phi = 0.123
         varphi = -0.543
-
-        dev = device(3)
-        ops = [
-            qml.RX(theta, wires=[0]),
-            qml.RX(phi, wires=[1]),
-            qml.RX(varphi, wires=[2]),
-            qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2]),
-        ]
-
         A = np.array(
             [
                 [-6, 2 + 1j, -3, -5 + 2j],
@@ -165,11 +135,14 @@ class TestTensorVar:
             ]
         )
 
-        ob = qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2])
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
-
-        res = dev.var(ob)
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.RX(varphi, wires=[2])
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.var(qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2]))
 
         expected = (
             1057
@@ -201,5 +174,4 @@ class TestTensorVar:
                 )
             )
         ) / 16
-
-        assert np.allclose(res, expected, **tol)
+        assert np.allclose(circuit(), expected, **tol)

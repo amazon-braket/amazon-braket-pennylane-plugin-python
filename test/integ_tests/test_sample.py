@@ -11,11 +11,10 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-"""Tests that samples are correctly computed in the plugin devices"""
+"""Tests that samples are correctly computed in the plugin device"""
 import numpy as np
 import pennylane as qml
 import pytest
-from conftest import rotations
 
 np.random.seed(42)
 
@@ -30,12 +29,13 @@ class TestSample:
         """
         dev = device(1)
 
-        dev.apply([qml.RX(np.pi / 4, wires=0)])
-        dev._samples = dev.generate_samples()
-        s1 = dev.sample(qml.PauliZ(wires=[0]))
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(np.pi / 4, wires=0)
+            return qml.sample(qml.PauliZ(wires=[0]))
 
-        # s1 should only contain 1 and -1
-        assert np.allclose(s1 ** 2, 1, **tol)
+        # The sample should only contain 1 and -1
+        assert np.allclose(circuit() ** 2, 1, **tol)
 
     def test_sample_values_hermitian(self, device, shots, tol):
         """Tests if the samples of a Hermitian observable returned by sample have
@@ -46,32 +46,30 @@ class TestSample:
         theta = 0.543
         A = np.array([[1, 2j], [-2j, 0]])
 
-        ops = [qml.RX(theta, wires=0)]
-        ob = qml.Hermitian(A, wires=[0])
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=0)
+            return qml.sample(qml.Hermitian(A, wires=[0]))
 
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
+        result = circuit()
 
-        s1 = dev.sample(ob)
-
-        # s1 should only contain the eigenvalues of
-        # the hermitian matrix
+        # `result` should only contain the eigenvalues of the hermitian matrix
         eigvals = np.linalg.eigvalsh(A)
-        assert np.allclose(sorted(list(set(s1))), sorted(eigvals), **tol)
+        assert np.allclose(sorted(list(set(result))), sorted(eigvals), **tol)
 
-        # the analytic mean is 2*sin(theta)+0.5*cos(theta)+0.5
-        assert np.allclose(np.mean(s1), 2 * np.sin(theta) + 0.5 * np.cos(theta) + 0.5, **tol)
+        # The analytic mean is 2*sin(theta)+0.5*cos(theta)+0.5
+        assert np.allclose(np.mean(result), 2 * np.sin(theta) + 0.5 * np.cos(theta) + 0.5, **tol)
 
-        # the analytic variance is 0.25*(sin(theta)-4*cos(theta))^2
-        assert np.allclose(np.var(s1), 0.25 * (np.sin(theta) - 4 * np.cos(theta)) ** 2, **tol)
+        # The analytic variance is 0.25*(sin(theta)-4*cos(theta))^2
+        assert np.allclose(np.var(result), 0.25 * (np.sin(theta) - 4 * np.cos(theta)) ** 2, **tol)
 
     def test_sample_values_hermitian_multi_qubit(self, device, shots, tol):
         """Tests if the samples of a multi-qubit Hermitian observable returned by sample have
         the correct values
         """
         dev = device(2)
-        theta = 0.543
 
+        theta = 0.543
         A = np.array(
             [
                 [1, 2j, 1 - 2j, 0.5j],
@@ -81,23 +79,20 @@ class TestSample:
             ]
         )
 
-        ops = [
-            qml.RX(theta, wires=0),
-            qml.RY(2 * theta, wires=1),
-            qml.CNOT(wires=[0, 1]),
-        ]
-        ob = qml.Hermitian(A, wires=[0, 1])
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=0)
+            qml.RY(2 * theta, wires=1)
+            qml.CNOT(wires=[0, 1])
+            return qml.sample(qml.Hermitian(A, wires=[0, 1]))
 
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
-        s1 = dev.sample(ob)
+        result = circuit()
 
-        # s1 should only contain the eigenvalues of
-        # the hermitian matrix
+        # `result` should only contain the eigenvalues of the hermitian matrix
         eigvals = np.linalg.eigvalsh(A)
-        assert np.allclose(sorted(list(set(s1))), sorted(eigvals), **tol)
+        assert np.allclose(sorted(list(set(result))), sorted(eigvals), **tol)
 
-        # make sure the mean matches the analytic mean
+        # Make sure the mean matches the analytic mean
         expected = (
             88 * np.sin(theta)
             + 24 * np.sin(2 * theta)
@@ -107,7 +102,7 @@ class TestSample:
             + 27 * np.cos(3 * theta)
             + 6
         ) / 32
-        assert np.allclose(np.mean(s1), expected, **tol)
+        assert np.allclose(np.mean(result), expected, **tol)
 
 
 @pytest.mark.parametrize("shots", [8192])
@@ -116,33 +111,29 @@ class TestTensorSample:
 
     def test_paulix_pauliy(self, device, shots, tol):
         """Test that a tensor product involving PauliX and PauliY works correctly"""
+        dev = device(3)
+
         theta = 0.432
         phi = 0.123
         varphi = -0.543
 
-        dev = device(3)
-        ops = [
-            qml.RX(theta, wires=[0]),
-            qml.RX(phi, wires=[1]),
-            qml.RX(varphi, wires=[2]),
-            qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2]),
-        ]
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.RX(varphi, wires=[2])
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.sample(qml.PauliX(0) @ qml.PauliY(2))
 
-        ob = qml.PauliX(0) @ qml.PauliY(2)
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
+        result = circuit()
 
-        s1 = dev.sample(ob)
+        # `result` should only contain 1 and -1
+        assert np.allclose(result ** 2, 1, **tol)
 
-        # s1 should only contain 1 and -1
-        assert np.allclose(s1 ** 2, 1, **tol)
-
-        mean = np.mean(s1)
         expected = np.sin(theta) * np.sin(phi) * np.sin(varphi)
-        assert np.allclose(mean, expected, **tol)
+        assert np.allclose(np.mean(result), expected, **tol)
 
-        var = np.var(s1)
         expected = (
             8 * np.sin(theta) ** 2 * np.cos(2 * varphi) * np.sin(phi) ** 2
             - np.cos(2 * (theta - phi))
@@ -151,51 +142,50 @@ class TestTensorSample:
             + 2 * np.cos(2 * phi)
             + 14
         ) / 16
-        assert np.allclose(var, expected, **tol)
+        assert np.allclose(np.var(result), expected, **tol)
 
     def test_pauliz_hadamard(self, device, shots, tol):
         """Test that a tensor product involving PauliZ and PauliY and hadamard works correctly"""
+        dev = device(3)
+
         theta = 0.432
         phi = 0.123
         varphi = -0.543
 
-        dev = device(3)
-        ops = [
-            qml.RX(theta, wires=[0]),
-            qml.RX(phi, wires=[1]),
-            qml.RX(varphi, wires=[2]),
-            qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2]),
-        ]
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.RX(varphi, wires=[2])
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.sample(
+                qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
+            )
 
-        ob = qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
+        result = circuit()
 
-        s1 = dev.sample(ob)
+        # `result` should only contain 1 and -1
+        assert np.allclose(result ** 2, 1, **tol)
 
-        # s1 should only contain 1 and -1
-        assert np.allclose(s1 ** 2, 1, **tol)
-
-        mean = np.mean(s1)
         expected = -(np.cos(varphi) * np.sin(phi) + np.sin(varphi) * np.cos(theta)) / np.sqrt(2)
-        assert np.allclose(mean, expected, **tol)
+        assert np.allclose(np.mean(result), expected, **tol)
 
-        var = np.var(s1)
         expected = (
             3
             + np.cos(2 * phi) * np.cos(varphi) ** 2
             - np.cos(2 * theta) * np.sin(varphi) ** 2
             - 2 * np.cos(theta) * np.sin(phi) * np.sin(2 * varphi)
         ) / 4
-        assert np.allclose(var, expected, **tol)
+        assert np.allclose(np.var(result), expected, **tol)
 
     def test_hermitian(self, device, shots, tol):
         """Test that a tensor product involving qml.Hermitian works correctly"""
+        dev = device(3)
+
         theta = 0.432
         phi = 0.123
         varphi = -0.543
-
         A = np.array(
             [
                 [-6, 2 + 1j, -3, -5 + 2j],
@@ -205,37 +195,30 @@ class TestTensorSample:
             ]
         )
 
-        dev = device(3)
-        ops = [
-            qml.RX(theta, wires=[0]),
-            qml.RX(phi, wires=[1]),
-            qml.RX(varphi, wires=[2]),
-            qml.CNOT(wires=[0, 1]),
-            qml.CNOT(wires=[1, 2]),
-        ]
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.RX(varphi, wires=[2])
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.sample(qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2]))
 
-        ob = qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2])
-        dev.apply(ops, rotations=rotations([ob]))
-        dev._samples = dev.generate_samples()
+        result = circuit()
 
-        s1 = dev.sample(ob)
+        # `result` should only contain the eigenvalues of the
+        # tensor product of Z and the Hermitian matrix
+        eigvals = np.linalg.eigvalsh(np.kron(np.diag([1, -1]), A))
+        assert np.allclose(sorted(list(set(result))), sorted(eigvals), **tol)
 
-        # s1 should only contain the eigenvalues of
-        # the hermitian matrix tensor product Z
-        Z = np.diag([1, -1])
-        eigvals = np.linalg.eigvalsh(np.kron(Z, A))
-        assert np.allclose(sorted(list(set(s1))), sorted(eigvals), **tol)
-
-        mean = np.mean(s1)
         expected = 0.5 * (
             -6 * np.cos(theta) * (np.cos(varphi) + 1)
             - 2 * np.sin(varphi) * (np.cos(theta) + np.sin(phi) - 2 * np.cos(phi))
             + 3 * np.cos(varphi) * np.sin(phi)
             + np.sin(phi)
         )
-        assert np.allclose(mean, expected, **tol)
+        assert np.allclose(np.mean(result), expected, **tol)
 
-        var = np.var(s1)
         expected = (
             1057
             - np.cos(2 * phi)
@@ -266,4 +249,4 @@ class TestTensorSample:
                 )
             )
         ) / 16
-        assert np.allclose(var, expected, **tol)
+        assert np.allclose(np.var(result), expected, **tol)

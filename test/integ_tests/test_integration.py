@@ -35,7 +35,7 @@ class TestDeviceIntegration:
             qml.device("braket.device")
 
     @pytest.mark.parametrize("d", shortnames)
-    @pytest.mark.parametrize("shots", [8192])
+    @pytest.mark.parametrize("shots", [0, 8192])
     def test_one_qubit_circuit(self, shots, d, tol, s3, device_arn):
         """Test that devices provide correct result for a simple circuit"""
         dev = qml.device(d, wires=1, device_arn=device_arn, shots=shots, s3_destination_folder=s3)

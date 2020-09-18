@@ -18,9 +18,10 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pennylane as qml
 import pytest
+from pennylane.wires import Wires
 
-from braket.aws import AwsDevice, AwsQuantumTask
-from braket.circuits import Circuit, Instruction, gates
+from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
+from braket.circuits import Circuit, Instruction, Observable, gates, result_types
 from braket.device_schema import DeviceActionType
 from braket.pennylane_plugin import (
     CY,
@@ -40,15 +41,32 @@ from braket.pennylane_plugin import (
 from braket.tasks import GateModelQuantumTaskResult
 
 SHOTS = 10000
+
 RESULT = GateModelQuantumTaskResult.from_string(
     json.dumps(
         {
-            "measurements": [[0, 0], [1, 1], [1, 1], [1, 1]],
-            "measuredQubits": [0, 1],
+            "braketSchemaHeader": {
+                "name": "braket.task_result.gate_model_task_result",
+                "version": "1",
+            },
+            "measurements": [[0, 0, 0, 0], [1, 1, 1, 1], [1, 1, 0, 0], [0, 0, 1, 1]],
+            "resultTypes": [
+                {"type": {"targets": [0], "type": "probability"}, "value": [0.5, 0.5]},
+                {
+                    "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
+                    "value": 0.0,
+                },
+                {"type": {"observable": ["y"], "targets": [2], "type": "variance"}, "value": 0.1},
+                {
+                    "type": {"observable": ["z"], "targets": [3], "type": "sample"},
+                    "value": [1, -1, 1, 1],
+                },
+            ],
+            "measuredQubits": [0, 1, 2, 3],
             "taskMetadata": {
                 "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
                 "id": "task_arn",
-                "shots": SHOTS,
+                "shots": 0,
                 "deviceId": "default",
             },
             "additionalMetadata": {
@@ -62,12 +80,21 @@ RESULT = GateModelQuantumTaskResult.from_string(
 )
 TASK = Mock()
 TASK.result.return_value = RESULT
-BELL_STATE = Circuit().h(0).cnot(0, 1)
+CIRCUIT = (
+    Circuit()
+    .h(0)
+    .cnot(0, 1)
+    .i(2)
+    .i(3)
+    .probability(target=[0])
+    .expectation(observable=Observable.X(), target=1)
+    .variance(observable=Observable.Y(), target=2)
+    .sample(observable=Observable.Z(), target=3)
+)
 
 DEVICE_ARN = "baz"
 
 testdata = [
-    (qml.Identity, gates.I, [0], []),
     (qml.Hadamard, gates.H, [0], []),
     (qml.PauliX, gates.X, [0], []),
     (qml.PauliY, gates.Y, [0], []),
@@ -108,7 +135,7 @@ testdata_inverses = [
 def test_reset():
     """Tests that the members of the device are cleared on reset."""
     dev = _device(wires=2)
-    dev._circuit = BELL_STATE
+    dev._circuit = CIRCUIT
     dev._task = TASK
 
     dev.reset()
@@ -124,6 +151,7 @@ def test_apply(pl_op, braket_gate, qubits, params):
     assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("pl_op, braket_gate", testdata_inverses)
 def test_apply_inverse_gates(pl_op, braket_gate):
     """
@@ -133,16 +161,6 @@ def test_apply_inverse_gates(pl_op, braket_gate):
     dev = _device(wires=1)
     dev.apply([pl_op(wires=0).inv()])
     assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
-
-
-def test_apply_with_rotations():
-    """Tests that the device's circuit member is set properly after apply is called."""
-    dev = _device(wires=2)
-    operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), qml.RX(np.pi / 2, wires=1)]
-    rotations = [qml.RY(np.pi, wires=0)]
-    dev.apply(operations, rotations)
-
-    assert dev.circuit == Circuit().h(0).cnot(0, 1).rx(1, np.pi / 2).ry(0, np.pi)
 
 
 def test_apply_unused_qubits():
@@ -167,17 +185,46 @@ def test_apply_unsupported():
 
 
 @patch.object(AwsQuantumTask, "create")
-def test_generate_samples(mock_create):
+def test_execute(mock_create):
     mock_create.return_value = TASK
-    dev = _device(wires=2)
-    dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
+    dev = _device(wires=4)
 
-    assert (dev.generate_samples() == RESULT.measurements).all()
+    circuit = qml.CircuitGraph(
+        [
+            qml.Hadamard(wires=0),
+            qml.CNOT(wires=[0, 1]),
+            qml.probs(wires=[0]),
+            qml.expval(qml.PauliX(1)),
+            qml.var(qml.PauliY(2)),
+            qml.sample(qml.PauliZ(3)),
+        ],
+        {},
+        wires=Wires([0, 1, 2, 3]),
+    )
+    results = dev.execute(circuit)
+    assert np.allclose(
+        results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+    )
+    assert np.allclose(
+        results[1],
+        RESULT.get_value_by_result_type(
+            result_types.Expectation(observable=Observable.X(), target=1)
+        ),
+    )
+    assert np.allclose(
+        results[2],
+        RESULT.get_value_by_result_type(result_types.Variance(observable=Observable.Y(), target=2)),
+    )
+    assert np.allclose(
+        results[3],
+        RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
+    )
+
     assert dev.task == TASK
     mock_create.assert_called_with(
         mock.ANY,
         DEVICE_ARN,
-        BELL_STATE,
+        CIRCUIT,
         ("foo", "bar"),
         SHOTS,
         poll_timeout_seconds=AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -185,12 +232,65 @@ def test_generate_samples(mock_create):
     )
 
 
-def test_probability():
-    """Tests that the right probabilities are passed into marginal_prob."""
-    dev = _device(wires=2)
-    dev._task = TASK
-    probs = np.array([0.25, 0, 0, 0.75])
-    assert (dev.probability() == dev.marginal_prob(probs)).all()
+@patch.object(AwsQuantumTask, "create")
+def test_execute_all_samples(mock_create):
+    result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": [[0, 0, 1], [1, 0, 1], [1, 1, 0], [0, 0, 0]],
+                "resultTypes": [
+                    {
+                        "type": {"observable": ["h", "i"], "targets": [0, 1], "type": "sample"},
+                        "value": [1, -1, 1, 1],
+                    },
+                    {
+                        "type": {
+                            "observable": [[[[0.0, 0.0], [1.0, 0.0]], [[1.0, 0.0], [0.0, 0.0]]]],
+                            "targets": [2],
+                            "type": "sample",
+                        },
+                        "value": [1, -1, 1, 1],
+                    },
+                ],
+                "measuredQubits": [0, 1, 3],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 0,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
+                        "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+                    },
+                },
+            }
+        )
+    )
+    task = Mock()
+    task.result.return_value = result
+    mock_create.return_value = task
+    dev = _device(wires=3)
+
+    circuit = qml.CircuitGraph(
+        [
+            qml.Hadamard(wires=0),
+            qml.CNOT(wires=[0, 1]),
+            qml.sample(qml.Hadamard(0) @ qml.Identity(1)),
+            qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2])),
+        ],
+        {},
+        wires=Wires([0, 1, 2]),
+    )
+    assert dev.execute(circuit).shape == (2, 4)
 
 
 @pytest.mark.xfail(raises=ValueError)
@@ -199,24 +299,62 @@ def test_non_jaqcd_device():
     _bad_device(wires=2)
 
 
+def test_simulator_default_shots():
+    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    dev = _device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=None)
+    assert dev.shots == 1
+    assert dev.analytic
+
+
+def test_qpu_default_shots():
+    """Tests that QPU devices have the right default value for ``shots``"""
+    dev = _device(wires=2, shots=None)
+    assert dev.shots == AwsDevice.DEFAULT_SHOTS_QPU
+    assert not dev.analytic
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_qpu_0_shots():
+    """Tests that QPUs can not be instantiated with 0 shots"""
+    _device(wires=2, shots=0)
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_invalid_device_type():
+    """Tests that BraketDevice cannot be instantiated with an unknown device type"""
+    _device(wires=2, device_type="foo", shots=None)
+
+
+@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties")
 @patch.object(AwsDevice, "refresh_metadata", return_value=None)
-def _device(refresh_metadata_mock, properties_mock, wires, **kwargs):
+def _device(
+    refresh_metadata_mock,
+    properties_mock,
+    type_mock,
+    wires,
+    device_type=AwsDeviceType.QPU,
+    shots=SHOTS,
+    **kwargs
+):
     properties_mock.action = {DeviceActionType.JAQCD: "foo"}
+    type_mock.return_value = device_type
     return BraketDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn="baz",
         aws_session=Mock(),
-        shots=SHOTS,
+        shots=shots,
         **kwargs
     )
 
 
+@patch.object(AwsDevice, "type")
 @patch.object(AwsDevice, "properties")
 @patch.object(AwsDevice, "refresh_metadata", return_value=None)
-def _bad_device(refresh_metadata_mock, properties_mock, wires, **kwargs):
+def _bad_device(refresh_metadata_mock, properties_mock, type_mock, wires, **kwargs):
     properties_mock.action = {DeviceActionType.ANNEALING: "foo"}
+    properties_mock.type = AwsDeviceType.QPU
     return BraketDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
