@@ -21,7 +21,6 @@ from braket.circuits import Gate, ResultType, gates, observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
 
 _OPERATION_MAP = {
-    "Identity": gates.I,
     "Hadamard": gates.H,
     "PauliX": gates.X,
     "PauliY": gates.Y,

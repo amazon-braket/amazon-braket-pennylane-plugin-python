@@ -95,7 +95,6 @@ CIRCUIT = (
 DEVICE_ARN = "baz"
 
 testdata = [
-    (qml.Identity, gates.I, [0], []),
     (qml.Hadamard, gates.H, [0], []),
     (qml.PauliX, gates.X, [0], []),
     (qml.PauliY, gates.Y, [0], []),

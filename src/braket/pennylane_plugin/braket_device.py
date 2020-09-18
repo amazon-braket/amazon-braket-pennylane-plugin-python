@@ -64,8 +64,12 @@ class BraketDevice(QubitDevice):
         poll_timeout_seconds (int): Total time in seconds to wait for
             results before timing out.
         shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables.
-            Defaults to 1000 for QPUs and 1 (which is ignored) for simulators.
+            to estimate expectation values of observables. If this is set to 0
+            and the device ARN points to a simulator, then the device will run
+            in analytic mode (calculations will be exact), and the device's
+            ``shots`` property will be set to 1 and ignored; trying use 0 shots
+            with QPUs will fail.
+            Defaults to 1000 for QPUs and 1 with analytic mode for simulators.
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -209,5 +213,4 @@ class BraketDevice(QubitDevice):
 
     @staticmethod
     def _get_statistic(task, observable):
-        print(task.result().result_types)
         return task.result().get_value_by_result_type(translate_result_type(observable))
