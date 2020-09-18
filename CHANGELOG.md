@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0 (2020-09-18)
+
+### Features
+
+ * Enable shots=0
+
 ## v0.2.0 (2020-09-15)
 
 ### Features
