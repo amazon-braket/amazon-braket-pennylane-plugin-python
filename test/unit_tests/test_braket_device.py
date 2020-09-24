@@ -31,7 +31,8 @@ from braket.pennylane_plugin import (
     XY,
     YY,
     ZZ,
-    BraketDevice,
+    BraketAwsDevice,
+    BraketLocalDevice,
     CPhaseShift,
     CPhaseShift00,
     CPhaseShift01,
@@ -187,7 +188,7 @@ def test_apply_unsupported():
 @patch.object(AwsQuantumTask, "create")
 def test_execute(mock_create):
     mock_create.return_value = TASK
-    dev = _device(wires=4)
+    dev = _device(wires=4, foo="bar")
 
     circuit = qml.CircuitGraph(
         [
@@ -229,6 +230,7 @@ def test_execute(mock_create):
         SHOTS,
         poll_timeout_seconds=AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
     )
 
 
@@ -306,6 +308,27 @@ def test_simulator_default_shots():
     assert dev.analytic
 
 
+def test_simulator_0_shots():
+    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    dev = _device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    assert dev.shots == 1
+    assert dev.analytic
+
+
+def test_local_default_shots():
+    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    dev = BraketLocalDevice(wires=2)
+    assert dev.shots == 1
+    assert dev.analytic
+
+
+def test_local_0_shots():
+    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    dev = BraketLocalDevice(wires=2, shots=0)
+    assert dev.shots == 1
+    assert dev.analytic
+
+
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
     dev = _device(wires=2, shots=None)
@@ -339,7 +362,7 @@ def _device(
 ):
     properties_mock.action = {DeviceActionType.JAQCD: "foo"}
     type_mock.return_value = device_type
-    return BraketDevice(
+    return BraketAwsDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn="baz",
@@ -355,7 +378,7 @@ def _device(
 def _bad_device(refresh_metadata_mock, properties_mock, type_mock, wires, **kwargs):
     properties_mock.action = {DeviceActionType.ANNEALING: "foo"}
     properties_mock.type = AwsDeviceType.QPU
-    return BraketDevice(
+    return BraketAwsDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn=DEVICE_ARN,

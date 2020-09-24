@@ -34,7 +34,8 @@ setup(
             # it corresponds to in the plugin. This allows
             # the device to be imported automatically via the
             # `pennylane.device` device loader.
-            "braket.device = braket.pennylane_plugin:BraketDevice"
+            "braket.aws = braket.pennylane_plugin:BraketAwsDevice",
+            "braket.local = braket.pennylane_plugin:BraketLocalDevice",
         ]
     },
     extras_require={
