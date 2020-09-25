@@ -3,7 +3,7 @@
 Plugin usage
 ############
 
-This plugin provides two Braket device to use with PennyLane:
+This plugin provides two Braket devices to use with PennyLane:
 
 * :class:`braket.pennylane_plugin.BraketAwsDevice <~BraketAwsDevice>`: provides a PennyLane device for running circuits on the Amazon Braket service
 * :class:`braket.pennylane_plugin.BraketLocalDevice <~BraketLocalDevice>`: provides a PennyLane device for running circuits on the Braket SDK's local simulator

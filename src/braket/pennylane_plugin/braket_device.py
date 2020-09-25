@@ -57,7 +57,7 @@ class BraketDevice(QubitDevice):
 
     Args:
         wires (int): the number of modes to initialize the device in.
-        device (Device): The Amazon Braket device to use with PennyLane
+        device (Device): The Amazon Braket device to use with PennyLane.
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. If this is set to 0,
             then the device will run in analytic mode (calculations will be exact),
@@ -258,7 +258,7 @@ class BraketLocalDevice(BraketDevice):
         wires (int): the number of modes to initialize the device in.
         backend (Union[str, BraketSimulator]): The name of the simulator backend or
             the actual simulator instance to use for simulation. Defaults to the
-            `default` simulator backend name.
+            ``default`` simulator backend name.
         shots (int): Number of circuit evaluations/random samples used
             to estimate expectation values of observables. If this is set to 0,
             then the device will run in analytic mode (calculations will be exact),
