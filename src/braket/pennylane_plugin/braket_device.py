@@ -25,8 +25,8 @@ Classes
 -------
 
 .. autosummary::
-   BraketAwsDevice
-   BraketLocalDevice
+   BraketAwsQubitDevice
+   BraketLocalQubitDevice
 
 Code details
 ~~~~~~~~~~~~
@@ -53,7 +53,7 @@ from braket.tasks import QuantumTask
 from ._version import __version__
 
 
-class BraketDevice(QubitDevice):
+class BraketQubitDevice(QubitDevice):
     r"""Abstract Amazon Braket device for PennyLane.
 
     Args:
@@ -156,13 +156,13 @@ class BraketDevice(QubitDevice):
         self._circuit = circuit
 
     def expval(self, observable):
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def var(self, observable):
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def sample(self, observable):
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def probability(self, wires=None):
         return self._probability(wires)
@@ -173,7 +173,7 @@ class BraketDevice(QubitDevice):
     def _probability(self, wires):
         observable = Identity(wires=wires or self.wires, do_queue=False)
         observable.return_type = Probability
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def _run_task(self):
         raise NotImplementedError("Need to implement task runner")
@@ -183,7 +183,7 @@ class BraketDevice(QubitDevice):
         return task.result().get_value_by_result_type(translate_result_type(observable))
 
 
-class BraketAwsDevice(BraketDevice):
+class BraketAwsQubitDevice(BraketQubitDevice):
     r"""Amazon Braket AwsDevice for PennyLane.
 
     Args:
@@ -209,7 +209,7 @@ class BraketAwsDevice(BraketDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
-    short_name = "braket.aws"
+    short_name = "braket.awsqubit"
 
     def __init__(
         self,
@@ -252,7 +252,7 @@ class BraketAwsDevice(BraketDevice):
         )
 
 
-class BraketLocalDevice(BraketDevice):
+class BraketLocalQubitDevice(BraketQubitDevice):
     r"""Amazon Braket LocalSimulator for PennyLane.
 
     Args:
@@ -268,7 +268,7 @@ class BraketLocalDevice(BraketDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket LocalSimulator for PennyLane"
-    short_name = "braket.local"
+    short_name = "braket.localqubit"
 
     def __init__(
         self,

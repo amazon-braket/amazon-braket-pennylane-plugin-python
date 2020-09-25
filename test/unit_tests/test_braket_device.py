@@ -31,8 +31,8 @@ from braket.pennylane_plugin import (
     XY,
     YY,
     ZZ,
-    BraketAwsDevice,
-    BraketLocalDevice,
+    BraketAwsQubitDevice,
+    BraketLocalQubitDevice,
     CPhaseShift,
     CPhaseShift00,
     CPhaseShift01,
@@ -317,14 +317,14 @@ def test_simulator_0_shots():
 
 def test_local_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = BraketLocalDevice(wires=2)
+    dev = BraketLocalQubitDevice(wires=2)
     assert dev.shots == 1
     assert dev.analytic
 
 
 def test_local_0_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = BraketLocalDevice(wires=2, shots=0)
+    dev = BraketLocalQubitDevice(wires=2, shots=0)
     assert dev.shots == 1
     assert dev.analytic
 
@@ -362,7 +362,7 @@ def _device(
 ):
     properties_mock.action = {DeviceActionType.JAQCD: "foo"}
     type_mock.return_value = device_type
-    return BraketAwsDevice(
+    return BraketAwsQubitDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn="baz",
@@ -378,7 +378,7 @@ def _device(
 def _bad_device(refresh_metadata_mock, properties_mock, type_mock, wires, **kwargs):
     properties_mock.action = {DeviceActionType.ANNEALING: "foo"}
     properties_mock.type = AwsDeviceType.QPU
-    return BraketAwsDevice(
+    return BraketAwsQubitDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn=DEVICE_ARN,

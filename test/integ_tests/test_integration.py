@@ -12,8 +12,6 @@
 # language governing permissions and limitations under the License.
 
 """Tests that plugin devices are accessible and integrate with PennyLane"""
-import inspect
-
 import numpy as np
 import pennylane as qml
 import pkg_resources
@@ -27,9 +25,9 @@ class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
     @pytest.mark.parametrize("d", shortnames)
-    def test_load_device(self, d, s3, device_arn):
+    def test_load_device(self, d, extra_kwargs):
         """Test that the device loads correctly"""
-        dev = TestDeviceIntegration._device(d, 2, device_arn, s3)
+        dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
         assert dev.num_wires == 2
         assert dev.shots == 1
         assert dev.short_name == d
@@ -37,18 +35,18 @@ class TestDeviceIntegration:
     def test_args_aws(self):
         """Test that BraketAwsDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 3 required positional arguments"):
-            qml.device("braket.aws")
+            qml.device("braket.awsqubit")
 
     def test_args_local(self):
         """Test that BraketLocalDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
-            qml.device("braket.local")
+            qml.device("braket.localqubit")
 
     @pytest.mark.parametrize("d", shortnames)
     @pytest.mark.parametrize("shots", [0, 8192])
-    def test_one_qubit_circuit(self, shots, d, tol, s3, device_arn):
+    def test_one_qubit_circuit(self, shots, d, tol, extra_kwargs):
         """Test that devices provide correct result for a simple circuit"""
-        dev = TestDeviceIntegration._device(d, 1, device_arn, s3)
+        dev = TestDeviceIntegration._device(d, 1, extra_kwargs)
 
         a = 0.543
         b = 0.123
@@ -65,13 +63,6 @@ class TestDeviceIntegration:
         assert np.allclose(circuit(a, b, c), np.cos(a) * np.sin(b), **tol)
 
     @staticmethod
-    def _device(name, wires, device_arn, s3):
-        device_class = ENTRY_POINTS[name].load()
-        signature = inspect.signature(device_class).parameters
-        extra_kwargs = {}
-        if "device_arn" in signature:
-            extra_kwargs["device_arn"] = device_arn
-        if "s3_destination_folder" in signature:
-            extra_kwargs["s3_destination_folder"] = s3
-
-        return qml.device(name, wires=wires, **extra_kwargs)
+    def _device(device_name, wires, extra_kwargs):
+        device_class = ENTRY_POINTS[device_name].load()
+        return qml.device(device_name, wires=wires, **extra_kwargs(device_class))
