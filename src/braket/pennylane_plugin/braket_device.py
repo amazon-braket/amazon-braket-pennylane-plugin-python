@@ -19,13 +19,14 @@ Devices
 
 .. currentmodule:: braket.pennylane_braket.braket_device
 
-Braket device to be used with PennyLane
+Braket devices to be used with PennyLane
 
 Classes
 -------
 
 .. autosummary::
-   BraketDevice
+   BraketAwsDevice
+   BraketLocalDevice
 
 Code details
 ~~~~~~~~~~~~
