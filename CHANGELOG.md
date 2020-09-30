@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0 (2020-09-30)
+
+### Features
+
+ * Add LocalSimulator support
+
 ## v0.3.0 (2020-09-18)
 
 ### Features
