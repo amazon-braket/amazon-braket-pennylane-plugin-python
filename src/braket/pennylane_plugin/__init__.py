@@ -12,9 +12,12 @@
 # language governing permissions and limitations under the License.
 
 """
-AWS PennyLane-braket plugin
+Amazon Braket PennyLane plugin
 """
-from braket.pennylane_plugin.braket_device import BraketDevice  # noqa: F401
+from braket.pennylane_plugin.braket_device import (  # noqa: F401
+    BraketAwsQubitDevice,
+    BraketLocalQubitDevice,
+)
 from braket.pennylane_plugin.ops import (  # noqa: F401
     CY,
     ISWAP,

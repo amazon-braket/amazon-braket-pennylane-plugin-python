@@ -11,6 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import inspect
 import os
 
 import boto3
@@ -18,7 +19,7 @@ import numpy as np
 import pytest
 from botocore.exceptions import ClientError
 
-from braket.pennylane_plugin import BraketDevice
+from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 
 DEVICE_ARN = "arn:aws:braket:::device/quantum-simulator/amazon/sv1"
 
@@ -41,7 +42,7 @@ A = np.array([[1.02789352, 1.61296440 - 0.3498192j], [1.61296440 + 0.3498192j, 1
 # PennyLane devices
 
 # List of all devices.
-devices = [BraketDevice]
+devices = [BraketAwsQubitDevice, BraketLocalQubitDevice]
 
 # List of all device shortnames
 shortnames = [d.short_name for d in devices]
@@ -113,22 +114,28 @@ def init_state(scope="session"):
     return _init_state
 
 
-@pytest.fixture
-def device_arn():
-    return DEVICE_ARN
-
-
 @pytest.fixture(params=devices)
-def device(request, shots, s3):
+def device(request, shots, extra_kwargs):
     """Fixture to initialize and return a PennyLane device"""
     device = request.param
 
     def _device(n):
-        return device(
-            wires=n,
-            device_arn=DEVICE_ARN,
-            shots=shots,
-            s3_destination_folder=s3,
-        )
+        return device(wires=n, shots=shots, **extra_kwargs(device))
 
     return _device
+
+
+@pytest.fixture
+def extra_kwargs(s3):
+    """Fixture to determine extra kwargs for devices"""
+
+    def _extra_kwargs(device_class):
+        signature = inspect.signature(device_class).parameters
+        kwargs = {}
+        if "device_arn" in signature:
+            kwargs["device_arn"] = DEVICE_ARN
+        if "s3_destination_folder" in signature:
+            kwargs["s3_destination_folder"] = s3
+        return kwargs
+
+    return _extra_kwargs

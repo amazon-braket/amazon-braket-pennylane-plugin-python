@@ -4,7 +4,10 @@
 
 [![Code Style: Black](https://img.shields.io/badge/code_style-black-000000.svg)](https://github.com/psf/black)
 
-The Amazon Braket PennyLane plugin allows Amazon Braket quantum devices, both QPUs and siumulators, to work with PennyLane.
+The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
+
+* `braket.aws.qubit` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
+* `braket.local.qubit` for running with the Amazon Braket SDK's local simulator
 
 The [Amazon Braket Python SDK](https://github.com/aws/amazon-braket-sdk-python) is an open source
 library that provides a framework that you can use to interact with quantum computing hardware
@@ -23,9 +26,9 @@ If you **Star**, **Watch**, or submit a pull request for this repository, other 
 
 ## Features
 
-* Provides the `braket.device` PennyLane device.
+* Provides two devices to be used with PennyLane: `braket.aws.qubit` for running on the Braket service, and `braket.local.qubit` for running on Braket's local simulator.
 
-* `braket.device` supports most core qubit PennyLane operations.
+* Both devices support most core qubit PennyLane operations.
 
 * All PennyLane observables are supported.
 
@@ -54,7 +57,7 @@ You can also download the repo as a .zip file by using the **Clone or download**
 After you add the repo to your local environment, install the plugin with the following `pip` command:
 
 ```bash
-pip install -e amazon-braket-pennylane-plugin-python
+pip install -e amazon-braket-pennylane-plugin
 ```
 
 
@@ -78,15 +81,26 @@ To view the generated documentation, open the following file in a browser: `PLUG
 
 ## Getting started
 
-Once you have installed the plugin, you can instantiate the Braket device for PennyLane as in the following example:
+Once the Braket SDK and the plugin are installed, the devices can be accessed straight away in PennyLane.
+
+To instantiate an AWS device that communicates with the Braket service:
 
 ```python
 import pennylane as qml
 s3 = ("my-bucket", "my-prefix")
-sv1 = qml.device("braket.device", device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1", s3_destination_folder=s3, wires=2)
+sv1 = qml.device("braket.aws.qubit", device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1", s3_destination_folder=s3, wires=2)
 ```
 
 In this example, the string `arn:aws:braket:::device/quantum-simulator/amazon/sv1` is the ARN used to identify the SV1 device. Other supported devices and their ARNs can be found in the [Amazon Braket Developer Guide](https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html). Note that the plugin only works with digital (qubit) circuit-based devices.
+
+To instantiate the Braket simulator that runs locally:
+
+```python
+import pennylane as qml
+local = qml.device("braket.local.qubit", wires=2)
+```
+
+For both devices, you can set the `shots` argument to 0 (simulators only for `braket.aws.qubit`) to get exact analytic results instead of samples.
 
 You can then use the device just like you would other devices for the definition and evaluation of QNodes within PennyLane. For more details, refer to the PennyLane documentation.
 

@@ -14,31 +14,39 @@
 """Tests that plugin devices are accessible and integrate with PennyLane"""
 import numpy as np
 import pennylane as qml
+import pkg_resources
 import pytest
 from conftest import shortnames
+
+ENTRY_POINTS = {entry.name: entry for entry in pkg_resources.iter_entry_points("pennylane.plugins")}
 
 
 class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
     @pytest.mark.parametrize("d", shortnames)
-    def test_load_device(self, d, s3, device_arn):
+    def test_load_device(self, d, extra_kwargs):
         """Test that the device loads correctly"""
-        dev = qml.device(d, wires=2, device_arn=device_arn, shots=1024, s3_destination_folder=s3)
+        dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
         assert dev.num_wires == 2
-        assert dev.shots == 1024
+        assert dev.shots == 1
         assert dev.short_name == d
 
-    def test_args(self):
-        """Test that the device requires correct arguments"""
+    def test_args_aws(self):
+        """Test that BraketAwsDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 3 required positional arguments"):
-            qml.device("braket.device")
+            qml.device("braket.aws.qubit")
+
+    def test_args_local(self):
+        """Test that BraketLocalDevice requires correct arguments"""
+        with pytest.raises(TypeError, match="missing 1 required positional argument"):
+            qml.device("braket.local.qubit")
 
     @pytest.mark.parametrize("d", shortnames)
     @pytest.mark.parametrize("shots", [0, 8192])
-    def test_one_qubit_circuit(self, shots, d, tol, s3, device_arn):
+    def test_one_qubit_circuit(self, shots, d, tol, extra_kwargs):
         """Test that devices provide correct result for a simple circuit"""
-        dev = qml.device(d, wires=1, device_arn=device_arn, shots=shots, s3_destination_folder=s3)
+        dev = TestDeviceIntegration._device(d, 1, extra_kwargs)
 
         a = 0.543
         b = 0.123
@@ -53,3 +61,8 @@ class TestDeviceIntegration:
             return qml.expval(qml.PauliZ(0))
 
         assert np.allclose(circuit(a, b, c), np.cos(a) * np.sin(b), **tol)
+
+    @staticmethod
+    def _device(device_name, wires, extra_kwargs):
+        device_class = ENTRY_POINTS[device_name].load()
+        return qml.device(device_name, wires=wires, **extra_kwargs(device_class))

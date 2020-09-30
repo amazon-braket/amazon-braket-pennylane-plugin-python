@@ -19,19 +19,20 @@ Devices
 
 .. currentmodule:: braket.pennylane_braket.braket_device
 
-Braket device to be used with PennyLane
+Braket devices to be used with PennyLane
 
 Classes
 -------
 
 .. autosummary::
-   BraketDevice
+   BraketAwsQubitDevice
+   BraketLocalQubitDevice
 
 Code details
 ~~~~~~~~~~~~
 """
 # pylint: disable=invalid-name
-from typing import FrozenSet, Optional
+from typing import FrozenSet, Optional, Union
 
 import numpy as np
 from pennylane import CircuitGraph, Identity, QubitDevice
@@ -40,42 +41,31 @@ from pennylane.operation import Probability, Sample
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
+from braket.devices import Device, LocalSimulator
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
     translate_result_type,
 )
+from braket.simulator import BraketSimulator
 from braket.tasks import QuantumTask
 
 from ._version import __version__
 
 
-class BraketDevice(QubitDevice):
-    r"""AWS Braket device for PennyLane.
+class BraketQubitDevice(QubitDevice):
+    r"""Abstract Amazon Braket qubit device for PennyLane.
 
     Args:
         wires (int): the number of modes to initialize the device in.
-        device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
-            run circuits; The corresponding AwsDevice must support quantum
-            circuits via JAQCD. You can get device ARNs using ``AwsDevice.get_devices``,
-            from the Amazon Braket console or from the Amazon Braket Developer Guide.
-        s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
-            and folder as a tuple.
-        poll_timeout_seconds (int): Total time in seconds to wait for
-            results before timing out.
+        device (Device): The Amazon Braket device to use with PennyLane.
         shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. If this is set to 0
-            and the device ARN points to a simulator, then the device will run
-            in analytic mode (calculations will be exact), and the device's
-            ``shots`` property will be set to 1 and ignored; trying to use 0 shots
-            with QPUs will fail.
-            Defaults to 1000 for QPUs and 1 with analytic mode for simulators.
-        aws_session (Optional[AwsSession]): An AwsSession object to managed
-            interactions with AWS services, to be supplied if extra control
-            is desired. Default: None
+            to estimate expectation values of observables. If this is set to 0,
+            then the device will run in analytic mode (calculations will be exact),
+            and the device's ``shots`` property will be set to 1 and ignored.
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
-    short_name = "braket.device"
     pennylane_requires = ">=0.11.0"
     version = __version__
     author = "Amazon Web Services"
@@ -83,38 +73,17 @@ class BraketDevice(QubitDevice):
     def __init__(
         self,
         wires: int,
-        device_arn: str,
-        s3_destination_folder: AwsSession.S3DestinationFolder,
+        device: Device,
         *,
-        shots: Optional[int] = None,
-        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
-        aws_session: Optional[AwsSession] = None,
-        **kwargs,
+        shots: int,
+        **run_kwargs,
     ):
-        device = AwsDevice(device_arn, aws_session=aws_session)
-        if DeviceActionType.JAQCD not in device.properties.action:
-            raise ValueError(f"Device {device.name} does not support quantum circuits")
-
-        device_type = device.type
-        if shots is not None:
-            if shots == 0 and device_type == AwsDeviceType.QPU:
-                raise ValueError("QPU devices do not support 0 shots")
-            num_shots = shots
-        elif device_type == AwsDeviceType.SIMULATOR:
-            num_shots = AwsDevice.DEFAULT_SHOTS_SIMULATOR
-        elif device_type == AwsDeviceType.QPU:
-            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
-        else:
-            raise ValueError(f"Invalid device type: {device_type}")
-
         # `shots` cannot be set to 0, but is ignored anyways
-        super().__init__(wires, num_shots or 1, analytic=num_shots == 0)
-        self._aws_device = device
-        self._s3_folder = s3_destination_folder
-        self._poll_timeout_seconds = poll_timeout_seconds
-
+        super().__init__(wires, shots or 1, analytic=shots == 0)
+        self._device = device
         self._circuit = None
         self._task = None
+        self._run_kwargs = run_kwargs
 
     def reset(self):
         super().reset()
@@ -136,25 +105,20 @@ class BraketDevice(QubitDevice):
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
-    def execute(self, circuit: CircuitGraph, **kwargs):
+    def execute(self, circuit: CircuitGraph, **run_kwargs):
         self.check_validity(circuit.operations, circuit.observables)
 
         # Apply all circuit operations
         self.apply(
             circuit.operations,
             rotations=None,  # Diagonalizing gates are applied in Braket SDK
-            **kwargs,
+            **run_kwargs,
         )
 
         for observable in circuit.observables:
             self._circuit.add_result_type(translate_result_type(observable))
 
-        self._task = self._aws_device.run(
-            self._circuit,
-            s3_destination_folder=self._s3_folder,
-            shots=0 if self.analytic else self.shots,
-            poll_timeout_seconds=self._poll_timeout_seconds,
-        )
+        self._task = self._run_task()
 
         # Compute the required statistics
         results = self.statistics(circuit.observables)
@@ -167,7 +131,7 @@ class BraketDevice(QubitDevice):
 
         return np.asarray(results)
 
-    def apply(self, operations, rotations=None, **kwargs):
+    def apply(self, operations, rotations=None, **run_kwargs):
         """Instantiate Braket Circuit object."""
         rotations = rotations or []
         circuit = Circuit()
@@ -192,13 +156,13 @@ class BraketDevice(QubitDevice):
         self._circuit = circuit
 
     def expval(self, observable):
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def var(self, observable):
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def sample(self, observable):
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
 
     def probability(self, wires=None):
         return self._probability(wires)
@@ -209,8 +173,115 @@ class BraketDevice(QubitDevice):
     def _probability(self, wires):
         observable = Identity(wires=wires or self.wires, do_queue=False)
         observable.return_type = Probability
-        return BraketDevice._get_statistic(self._task, observable)
+        return BraketQubitDevice._get_statistic(self._task, observable)
+
+    def _run_task(self):
+        raise NotImplementedError("Need to implement task runner")
 
     @staticmethod
     def _get_statistic(task, observable):
         return task.result().get_value_by_result_type(translate_result_type(observable))
+
+
+class BraketAwsQubitDevice(BraketQubitDevice):
+    r"""Amazon Braket AwsDevice qubit device for PennyLane.
+
+    Args:
+        wires (int): the number of modes to initialize the device in.
+        device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
+            run circuits; The corresponding AwsDevice must support quantum
+            circuits via JAQCD. You can get device ARNs using ``AwsDevice.get_devices``,
+            from the Amazon Braket console or from the Amazon Braket Developer Guide.
+        s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
+            and folder as a tuple.
+        poll_timeout_seconds (int): Total time in seconds to wait for
+            results before timing out.
+        shots (int): Number of circuit evaluations/random samples used
+            to estimate expectation values of observables. If this is set to 0
+            and the device ARN points to a simulator, then the device will run
+            in analytic mode (calculations will be exact), and the device's
+            ``shots`` property will be set to 1 and ignored; trying to use 0 shots
+            with QPUs will fail.
+            Defaults to 1000 for QPUs and 0 for simulators.
+        aws_session (Optional[AwsSession]): An AwsSession object to managed
+            interactions with AWS services, to be supplied if extra control
+            is desired. Default: None
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+    """
+    name = "Braket AwsDevice for PennyLane"
+    short_name = "braket.aws.qubit"
+
+    def __init__(
+        self,
+        wires: int,
+        device_arn: str,
+        s3_destination_folder: AwsSession.S3DestinationFolder,
+        *,
+        shots: Optional[int] = None,
+        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
+        aws_session: Optional[AwsSession] = None,
+        **run_kwargs,
+    ):
+        device = AwsDevice(device_arn, aws_session=aws_session)
+        if DeviceActionType.JAQCD not in device.properties.action:
+            raise ValueError(f"Device {device.name} does not support quantum circuits")
+
+        device_type = device.type
+        if shots is not None:
+            if shots == 0 and device_type == AwsDeviceType.QPU:
+                raise ValueError("QPU devices do not support 0 shots")
+            num_shots = shots
+        elif device_type == AwsDeviceType.SIMULATOR:
+            num_shots = AwsDevice.DEFAULT_SHOTS_SIMULATOR
+        elif device_type == AwsDeviceType.QPU:
+            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
+        else:
+            raise ValueError(f"Invalid device type: {device_type}")
+
+        super().__init__(wires, device, shots=num_shots, **run_kwargs)
+        self._s3_folder = s3_destination_folder
+        self._poll_timeout_seconds = poll_timeout_seconds
+
+    def _run_task(self):
+        return self._device.run(
+            self._circuit,
+            s3_destination_folder=self._s3_folder,
+            shots=0 if self.analytic else self.shots,
+            poll_timeout_seconds=self._poll_timeout_seconds,
+            **self._run_kwargs,
+        )
+
+
+class BraketLocalQubitDevice(BraketQubitDevice):
+    r"""Amazon Braket LocalSimulator qubit device for PennyLane.
+
+    Args:
+        wires (int): the number of modes to initialize the device in.
+        backend (Union[str, BraketSimulator]): The name of the simulator backend or
+            the actual simulator instance to use for simulation. Defaults to the
+            ``default`` simulator backend name.
+        shots (int): Number of circuit evaluations/random samples used
+            to estimate expectation values of observables. If this is set to 0,
+            then the device will run in analytic mode (calculations will be exact),
+            and the device's ``shots`` property will be set to 1 and ignored.
+            Default: 0
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+    """
+    name = "Braket LocalSimulator for PennyLane"
+    short_name = "braket.local.qubit"
+
+    def __init__(
+        self,
+        wires: int,
+        backend: Union[str, BraketSimulator] = "default",
+        *,
+        shots: int = 0,
+        **run_kwargs,
+    ):
+        device = LocalSimulator(backend)
+        super().__init__(wires, device, shots=shots, **run_kwargs)
+
+    def _run_task(self):
+        return self._device.run(
+            self._circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
+        )
