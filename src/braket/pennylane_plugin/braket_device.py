@@ -54,7 +54,7 @@ from ._version import __version__
 
 
 class BraketQubitDevice(QubitDevice):
-    r"""Abstract Amazon Braket device for PennyLane.
+    r"""Abstract Amazon Braket qubit device for PennyLane.
 
     Args:
         wires (int): the number of modes to initialize the device in.
@@ -184,7 +184,7 @@ class BraketQubitDevice(QubitDevice):
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):
-    r"""Amazon Braket AwsDevice for PennyLane.
+    r"""Amazon Braket AwsDevice qubit device for PennyLane.
 
     Args:
         wires (int): the number of modes to initialize the device in.
@@ -209,7 +209,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
-    short_name = "braket.awsqubit"
+    short_name = "braket.aws.qubit"
 
     def __init__(
         self,
@@ -253,7 +253,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
 
 class BraketLocalQubitDevice(BraketQubitDevice):
-    r"""Amazon Braket LocalSimulator for PennyLane.
+    r"""Amazon Braket LocalSimulator qubit device for PennyLane.
 
     Args:
         wires (int): the number of modes to initialize the device in.
@@ -268,7 +268,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket LocalSimulator for PennyLane"
-    short_name = "braket.localqubit"
+    short_name = "braket.local.qubit"
 
     def __init__(
         self,
