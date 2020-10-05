@@ -55,23 +55,18 @@ session = boto3.session.Session(profile_name=os.environ["AWS_PROFILE"])
 account_id = session.client("sts").get_caller_identity()["Account"]
 bucket_name = f"amazon-braket-pennylane-plugin-integ-tests-{account_id}"
 s3_bucket = session.resource("s3").Bucket(bucket_name)
+s3_client = session.client("s3")
 
 # Create bucket if it doesn't exist
 try:
-    s3_bucket.create(
-        ACL="private", CreateBucketConfiguration={"LocationConstraint": session.region_name}
-    )
+    # Determine if bucket exists
+    s3_client.head_bucket(Bucket=bucket_name)
 except ClientError as e:
-    code = e.response["Error"]["Code"]
-
-    # Bucket exists in profile region
-    if code == "BucketAlreadyOwnedByYou":
-        pass
-    # Bucket exists in another region
-    elif code == "IllegalLocationConstraintException" and s3_bucket.creation_date:
-        pass
-    else:
-        raise e
+    error_code = e.response["Error"]["Code"]
+    if error_code == "404":
+        s3_bucket.create(
+            ACL="private", CreateBucketConfiguration={"LocationConstraint": session.region_name}
+        )
 
 
 # ==========================================================
