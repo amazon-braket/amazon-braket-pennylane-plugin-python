@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0.post0 (2020-10-06)
+
+### Testing and Release Infrastructure
+
+ * change s3 bucket exists check
+
 ## v0.4.0 (2020-09-30)
 
 ### Features
