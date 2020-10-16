@@ -148,8 +148,8 @@ def test_reset():
 def test_apply(pl_op, braket_gate, qubits, params):
     """Tests that the correct Braket gate is applied for each PennyLane operation."""
     dev = _device(wires=len(qubits))
-    dev.apply([pl_op(*params, wires=qubits)])
-    assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
+    circuit = dev.apply([pl_op(*params, wires=qubits)])
+    assert circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
 
 
 @pytest.mark.xfail
@@ -160,8 +160,8 @@ def test_apply_inverse_gates(pl_op, braket_gate):
     where the inverse is defined.
     """
     dev = _device(wires=1)
-    dev.apply([pl_op(wires=0).inv()])
-    assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
+    circuit = dev.apply([pl_op(wires=0).inv()])
+    assert circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
 
 
 def test_apply_unused_qubits():
@@ -169,9 +169,9 @@ def test_apply_unused_qubits():
     dev = _device(wires=4)
     operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi / 2, wires=2)]
     rotations = [qml.RY(np.pi, wires=1)]
-    dev.apply(operations, rotations)
+    circuit = dev.apply(operations, rotations)
 
-    assert dev.circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi / 2).ry(1, np.pi).i(0).i(3)
+    assert circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi / 2).ry(1, np.pi).i(0).i(3)
 
 
 @pytest.mark.xfail(raises=NotImplementedError)

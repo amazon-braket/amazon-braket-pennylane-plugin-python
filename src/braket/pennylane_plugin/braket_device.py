@@ -109,7 +109,7 @@ class BraketQubitDevice(QubitDevice):
         self.check_validity(circuit.operations, circuit.observables)
 
         # Apply all circuit operations
-        self.apply(
+        self._circuit = self.apply(
             circuit.operations,
             rotations=None,  # Diagonalizing gates are applied in Braket SDK
             **run_kwargs,
@@ -153,7 +153,7 @@ class BraketQubitDevice(QubitDevice):
         for qubit in sorted(unused):
             circuit.i(qubit)
 
-        self._circuit = circuit
+        return circuit
 
     def expval(self, observable):
         return BraketQubitDevice._get_statistic(self._task, observable)
