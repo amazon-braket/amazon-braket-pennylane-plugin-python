@@ -235,6 +235,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
+        parallel (bool): Indicates whether to use parallel execution for gradient calculations
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
@@ -249,6 +250,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         shots: Optional[int] = None,
         poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
         aws_session: Optional[AwsSession] = None,
+        parallel: bool = False,
         **run_kwargs,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
@@ -270,21 +272,22 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=num_shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
+        self._parallel = parallel
 
     def batch_execute(self, circuits, **run_kwargs):
-        try:
-            import dask
-            parallel = True
-        except ImportError:
-            parallel = False
-            warnings.warn(
-                "Dask must be installed for parallel evaluation. "
-                "\nDask can be installed using pip:"
-                "\n\npip install dask[delayed]]\n\n"
-                "Falling back to non-parallel evaluation"
-            )
+        if self._parallel:
+            try:
+                import dask
+            except ImportError:
+                self._parallel = False
+                warnings.warn(
+                    "Dask must be installed for parallel evaluation. "
+                    "\nDask can be installed using pip:"
+                    "\n\npip install dask[delayed]]\n\n"
+                    "Falling back to non-parallel evaluation"
+                )
 
-        if parallel:
+        if self._parallel:
             runs = [dask.delayed(self.execute)(circuit, **run_kwargs) for circuit in circuits]
             return dask.compute(*runs)
         else:
