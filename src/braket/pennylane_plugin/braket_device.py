@@ -35,6 +35,7 @@ Code details
 from typing import FrozenSet, Optional, Union
 
 import numpy as np
+import warnings
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
@@ -269,6 +270,25 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=num_shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
+
+    def batch_execute(self, circuits, **run_kwargs):
+        try:
+            import dask
+            parallel = True
+        except ImportError:
+            parallel = False
+            warnings.warn(
+                "Dask must be installed for parallel evaluation. "
+                "\nDask can be installed using pip:"
+                "\n\npip install dask[delayed]]\n\n"
+                "Falling back to non-parallel evaluation"
+            )
+
+        if parallel:
+            runs = [dask.delayed(self.execute)(circuit, **run_kwargs) for circuit in circuits]
+            return dask.compute(*runs)
+        else:
+            return super().batch_execute(circuits)
 
     def _run_task(self, circuit):
         return self._device.run(
