@@ -42,7 +42,8 @@ from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import QuantumTask
 from pennylane import CircuitGraph, Identity, QubitDevice
-from pennylane.operation import Probability, Sample
+from pennylane.operation import Probability, Sample, Variance, Expectation
+from pennylane.qnodes import QuantumFunctionError
 
 from braket.pennylane_plugin.translation import (
     supported_operations,
@@ -51,6 +52,8 @@ from braket.pennylane_plugin.translation import (
 )
 
 from ._version import __version__
+
+RETURN_TYPES = [Expectation, Variance, Sample, Probability]
 
 
 class BraketQubitDevice(QubitDevice):
@@ -116,13 +119,24 @@ class BraketQubitDevice(QubitDevice):
             braket_circuit.add_result_type(translate_result_type(observable))
         return braket_circuit
 
+    def statistics(self, task, observables):
+        results = []
+        for obs in observables:
+            if obs.return_type not in RETURN_TYPES:
+                raise QuantumFunctionError(
+                    "Unsupported return type specified for observable {}".format(obs.name)
+                )
+            results.append(self._get_statistic(task, obs))
+
+        return results
+
     def execute(self, circuit: CircuitGraph, **run_kwargs):
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
 
         # Compute the required statistics
-        results = self.statistics(circuit.observables)
+        results = self.statistics(self._task, circuit.observables)
 
         # Ensures that a combination with sample does not put
         # single-number results in superfluous arrays
