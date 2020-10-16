@@ -105,20 +105,21 @@ class BraketQubitDevice(QubitDevice):
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
-    def execute(self, circuit: CircuitGraph, **run_kwargs):
-        self.check_validity(circuit.operations, circuit.observables)
-
-        # Apply all circuit operations
-        self._circuit = self.apply(
+    def _pl_to_braket_circuit(self, circuit, **run_kwargs):
+        """Converts a PennyLane circuit to a Braket circuit"""
+        braket_circuit = self.apply(
             circuit.operations,
             rotations=None,  # Diagonalizing gates are applied in Braket SDK
             **run_kwargs,
         )
-
         for observable in circuit.observables:
-            self._circuit.add_result_type(translate_result_type(observable))
+            braket_circuit.add_result_type(translate_result_type(observable))
+        return braket_circuit
 
-        self._task = self._run_task()
+    def execute(self, circuit: CircuitGraph, **run_kwargs):
+        self.check_validity(circuit.operations, circuit.observables)
+        self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
+        self._task = self._run_task(self._circuit)
 
         # Compute the required statistics
         results = self.statistics(circuit.observables)
@@ -175,7 +176,7 @@ class BraketQubitDevice(QubitDevice):
         observable.return_type = Probability
         return BraketQubitDevice._get_statistic(self._task, observable)
 
-    def _run_task(self):
+    def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
 
     @staticmethod
@@ -242,9 +243,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
 
-    def _run_task(self):
+    def _run_task(self, circuit):
         return self._device.run(
-            self._circuit,
+            circuit,
             s3_destination_folder=self._s3_folder,
             shots=0 if self.analytic else self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds,
@@ -281,7 +282,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         device = LocalSimulator(backend)
         super().__init__(wires, device, shots=shots, **run_kwargs)
 
-    def _run_task(self):
+    def _run_task(self, circuit):
         return self._device.run(
-            self._circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
+            circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
         )
