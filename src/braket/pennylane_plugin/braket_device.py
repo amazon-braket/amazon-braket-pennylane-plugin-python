@@ -35,20 +35,20 @@ Code details
 from typing import FrozenSet, Optional, Union
 
 import numpy as np
-from pennylane import CircuitGraph, Identity, QubitDevice
-from pennylane.operation import Probability, Sample
-
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
+from braket.simulator import BraketSimulator
+from braket.tasks import QuantumTask
+from pennylane import CircuitGraph, Identity, QubitDevice
+from pennylane.operation import Probability, Sample
+
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
     translate_result_type,
 )
-from braket.simulator import BraketSimulator
-from braket.tasks import QuantumTask
 
 from ._version import __version__
 
