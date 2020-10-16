@@ -120,6 +120,18 @@ class BraketQubitDevice(QubitDevice):
         return braket_circuit
 
     def statistics(self, task, observables):
+        """Process measurement results from a Braket task and return statistics.
+
+        Args:
+            task (GateModelQuantumTaskResult): the executed task
+            observables (List[Observable]): the observables to be measured
+
+        Raises:
+            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
+
+        Returns:
+            Union[float, List[float]]: the corresponding statistics
+        """
         results = []
         for obs in observables:
             if obs.return_type not in RETURN_TYPES:
@@ -170,25 +182,26 @@ class BraketQubitDevice(QubitDevice):
 
         return circuit
 
-    def expval(self, observable):
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def var(self, observable):
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def sample(self, observable):
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def probability(self, wires=None):
-        return self._probability(wires)
-
-    def analytic_probability(self, wires=None):
-        return self._probability(wires)
-
-    def _probability(self, wires):
-        observable = Identity(wires=wires or self.wires, do_queue=False)
-        observable.return_type = Probability
-        return BraketQubitDevice._get_statistic(self._task, observable)
+    # Is the following needed any more?
+    # def expval(self, observable):
+    #     return BraketQubitDevice._get_statistic(self._task, observable)
+    #
+    # def var(self, observable):
+    #     return BraketQubitDevice._get_statistic(self._task, observable)
+    #
+    # def sample(self, observable):
+    #     return BraketQubitDevice._get_statistic(self._task, observable)
+    #
+    # def probability(self, wires=None):
+    #     return self._probability(wires)
+    #
+    # def analytic_probability(self, wires=None):
+    #     return self._probability(wires)
+    #
+    # def _probability(self, wires):
+    #     observable = Identity(wires=wires or self.wires, do_queue=False)
+    #     observable.return_type = Probability
+    #     return BraketQubitDevice._get_statistic(self._task, observable)
 
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
