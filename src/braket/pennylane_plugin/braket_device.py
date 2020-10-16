@@ -31,19 +31,20 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
+import warnings
+
 # pylint: disable=invalid-name
 from typing import FrozenSet, Optional, Union
 
 import numpy as np
-import warnings
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import QuantumTask
-from pennylane import CircuitGraph, Identity, QubitDevice
-from pennylane.operation import Probability, Sample, Variance, Expectation
+from pennylane import CircuitGraph, QubitDevice
+from pennylane.operation import Expectation, Probability, Sample, Variance
 from pennylane.qnodes import QuantumFunctionError
 
 from braket.pennylane_plugin.translation import (
