@@ -23,6 +23,7 @@ from braket.circuits import Circuit, Instruction, Observable, gates, result_type
 from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane.wires import Wires
+from pennylane.qnodes import QuantumFunctionError
 
 from braket.pennylane_plugin import (
     CY,
@@ -232,6 +233,16 @@ def test_execute(mock_create):
         poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
     )
+
+
+def test_bad_statistics():
+    """Test is a QuantumFunctionError is raised for an invalid return type"""
+    dev = _device(wires=1, foo="bar")
+    observable = qml.Identity(wires=0, do_queue=False)
+    observable.return_type = None
+
+    with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
+        dev.statistics(None, [observable])
 
 
 @patch.object(AwsQuantumTask, "create")
