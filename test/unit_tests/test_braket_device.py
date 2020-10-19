@@ -187,8 +187,9 @@ def test_apply_unsupported():
     dev.apply(operations)
 
 
+@pytest.mark.parametrize("execute_dask", [False, True])
 @patch.object(AwsQuantumTask, "create")
-def test_execute(mock_create):
+def test_execute(mock_create, execute_dask):
     mock_create.return_value = TASK
     dev = _device(wires=4, foo="bar")
 
@@ -204,7 +205,12 @@ def test_execute(mock_create):
         {},
         wires=Wires([0, 1, 2, 3]),
     )
-    results = dev.execute(circuit)
+
+    if execute_dask:
+        results = dev._execute_dask(circuit)
+    else:
+        results = dev.execute(circuit)
+
     assert np.allclose(
         results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
     )
@@ -223,7 +229,9 @@ def test_execute(mock_create):
         RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
     )
 
-    assert dev.task == TASK
+    if not execute_dask:
+        assert dev.task == TASK
+
     mock_create.assert_called_with(
         mock.ANY,
         DEVICE_ARN,
@@ -265,8 +273,9 @@ def test_bad_statistics():
         dev.statistics(None, [observable])
 
 
+@pytest.mark.parametrize("execute_dask", [False, True])
 @patch.object(AwsQuantumTask, "create")
-def test_execute_all_samples(mock_create):
+def test_execute_all_samples(mock_create, execute_dask):
     result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
@@ -323,7 +332,10 @@ def test_execute_all_samples(mock_create):
         {},
         wires=Wires([0, 1, 2]),
     )
-    assert dev.execute(circuit).shape == (2, 4)
+    if not execute_dask:
+        assert dev.execute(circuit).shape == (2, 4)
+    else:
+        assert dev._execute_dask(circuit).shape == (2, 4)
 
 
 @pytest.mark.xfail(raises=ValueError)
