@@ -184,27 +184,6 @@ class BraketQubitDevice(QubitDevice):
 
         return circuit
 
-    # Is the following needed any more?
-    # def expval(self, observable):
-    #     return BraketQubitDevice._get_statistic(self._task, observable)
-    #
-    # def var(self, observable):
-    #     return BraketQubitDevice._get_statistic(self._task, observable)
-    #
-    # def sample(self, observable):
-    #     return BraketQubitDevice._get_statistic(self._task, observable)
-    #
-    # def probability(self, wires=None):
-    #     return self._probability(wires)
-    #
-    # def analytic_probability(self, wires=None):
-    #     return self._probability(wires)
-    #
-    # def _probability(self, wires):
-    #     observable = Identity(wires=wires or self.wires, do_queue=False)
-    #     observable.return_type = Probability
-    #     return BraketQubitDevice._get_statistic(self._task, observable)
-
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
 
