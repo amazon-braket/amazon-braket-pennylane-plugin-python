@@ -289,10 +289,29 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 )
 
         if self._parallel:
-            runs = [dask.delayed(self.execute)(circuit, **run_kwargs) for circuit in circuits]
+            runs = [dask.delayed(self._execute_dask)(circuit, **run_kwargs) for circuit in circuits]
             return dask.compute(*runs)
         else:
             return super().batch_execute(circuits)
+
+    def _execute_dask(self, circuit: CircuitGraph, **run_kwargs):
+        """A version of execute() for use with dask. This method replaces self._circuit and
+        self._task with internal variables to prevent race conditions when the method is
+        evaluated in parallel."""
+        self.check_validity(circuit.operations, circuit.observables)
+        braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
+        braket_task = self._run_task(braket_circuit)
+
+        # Compute the required statistics
+        results = self.statistics(braket_task, circuit.observables)
+
+        # Ensures that a combination with sample does not put
+        # single-number results in superfluous arrays
+        all_sampled = all(obs.return_type is Sample for obs in circuit.observables)
+        if circuit.is_sampled and not all_sampled:
+            return np.asarray(results, dtype="object")
+
+        return np.asarray(results)
 
     def _run_task(self, circuit):
         return self._device.run(
