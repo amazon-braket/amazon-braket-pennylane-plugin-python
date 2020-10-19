@@ -236,7 +236,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
-        parallel (bool): Indicates whether to use parallel execution for gradient calculations
+        parallel (bool): Indicates whether to use parallel execution for gradient calculations.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
