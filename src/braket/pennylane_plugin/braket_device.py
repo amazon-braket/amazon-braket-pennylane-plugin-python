@@ -145,13 +145,11 @@ class BraketQubitDevice(QubitDevice):
 
         return results
 
-    def execute(self, circuit: CircuitGraph, **run_kwargs):
-        self.check_validity(circuit.operations, circuit.observables)
-        self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
-        self._task = self._run_task(self._circuit)
-
+    def _task_to_results(self, task, circuit):
+        """Calculates the results from a Braket task. A PennyLane circuit is also used to
+        determine the output observables."""
         # Compute the required statistics
-        results = self.statistics(self._task, circuit.observables)
+        results = self.statistics(task, circuit.observables)
 
         # Ensures that a combination with sample does not put
         # single-number results in superfluous arrays
@@ -160,6 +158,12 @@ class BraketQubitDevice(QubitDevice):
             return np.asarray(results, dtype="object")
 
         return np.asarray(results)
+
+    def execute(self, circuit: CircuitGraph, **run_kwargs):
+        self.check_validity(circuit.operations, circuit.observables)
+        self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
+        self._task = self._run_task(self._circuit)
+        return self._task_to_results(self._task, circuit)
 
     def apply(self, operations, rotations=None, **run_kwargs):
         """Instantiate Braket Circuit object."""
@@ -282,22 +286,13 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return super().batch_execute(circuits)
 
     async def _execute_asyncio(self, circuit: CircuitGraph, **run_kwargs):
+        """A version of execute() for use with asyncio. This includes an await keyword to wait
+        for the results of the task before converting to output data."""
         self.check_validity(circuit.operations, circuit.observables)
         braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         braket_task = self._run_task(braket_circuit)
-
         await braket_task.async_result()
-
-        # Compute the required statistics
-        results = self.statistics(braket_task, circuit.observables)
-
-        # Ensures that a combination with sample does not put
-        # single-number results in superfluous arrays
-        all_sampled = all(obs.return_type is Sample for obs in circuit.observables)
-        if circuit.is_sampled and not all_sampled:
-            return np.asarray(results, dtype="object")
-
-        return np.asarray(results)
+        return self._task_to_results(braket_task, circuit)
 
     def _execute_dask(self, circuit: CircuitGraph, **run_kwargs):
         """A version of execute() for use with dask. This method replaces self._circuit and
@@ -306,17 +301,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self.check_validity(circuit.operations, circuit.observables)
         braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         braket_task = self._run_task(braket_circuit)
-
-        # Compute the required statistics
-        results = self.statistics(braket_task, circuit.observables)
-
-        # Ensures that a combination with sample does not put
-        # single-number results in superfluous arrays
-        all_sampled = all(obs.return_type is Sample for obs in circuit.observables)
-        if circuit.is_sampled and not all_sampled:
-            return np.asarray(results, dtype="object")
-
-        return np.asarray(results)
+        return self._task_to_results(braket_task, circuit)
 
     def _run_task(self, circuit):
         return self._device.run(
