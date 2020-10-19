@@ -298,6 +298,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """A version of execute() for use with dask. This method replaces self._circuit and
         self._task with internal variables to prevent race conditions when the method is
         evaluated in parallel."""
+        # Note: This could directly replace the execute() method if we are happy to lose access
+        # to the generated circuit and task.
         self.check_validity(circuit.operations, circuit.observables)
         braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         braket_task = self._run_task(braket_circuit)
