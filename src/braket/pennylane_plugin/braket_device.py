@@ -274,15 +274,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 runs = [dask.delayed(self._execute_dask)(circuit, **run_kwargs) for circuit in circuits]
                 return dask.compute(*runs)
             else:
-                return self._execute_gather(circuits, **run_kwargs)
+                loop = asyncio.get_event_loop()
+                results = [self._execute_asyncio(circuit, **run_kwargs) for circuit in circuits]
+                results_gathered = asyncio.gather(*results)
+                return loop.run_until_complete(results_gathered)
 
         return super().batch_execute(circuits)
-
-    def _execute_gather(self, circuits, **run_kwargs):
-        loop = asyncio.get_event_loop()
-        results = [self._execute_asyncio(circuit, **run_kwargs) for circuit in circuits]
-        results_gathered = asyncio.gather(*results)
-        return loop.run_until_complete(results_gathered)
 
     async def _execute_asyncio(self, circuit: CircuitGraph, **run_kwargs):
         self.check_validity(circuit.operations, circuit.observables)
