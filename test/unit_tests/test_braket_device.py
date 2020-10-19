@@ -24,6 +24,7 @@ from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.wires import Wires
+from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin import (
     CY,
@@ -233,6 +234,25 @@ def test_execute(mock_create):
         poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
     )
+
+
+def test_pl_to_braket_circuit():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
+    dev = _device(wires=1, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.PauliZ(0))
+
+    braket_circuit_true = Circuit().rx(0, 0.2).rx(1, 0.3).cnot(0, 1).add_result_type(
+        result_types.Expectation(
+        observable=Observable.Z(), target=0))
+
+    braket_circuit = dev._pl_to_braket_circuit(tape)
+
+    assert braket_circuit_true == braket_circuit
 
 
 def test_bad_statistics():
