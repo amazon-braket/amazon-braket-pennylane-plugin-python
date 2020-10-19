@@ -275,7 +275,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                     self._use_dask = False
 
             if self._use_dask:
-                runs = [dask.delayed(self._execute_dask)(circuit, **run_kwargs) for circuit in circuits]
+                runs = [
+                    dask.delayed(self._execute_dask)(circuit, **run_kwargs) for circuit in circuits
+                ]
                 return dask.compute(*runs)
             else:
                 loop = asyncio.get_event_loop()

@@ -23,8 +23,8 @@ from braket.circuits import Circuit, Instruction, Observable, gates, result_type
 from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane.qnodes import QuantumFunctionError
-from pennylane.wires import Wires
 from pennylane.tape import QuantumTape
+from pennylane.wires import Wires
 
 from braket.pennylane_plugin import (
     CY,
@@ -254,9 +254,13 @@ def test_pl_to_braket_circuit():
         qml.CNOT(wires=[0, 1])
         qml.expval(qml.PauliZ(0))
 
-    braket_circuit_true = Circuit().rx(0, 0.2).rx(1, 0.3).cnot(0, 1).add_result_type(
-        result_types.Expectation(
-        observable=Observable.Z(), target=0))
+    braket_circuit_true = (
+        Circuit()
+        .rx(0, 0.2)
+        .rx(1, 0.3)
+        .cnot(0, 1)
+        .add_result_type(result_types.Expectation(observable=Observable.Z(), target=0))
+    )
 
     braket_circuit = dev._pl_to_braket_circuit(tape)
 
