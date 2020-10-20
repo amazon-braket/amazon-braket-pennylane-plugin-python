@@ -11,6 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import asyncio
 import json
 from unittest import mock
 from unittest.mock import Mock, patch
@@ -268,13 +269,41 @@ def test_pl_to_braket_circuit():
 
 
 def test_bad_statistics():
-    """Test is a QuantumFunctionError is raised for an invalid return type"""
+    """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _device(wires=1, foo="bar")
     observable = qml.Identity(wires=0, do_queue=False)
     observable.return_type = None
 
     with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
         dev.statistics(None, [observable])
+
+
+def test_execute_asyncio(monkeypatch):
+    """Test that _execute_asyncio returns a coroutine that can be run using asyncio.run()"""
+    dev = _device(wires=2, foo="bar")
+
+    circuit = qml.CircuitGraph(
+        [
+            qml.Hadamard(wires=0),
+            qml.CNOT(wires=[0, 1]),
+            qml.probs(wires=[0]),
+            qml.expval(qml.PauliX(1)),
+            qml.var(qml.PauliY(2)),
+            qml.sample(qml.PauliZ(3)),
+        ],
+        {},
+        wires=Wires([0, 1, 2, 3]),
+    )
+
+    with monkeypatch.context() as m:
+        task = TASK
+
+        m.setattr(BraketAwsQubitDevice, "_run_task", lambda *args: task)
+        result = dev._execute_asyncio(circuit)
+
+        assert asyncio.iscoroutine(result)
+        result = asyncio.run(result)
+        assert not asyncio.iscoroutine(result)
 
 
 @pytest.mark.parametrize("_execute", [False, True])
