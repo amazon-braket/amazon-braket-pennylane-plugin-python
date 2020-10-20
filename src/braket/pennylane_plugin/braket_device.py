@@ -276,7 +276,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
             if self._use_dask:
                 runs = [
-                    dask.delayed(self._execute_dask)(circuit, **run_kwargs) for circuit in circuits
+                    dask.delayed(self._execute)(circuit, **run_kwargs) for circuit in circuits
                 ]
                 return dask.compute(*runs)
             else:
@@ -287,16 +287,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return super().batch_execute(circuits)
 
     async def _execute_asyncio(self, circuit: CircuitGraph, **run_kwargs):
-        """A version of execute() for use with asyncio. This includes an await keyword to wait
-        for the results of the task before converting to output data."""
-        self.check_validity(circuit.operations, circuit.observables)
-        braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
-        braket_task = self._run_task(braket_circuit)
-        await braket_task.async_result()
-        return self._task_to_results(braket_task, circuit)
+        """A version of execute() for use with asyncio."""
+        return self._execute(circuit, **run_kwargs)
 
-    def _execute_dask(self, circuit: CircuitGraph, **run_kwargs):
-        """A version of execute() for use with dask. This method replaces self._circuit and
+    def _execute(self, circuit: CircuitGraph, **run_kwargs):
+        """A version of execute() for asynchronous use. This method replaces self._circuit and
         self._task with internal variables to prevent race conditions when the method is
         evaluated in parallel."""
         # Note: This could directly replace the execute() method if we are happy to lose access
