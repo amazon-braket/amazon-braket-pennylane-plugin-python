@@ -26,10 +26,7 @@ setup(
     python_requires=">= 3.7.2",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
-    install_requires=[
-        "amazon-braket-sdk",
-        "pennylane",
-    ],
+    install_requires=["amazon-braket-sdk", "pennylane",],
     entry_points={
         "pennylane.plugins": [
             # List the short name of each device provided by
