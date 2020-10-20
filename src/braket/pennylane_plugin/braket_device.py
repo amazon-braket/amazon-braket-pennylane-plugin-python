@@ -280,10 +280,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 ]
                 return dask.compute(*runs)
             else:
-                loop = asyncio.get_event_loop()
                 results = [self._execute_asyncio(circuit, **run_kwargs) for circuit in circuits]
                 results_gathered = asyncio.gather(*results)
-                return loop.run_until_complete(results_gathered)
+                return asyncio.run(results_gathered)
 
         return super().batch_execute(circuits)
 
