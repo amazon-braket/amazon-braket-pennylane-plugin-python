@@ -28,7 +28,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk",
-        "pennylane @ git+https://github.com/PennyLaneAI/pennylane.git",
+        "pennylane",
     ],
     entry_points={
         "pennylane.plugins": [
