@@ -21,8 +21,8 @@ from braket.pennylane_plugin import BraketLocalQubitDevice, BraketAwsQubitDevice
 @pytest.mark.parametrize("shots", [0])
 def test_batch_execution_of_gradient(device, shots, mocker):
     qml.enable_tape()
-    qubits = 1
-    layers = 1
+    qubits = 2
+    layers = 2
 
     dev_aws = device(qubits)
 
