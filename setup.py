@@ -48,6 +48,7 @@ setup(
             "pylint",
             "pytest",
             "pytest-cov",
+            "pytest-mock",
             "pytest-rerunfailures",
             "pytest-xdist",
             "sphinx",
