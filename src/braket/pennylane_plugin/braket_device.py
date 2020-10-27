@@ -281,7 +281,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 return dask.compute(*runs)
             else:
                 runs = asyncio.run(self._execute_circuits_asyncio(circuits))
-                return np.array([r.result() for r in runs[0]])
+                return np.array(runs)
 
         return super().batch_execute(circuits)
 
@@ -292,7 +292,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             results = [loop.run_in_executor(pool, functools.partial(self.execute, **run_kwargs), circuit)
                        for \
                        circuit in circuits]
-        return await asyncio.wait(results)
+        return await asyncio.gather(*results)
 
     def _execute(self, circuit: CircuitGraph, **run_kwargs):
         """A version of execute() for asynchronous use. This method replaces self._circuit and
