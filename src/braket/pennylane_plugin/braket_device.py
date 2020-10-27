@@ -267,7 +267,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     def batch_execute(self, circuits, **run_kwargs):
         if self._parallel:
-            runs = asyncio.run(self._batch_execute_async(circuits))
+            runs = asyncio.run(self._batch_execute_async(circuits, **run_kwargs))
             return np.array(runs)
         return super().batch_execute(circuits)
 

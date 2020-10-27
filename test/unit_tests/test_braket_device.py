@@ -26,6 +26,7 @@ from braket.tasks import GateModelQuantumTaskResult
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
 from pennylane.wires import Wires
+from pennylane import QubitDevice
 
 from braket.pennylane_plugin import (
     CY,
@@ -278,9 +279,10 @@ def test_bad_statistics():
         dev.statistics(None, [observable])
 
 
-def test_execute_asyncio(monkeypatch):
-    """Test that _execute_asyncio returns a coroutine that can be run using asyncio.run()"""
-    dev = _device(wires=2, foo="bar")
+def test_batch_execute_non_parallel(monkeypatch):
+    """Test if the batch_execute() method simply calls the inherited method if parallel=False"""
+    dev = _device(wires=2, foo="bar", parallel=False)
+    assert dev.parallel is False
 
     circuit = qml.CircuitGraph(
         [
@@ -294,16 +296,70 @@ def test_execute_asyncio(monkeypatch):
         {},
         wires=Wires([0, 1, 2, 3]),
     )
+    circuits = [circuit]
 
     with monkeypatch.context() as m:
-        task = TASK
+        m.setattr(QubitDevice, "batch_execute", lambda self, circuits: 1967)
+        res = dev.batch_execute(circuits)
+        assert res == 1967
 
-        m.setattr(BraketAwsQubitDevice, "_run_task", lambda *args: task)
-        result = dev._execute_asyncio(circuit)
 
-        assert asyncio.iscoroutine(result)
-        result = asyncio.run(result)
-        assert not asyncio.iscoroutine(result)
+def test_batch_execute_parallel(monkeypatch):
+    """Test if the batch_execute() method calls _batch_execute_async. This is done by creating a
+    mock asyncio coroutine."""
+    dev = _device(wires=2, foo="bar", parallel=True)
+    assert dev.parallel is True
+
+    circuit = qml.CircuitGraph(
+        [
+            qml.Hadamard(wires=0),
+            qml.CNOT(wires=[0, 1]),
+            qml.probs(wires=[0]),
+            qml.expval(qml.PauliX(1)),
+            qml.var(qml.PauliY(2)),
+            qml.sample(qml.PauliZ(3)),
+        ],
+        {},
+        wires=Wires([0, 1, 2, 3]),
+    )
+    circuits = [circuit]
+
+    async def mock_batch_execute_async(self, circuit, **run_kwargs):
+        await asyncio.sleep(1)
+        return [0.42]
+
+    with monkeypatch.context() as m:
+        m.setattr(BraketAwsQubitDevice, "_batch_execute_async", mock_batch_execute_async)
+        res = dev.batch_execute(circuits)
+        assert res == np.array([0.42])
+
+
+# def test_execute_asyncio(monkeypatch):
+#     """Test that _execute_asyncio returns a coroutine that can be run using asyncio.run()"""
+#     dev = _device(wires=2, foo="bar")
+#
+#     circuit = qml.CircuitGraph(
+#         [
+#             qml.Hadamard(wires=0),
+#             qml.CNOT(wires=[0, 1]),
+#             qml.probs(wires=[0]),
+#             qml.expval(qml.PauliX(1)),
+#             qml.var(qml.PauliY(2)),
+#             qml.sample(qml.PauliZ(3)),
+#         ],
+#         {},
+#         wires=Wires([0, 1, 2, 3]),
+#     )
+#
+#     with monkeypatch.context() as m:
+#         task = TASK
+#
+#         m.setattr(BraketAwsQubitDevice, "_run_task", lambda *args: task)
+#         result = dev._execute_asyncio(circuit)
+#
+#         assert asyncio.iscoroutine(result)
+#         result = asyncio.run(result)
+#         assert not asyncio.iscoroutine(result)
 
 
 @pytest.mark.parametrize("_execute", [False, True])
