@@ -248,7 +248,7 @@ def test_execute(mock_create, _execute):
 
 def test_pl_to_braket_circuit():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
-    dev = _device(wires=1, foo="bar")
+    dev = _device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
         qml.RX(0.2, wires=0)
