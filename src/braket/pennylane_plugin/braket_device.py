@@ -34,7 +34,6 @@ Code details
 import asyncio
 import concurrent.futures
 import functools
-import warnings
 
 # pylint: disable=invalid-name
 from typing import FrozenSet, Optional, Union
@@ -260,38 +259,21 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
         self._parallel = parallel
-        self._use_dask = False
 
     def batch_execute(self, circuits, **run_kwargs):
         if self._parallel:
-            if self._use_dask:
-                try:
-                    import dask
-                except ImportError:
-                    warnings.warn(
-                        "Dask must be installed for parallel evaluation. "
-                        "\nDask can be installed using pip:"
-                        "\n\npip install dask[delayed]]\n\n"
-                        "Falling back to asyncio evaluation"
-                    )
-                    self._use_dask = False
-
-            if self._use_dask:
-                runs = [dask.delayed(self._execute)(circuit, **run_kwargs) for circuit in circuits]
-                return dask.compute(*runs)
-            else:
-                runs = asyncio.run(self._execute_circuits_asyncio(circuits))
-                return np.array(runs)
-
+            runs = asyncio.run(self._batch_execute_async(circuits))
+            return np.array(runs)
         return super().batch_execute(circuits)
 
-    async def _execute_circuits_asyncio(self, circuits, **run_kwargs):
-        """Executes over a list of circuits using asyncio."""
+    async def _batch_execute_async(self, circuits, **run_kwargs):
+        """Execute a quantum circuits asynchronously on AWS"""
         loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
-            results = [loop.run_in_executor(pool, functools.partial(self.execute, **run_kwargs), circuit)
-                       for \
-                       circuit in circuits]
+            results = [
+                loop.run_in_executor(pool, functools.partial(self.execute, **run_kwargs), circuit)
+                for circuit in circuits
+            ]
         return await asyncio.gather(*results)
 
     def _execute(self, circuit: CircuitGraph, **run_kwargs):
