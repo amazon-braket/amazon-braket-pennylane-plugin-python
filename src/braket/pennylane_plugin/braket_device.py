@@ -260,6 +260,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._poll_timeout_seconds = poll_timeout_seconds
         self._parallel = parallel
 
+    @property
+    def parallel(self):
+        """bool: True if gradient calculations are evaluated in parallel."""
+        return self._parallel
+
     def batch_execute(self, circuits, **run_kwargs):
         if self._parallel:
             runs = asyncio.run(self._batch_execute_async(circuits))
