@@ -276,7 +276,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
             results = [
-                loop.run_in_executor(pool, functools.partial(self.execute, **run_kwargs), circuit)
+                loop.run_in_executor(pool, functools.partial(self._execute, **run_kwargs), circuit)
                 for circuit in circuits
             ]
         return await asyncio.gather(*results)

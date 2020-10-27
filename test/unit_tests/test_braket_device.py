@@ -284,23 +284,9 @@ def test_batch_execute_non_parallel(monkeypatch):
     dev = _device(wires=2, foo="bar", parallel=False)
     assert dev.parallel is False
 
-    circuit = qml.CircuitGraph(
-        [
-            qml.Hadamard(wires=0),
-            qml.CNOT(wires=[0, 1]),
-            qml.probs(wires=[0]),
-            qml.expval(qml.PauliX(1)),
-            qml.var(qml.PauliY(2)),
-            qml.sample(qml.PauliZ(3)),
-        ],
-        {},
-        wires=Wires([0, 1, 2, 3]),
-    )
-    circuits = [circuit]
-
     with monkeypatch.context() as m:
         m.setattr(QubitDevice, "batch_execute", lambda self, circuits: 1967)
-        res = dev.batch_execute(circuits)
+        res = dev.batch_execute([])
         assert res == 1967
 
 
@@ -310,56 +296,34 @@ def test_batch_execute_parallel(monkeypatch):
     dev = _device(wires=2, foo="bar", parallel=True)
     assert dev.parallel is True
 
-    circuit = qml.CircuitGraph(
-        [
-            qml.Hadamard(wires=0),
-            qml.CNOT(wires=[0, 1]),
-            qml.probs(wires=[0]),
-            qml.expval(qml.PauliX(1)),
-            qml.var(qml.PauliY(2)),
-            qml.sample(qml.PauliZ(3)),
-        ],
-        {},
-        wires=Wires([0, 1, 2, 3]),
-    )
-    circuits = [circuit]
-
     async def mock_batch_execute_async(self, circuit, **run_kwargs):
         await asyncio.sleep(1)
         return [0.42]
 
     with monkeypatch.context() as m:
         m.setattr(BraketAwsQubitDevice, "_batch_execute_async", mock_batch_execute_async)
-        res = dev.batch_execute(circuits)
+        res = dev.batch_execute([])
         assert res == np.array([0.42])
 
 
-# def test_execute_asyncio(monkeypatch):
-#     """Test that _execute_asyncio returns a coroutine that can be run using asyncio.run()"""
-#     dev = _device(wires=2, foo="bar")
-#
-#     circuit = qml.CircuitGraph(
-#         [
-#             qml.Hadamard(wires=0),
-#             qml.CNOT(wires=[0, 1]),
-#             qml.probs(wires=[0]),
-#             qml.expval(qml.PauliX(1)),
-#             qml.var(qml.PauliY(2)),
-#             qml.sample(qml.PauliZ(3)),
-#         ],
-#         {},
-#         wires=Wires([0, 1, 2, 3]),
-#     )
-#
-#     with monkeypatch.context() as m:
-#         task = TASK
-#
-#         m.setattr(BraketAwsQubitDevice, "_run_task", lambda *args: task)
-#         result = dev._execute_asyncio(circuit)
-#
-#         assert asyncio.iscoroutine(result)
-#         result = asyncio.run(result)
-#         assert not asyncio.iscoroutine(result)
+def test_batch_execute_async(monkeypatch):
+    """Test if the _batch_execute_async() method functions correctly with a mock Future object
+    replacing the result of _execute()."""
+    dev = _device(wires=2, foo="bar", parallel=True)
+
+    loop = asyncio.new_event_loop()  # This was required to run in tox
+    asyncio.set_event_loop(loop)
+
+    future = asyncio.Future()
+    with monkeypatch.context() as m:
+        m.setattr(BraketAwsQubitDevice, "_execute", lambda self, circuit, **run_kwargs: future)
+        res = dev._batch_execute_async([None])
+
+        run = asyncio.run(res)[0]
+        assert asyncio.isfuture(run)
+
+        future.set_result(0.4)
+        assert run.result() == 0.4
 
 
 @pytest.mark.parametrize("_execute", [False, True])
