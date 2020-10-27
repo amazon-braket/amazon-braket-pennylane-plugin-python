@@ -32,6 +32,8 @@ Code details
 ~~~~~~~~~~~~
 """
 import asyncio
+import concurrent.futures
+import functools
 import warnings
 
 # pylint: disable=invalid-name
@@ -278,15 +280,19 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 runs = [dask.delayed(self._execute)(circuit, **run_kwargs) for circuit in circuits]
                 return dask.compute(*runs)
             else:
-                results = [self._execute_asyncio(circuit, **run_kwargs) for circuit in circuits]
-                results_gathered = asyncio.gather(*results)
-                return asyncio.run(results_gathered)
+                runs = asyncio.run(self._execute_circuits_asyncio(circuits))
+                return np.array([r.result() for r in runs[0]])
 
         return super().batch_execute(circuits)
 
-    async def _execute_asyncio(self, circuit: CircuitGraph, **run_kwargs):
-        """A version of execute() for use with asyncio."""
-        return self._execute(circuit, **run_kwargs)
+    async def _execute_circuits_asyncio(self, circuits, **run_kwargs):
+        """Executes over a list of circuits using asyncio."""
+        loop = asyncio.get_running_loop()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+            results = [loop.run_in_executor(pool, functools.partial(self.execute, **run_kwargs), circuit)
+                       for \
+                       circuit in circuits]
+        return await asyncio.wait(results)
 
     def _execute(self, circuit: CircuitGraph, **run_kwargs):
         """A version of execute() for asynchronous use. This method replaces self._circuit and
