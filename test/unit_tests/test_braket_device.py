@@ -23,10 +23,10 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit, Instruction, Observable, gates, result_types
 from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
+from pennylane import QubitDevice
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
 from pennylane.wires import Wires
-from pennylane import QubitDevice
 
 from braket.pennylane_plugin import (
     CY,

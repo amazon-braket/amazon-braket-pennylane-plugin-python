@@ -13,9 +13,10 @@
 
 """Tests for batch execution of jobs on AWS"""
 import pennylane as qml
-from pennylane import numpy as np
 import pytest
-from braket.pennylane_plugin import BraketLocalQubitDevice, BraketAwsQubitDevice
+from pennylane import numpy as np
+
+from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 
 
 @pytest.mark.parametrize("shots", [0])
