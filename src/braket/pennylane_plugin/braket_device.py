@@ -36,7 +36,7 @@ import concurrent.futures
 import functools
 
 # pylint: disable=invalid-name
-from typing import FrozenSet, Optional, Union, Sequence, List
+from typing import FrozenSet, List, Optional, Sequence, Union
 
 import numpy as np
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
@@ -44,8 +44,8 @@ from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
-from braket.tasks import QuantumTask, GateModelQuantumTaskResult
-from pennylane import CircuitGraph, QubitDevice, Observable, Operation
+from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from pennylane import CircuitGraph, Observable, Operation, QubitDevice
 from pennylane.operation import Expectation, Probability, Sample, Variance
 from pennylane.qnodes import QuantumFunctionError
 
