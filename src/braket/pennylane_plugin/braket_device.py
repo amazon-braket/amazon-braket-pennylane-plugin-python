@@ -36,7 +36,7 @@ import concurrent.futures
 import functools
 
 # pylint: disable=invalid-name
-from typing import FrozenSet, Optional, Union
+from typing import FrozenSet, Optional, Union, Sequence, List
 
 import numpy as np
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
@@ -44,8 +44,8 @@ from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
-from braket.tasks import QuantumTask
-from pennylane import CircuitGraph, QubitDevice
+from braket.tasks import QuantumTask, GateModelQuantumTaskResult
+from pennylane import CircuitGraph, QubitDevice, Observable, Operation
 from pennylane.operation import Expectation, Probability, Sample, Variance
 from pennylane.qnodes import QuantumFunctionError
 
@@ -123,7 +123,9 @@ class BraketQubitDevice(QubitDevice):
             braket_circuit.add_result_type(translate_result_type(observable))
         return braket_circuit
 
-    def statistics(self, task, observables):
+    def statistics(
+        self, task: GateModelQuantumTaskResult, observables: Sequence[Observable]
+    ) -> Union[float, List[float]]:
         """Process measurement results from a Braket task and return statistics.
 
         Args:
@@ -160,13 +162,15 @@ class BraketQubitDevice(QubitDevice):
 
         return np.asarray(results)
 
-    def execute(self, circuit: CircuitGraph, **run_kwargs):
+    def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
         return self._task_to_results(self._task, circuit)
 
-    def apply(self, operations, rotations=None, **run_kwargs):
+    def apply(
+        self, operations: Sequence[Operation], rotations: Sequence[Operation] = None, **run_kwargs
+    ) -> Circuit:
         """Instantiate Braket Circuit object."""
         rotations = rotations or []
         circuit = Circuit()
