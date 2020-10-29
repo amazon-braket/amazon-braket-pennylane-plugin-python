@@ -45,8 +45,8 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import CircuitGraph, Observable, Operation, QubitDevice
-from pennylane.operation import Expectation, Probability, Sample, Variance
+from pennylane import CircuitGraph, QubitDevice
+from pennylane.operation import Expectation, Observable, Operation, Probability, Sample, Variance
 from pennylane.qnodes import QuantumFunctionError
 
 from braket.pennylane_plugin.translation import (
