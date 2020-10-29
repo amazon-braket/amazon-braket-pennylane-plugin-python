@@ -15,8 +15,8 @@ import math
 
 import numpy as np
 import pytest
-
 from braket.circuits import gates
+
 from braket.pennylane_plugin import (
     CY,
     ISWAP,
