@@ -226,6 +226,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
         parallel (bool): Indicates whether to use parallel execution for gradient calculations.
+            Default: False
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
