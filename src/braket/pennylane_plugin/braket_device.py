@@ -31,26 +31,33 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
+import asyncio
+import concurrent.futures
+import functools
+
 # pylint: disable=invalid-name
-from typing import FrozenSet, Optional, Union
+from typing import FrozenSet, List, Optional, Sequence, Union
 
 import numpy as np
-from pennylane import CircuitGraph, Identity, QubitDevice
-from pennylane.operation import Probability, Sample
-
 from braket.aws import AwsDevice, AwsDeviceType, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
+from braket.simulator import BraketSimulator
+from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from pennylane import CircuitGraph, QubitDevice
+from pennylane.operation import Expectation, Observable, Operation, Probability, Sample, Variance
+from pennylane.qnodes import QuantumFunctionError
+
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
     translate_result_type,
 )
-from braket.simulator import BraketSimulator
-from braket.tasks import QuantumTask
 
 from ._version import __version__
+
+RETURN_TYPES = [Expectation, Variance, Sample, Probability]
 
 
 class BraketQubitDevice(QubitDevice):
@@ -105,23 +112,47 @@ class BraketQubitDevice(QubitDevice):
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
-    def execute(self, circuit: CircuitGraph, **run_kwargs):
-        self.check_validity(circuit.operations, circuit.observables)
-
-        # Apply all circuit operations
-        self.apply(
+    def _pl_to_braket_circuit(self, circuit, **run_kwargs):
+        """Converts a PennyLane circuit to a Braket circuit"""
+        braket_circuit = self.apply(
             circuit.operations,
             rotations=None,  # Diagonalizing gates are applied in Braket SDK
             **run_kwargs,
         )
-
         for observable in circuit.observables:
-            self._circuit.add_result_type(translate_result_type(observable))
+            braket_circuit.add_result_type(translate_result_type(observable))
+        return braket_circuit
 
-        self._task = self._run_task()
+    def statistics(
+        self, task: GateModelQuantumTaskResult, observables: Sequence[Observable]
+    ) -> Union[float, List[float]]:
+        """Process measurement results from a Braket task and return statistics.
 
+        Args:
+            task (GateModelQuantumTaskResult): the executed task
+            observables (List[Observable]): the observables to be measured
+
+        Raises:
+            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
+
+        Returns:
+            Union[float, List[float]]: the corresponding statistics
+        """
+        results = []
+        for obs in observables:
+            if obs.return_type not in RETURN_TYPES:
+                raise QuantumFunctionError(
+                    "Unsupported return type specified for observable {}".format(obs.name)
+                )
+            results.append(self._get_statistic(task, obs))
+
+        return results
+
+    def _task_to_results(self, task, circuit):
+        """Calculates the results from a Braket task. A PennyLane circuit is also used to
+        determine the output observables."""
         # Compute the required statistics
-        results = self.statistics(circuit.observables)
+        results = self.statistics(task, circuit.observables)
 
         # Ensures that a combination with sample does not put
         # single-number results in superfluous arrays
@@ -131,7 +162,15 @@ class BraketQubitDevice(QubitDevice):
 
         return np.asarray(results)
 
-    def apply(self, operations, rotations=None, **run_kwargs):
+    def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
+        self.check_validity(circuit.operations, circuit.observables)
+        self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
+        self._task = self._run_task(self._circuit)
+        return self._task_to_results(self._task, circuit)
+
+    def apply(
+        self, operations: Sequence[Operation], rotations: Sequence[Operation] = None, **run_kwargs
+    ) -> Circuit:
         """Instantiate Braket Circuit object."""
         rotations = rotations or []
         circuit = Circuit()
@@ -153,29 +192,9 @@ class BraketQubitDevice(QubitDevice):
         for qubit in sorted(unused):
             circuit.i(qubit)
 
-        self._circuit = circuit
+        return circuit
 
-    def expval(self, observable):
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def var(self, observable):
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def sample(self, observable):
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def probability(self, wires=None):
-        return self._probability(wires)
-
-    def analytic_probability(self, wires=None):
-        return self._probability(wires)
-
-    def _probability(self, wires):
-        observable = Identity(wires=wires or self.wires, do_queue=False)
-        observable.return_type = Probability
-        return BraketQubitDevice._get_statistic(self._task, observable)
-
-    def _run_task(self):
+    def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
 
     @staticmethod
@@ -206,6 +225,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         aws_session (Optional[AwsSession]): An AwsSession object to managed
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
+        parallel (bool): Indicates whether to use parallel execution for gradient calculations.
+            Default: False
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
@@ -220,6 +241,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         shots: Optional[int] = None,
         poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
         aws_session: Optional[AwsSession] = None,
+        parallel: bool = False,
         **run_kwargs,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
@@ -241,10 +263,43 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=num_shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
+        self._parallel = parallel
 
-    def _run_task(self):
+    @property
+    def parallel(self):
+        """bool: True if gradient calculations are evaluated in parallel."""
+        return self._parallel
+
+    def batch_execute(self, circuits, **run_kwargs):
+        if self._parallel:
+            runs = asyncio.run(self._batch_execute_async(circuits, **run_kwargs))
+            return np.array(runs)
+        return super().batch_execute(circuits)
+
+    async def _batch_execute_async(self, circuits, **run_kwargs):
+        """Execute a quantum circuits asynchronously on AWS"""
+        loop = asyncio.get_running_loop()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+            results = [
+                loop.run_in_executor(pool, functools.partial(self._execute, **run_kwargs), circuit)
+                for circuit in circuits
+            ]
+        return await asyncio.gather(*results)
+
+    def _execute(self, circuit: CircuitGraph, **run_kwargs):
+        """A version of execute() for asynchronous use. This method replaces self._circuit and
+        self._task with internal variables to prevent race conditions when the method is
+        evaluated in parallel."""
+        # Note: This could directly replace the execute() method if we are happy to lose access
+        # to the generated circuit and task.
+        self.check_validity(circuit.operations, circuit.observables)
+        braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
+        braket_task = self._run_task(braket_circuit)
+        return self._task_to_results(braket_task, circuit)
+
+    def _run_task(self, circuit):
         return self._device.run(
-            self._circuit,
+            circuit,
             s3_destination_folder=self._s3_folder,
             shots=0 if self.analytic else self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds,
@@ -281,7 +336,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         device = LocalSimulator(backend)
         super().__init__(wires, device, shots=shots, **run_kwargs)
 
-    def _run_task(self):
+    def _run_task(self, circuit):
         return self._device.run(
-            self._circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
+            circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
         )

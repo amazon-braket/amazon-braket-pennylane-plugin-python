@@ -26,7 +26,10 @@ setup(
     python_requires=">= 3.7.2",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
-    install_requires=["amazon-braket-sdk", "pennylane>=0.11"],
+    install_requires=[
+        "amazon-braket-sdk",
+        "pennylane @ git+https://github.com/PennyLaneAI/pennylane.git",
+    ],
     entry_points={
         "pennylane.plugins": [
             # List the short name of each device provided by
@@ -48,6 +51,7 @@ setup(
             "pylint",
             "pytest",
             "pytest-cov",
+            "pytest-mock",
             "pytest-rerunfailures",
             "pytest-xdist",
             "sphinx",

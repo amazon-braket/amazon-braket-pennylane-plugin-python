@@ -11,6 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import asyncio
 import json
 from unittest import mock
 from unittest.mock import Mock, patch
@@ -18,11 +19,15 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pennylane as qml
 import pytest
-from pennylane.wires import Wires
-
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit, Instruction, Observable, gates, result_types
 from braket.device_schema import DeviceActionType
+from braket.tasks import GateModelQuantumTaskResult
+from pennylane import QubitDevice
+from pennylane.qnodes import QuantumFunctionError
+from pennylane.tape import QuantumTape
+from pennylane.wires import Wires
+
 from braket.pennylane_plugin import (
     CY,
     ISWAP,
@@ -39,7 +44,6 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
     V,
 )
-from braket.tasks import GateModelQuantumTaskResult
 
 SHOTS = 10000
 
@@ -148,8 +152,8 @@ def test_reset():
 def test_apply(pl_op, braket_gate, qubits, params):
     """Tests that the correct Braket gate is applied for each PennyLane operation."""
     dev = _device(wires=len(qubits))
-    dev.apply([pl_op(*params, wires=qubits)])
-    assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
+    circuit = dev.apply([pl_op(*params, wires=qubits)])
+    assert circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
 
 
 @pytest.mark.xfail
@@ -160,8 +164,8 @@ def test_apply_inverse_gates(pl_op, braket_gate):
     where the inverse is defined.
     """
     dev = _device(wires=1)
-    dev.apply([pl_op(wires=0).inv()])
-    assert dev.circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
+    circuit = dev.apply([pl_op(wires=0).inv()])
+    assert circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
 
 
 def test_apply_unused_qubits():
@@ -169,9 +173,9 @@ def test_apply_unused_qubits():
     dev = _device(wires=4)
     operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi / 2, wires=2)]
     rotations = [qml.RY(np.pi, wires=1)]
-    dev.apply(operations, rotations)
+    circuit = dev.apply(operations, rotations)
 
-    assert dev.circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi / 2).ry(1, np.pi).i(0).i(3)
+    assert circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi / 2).ry(1, np.pi).i(0).i(3)
 
 
 @pytest.mark.xfail(raises=NotImplementedError)
@@ -185,8 +189,9 @@ def test_apply_unsupported():
     dev.apply(operations)
 
 
+@pytest.mark.parametrize("_execute", [False, True])
 @patch.object(AwsQuantumTask, "create")
-def test_execute(mock_create):
+def test_execute(mock_create, _execute):
     mock_create.return_value = TASK
     dev = _device(wires=4, foo="bar")
 
@@ -202,7 +207,12 @@ def test_execute(mock_create):
         {},
         wires=Wires([0, 1, 2, 3]),
     )
-    results = dev.execute(circuit)
+
+    if _execute:
+        results = dev._execute(circuit)
+    else:
+        results = dev.execute(circuit)
+
     assert np.allclose(
         results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
     )
@@ -221,7 +231,9 @@ def test_execute(mock_create):
         RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
     )
 
-    assert dev.task == TASK
+    if not _execute:
+        assert dev.task == TASK
+
     mock_create.assert_called_with(
         mock.ANY,
         DEVICE_ARN,
@@ -234,8 +246,89 @@ def test_execute(mock_create):
     )
 
 
+def test_pl_to_braket_circuit():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
+    dev = _device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.PauliZ(0))
+
+    braket_circuit_true = (
+        Circuit()
+        .rx(0, 0.2)
+        .rx(1, 0.3)
+        .cnot(0, 1)
+        .add_result_type(result_types.Expectation(observable=Observable.Z(), target=0))
+    )
+
+    braket_circuit = dev._pl_to_braket_circuit(tape)
+
+    assert braket_circuit_true == braket_circuit
+
+
+def test_bad_statistics():
+    """Test if a QuantumFunctionError is raised for an invalid return type"""
+    dev = _device(wires=1, foo="bar")
+    observable = qml.Identity(wires=0, do_queue=False)
+    observable.return_type = None
+
+    with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
+        dev.statistics(None, [observable])
+
+
+def test_batch_execute_non_parallel(monkeypatch):
+    """Test if the batch_execute() method simply calls the inherited method if parallel=False"""
+    dev = _device(wires=2, foo="bar", parallel=False)
+    assert dev.parallel is False
+
+    with monkeypatch.context() as m:
+        m.setattr(QubitDevice, "batch_execute", lambda self, circuits: 1967)
+        res = dev.batch_execute([])
+        assert res == 1967
+
+
+def test_batch_execute_parallel(monkeypatch):
+    """Test if the batch_execute() method calls _batch_execute_async. This is done by creating a
+    mock asyncio coroutine."""
+    dev = _device(wires=2, foo="bar", parallel=True)
+    assert dev.parallel is True
+
+    async def mock_batch_execute_async(self, circuit, **run_kwargs):
+        await asyncio.sleep(1)
+        return [0.42]
+
+    with monkeypatch.context() as m:
+        m.setattr(BraketAwsQubitDevice, "_batch_execute_async", mock_batch_execute_async)
+        res = dev.batch_execute([])
+        assert res == np.array([0.42])
+
+
+def test_batch_execute_async(monkeypatch):
+    """Test if the _batch_execute_async() method functions correctly with a mock Future object
+    replacing the result of _execute()."""
+    dev = _device(wires=2, foo="bar", parallel=True)
+
+    loop = asyncio.new_event_loop()  # This was required to run in tox
+    asyncio.set_event_loop(loop)
+
+    future = asyncio.Future()
+    with monkeypatch.context() as m:
+        m.setattr(BraketAwsQubitDevice, "_execute", lambda self, circuit, **run_kwargs: future)
+        res = dev._batch_execute_async([None])
+
+        run = asyncio.run(res)[0]
+        assert asyncio.isfuture(run)
+
+        future.set_result(0.4)
+        assert run.result() == 0.4
+
+
+@pytest.mark.parametrize("_execute", [False, True])
 @patch.object(AwsQuantumTask, "create")
-def test_execute_all_samples(mock_create):
+def test_execute_all_samples(mock_create, _execute):
     result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
@@ -292,7 +385,10 @@ def test_execute_all_samples(mock_create):
         {},
         wires=Wires([0, 1, 2]),
     )
-    assert dev.execute(circuit).shape == (2, 4)
+    if not _execute:
+        assert dev.execute(circuit).shape == (2, 4)
+    else:
+        assert dev._execute(circuit).shape == (2, 4)
 
 
 @pytest.mark.xfail(raises=ValueError)
