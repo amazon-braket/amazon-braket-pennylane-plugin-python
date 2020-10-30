@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.1 (2020-10-30)
+
+### Bug Fixes and Other Changes
+
+ * Provide parallelized batch execution
+
+### Testing and Release Infrastructure
+
+ * updating codeowners
+
 ## v0.4.0.post0 (2020-10-06)
 
 ### Testing and Release Infrastructure
