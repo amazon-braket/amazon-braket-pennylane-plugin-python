@@ -26,7 +26,7 @@ To instantiate the Braket simulator that runs locally:
 >>> import pennylane as qml
 >>> local = qml.device("braket.local.qubit", wires=2)
 
-These devices behave like other devices designed to define and evaluate QNodes within PennyLane.
+You can define and evaluate QNodes with these devices just as you would with any other PennyLane device.
 
 Device options
 ==============
