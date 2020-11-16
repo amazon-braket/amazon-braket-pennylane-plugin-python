@@ -31,7 +31,7 @@ You can define and evaluate QNodes with these devices just as you would with any
 Device options
 ==============
 
-For either of these devices, you can set ``shots`` to 0 to get exact results, instead of results calculated from samples. Note that for ``BraketAwsQubitDevice``, this technique works only for simulators.
+For either of these devices, you can set ``shots`` to 0 to get exact results, instead of results calculated from samples. Note: if you are using ``BraketAwsQubitDevice``, you can only set ``shots`` to zero for simulator devices.
 
 The ``BraketAwsQubitDevice`` device accepts additional arguments beyond the PennyLane default device arguments:
 
