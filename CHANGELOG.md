@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.2 (2020-11-17)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #33 from aws/lundql-patch-1
+ * Update doc/usage.rst
+ * Update doc/usage.rst
+ * Update usage.rst
+
 ## v0.4.1 (2020-10-30)
 
 ### Bug Fixes and Other Changes
