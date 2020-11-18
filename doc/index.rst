@@ -5,22 +5,36 @@ Amazon Braket PennyLane Plugin
 :Date: |today|
 
 
-The Amazon Braket PennyLane plugin allows three AWS quantum devices to work with PennyLane:
-the AWS quantum simulator, as well as Rigetti and IonQ Quantum Processing Units (QPUs).
+The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
+
+* ```braket.aws.qubit``` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
+
+* ```braket.local.qubit``` for running with the Amazon Braket SDK's local simulator
 
 The `Amazon Braket Python SDK  <https://github.com/aws/amazon-braket-sdk-python>`_ is an open source
-library that provides a framework that you can use to interact with quantum computing hardware
+library. It provides a framework that you can use to interact with quantum computing hardware
 devices through Amazon Braket.
 
 `PennyLane <https://pennylane.readthedocs.io>`_ is a machine learning library for optimization and automatic differentiation of hybrid quantum-classical computations.
 
 
-Features
-========
+Providing Feedback and Getting Help
+======
 
-* Provides three devices to be used with PennyLane: ``braket.simulator``, ``braket.ionq``,
-  and ``braket.rigetti``. These devices provide access to the AWS Quantum Simulator, IonQ QPUs, and
-  Rigetti QPUs respectively.
+To provide feedback or request support, please contact the Amazon Braket team at amazon-braket-preview-support@amazon.com.
+
+**Important**
+
+If you **Star** or **Watch** this repository, or if you submit a pull request, other users with access to this repository can see your user name in the list of watchers. To remain anonymous, do not **Watch** or **Star** this repository, do not post any comments, and do not submit a pull request.
+
+Features
+======
+
+Provides two devices to be used with PennyLane:
+
+* ```braket.aws.qubit``` for running on the Braket service, and 
+
+* ```braket.local.qubit``` for running on Braket's local simulator.
 
 * All provided devices support most core qubit PennyLane operations.
 
