@@ -66,10 +66,10 @@ class BraketQubitDevice(QubitDevice):
     Args:
         wires (int): the number of modes to initialize the device in.
         device (Device): The Amazon Braket device to use with PennyLane.
-        shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. If this is set to 0,
-            then the device will run in analytic mode (calculations will be exact),
-            and the device's ``shots`` property will be set to 1 and ignored.
+        shots (int): Number of circuit evaluations or random samples included,
+            to estimate expectation values of observables. If this value is set to 0,
+            the device runs in analytic mode (calculations will be exact).
+            The device's ``shots`` property is set to 1 and ignored.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
@@ -99,7 +99,7 @@ class BraketQubitDevice(QubitDevice):
 
     @property
     def operations(self) -> FrozenSet[str]:
-        """FrozenSet[str]: The set of PennyLane operation names the device supports."""
+        """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
         return supported_operations()
 
     @property
@@ -149,8 +149,8 @@ class BraketQubitDevice(QubitDevice):
         return results
 
     def _task_to_results(self, task, circuit):
-        """Calculates the results from a Braket task. A PennyLane circuit is also used to
-        determine the output observables."""
+        """Calculates the results from a Braket task. A PennyLane circuit also
+        determines the output observables."""
         # Compute the required statistics
         results = self.statistics(task, circuit.observables)
 
@@ -212,17 +212,17 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             circuits via JAQCD. You can get device ARNs using ``AwsDevice.get_devices``,
             from the Amazon Braket console or from the Amazon Braket Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
-            and folder as a tuple.
+            and folder, specified as a tuple.
         poll_timeout_seconds (int): Total time in seconds to wait for
             results before timing out.
-        shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. If this is set to 0
-            and the device ARN points to a simulator, then the device will run
-            in analytic mode (calculations will be exact), and the device's
-            ``shots`` property will be set to 1 and ignored; trying to use 0 shots
+        shots (int): Number of circuit evaluations or random samples included,
+            to estimate expectation values of observables. If this value is set to 0
+            and the device ARN points to a simulator, the device runs
+            in analytic mode (calculations will be exact). The device's
+            ``shots`` property is set to 1 and ignored; trying to use 0 shots
             with QPUs will fail.
             Defaults to 1000 for QPUs and 0 for simulators.
-        aws_session (Optional[AwsSession]): An AwsSession object to managed
+        aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
         parallel (bool): Indicates whether to use parallel execution for gradient calculations.
@@ -277,7 +277,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return super().batch_execute(circuits)
 
     async def _batch_execute_async(self, circuits, **run_kwargs):
-        """Execute a quantum circuits asynchronously on AWS"""
+        """Execute a quantum circuit asynchronously on AWS"""
         loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
             results = [
@@ -315,10 +315,10 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         backend (Union[str, BraketSimulator]): The name of the simulator backend or
             the actual simulator instance to use for simulation. Defaults to the
             ``default`` simulator backend name.
-        shots (int): Number of circuit evaluations/random samples used
-            to estimate expectation values of observables. If this is set to 0,
-            then the device will run in analytic mode (calculations will be exact),
-            and the device's ``shots`` property will be set to 1 and ignored.
+        shots (int): Number of circuit evaluations or random samples included,
+            to estimate expectation values of observables. If this value is set to 0,
+            then the device runs in analytic mode (calculations will be exact);
+            the device's ``shots`` property is set to 1 and ignored.
             Default: 0
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
