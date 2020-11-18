@@ -50,7 +50,7 @@ Use the following command to clone the repo.
 git clone https://github.com/aws/amazon-braket-pennylane-plugin-python.git
 ```
 
-Note that you must have a valid SSH key created in your local environment that has been added to your GitHub account to clone the repo.
+Note that, to clone the repo, you must have a valid SSH key created in your local environment and added to your GitHub account.
 
 You can also download the repo as a .zip file by using the **Clone or download** button. 
 
@@ -81,7 +81,7 @@ To view the generated documentation, open the following file in a browser: `PLUG
 
 ## Getting started
 
-Once the Braket SDK and the plugin are installed, the devices can be accessed straight away in PennyLane.
+After the Braket SDK and the plugin are installed, you have access to the devices immediately in PennyLane.
 
 To instantiate an AWS device that communicates with the Braket service:
 
@@ -91,7 +91,7 @@ s3 = ("my-bucket", "my-prefix")
 sv1 = qml.device("braket.aws.qubit", device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1", s3_destination_folder=s3, wires=2)
 ```
 
-In this example, the string `arn:aws:braket:::device/quantum-simulator/amazon/sv1` is the ARN used to identify the SV1 device. Other supported devices and their ARNs can be found in the [Amazon Braket Developer Guide](https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html). Note that the plugin only works with digital (qubit) circuit-based devices.
+This example utilizes the string `arn:aws:braket:::device/quantum-simulator/amazon/sv1` as the ARN to identify the SV1 device. You can find other supported devices and their ARNs in the [Amazon Braket Developer Guide](https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html). Note that the plugin works with digital (qubit) circuit-based devices only.
 
 To instantiate the Braket simulator that runs locally:
 
@@ -102,7 +102,7 @@ local = qml.device("braket.local.qubit", wires=2)
 
 For both devices, you can set the `shots` argument to 0 (simulators only for `braket.aws.qubit`) to get exact analytic results instead of samples.
 
-You can then use the device just like you would other devices for the definition and evaluation of QNodes within PennyLane. For more details, refer to the PennyLane documentation.
+You can then use the device just as you would other devices to define and evaluate QNodes within PennyLane. For more details, refer to the PennyLane documentation.
 
 
 ## Testing
@@ -133,7 +133,7 @@ Set the `AWS_PROFILE`, similar to in the amazon-braket-sdk-python [README](https
 export AWS_PROFILE=Your_Profile_Name
 ```
 
-Running the integration tests will create an S3 bucket in the same account as the `AWS_PROFILE` with the following naming convention `braket-pennylane-plugin-integ-tests-{account_id}`.
+Running the integration tests creates an S3 bucket in the same account as the `AWS_PROFILE` with the following naming convention `braket-pennylane-plugin-integ-tests-{account_id}`.
 
 Run the tests
 ```bash
