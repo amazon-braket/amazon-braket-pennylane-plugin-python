@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.4.3 (2020-11-19)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #35 from aws/lundql-patch-2
+ * Merge branch 'main' into lundql-patch-2
+ * Merge pull request #34 from aws/lundql-patch-1
+ * Merge branch 'main' into lundql-patch-1
+ * Merge branch 'main' into lundql-patch-2
+ * Update index.rst
+ * Update braket_device.py
+
 ## v0.4.2 (2020-11-17)
 
 ### Bug Fixes and Other Changes
