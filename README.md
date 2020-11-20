@@ -109,7 +109,7 @@ You can then use the device just as you would other devices to define and evalua
 
 Make sure to install test dependencies first:
 ```bash
-pip install -e "amazon-braket-pennyLane-plugin-python[test]"
+pip install -e "amazon-braket-pennylane-plugin-python[test]"
 ```
 
 ### Unit Tests
