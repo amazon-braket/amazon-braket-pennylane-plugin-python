@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.4 (2020-11-20)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #36 from aws/lundql-patch-1
+ * Merge branch 'main' into lundql-patch-1
+ * Update README.md
+
 ## v0.4.3 (2020-11-19)
 
 ### Bug Fixes and Other Changes
