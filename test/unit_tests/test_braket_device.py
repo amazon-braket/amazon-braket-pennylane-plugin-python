@@ -240,8 +240,8 @@ def test_execute(mock_create, _execute):
         CIRCUIT,
         ("foo", "bar"),
         SHOTS,
-        poll_timeout_seconds=AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
-        poll_interval_seconds=AwsDevice.DEFAULT_RESULTS_POLL_INTERVAL,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
     )
 
