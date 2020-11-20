@@ -39,7 +39,7 @@ import functools
 from typing import FrozenSet, List, Optional, Sequence, Union
 
 import numpy as np
-from braket.aws import AwsDevice, AwsDeviceType, AwsSession
+from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
@@ -239,7 +239,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         s3_destination_folder: AwsSession.S3DestinationFolder,
         *,
         shots: Optional[int] = None,
-        poll_timeout_seconds: int = AwsDevice.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         aws_session: Optional[AwsSession] = None,
         parallel: bool = False,
         **run_kwargs,
@@ -263,6 +264,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=num_shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
+        self._poll_interval_seconds = poll_interval_seconds
         self._parallel = parallel
 
     @property
@@ -303,6 +305,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             s3_destination_folder=self._s3_folder,
             shots=0 if self.analytic else self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds,
+            poll_interval_seconds=self._poll_interval_seconds,
             **self._run_kwargs,
         )
 
