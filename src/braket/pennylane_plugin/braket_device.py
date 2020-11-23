@@ -228,8 +228,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_parallel (int): Maximum number of tasks to run on AWS in parallel.
             Batch creation will fail if this value is greater than the maximum allowed
             concurrent tasks on the device.
+            Ignored if ``parallel=False``.
         max_connections (int): The maximum number of connections in the Boto3 connection pool.
             Also the maximum number of thread pool workers for the batch.
+            Ignored if ``parallel=False``.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
