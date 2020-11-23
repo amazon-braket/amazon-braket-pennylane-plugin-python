@@ -11,15 +11,14 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import asyncio
 import json
 from unittest import mock
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import numpy as np
 import pennylane as qml
 import pytest
-from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
+from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
 from braket.circuits import Circuit, Instruction, Observable, gates, result_types
 from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
@@ -85,6 +84,9 @@ RESULT = GateModelQuantumTaskResult.from_string(
 )
 TASK = Mock()
 TASK.result.return_value = RESULT
+TASK_BATCH = Mock()
+TASK_BATCH.results.return_value = [RESULT, RESULT]
+type(TASK_BATCH).tasks = PropertyMock(return_value=[TASK, TASK])
 CIRCUIT = (
     Circuit()
     .h(0)
@@ -189,9 +191,8 @@ def test_apply_unsupported():
     dev.apply(operations)
 
 
-@pytest.mark.parametrize("_execute", [False, True])
 @patch.object(AwsQuantumTask, "create")
-def test_execute(mock_create, _execute):
+def test_execute(mock_create):
     mock_create.return_value = TASK
     dev = _device(wires=4, foo="bar")
 
@@ -207,11 +208,7 @@ def test_execute(mock_create, _execute):
         {},
         wires=Wires([0, 1, 2, 3]),
     )
-
-    if _execute:
-        results = dev._execute(circuit)
-    else:
-        results = dev.execute(circuit)
+    results = dev.execute(circuit)
 
     assert np.allclose(
         results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
@@ -230,9 +227,7 @@ def test_execute(mock_create, _execute):
         results[3],
         RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
     )
-
-    if not _execute:
-        assert dev.task == TASK
+    assert dev.task == TASK
 
     mock_create.assert_called_with(
         mock.ANY,
@@ -290,45 +285,64 @@ def test_batch_execute_non_parallel(monkeypatch):
         assert res == 1967
 
 
-def test_batch_execute_parallel(monkeypatch):
-    """Test if the batch_execute() method calls _batch_execute_async. This is done by creating a
-    mock asyncio coroutine."""
-    dev = _device(wires=2, foo="bar", parallel=True)
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_parallel(mock_run_batch):
+    """Test batch_execute(parallel=True) correctly calls batch execution methods in Braket SDK"""
+    mock_run_batch.return_value = TASK_BATCH
+    dev = _device(wires=4, foo="bar", parallel=True)
     assert dev.parallel is True
 
-    async def mock_batch_execute_async(self, circuit, **run_kwargs):
-        await asyncio.sleep(1)
-        return [0.42]
+    circuit = qml.CircuitGraph(
+        [
+            qml.Hadamard(wires=0),
+            qml.CNOT(wires=[0, 1]),
+            qml.probs(wires=[0]),
+            qml.expval(qml.PauliX(1)),
+            qml.var(qml.PauliY(2)),
+            qml.sample(qml.PauliZ(3)),
+        ],
+        {},
+        wires=Wires([0, 1, 2, 3]),
+    )
+    circuits = [circuit, circuit]
+    batch_results = dev.batch_execute(circuits)
+    for results in batch_results:
+        assert np.allclose(
+            results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+        )
+        assert np.allclose(
+            results[1],
+            RESULT.get_value_by_result_type(
+                result_types.Expectation(observable=Observable.X(), target=1)
+            ),
+        )
+        assert np.allclose(
+            results[2],
+            RESULT.get_value_by_result_type(
+                result_types.Variance(observable=Observable.Y(), target=2)
+            ),
+        )
+        assert np.allclose(
+            results[3],
+            RESULT.get_value_by_result_type(
+                result_types.Sample(observable=Observable.Z(), target=3)
+            ),
+        )
 
-    with monkeypatch.context() as m:
-        m.setattr(BraketAwsQubitDevice, "_batch_execute_async", mock_batch_execute_async)
-        res = dev.batch_execute([])
-        assert res == np.array([0.42])
+    mock_run_batch.assert_called_with(
+        [CIRCUIT, CIRCUIT],
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        max_parallel=AwsQuantumTaskBatch.MAX_PARALLEL_DEFAULT,
+        max_connections=AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+    )
 
 
-def test_batch_execute_async(monkeypatch):
-    """Test if the _batch_execute_async() method functions correctly with a mock Future object
-    replacing the result of _execute()."""
-    dev = _device(wires=2, foo="bar", parallel=True)
-
-    loop = asyncio.new_event_loop()  # This was required to run in tox
-    asyncio.set_event_loop(loop)
-
-    future = asyncio.Future()
-    with monkeypatch.context() as m:
-        m.setattr(BraketAwsQubitDevice, "_execute", lambda self, circuit, **run_kwargs: future)
-        res = dev._batch_execute_async([None])
-
-        run = asyncio.run(res)[0]
-        assert asyncio.isfuture(run)
-
-        future.set_result(0.4)
-        assert run.result() == 0.4
-
-
-@pytest.mark.parametrize("_execute", [False, True])
 @patch.object(AwsQuantumTask, "create")
-def test_execute_all_samples(mock_create, _execute):
+def test_execute_all_samples(mock_create):
     result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
@@ -385,10 +399,7 @@ def test_execute_all_samples(mock_create, _execute):
         {},
         wires=Wires([0, 1, 2]),
     )
-    if not _execute:
-        assert dev.execute(circuit).shape == (2, 4)
-    else:
-        assert dev._execute(circuit).shape == (2, 4)
+    assert dev.execute(circuit).shape == (2, 4)
 
 
 @pytest.mark.xfail(raises=ValueError)
