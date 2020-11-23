@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.5.0 (2020-11-23)
+
+### Features
+
+ * Use batching methods in the Braket SDK to run parallel batch executions.
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #39 from aws/feature/batching-from-sdk
+ * Add minor comment about max_parallel and max_connections
+ * Refactor translation from Braket to PennyLane results to read task results directly instead of Braket tasks
+ * Merge pull request #37 from aws/fix/rename-package
+ * Merge branch 'main' into fix/rename-package
+ * Merge pull request #38 from aws/fix/default-polling-time
+ * Merge branch 'fix/rename-package' of ssh://github.com/aws/amazon-braket-pennylane-plugin-python into fix/rename-package
+ * Fix typo in package name
+ * Fix typo in package name
+
 ## v0.4.4 (2020-11-20)
 
 ### Bug Fixes and Other Changes
