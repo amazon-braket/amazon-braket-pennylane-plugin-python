@@ -16,6 +16,7 @@ import pennylane as qml
 import pytest
 from pennylane import numpy as np
 
+from braket.aws import AwsDevice
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 
 
@@ -48,18 +49,20 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     dfunc_aws = qml.grad(qnode_aws)
     dfunc_default = qml.grad(qnode_default)
 
-    spy1 = mocker.spy(BraketAwsQubitDevice, "_batch_execute_async")
-    spy2 = mocker.spy(BraketAwsQubitDevice, "execute")
+    spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
+    spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
+    spy3 = mocker.spy(AwsDevice, "run_batch")
 
     res_aws = dfunc_aws(weights)
     res_default = dfunc_default(weights)
 
     assert np.allclose(res_aws, res_default)
-    spy1.assert_called_once()
-    spy2.assert_called_once()  # For a forward pass
+    spy1.assert_called_once()  # For a forward pass
+    spy2.assert_called_once()
+    spy3.assert_called_once()
 
     expected_circuits = qubits * layers * 3 * 2
-    assert len(spy1.call_args_list[0][0][1]) == expected_circuits
+    assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
     qml.disable_tape()
 
@@ -100,8 +103,9 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
         qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967), requires_grad=True
     )
 
-    spy1 = mocker.spy(BraketAwsQubitDevice, "_batch_execute_async")
-    spy2 = mocker.spy(BraketAwsQubitDevice, "execute")
+    spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
+    spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
+    spy3 = mocker.spy(AwsDevice, "run_batch")
 
     out_aws = qnode_aws(weights_aws)
     out_default = qnode_default(weights_default)
@@ -113,11 +117,12 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     res_default = weights_default.grad
 
     assert np.allclose(res_aws, res_default)
-    spy1.assert_called_once()
-    spy2.assert_called_once()  # For a forward pass
+    spy1.assert_called_once()  # For a forward pass
+    spy2.assert_called_once()
+    spy3.assert_called_once()
 
     expected_circuits = qubits * layers * 3 * 2
-    assert len(spy1.call_args_list[0][0][1]) == expected_circuits
+    assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
     qml.disable_tape()
 
@@ -154,8 +159,9 @@ def test_batch_execution_of_gradient_tf(device, shots, mocker):
     weights_aws = tf.Variable(qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967))
     weights_default = tf.Variable(qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967))
 
-    spy1 = mocker.spy(BraketAwsQubitDevice, "_batch_execute_async")
-    spy2 = mocker.spy(BraketAwsQubitDevice, "execute")
+    spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
+    spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
+    spy3 = mocker.spy(AwsDevice, "run_batch")
 
     with tf.GradientTape() as tape:
         out_aws = qnode_aws(weights_aws)
@@ -168,10 +174,11 @@ def test_batch_execution_of_gradient_tf(device, shots, mocker):
     res_default = tape.gradient(out_default, weights_default)
 
     assert np.allclose(res_aws, res_default)
-    spy1.assert_called_once()
-    spy2.assert_called_once()  # For a forward pass
+    spy1.assert_called_once()  # For a forward pass
+    spy2.assert_called_once()
+    spy3.assert_called_once()
 
     expected_circuits = qubits * layers * 3 * 2
-    assert len(spy1.call_args_list[0][0][1]) == expected_circuits
+    assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
     qml.disable_tape()

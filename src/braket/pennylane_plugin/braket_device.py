@@ -31,15 +31,12 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
-import asyncio
-import concurrent.futures
-import functools
 
 # pylint: disable=invalid-name
 from typing import FrozenSet, List, Optional, Sequence, Union
 
 import numpy as np
-from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsSession
+from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
@@ -213,8 +210,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             from the Amazon Braket console or from the Amazon Braket Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
             and folder, specified as a tuple.
-        poll_timeout_seconds (int): Total time in seconds to wait for
+        poll_timeout_seconds (float): Total time in seconds to wait for
             results before timing out.
+        poll_interval_seconds (float): The polling interval for results in seconds.
         shots (int): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to 0
             and the device ARN points to a simulator, the device runs
@@ -227,6 +225,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             is desired. Default: None
         parallel (bool): Indicates whether to use parallel execution for gradient calculations.
             Default: False
+        max_parallel (int): Maximum number of tasks to run on AWS in parallel.
+            Batch creation will fail if this value is greater than the maximum allowed
+            concurrent tasks on the device.
+        max_connections (int): The maximum number of connections in the Boto3 connection pool.
+            Also the maximum number of thread pool workers for the batch.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
@@ -243,6 +246,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         aws_session: Optional[AwsSession] = None,
         parallel: bool = False,
+        max_parallel: int = AwsQuantumTaskBatch.MAX_PARALLEL_DEFAULT,
+        max_connections: int = AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         **run_kwargs,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
@@ -266,6 +271,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
         self._parallel = parallel
+        self._max_parallel = max_parallel
+        self._max_connections = max_connections
 
     @property
     def parallel(self):
@@ -273,31 +280,32 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return self._parallel
 
     def batch_execute(self, circuits, **run_kwargs):
-        if self._parallel:
-            runs = asyncio.run(self._batch_execute_async(circuits, **run_kwargs))
-            return np.array(runs)
-        return super().batch_execute(circuits)
+        if not self._parallel:
+            return super().batch_execute(circuits)
 
-    async def _batch_execute_async(self, circuits, **run_kwargs):
-        """Execute a quantum circuit asynchronously on AWS"""
-        loop = asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
-            results = [
-                loop.run_in_executor(pool, functools.partial(self._execute, **run_kwargs), circuit)
-                for circuit in circuits
-            ]
-        return await asyncio.gather(*results)
+        for circuit in circuits:
+            self.check_validity(circuit.operations, circuit.observables)
+        braket_circuits = [
+            self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
+        ]
 
-    def _execute(self, circuit: CircuitGraph, **run_kwargs):
-        """A version of execute() for asynchronous use. This method replaces self._circuit and
-        self._task with internal variables to prevent race conditions when the method is
-        evaluated in parallel."""
-        # Note: This could directly replace the execute() method if we are happy to lose access
-        # to the generated circuit and task.
-        self.check_validity(circuit.operations, circuit.observables)
-        braket_circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
-        braket_task = self._run_task(braket_circuit)
-        return self._task_to_results(braket_task, circuit)
+        task_batch = self._device.run_batch(
+            braket_circuits,
+            s3_destination_folder=self._s3_folder,
+            shots=0 if self.analytic else self.shots,
+            max_parallel=self._max_parallel,
+            max_connections=self._max_connections,
+            poll_timeout_seconds=self._poll_timeout_seconds,
+            poll_interval_seconds=self._poll_interval_seconds,
+            **self._run_kwargs,
+        )
+        # Call results() to retrieve the Braket results in parallel.
+        task_batch.results()
+        results = [
+            self._task_to_results(task, circuit)
+            for task, circuit in zip(task_batch.tasks, circuits)
+        ]
+        return results
 
     def _run_task(self, circuit):
         return self._device.run(
