@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.1 (2020-11-26)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #40 from aws/fix/batch-retry
+ * Enable specification of max_retries for batch_execute()
+
 ## v0.5.0 (2020-11-23)
 
 ### Features
