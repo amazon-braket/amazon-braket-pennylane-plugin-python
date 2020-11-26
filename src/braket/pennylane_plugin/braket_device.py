@@ -232,6 +232,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_connections (int): The maximum number of connections in the Boto3 connection pool.
             Also the maximum number of thread pool workers for the batch.
             Ignored if ``parallel=False``.
+        max_retries (int): The maximum number of retries to use for batch execution.
+            When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
+            times. Ignored if ``parallel=False``.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket AwsDevice for PennyLane"
@@ -250,6 +253,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         parallel: bool = False,
         max_parallel: int = AwsQuantumTaskBatch.MAX_PARALLEL_DEFAULT,
         max_connections: int = AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
+        max_retries: int = AwsQuantumTaskBatch.MAX_RETRIES,
         **run_kwargs,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
@@ -275,6 +279,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._parallel = parallel
         self._max_parallel = max_parallel
         self._max_connections = max_connections
+        self._max_retries = max_retries
 
     @property
     def parallel(self):
@@ -302,7 +307,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             **self._run_kwargs,
         )
         # Call results() to retrieve the Braket results in parallel.
-        braket_results_batch = task_batch.results()
+        braket_results_batch = task_batch.results(
+            fail_unsuccessful=True, max_retries=self._max_retries
+        )
         return [
             self._braket_to_pl_result(braket_result, circuit)
             for braket_result, circuit in zip(braket_results_batch, circuits)
