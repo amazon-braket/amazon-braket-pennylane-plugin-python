@@ -12,10 +12,10 @@
 # language governing permissions and limitations under the License.
 
 """Tests that expectation values are correctly computed in the plugin device"""
-from pennylane import numpy as np
 import pennylane as qml
 import pytest
 from conftest import A
+from pennylane import numpy as np
 
 np.random.seed(42)
 
@@ -176,6 +176,7 @@ class TestExpval:
         qml.enable_tape()
 
         try:
+
             def circuit(x, y):
                 qml.RX(x[0], wires=0)
                 qml.Rot(*x[1:], wires=0)

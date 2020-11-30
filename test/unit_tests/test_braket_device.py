@@ -15,7 +15,6 @@ import json
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
-from pennylane import numpy as np
 import numpy as anp
 import pennylane as qml
 import pytest
@@ -24,6 +23,7 @@ from braket.circuits import Circuit, Instruction, Observable, gates, result_type
 from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QubitDevice
+from pennylane import numpy as np
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
 from pennylane.wires import Wires
