@@ -15,7 +15,8 @@ import json
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
-import numpy as np
+from pennylane import numpy as np
+import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
@@ -189,6 +190,22 @@ def test_apply_unsupported():
 
     operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), mock_op]
     dev.apply(operations)
+
+
+def test_apply_unwrap_tensor():
+    """Test that apply() unwraps tensors from the PennyLane version of NumPy into standard NumPy
+    arrays (or floats)"""
+    dev = _device(wires=0)
+
+    a = anp.array(0.6)  # array
+    b = np.array(0.5, requires_grad=True)  # tensor
+
+    operations = [qml.RY(a, wires=0), qml.RX(b, wires=[0])]
+    rotations = []
+    circuit = dev.apply(operations, rotations)
+
+    angles = [op.operator.angle for op in circuit.instructions]
+    assert not any([isinstance(angle, np.tensor) for angle in angles])
 
 
 @patch.object(AwsQuantumTask, "create")
