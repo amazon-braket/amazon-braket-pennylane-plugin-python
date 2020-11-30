@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 """Tests that expectation values are correctly computed in the plugin device"""
-import numpy as np
+from pennylane import numpy as np
 import pennylane as qml
 import pytest
 from conftest import A
@@ -162,6 +162,29 @@ class TestExpval:
             - 6
         )
         assert np.allclose(circuit(), expected, **tol)
+
+    def test_nondiff_param(self, device):
+        """Test that the device can be successfully executed in tape-mode with the Autograd
+        interface when some of the arguments are tensors with requires_grad=False"""
+
+        qml.enable_tape()
+
+        try:
+            dev = device(1)
+
+            @qml.qnode(dev, interface="autograd")
+            def circuit(x, y):
+                qml.RX(x[0], wires=0)
+                qml.Rot(*x[1:], wires=0)
+                qml.RY(y[0], wires=0)
+                return qml.expval(qml.PauliZ(0))
+
+            x = np.array([0.1, 0.2, 0.3, 0.4], requires_grad=False)
+            y = np.array([0.5], requires_grad=True)
+
+            circuit(x, y)
+        finally:
+            qml.disable_tape()
 
 
 @pytest.mark.parametrize("shots", [0, 8192])
