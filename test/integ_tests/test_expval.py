@@ -167,12 +167,15 @@ class TestExpval:
         """Test that the device can be successfully executed in tape-mode with the Autograd
         interface when some of the arguments are tensors with requires_grad=False"""
 
+        dev1 = device(1)
+        dev2 = qml.device("default.qubit", wires=1)
+
+        if not dev1.analytic:
+            pytest.skip("This test is designed to work in analytic mode")
+
         qml.enable_tape()
 
         try:
-            dev = device(1)
-
-            @qml.qnode(dev, interface="autograd")
             def circuit(x, y):
                 qml.RX(x[0], wires=0)
                 qml.Rot(*x[1:], wires=0)
@@ -182,7 +185,13 @@ class TestExpval:
             x = np.array([0.1, 0.2, 0.3, 0.4], requires_grad=False)
             y = np.array([0.5], requires_grad=True)
 
-            circuit(x, y)
+            qnode1 = qml.QNode(circuit, dev1, interface="autograd")
+            qnode2 = qml.QNode(circuit, dev2, interface="autograd")
+
+            r1 = qnode1(x, y)
+            r2 = qnode2(x, y)
+
+            assert np.allclose(r1, r2)
         finally:
             qml.disable_tape()
 

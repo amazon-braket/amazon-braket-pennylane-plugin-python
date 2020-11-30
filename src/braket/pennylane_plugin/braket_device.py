@@ -35,7 +35,7 @@ Code details
 # pylint: disable=invalid-name
 from typing import FrozenSet, List, Optional, Sequence, Union
 
-import numpy as np
+from pennylane import numpy as np
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
@@ -180,7 +180,10 @@ class BraketQubitDevice(QubitDevice):
                 raise NotImplementedError(
                     f"Braket PennyLane plugin does not support operation {operation.name}."
                 )
-            ins = Instruction(op(*operation.parameters), operation.wires.tolist())
+
+            params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
+
+            ins = Instruction(op(*params), operation.wires.tolist())
             circuit.add_instruction(ins)
 
         unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}
