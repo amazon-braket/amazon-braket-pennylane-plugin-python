@@ -27,7 +27,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk",
+        "amazon-braket-sdk>=1.3.0",
         "pennylane @ git+https://github.com/PennyLaneAI/pennylane.git",
     ],
     entry_points={
