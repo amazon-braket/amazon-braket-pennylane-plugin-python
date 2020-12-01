@@ -1,5 +1,3 @@
-**This prerelease documentation is confidential and is provided under the terms of your nondisclosure agreement with Amazon Web Services (AWS) or other agreement governing your receipt of AWS confidential information.**
-
 # PennyLane Braket plugin
 
 [![Code Style: Black](https://img.shields.io/badge/code_style-black-000000.svg)](https://github.com/psf/black)
@@ -14,14 +12,6 @@ library that provides a framework that you can use to interact with quantum comp
 devices through Amazon Braket.
 
 [PennyLane](https://pennylane.readthedocs.io) is a machine learning library for optimization and automatic differentiation of hybrid quantum-classical computations.
-
-**Providing Feedback and Getting Help**
-
-To provide feedback or request support, please contact the Amazon Braket team at [amazon-braket-preview-support@amazon.com](mailto:amazon-braket-preview-support@amazon.com?subject=Add%20a%20brief%20description%20of%20the%20issue).
-
-**Important**
-
-If you **Star**, **Watch**, or submit a pull request for this repository, other users that have access to this repository are able to see your user name in the list of watchers. If you want to remain anonymous, you should not Watch or Star this repository, nor post any comments or submit a pull request.
 
 
 ## Features
@@ -38,39 +28,58 @@ If you **Star**, **Watch**, or submit a pull request for this repository, other 
 * Combine Amazon Braket with PennyLane's automatic differentiation and optimization.
 
 
-## Installation
 
-The PennyLane-Braket plugin requires both [PennyLane](https://pennylane.readthedocs.io) and the [Amazon Braket Python SDK](https://github.com/aws/amazon-braket-sdk-python/). Instructions for installing the Amazon Braket SDK are included in the README file for the repo.
+## Prerequisites
+Before you begin working with the Amazon Braket PennyLane Plugin, make sure that you've installed or configured the following prerequisites.
 
-After you install the Amazon Braket SDK, either clone or download the amazon-braket-pennylane-plugin-python repo to your local environment. You must clone or download the repo into a folder in the same virtual environment where you are using the Amazon Braket SDK.
+### Python 3.7.2 or greater
+Download and install Python 3.7.2 or greater from [Python.org](https://www.python.org/downloads/).
+If you are using Windows, choose **Add Python to environment variables** before you begin the installation.
 
-Use the following command to clone the repo.
+### Amazon Braket SDK
+Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions in the [README](https://github.com/aws/amazon-braket-sdk-python#prerequisites).
+
+### PennyLane
+Download and install [PennyLane](https://pennylane.ai/install.html):
+```bash
+pip install dwave-ocean-sdk
+```
+
+## Install the Amazon Braket PennyLane Plugin
+
+You can install from source by cloning this repository and running a pip install command in the root directory of the repository:
 
 ```bash
 git clone https://github.com/aws/amazon-braket-pennylane-plugin-python.git
+cd amazon-braket-pennylane-plugin-python
+pip install .
 ```
 
-Note that, to clone the repo, you must have a valid SSH key created in your local environment and added to your GitHub account.
-
-You can also download the repo as a .zip file by using the **Clone or download** button. 
-
-After you add the repo to your local environment, install the plugin with the following `pip` command:
+You can check your currently installed version of `amazon-braket-pennylane-plugin` with `pip show`:
 
 ```bash
-pip install -e amazon-braket-pennylane-plugin
+pip show amazon-braket-pennylane-plugin
+```
+
+or alternatively from within Python:
+
+```
+>>> from braket import pennylane_plugin
+>>> pennylane_plugin.__version__
 ```
 
 
 ## Documentation
 
-To download the documentation for the plugin, use the following command:
+**To generate the API Reference HTML in your local environment**
+
+First, you must have tox installed.
+
 ```bash
-aws s3 cp s3://braket-external-assets-prod-us-west-2/sdk-docs/amazon-braket-pennylane-plugin-python-docs.zip amazon-braket-pennylane-plugin-python-docs.zip
-``` 
+pip install tox
+```
 
-Extract the downloaded .zip file, and then open ..\html\index.html in a browser.
-
-You can also generate the documentation for the plugin with the following command:
+Then, you can run the following command with tox to generate the documentation:
 
 ```bash
 tox -e docs
@@ -127,13 +136,14 @@ To run linters and doc generators and unit tests
 tox
 ```
 
+
 ### Integration Tests
-Set the `AWS_PROFILE`, similar to in the amazon-braket-sdk-python [README](https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md).
+Set the `AWS_PROFILE`, as instructed in the amazon-braket-sdk-python [README](https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md).
 ```bash
 export AWS_PROFILE=Your_Profile_Name
 ```
 
-Running the integration tests creates an S3 bucket in the same account as the `AWS_PROFILE` with the following naming convention `braket-pennylane-plugin-integ-tests-{account_id}`.
+Running the integration tests creates an S3 bucket in the same account as the `AWS_PROFILE` with the following naming convention `amazon-braket-pennylane-plugin-integ-tests-{account_id}`.
 
 Run the tests
 ```bash
