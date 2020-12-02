@@ -159,7 +159,7 @@ To build the HTML documentation, go to the top-level directory and run:
 
 .. code-block:: bash
 
-  $ make docs
+  $ make html
 
 The documentation can then be found in the ``doc/_build/html/`` directory.
 
