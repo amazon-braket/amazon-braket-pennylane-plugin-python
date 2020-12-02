@@ -11,9 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-"""
-Amazon Braket PennyLane plugin
-"""
 from braket.pennylane_plugin.braket_device import (  # noqa: F401
     BraketAwsQubitDevice,
     BraketLocalQubitDevice,

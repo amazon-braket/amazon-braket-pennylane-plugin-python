@@ -51,11 +51,15 @@ quantum circuits in parallel. To unlock this feature, instantiate the device usi
 The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account specifications.
 
 For example, PennyLane 0.13.0 and higher supports the parallel execution of circuits created during the computation of gradients.
-Just by creating the remote device with the ``parallel=True`` option, this feature is automatically used which can
+Just by instantiating the remote device with the ``parallel=True`` option, this feature is automatically used and can
 lead to significant speedups of your optimization pipeline.
 
-The number of circuits that can be executed in parallel depends on the
-number of workers. !TODO: is this exposed?!
+The maximum number of circuits that can be executed in parallel is specified by the ``max_parallel`` argument.
+
+>>> remote_device = qml.device('braket.aws.qubit', [... ,] max_parallel=20)
+
+Make sure that this number is not larger than the maximum number of workers set for your account.
+
 
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~

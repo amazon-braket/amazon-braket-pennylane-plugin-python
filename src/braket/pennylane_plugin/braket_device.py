@@ -235,7 +235,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_retries (int): The maximum number of retries to use for batch execution.
             When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
             times. Ignored if ``parallel=False``.
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket AwsDevice for PennyLane"
     short_name = "braket.aws.qubit"
@@ -339,7 +339,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             then the device runs in analytic mode (calculations will be exact);
             the device's ``shots`` property is set to 1 and ignored.
             Default: 0
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket LocalSimulator for PennyLane"
     short_name = "braket.local.qubit"
