@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1.post0 (2020-12-01)
+
+### Documentation Changes
+
+ * Remove private beta instructions
+
 ## v0.5.1 (2020-11-26)
 
 ### Bug Fixes and Other Changes
