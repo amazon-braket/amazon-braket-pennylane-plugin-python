@@ -249,19 +249,20 @@
 <p>Before you begin working with the Amazon Braket PennyLane Plugin, make sure
 that you installed or configured the following prerequisites:</p>
 <ul>
-<li><p class="first">Download and install Python 3.7.2 or greater from <a class="reference external" href="https://www.python.org/downloads/">Python.org</a>.
-If you are using Windows, choose <strong>Add Python to environment variables</strong> before you begin the installation.</p>
+<li><p class="first">Download and install <a class="reference external" href="https://www.python.org/downloads/">Python 3.7.2</a> or greater.
+If you are using Windows, choose the option <em>Add Python to environment variables</em> before you begin the installation.</p>
 </li>
-<li><p class="first">Make sure that your AWS account is onboarded to Amazon Braket.</p>
+<li><p class="first">Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions
+<a class="reference external" href="https://github.com/aws/amazon-braket-sdk-python#prerequisites">here</a>.</p>
 </li>
-<li><p class="first">Download and install [PennyLane](<a class="reference external" href="https://pennylane.ai/install.html">https://pennylane.ai/install.html</a>):</p>
+<li><p class="first">Download and install <a class="reference external" href="https://pennylane.ai/install.html">PennyLane</a>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install pennylane
 </pre></div>
 </div>
 </li>
 </ul>
-<p>You can install the latest release of the PennyLane-Braket plugin as follows:</p>
-<p>XXX check!</p>
+<p>You can then install the latest release of the PennyLane-Braket plugin as follows:</p>
+<p>!TODO: check package name!</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install pennylane-braket
 </pre></div>
 </div>
@@ -277,10 +278,10 @@ pip install .
 </pre></div>
 </div>
 <p>or alternatively from within Python:</p>
-<p><code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">&gt;&gt;&gt;</span> <span class="pre">from</span> <span class="pre">braket</span> <span class="pre">import</span> <span class="pre">pennylane_plugin</span>
-<span class="pre">&gt;&gt;&gt;</span> <span class="pre">pennylane_plugin.__version__</span>
-<span class="pre">`</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">braket</span> <span class="kn">import</span> <span class="n">pennylane_plugin</span>
+<span class="n">pennylane_plugin</span><span class="o">.</span><span class="n">__version__</span>
+</pre></div>
+</div>
 <div class="section" id="tests">
 <h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
 <p>Make sure to install test dependencies first:</p>
@@ -304,7 +305,8 @@ pip install .
 </div>
 <div class="section" id="integration-tests">
 <h3>Integration tests<a class="headerlink" href="#integration-tests" title="Permalink to this headline">¶</a></h3>
-<p>To run the integration tests, set the <cite>AWS_PROFILE</cite>, as instructed XXX.</p>
+<p>To run the integration tests, set the <cite>AWS_PROFILE</cite> as explained in the amazon-braket-sdk-python
+<a class="reference external" href="https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md">README</a></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">AWS_PROFILE</span><span class="o">=</span>Your_Profile_Name
 </pre></div>
 </div>

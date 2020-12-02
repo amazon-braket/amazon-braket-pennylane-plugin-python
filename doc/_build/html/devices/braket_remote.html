@@ -246,15 +246,15 @@
               
   <div class="section" id="the-remote-braket-device">
 <h1>The remote Braket device<a class="headerlink" href="#the-remote-braket-device" title="Permalink to this headline">¶</a></h1>
-<p>The remote device of the PennyLane-Braket plugin runs quantum computations on Amazon Braket’s remote service.</p>
-<p>The remote service provides access to hardware providers and a high-performance simulator backend.</p>
-<p>A list of hardware providers can be found <a class="reference external" href="https://aws.amazon.com/braket/hardware-providers/">here</a>.</p>
-<p>The <a class="reference external" href="https://aws.amazon.com/braket/features/">simulator</a> is particularly suited for executing circuits with high qubit numbers,
-where parallelization is needed to handle the exponential scaling notorious for simulating quantum computations on classical hardware.</p>
+<p>The remote device of the PennyLane-Braket plugin runs quantum computations on Amazon Braket’s remote service.
+The remote service provides access to hardware providers and a high-performance simulator backend.</p>
+<p>A list of hardware providers can be found <a class="reference external" href="https://aws.amazon.com/braket/hardware-providers/">here</a>.
+The <a class="reference external" href="https://aws.amazon.com/braket/features/">simulator</a> is particularly suited for executing circuits with high qubit numbers,
+where parallelization is needed to handle the exponential scaling notorious to simulating quantum computations on classical hardware.</p>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>After the Braket SDK and the plugin are installed, you immediately have access to the Braket devices in PennyLane.</p>
-<p>To instantiate an AWS device that communicates with the Braket service:</p>
+<p>Instantiate an AWS device that communicates with the Braket service like this:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pennylane</span> <span class="k">as</span> <span class="nn">qml</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s3</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;my-bucket&quot;</span><span class="p">,</span> <span class="s2">&quot;my-prefix&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">remote_device</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;braket.aws.qubit&quot;</span><span class="p">,</span> <span class="n">device_arn</span><span class="o">=</span><span class="s2">&quot;arn:aws:braket:::device/quantum-simulator/amazon/sv1&quot;</span><span class="p">,</span> <span class="n">s3_destination_folder</span><span class="o">=</span><span class="n">s3</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -262,8 +262,7 @@ where parallelization is needed to handle the exponential scaling notorious for 
 </div>
 <p>In this example, the string <code class="docutils literal notranslate"><span class="pre">arn:aws:braket:::device/quantum-simulator/amazon/sv1</span></code> is the ARN that identifies the SV1 device. Other supported devices and their ARNs can be found in the <a class="reference external" href="https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html">Amazon Braket Developer Guide</a>. Note that the plugin works with digital (qubit) circuit-based devices only.</p>
 <p>This device can then be used just like other devices for the definition and evaluation of QNodes within PennyLane.</p>
-<p>A simple quantum function that returns the expectation value and variance of a measurement and
-depends on three classical input parameters would look like:</p>
+<p>For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@qml.qnode</span><span class="p">(</span><span class="n">remote_device</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">circuit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
     <span class="n">qml</span><span class="o">.</span><span class="n">RZ</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -273,7 +272,7 @@ depends on three classical input parameters would look like:</p>
     <span class="k">return</span> <span class="n">qml</span><span class="o">.</span><span class="n">expval</span><span class="p">(</span><span class="n">qml</span><span class="o">.</span><span class="n">PauliZ</span><span class="p">(</span><span class="mi">0</span><span class="p">)),</span> <span class="n">var</span><span class="p">(</span><span class="n">qml</span><span class="o">.</span><span class="n">PauliZ</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>You can then execute the circuit like any other function to get the quantum mechanical expectation value and variance:</p>
+<p>When executed, the circuit with perform the computation on the Amazon Braket service.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">circuit</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
 <span class="go">array([0.97517033, 0.04904283])</span>
 </pre></div>
@@ -281,22 +280,23 @@ depends on three classical input parameters would look like:</p>
 </div>
 <div class="section" id="enabling-the-parallel-execution-of-multiple-circuits">
 <h2>Enabling the parallel execution of multiple circuits<a class="headerlink" href="#enabling-the-parallel-execution-of-multiple-circuits" title="Permalink to this headline">¶</a></h2>
-<p>Where supported by the backend of the Amazon Braket service, the remote device can be used to execute batches
-of quantum circuits in parallel. To unlock this feature, instantiate the device using the <code class="docutils literal notranslate"><span class="pre">parralel=True</span></code> argument:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">remote_device</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;braket.aws.qubit&#39;</span><span class="p">,</span> <span class="n">device_arn</span><span class="o">=...</span><span class="p">,</span> <span class="n">wires</span><span class="o">=...</span><span class="p">,</span> <span class="n">s3_destination_folder</span><span class="o">=...</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<p>Where supported by the backend of the Amazon Braket service, the remote device can be used to execute multiple
+quantum circuits in parallel. To unlock this feature, instantiate the device using the <code class="docutils literal notranslate"><span class="pre">parralel=True</span></code> argument:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">remote_device</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;braket.aws.qubit&#39;</span><span class="p">,</span> <span class="p">[</span><span class="o">...</span> <span class="p">,]</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account details.</p>
-<p>For example, since PennyLane v0.13 the parallel execution of circuits created during the computation of gradients is supported.
-Gradients are usually required for the optimization of quantum circuits.</p>
-<p>In other words, just by creating the remote device with the <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> option, your optimization pipelines
-should run a lot faster.</p>
+<p>The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account specifications.</p>
+<p>For example, PennyLane 0.13.0 and higher supports the parallel execution of circuits created during the computation of gradients.
+Just by creating the remote device with the <code class="docutils literal notranslate"><span class="pre">parallel=True</span></code> option, this feature is automatically used which can
+lead to significant speedups of your optimization pipeline.</p>
+<p>The number of circuits that can be executed in parallel depends on the
+number of workers. !TODO: is this exposed?!</p>
 </div>
 <div class="section" id="supported-operations">
 <h2>Supported operations<a class="headerlink" href="#supported-operations" title="Permalink to this headline">¶</a></h2>
 <p>The device support all PennyLane <a class="reference external" href="https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations">operations and observables</a>,
 with the exception of the PennyLane <code class="docutils literal notranslate"><span class="pre">QubitUnitary</span></code> and <code class="docutils literal notranslate"><span class="pre">Rot</span></code> gates and <code class="docutils literal notranslate"><span class="pre">Hermitian</span></code> observable.</p>
-<p>The plugin provides the following framework-specific operations for PennyLane, which can be imported
+<p>The PennyLane-Braket plugin provides the following framework-specific operations for PennyLane, which can be imported
 from <code class="xref py py-mod docutils literal notranslate"><span class="pre">braket.pennylane_plugin.ops</span></code>:</p>
 <table border="1" class="longtable docutils">
 <colgroup>

@@ -3,6 +3,8 @@ PennyLane-Braket Plugin
 
 :Release: |release|
 
+!TODO: image!
+
 .. image:: _static/puzzle_braket.png
     :align: center
     :width: 70%
@@ -14,7 +16,7 @@ PennyLane-Braket Plugin
   :start-after:	header-start-inclusion-marker-do-not-remove
   :end-before: header-end-inclusion-marker-do-not-remove
 
-Once Pennylane-Braket is installed, the provided Braket devices can be accessed straight
+Once the Pennylane-Braket plugin is installed, the provided Braket devices can be accessed straight
 away in PennyLane, without the need to import any additional packages.
 
 Devices
@@ -24,7 +26,7 @@ This plugin provides two Braket devices for use with PennyLane:
 
 .. devicegalleryitem::
     :name: 'braket.aws.qubit'
-    :description: Runs circuits on the Amazon Braket service.
+    :description: Runs circuits on the remote Amazon Braket service.
     :link: devices/braket_remote.html
 
 .. devicegalleryitem::
@@ -37,7 +39,8 @@ This plugin provides two Braket devices for use with PennyLane:
         <div style='clear:both'></div>
         </br>
 
-The remote device can be modified to address different backends of Amazon Braket's service, such as
+While the local device helps with small-scale simulations and rapid prototyping,
+the remote device provides access different backends of the Amazon Braket service, such as
 high performance simulators and quantum hardware.
 
 Tutorials
@@ -46,13 +49,13 @@ Tutorials
 To see the PennyLane-Braket plugin in action, you can use any of the qubit-based `demos
 from the PennyLane documentation <https://pennylane.ai/qml/demonstrations.html>`_, for example
 the tutorial on `qubit rotation <https://pennylane.ai/qml/demos/tutorial_qubit_rotation.html>`_,
-and simply replace ``'default.qubit'`` with the ``'braket.local.qubit'`` or the ``'braket.aws.qubit'`` device, such as:
+and simply replace ``'default.qubit'`` with the ``'braket.local.qubit'`` or the ``'braket.aws.qubit'`` device:
 
 .. code-block:: python
 
-    dev = qml.device('braket.local.qubit', [...])
+    dev = qml.device('braket.XXX.qubit', [...])
 
-Tutorials that showcase the braket device are the demos XXX.
+Tutorials that showcase the braket devices are the demos !TODO: link to demos!.
 
 .. toctree::
    :maxdepth: 2

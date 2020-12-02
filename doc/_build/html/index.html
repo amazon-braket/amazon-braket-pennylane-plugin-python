@@ -250,16 +250,17 @@
 </tr>
 </tbody>
 </table>
+<p>!TODO: image!</p>
 <a class="reference external image-reference" href="javascript:void(0);"><img alt="_static/puzzle_braket.png" class="align-center" src="_static/puzzle_braket.png" style="width: 70%;" /></a>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
 <p>The <a class="reference external" href="https://github.com/aws/amazon-braket-sdk-python">Amazon Braket Python SDK</a> is an open source
-library that provides a framework that you can use to interact with quantum computing hardware
-devices through Amazon Braket.</p>
+library that provides a framework to interact with quantum computing hardware
+devices and simulators through Amazon Braket.</p>
 <p><a class="reference external" href="https://pennylane.readthedocs.io">PennyLane</a> is a machine learning library for optimization and automatic
 differentiation of hybrid quantum-classical computations.</p>
-<p>Once Pennylane-Braket is installed, the provided Braket devices can be accessed straight
+<p>Once the Pennylane-Braket plugin is installed, the provided Braket devices can be accessed straight
 away in PennyLane, without the need to import any additional packages.</p>
 <div class="section" id="devices">
 <h2>Devices<a class="headerlink" href="#devices" title="Permalink to this headline">¶</a></h2>
@@ -270,7 +271,7 @@ away in PennyLane, without the need to import any additional packages.</p>
             <b>'braket.aws.qubit'</b>
         </div>
         <div class="card-body">
-            <p class="card-text"> Runs circuits on the Amazon Braket service. </p>
+            <p class="card-text"> Runs circuits on the remote Amazon Braket service. </p>
         </div>
     </a>
 </div></p>
@@ -285,7 +286,8 @@ away in PennyLane, without the need to import any additional packages.</p>
     </a>
 </div></p>
 <div style='clear:both'></div>
-</br><p>The remote device can be modified to address different backends of Amazon Braket’s service, such as
+</br><p>While the local device helps with small-scale simulations and rapid prototyping,
+the remote device provides access different backends of the Amazon Braket service, such as
 high performance simulators and quantum hardware.</p>
 </div>
 <div class="section" id="tutorials">
@@ -293,11 +295,11 @@ high performance simulators and quantum hardware.</p>
 <p>To see the PennyLane-Braket plugin in action, you can use any of the qubit-based <a class="reference external" href="https://pennylane.ai/qml/demonstrations.html">demos
 from the PennyLane documentation</a>, for example
 the tutorial on <a class="reference external" href="https://pennylane.ai/qml/demos/tutorial_qubit_rotation.html">qubit rotation</a>,
-and simply replace <code class="docutils literal notranslate"><span class="pre">'default.qubit'</span></code> with the <code class="docutils literal notranslate"><span class="pre">'braket.local.qubit'</span></code> or the <code class="docutils literal notranslate"><span class="pre">'braket.aws.qubit'</span></code> device, such as:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dev</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;braket.local.qubit&#39;</span><span class="p">,</span> <span class="p">[</span><span class="o">...</span><span class="p">])</span>
+and simply replace <code class="docutils literal notranslate"><span class="pre">'default.qubit'</span></code> with the <code class="docutils literal notranslate"><span class="pre">'braket.local.qubit'</span></code> or the <code class="docutils literal notranslate"><span class="pre">'braket.aws.qubit'</span></code> device:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dev</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;braket.XXX.qubit&#39;</span><span class="p">,</span> <span class="p">[</span><span class="o">...</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>Tutorials that showcase the braket device are the demos XXX.</p>
+<p>Tutorials that showcase the braket devices are the demos !TODO: link to demos!.</p>
 <div class="toctree-wrapper compound">
 </div>
 <div class="toctree-wrapper compound">

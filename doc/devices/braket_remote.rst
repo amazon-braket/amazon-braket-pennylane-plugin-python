@@ -2,20 +2,18 @@ The remote Braket device
 ========================
 
 The remote device of the PennyLane-Braket plugin runs quantum computations on Amazon Braket's remote service.
-
 The remote service provides access to hardware providers and a high-performance simulator backend.
 
 A list of hardware providers can be found `here <https://aws.amazon.com/braket/hardware-providers/>`_.
-
 The `simulator <https://aws.amazon.com/braket/features/>`_ is particularly suited for executing circuits with high qubit numbers,
-where parallelization is needed to handle the exponential scaling notorious for simulating quantum computations on classical hardware.
+where parallelization is needed to handle the exponential scaling notorious to simulating quantum computations on classical hardware.
 
 Usage
 ~~~~~
 
 After the Braket SDK and the plugin are installed, you immediately have access to the Braket devices in PennyLane.
 
-To instantiate an AWS device that communicates with the Braket service:
+Instantiate an AWS device that communicates with the Braket service like this:
 
 >>> import pennylane as qml
 >>> s3 = ("my-bucket", "my-prefix")
@@ -25,8 +23,7 @@ In this example, the string ``arn:aws:braket:::device/quantum-simulator/amazon/s
 
 This device can then be used just like other devices for the definition and evaluation of QNodes within PennyLane.
 
-A simple quantum function that returns the expectation value and variance of a measurement and
-depends on three classical input parameters would look like:
+For example:
 
 .. code-block:: python
 
@@ -38,7 +35,7 @@ depends on three classical input parameters would look like:
         qml.CNOT(wires=[0, 1])
         return qml.expval(qml.PauliZ(0)), var(qml.PauliZ(1))
 
-You can then execute the circuit like any other function to get the quantum mechanical expectation value and variance:
+When executed, the circuit performs the computation on the Amazon Braket service.
 
 >>> circuit(0.2, 0.1, 0.3)
 array([0.97517033, 0.04904283])
@@ -46,18 +43,19 @@ array([0.97517033, 0.04904283])
 Enabling the parallel execution of multiple circuits
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Where supported by the backend of the Amazon Braket service, the remote device can be used to execute batches
-of quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parralel=True`` argument:
+Where supported by the backend of the Amazon Braket service, the remote device can be used to execute multiple
+quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parralel=True`` argument:
 
->>> remote_device = qml.device('braket.aws.qubit', device_arn=..., wires=..., s3_destination_folder=..., parallel=True)
+>>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True)
 
-The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account details.
+The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account specifications.
 
-For example, since PennyLane v0.13 the parallel execution of circuits created during the computation of gradients is supported.
-Gradients are usually required for the optimization of quantum circuits.
+For example, PennyLane 0.13.0 and higher supports the parallel execution of circuits created during the computation of gradients.
+Just by creating the remote device with the ``parallel=True`` option, this feature is automatically used which can
+lead to significant speedups of your optimization pipeline.
 
-In other words, just by creating the remote device with the ``parallel=True`` option, your optimization pipelines
-should run a lot faster.
+The number of circuits that can be executed in parallel depends on the
+number of workers. !TODO: is this exposed?!
 
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
@@ -65,7 +63,7 @@ Supported operations
 The device support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_,
 with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``Hermitian`` observable.
 
-The plugin provides the following framework-specific operations for PennyLane, which can be imported
+The PennyLane-Braket plugin provides the following framework-specific operations for PennyLane, which can be imported
 from :mod:`braket.pennylane_plugin.ops <.ops>`:
 
 .. autosummary::
