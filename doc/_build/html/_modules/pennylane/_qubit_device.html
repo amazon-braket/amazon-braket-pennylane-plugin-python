@@ -1,0 +1,1152 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Noto+Serif" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Material Design Bootstrap -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.14/css/mdb.min.css" rel="stylesheet">
+
+  <!-- nanoscroller -->
+  <link rel="stylesheet" type="text/css" href="../../_static/css/nanoscroller.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/x-mathjax-config">
+     MathJax.Hub.Config({
+       "HTML-CSS": { scale: 90, linebreaks: { automatic: true } },
+       TeX: {
+         Macros: {
+           pr : ['|\#1\\rangle\\langle\#1|',1],
+           ket: ['\\left| \#1\\right\\rangle',1],
+           bra: ['\\left\\langle \#1\\right|',1],
+           xket: ['\\left| \#1\\right\\rangle_x',1],
+           xbra: ['\\left\\langle \#1\\right|_x',1],
+           braket: ['\\langle \#1 \\rangle',1],
+           braketD: ['\\langle \#1 \\mid \#2 \\rangle',2],
+           braketT: ['\\langle \#1 \\mid \#2 \\mid \#3 \\rangle',3],
+           ketbra: ['| #1 \\rangle \\langle #2 |',2],
+           hc: ['\\text{h.c.}',0],
+           cc: ['\\text{c.c.}',0],
+           h: ['\\hat',0],
+           nn: ['\\nonumber',0],
+           di: ['\\frac{d}{d \#1}',1],
+           uu: ['\\mathcal{U}',0],
+           inn: ['\\text{in}',0],
+           out: ['\\text{out}',0],
+           vac: ['\\text{vac}',0],
+           I: ['\\hat{\\mathbf{1}}',0],
+           x: ['\\hat{x}',0],
+           p: ['\\hat{p}',0],
+           a: ['\\hat{a}',0],
+           ad: ['\\hat{a}^\\dagger',0],
+           n: ['\\hat{n}',0],
+           nbar: ['\\overline{n}',0],
+           sech: ['\\mathrm{sech~}',0],
+           tanh: ['\\mathrm{tanh~}',0],
+           re: ['\\text{Re}',0],
+           im: ['\\text{Im}',0],
+           tr: ['\\mathrm{Tr} #1',1],
+           sign: ['\\text{sign}',0],
+           overlr: ['\\overset\\leftrightarrow{\#1}',1],
+           overl: ['\\overset\leftarrow{\#1}',1],
+           overr: ['\\overset\rightarrow{\#1}',1],
+           avg: ['\\left< \#1 \\right>',1],
+           slashed: ['\\cancel{\#1}',1],
+           bold: ['\\boldsymbol{\#1}',1],
+           d: ['\\mathrm d',0],
+           expect: ["\\langle #1 \\rangle",1],
+           pde: ["\\frac{\\partial}{\\partial \#1}",1],
+           R: ["\\mathbb{R}",0],
+           C: ["\\mathbb{C}",0],
+           Ad: ["\\text{Ad}",0],
+           Var: ["\\text{Var}",0],
+           bx: ["\\mathbf{x}", 0],
+           bm: ["\\boldsymbol{\#1}",1]
+         }
+       }
+     });
+     </script>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-130507810-2"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-130507810-2');
+      </script>
+  
+    <title>pennylane._qubit_device &#8212; Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</title>
+    <link rel="stylesheet" href="../../_static/xanadu.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body><!--Navbar-->
+<nav class="navbar navbar-expand-lg navbar-light white sticky-top">
+
+  <!-- Navbar brand -->
+  <a class="navbar-brand" href="https://pennylane.ai">
+    <img class="pr-1" src="../../_static/xanadu_x.png" width="28px"></img>
+    <img src="../../_static/pennylane.png" width="180px"></img>
+  </a>
+
+  <!-- Collapse button -->
+  <div class="row right">
+  <a href="#" class="btn navbar-toggler black-text mr-1 justify-content-center" id="mobile-toggle">
+    <i class="fas fa-search"></i>
+  </a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#basicExampleNav"
+    aria-controls="basicExampleNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+</div>
+
+  <!-- Collapsible content -->
+  <div class="collapse navbar-collapse" id="basicExampleNav">
+
+    <!-- Links -->
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/qml">Quantum machine learning
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/install.html">Install</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="https://pennylane.ai/plugins.html">Plugins</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.readthedocs.io">Documentation</a>
+          <span class="sr-only">(current)</span>
+      </li>
+    </ul>
+    <!-- Links -->
+
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/faq.html">
+          <i class="fab fas fa-question"></i> FAQ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://discuss.pennylane.ai">
+          <i class="fab fab fa-discourse"></i> Support
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/XanaduAI/pennyLane-forest">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </li>
+    </ul>
+  </div>
+  <!-- Collapsible content -->
+</nav>
+<!--/.Navbar-->
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+  <div id="left-column" class="nano css-transitions-only-after-page-load">
+    <div class="sphinxsidebar nano-content"><div class="sidebar-block search-block">
+  <div id="main-search">
+    <form action="../../search.html" method="GET" role="form">
+      <div class="md-input">
+        <input name="q" type="text" required>
+        <span class="bar"></span>
+        <label>Search</label>
+      </div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+  </div>
+</div>
+<div class="sidebar-block">
+<!--   <div class="sidebar-wrapper">
+    <h2>Table Of Contents</h2>
+  </div> -->
+  <div class="sidebar-toc">
+    <p class="caption">PennyLane-Braket</p>
+    <ul>
+      <li class="caption toctree-l1 ">
+        <a class="reference internal" href="../../index.html">Overview</a>
+      </li>
+    </ul>
+    
+    
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="content">
+          <div id="right-column">
+            
+            <div role="navigation" aria-label="breadcrumbs navigation">
+              <ol class="breadcrumb">
+                <li><a href="../../index.html">Docs</a></li>
+                
+                  <li><a href="../index.html">Module code</a></li>
+                
+                <li>pennylane._qubit_device</li>
+              </ol>
+            </div>
+            
+            <div class="document clearer body">
+
+              
+  <h1>Source code for pennylane._qubit_device</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2018-2020 Xanadu Quantum Technologies Inc.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the :class:`QubitDevice` abstract base class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># For now, arguments may be different from the signatures provided in Device</span>
+<span class="c1"># e.g. instead of expval(self, observable, wires, par) have expval(self, observable)</span>
+<span class="c1"># pylint: disable=arguments-differ, abstract-method, no-value-for-parameter,too-many-instance-attributes</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pennylane.operation</span> <span class="k">import</span> <span class="n">Sample</span><span class="p">,</span> <span class="n">Variance</span><span class="p">,</span> <span class="n">Expectation</span><span class="p">,</span> <span class="n">Probability</span><span class="p">,</span> <span class="n">State</span>
+<span class="kn">from</span> <span class="nn">pennylane.qnodes</span> <span class="k">import</span> <span class="n">QuantumFunctionError</span>
+<span class="kn">from</span> <span class="nn">pennylane</span> <span class="k">import</span> <span class="n">Device</span>
+<span class="kn">from</span> <span class="nn">pennylane.wires</span> <span class="k">import</span> <span class="n">Wires</span>
+
+
+<span class="k">class</span> <span class="nc">QubitDevice</span><span class="p">(</span><span class="n">Device</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for PennyLane qubit devices.</span>
+
+<span class="sd">    The following abstract method **must** be defined:</span>
+
+<span class="sd">    * :meth:`~.apply`: append circuit operations, compile the circuit (if applicable),</span>
+<span class="sd">      and perform the quantum computation.</span>
+
+<span class="sd">    Devices that generate their own samples (such as hardware) may optionally</span>
+<span class="sd">    overwrite :meth:`~.probabilty`. This method otherwise automatically</span>
+<span class="sd">    computes the probabilities from the generated samples, and **must**</span>
+<span class="sd">    overwrite the following method:</span>
+
+<span class="sd">    * :meth:`~.generate_samples`: Generate samples from the device from the</span>
+<span class="sd">      exact or approximate probability distribution.</span>
+
+<span class="sd">    Analytic devices **must** overwrite the following method:</span>
+
+<span class="sd">    * :meth:`~.analytic_probability`: returns the probability or marginal probability from the</span>
+<span class="sd">      device after circuit execution. :meth:`~.marginal_prob` may be used here.</span>
+
+<span class="sd">    This device contains common utility methods for qubit-based devices. These</span>
+<span class="sd">    do not need to be overwritten. Utility methods include:</span>
+
+<span class="sd">    * :meth:`~.expval`, :meth:`~.var`, :meth:`~.sample`: return expectation values,</span>
+<span class="sd">      variances, and samples of observables after the circuit has been rotated</span>
+<span class="sd">      into the observable eigenbasis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        wires (int, Iterable[Number, str]]): Number of subsystems represented by the device,</span>
+<span class="sd">            or iterable that contains unique labels for the subsystems as numbers (i.e., ``[-1, 0, 2]``)</span>
+<span class="sd">            or strings (``[&#39;ancilla&#39;, &#39;q1&#39;, &#39;q2&#39;]``). Default 1 if not specified.</span>
+<span class="sd">        shots (int): number of circuit evaluations/random samples used to estimate</span>
+<span class="sd">            expectation values of observables</span>
+<span class="sd">        analytic (bool): If ``True``, the device calculates probability, expectation values,</span>
+<span class="sd">            and variances analytically. If ``False``, a finite number of samples set by</span>
+<span class="sd">            the argument ``shots`` are used to estimate these quantities.</span>
+<span class="sd">        cache (int): Number of device executions to store in a cache to speed up subsequent</span>
+<span class="sd">            executions. A value of ``0`` indicates that no caching will take place. Once filled,</span>
+<span class="sd">            older elements of the cache are removed and replaced with the most recent device</span>
+<span class="sd">            executions to keep the cache up to date.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=too-many-public-methods</span>
+    <span class="n">C_DTYPE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span>
+    <span class="n">R_DTYPE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+    <span class="n">_asarray</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">)</span>
+    <span class="n">_dot</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">)</span>
+    <span class="n">_abs</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">)</span>
+    <span class="n">_reduce_sum</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="k">lambda</span> <span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">axes</span><span class="p">)))</span>
+    <span class="n">_reshape</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">)</span>
+    <span class="n">_flatten</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="k">lambda</span> <span class="n">array</span><span class="p">:</span> <span class="n">array</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="n">_gather</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="k">lambda</span> <span class="n">array</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">array</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+    <span class="n">_einsum</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">)</span>
+    <span class="n">_cast</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">)</span>
+    <span class="n">_transpose</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">)</span>
+    <span class="n">_tensordot</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">)</span>
+    <span class="n">_conj</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">)</span>
+    <span class="n">_imag</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">)</span>
+    <span class="n">_roll</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">)</span>
+    <span class="n">_stack</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">)</span>
+    <span class="n">_outer</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">)</span>
+    <span class="n">_diag</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">)</span>
+    <span class="n">_real</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_scatter</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">new_dimensions</span><span class="p">):</span>
+        <span class="n">new_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">new_dimensions</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">new_array</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span>
+        <span class="k">return</span> <span class="n">new_array</span>
+
+    <span class="n">observables</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;PauliX&quot;</span><span class="p">,</span> <span class="s2">&quot;PauliY&quot;</span><span class="p">,</span> <span class="s2">&quot;PauliZ&quot;</span><span class="p">,</span> <span class="s2">&quot;Hadamard&quot;</span><span class="p">,</span> <span class="s2">&quot;Hermitian&quot;</span><span class="p">,</span> <span class="s2">&quot;Identity&quot;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">analytic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="n">shots</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">analytic</span> <span class="o">=</span> <span class="n">analytic</span>
+        <span class="sd">&quot;&quot;&quot;bool: If ``True``, the device supports exact calculation of expectation</span>
+<span class="sd">        values, variances, and probabilities. If ``False``, samples are used</span>
+<span class="sd">        to estimate the statistical quantities above.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;None or array[int]: stores the samples generated by the device</span>
+<span class="sd">        *after* rotation to diagonalize the observables.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_circuit_hash</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;None or int: stores the hash of the circuit from the last execution which</span>
+<span class="sd">        can be used by devices in :meth:`apply` for parametric compilation.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="sd">&quot;&quot;&quot;int: Number of device executions to store in a cache to speed up subsequent</span>
+<span class="sd">        executions. If set to zero, no caching occurs.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="sd">&quot;&quot;&quot;OrderedDict[int: Any]: Mapping from hashes of the circuit to results of executing the</span>
+<span class="sd">        device.&quot;&quot;&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">capabilities</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+
+        <span class="n">capabilities</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">capabilities</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="s2">&quot;qubit&quot;</span><span class="p">,</span>
+            <span class="n">supports_finite_shots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">supports_tensor_observables</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">returns_probs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">capabilities</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the backend state.</span>
+
+<span class="sd">        After the reset, the backend should be as if it was just constructed.</span>
+<span class="sd">        Most importantly the quantum state is reset to its initial value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_circuit_hash</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute a queue of quantum operations on the device and then</span>
+<span class="sd">        measure the given observables.</span>
+
+<span class="sd">        For plugin developers: instead of overwriting this, consider</span>
+<span class="sd">        implementing a suitable subset of</span>
+
+<span class="sd">        * :meth:`apply`</span>
+
+<span class="sd">        * :meth:`~.generate_samples`</span>
+
+<span class="sd">        * :meth:`~.probability`</span>
+
+<span class="sd">        Additional keyword arguments may be passed to the this method</span>
+<span class="sd">        that can be utilised by :meth:`apply`. An example would be passing</span>
+<span class="sd">        the ``QNode`` hash that can be used later for parametric compilation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            circuit (~.CircuitGraph): circuit to execute on the device</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: measured value(s)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>  <span class="c1"># TODO: Remove try/except when circuit is always QuantumTape</span>
+                <span class="n">circuit_hash</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">hash</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Caching is only available when using tape mode&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+            <span class="k">if</span> <span class="n">circuit_hash</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span><span class="p">[</span><span class="n">circuit_hash</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_validity</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">operations</span><span class="p">,</span> <span class="n">circuit</span><span class="o">.</span><span class="n">observables</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_circuit_hash</span> <span class="o">=</span> <span class="n">circuit</span><span class="o">.</span><span class="n">hash</span>
+
+        <span class="c1"># apply all circuit operations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">operations</span><span class="p">,</span> <span class="n">rotations</span><span class="o">=</span><span class="n">circuit</span><span class="o">.</span><span class="n">diagonalizing_gates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># generate computational basis samples</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic</span><span class="p">)</span> <span class="ow">or</span> <span class="n">circuit</span><span class="o">.</span><span class="n">is_sampled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_samples</span><span class="p">()</span>
+
+        <span class="c1"># compute the required statistics</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">observables</span><span class="p">)</span>
+
+        <span class="c1"># Ensures that a combination with sample does not put</span>
+        <span class="c1"># expvals and vars in superfluous arrays</span>
+        <span class="n">all_sampled</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Sample</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">circuit</span><span class="o">.</span><span class="n">observables</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">circuit</span><span class="o">.</span><span class="n">is_sampled</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">all_sampled</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="ow">and</span> <span class="n">circuit_hash</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span><span class="p">[</span><span class="n">circuit_hash</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cache_execute</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># increment counter for number of executions of qubit device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_executions</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;int: Number of device executions to store in a cache to speed up subsequent</span>
+<span class="sd">        executions. If set to zero, no caching occurs.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span>
+
+    <span class="k">def</span> <span class="nf">batch_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute a batch of quantum circuits on the device.</span>
+
+<span class="sd">        The circuits are represented by tapes, and they are executed one-by-one using the</span>
+<span class="sd">        device&#39;s ``execute`` method. The results are collected in a list.</span>
+
+<span class="sd">        For plugin developers: This function should be overwritten if the device can efficiently run multiple</span>
+<span class="sd">        circuits on a backend, for example using parallel and/or asynchronous executions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            circuits (list[.tapes.QuantumTape]): circuits to execute on the device</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[array[float]]: list of measured value(s)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: This method and the tests can be globally implemented by Device</span>
+        <span class="c1"># once it has the same signature in the execute() method</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">circuit</span> <span class="ow">in</span> <span class="n">circuits</span><span class="p">:</span>
+            <span class="c1"># we need to reset the device here, else it will</span>
+            <span class="c1"># not start the next computation in the zero state</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operations</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply quantum operations, rotate the circuit into the measurement</span>
+<span class="sd">        basis, and compile and execute the quantum circuit.</span>
+
+<span class="sd">        This method receives a list of quantum operations queued by the QNode,</span>
+<span class="sd">        and should be responsible for:</span>
+
+<span class="sd">        * Constructing the quantum program</span>
+<span class="sd">        * (Optional) Rotating the quantum circuit using the rotation</span>
+<span class="sd">          operations provided. This diagonalizes the circuit so that arbitrary</span>
+<span class="sd">          observables can be measured in the computational basis.</span>
+<span class="sd">        * Compile the circuit</span>
+<span class="sd">        * Execute the quantum circuit</span>
+
+<span class="sd">        Both arguments are provided as lists of PennyLane :class:`~.Operation`</span>
+<span class="sd">        instances. Useful properties include :attr:`~.Operation.name`,</span>
+<span class="sd">        :attr:`~.Operation.wires`, and :attr:`~.Operation.parameters`,</span>
+<span class="sd">        and :attr:`~.Operation.inverse`:</span>
+
+<span class="sd">        &gt;&gt;&gt; op = qml.RX(0.2, wires=[0])</span>
+<span class="sd">        &gt;&gt;&gt; op.name # returns the operation name</span>
+<span class="sd">        &quot;RX&quot;</span>
+<span class="sd">        &gt;&gt;&gt; op.wires # returns a Wires object representing the wires that the operation acts on</span>
+<span class="sd">        &lt;Wires = [0]&gt;</span>
+<span class="sd">        &gt;&gt;&gt; op.parameters # returns a list of parameters</span>
+<span class="sd">        [0.2]</span>
+<span class="sd">        &gt;&gt;&gt; op.inverse # check if the operation should be inverted</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; op = qml.RX(0.2, wires=[0]).inv</span>
+<span class="sd">        &gt;&gt;&gt; op.inverse</span>
+<span class="sd">        True</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            operations (list[~.Operation]): operations to apply to the device</span>
+
+<span class="sd">        Keyword args:</span>
+<span class="sd">            rotations (list[~.Operation]): operations that rotate the circuit</span>
+<span class="sd">                pre-measurement into the eigenbasis of the observables.</span>
+<span class="sd">            hash (int): the hash value of the circuit constructed by `CircuitGraph.hash`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">active_wires</span><span class="p">(</span><span class="n">operators</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the wires acted on by a set of operators.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            operators (list[~.Operation]): operators for which</span>
+<span class="sd">                we are gathering the active wires</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Wires: wires activated by the specified operators</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">list_of_wires</span> <span class="o">=</span> <span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">wires</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">Wires</span><span class="o">.</span><span class="n">all_wires</span><span class="p">(</span><span class="n">list_of_wires</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observables</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process measurement results from circuit execution and return statistics.</span>
+
+<span class="sd">        This includes returning expectation values, variance, samples, probabilities, states, and</span>
+<span class="sd">        density matrices.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            observables (List[.Observable]): the observables to be measured</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Union[float, List[float]]: the corresponding statistics</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observables</span><span class="p">:</span>
+            <span class="c1"># Pass instances directly</span>
+            <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Expectation</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expval</span><span class="p">(</span><span class="n">obs</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Variance</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">obs</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Sample</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">obs</span><span class="p">)))</span>
+
+            <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Probability</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">obs</span><span class="o">.</span><span class="n">wires</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">State</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">observables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span>
+                        <span class="s2">&quot;The state or density matrix cannot be returned in combination&quot;</span>
+                        <span class="s2">&quot; with other return types&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">labels</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span>
+                        <span class="s2">&quot;Returning the state is not supported when using custom wire labels&quot;</span>
+                    <span class="p">)</span>
+                <span class="c1"># Check if the state is accessible and decide to return the state or the density</span>
+                <span class="c1"># matrix.</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_state</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">obs</span><span class="o">.</span><span class="n">wires</span><span class="p">))</span>
+
+            <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unsupported return type specified for observable </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="k">def</span> <span class="nf">access_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that the device has access to an internal state and return it if available.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Wires): wires of the reduced system</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            QuantumFunctionError: if the device is not capable of returning the state</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array or tensor: the state or the density matrix of the device</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;returns_state&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span><span class="s2">&quot;The current device is not capable of returning the state&quot;</span><span class="p">)</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span><span class="s2">&quot;The state is not available in the current device&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wires</span><span class="p">:</span>
+            <span class="n">density_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_matrix</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">density_matrix</span>
+
+        <span class="k">return</span> <span class="n">state</span>
+
+    <span class="k">def</span> <span class="nf">generate_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the computational basis samples generated for all wires.</span>
+
+<span class="sd">        Note that PennyLane uses the convention :math:`|q_0,q_1,\dots,q_{N-1}\rangle` where</span>
+<span class="sd">        :math:`q_0` is the most significant bit.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">            This method should be overwritten on devices that</span>
+<span class="sd">            generate their own computational basis samples, with the resulting</span>
+<span class="sd">            computational basis samples stored as ``self._samples``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">number_of_states</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span>
+
+        <span class="n">rotated_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic_probability</span><span class="p">()</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_basis_states</span><span class="p">(</span><span class="n">number_of_states</span><span class="p">,</span> <span class="n">rotated_prob</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">QubitDevice</span><span class="o">.</span><span class="n">states_to_binary</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">sample_basis_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_states</span><span class="p">,</span> <span class="n">state_probability</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sample from the computational basis states based on the state</span>
+<span class="sd">        probability.</span>
+
+<span class="sd">        This is an auxiliary method to the generate_samples method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            number_of_states (int): the number of basis states to sample from</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[int]: the sampled basis states</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">basis_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">number_of_states</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">basis_states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shots</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">state_probability</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">generate_basis_states</span><span class="p">(</span><span class="n">num_wires</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates basis states in binary representation according to the number</span>
+<span class="sd">        of wires specified.</span>
+
+<span class="sd">        The states_to_binary method creates basis states faster (for larger</span>
+<span class="sd">        systems at times over x25 times faster) than the approach using</span>
+<span class="sd">        ``itertools.product``, at the expense of using slightly more memory.</span>
+
+<span class="sd">        Due to the large size of the integer arrays for more than 32 bits,</span>
+<span class="sd">        memory allocation errors may arise in the states_to_binary method.</span>
+<span class="sd">        Hence we constraint the dtype of the array to represent unsigned</span>
+<span class="sd">        integers on 32 bits. Due to this constraint, an overflow occurs for 32</span>
+<span class="sd">        or more wires, therefore this approach is used only for fewer wires.</span>
+
+<span class="sd">        For smaller number of wires speed is comparable to the next approach</span>
+<span class="sd">        (using ``itertools.product``), hence we resort to that one for testing</span>
+<span class="sd">        purposes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            num_wires (int): the number wires</span>
+<span class="sd">            dtype=np.uint32 (type): the data type of the arrays to use</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: the sampled basis states</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mi">2</span> <span class="o">&lt;</span> <span class="n">num_wires</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">:</span>
+            <span class="n">states_base_ten</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">num_wires</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">QubitDevice</span><span class="o">.</span><span class="n">states_to_binary</span><span class="p">(</span><span class="n">states_base_ten</span><span class="p">,</span> <span class="n">num_wires</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="c1"># A slower, but less memory intensive method</span>
+        <span class="n">basis_states_generator</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="n">num_wires</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">basis_states_generator</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_wires</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">states_to_binary</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">num_wires</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert basis states from base 10 to binary representation.</span>
+
+<span class="sd">        This is an auxiliary method to the generate_samples method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            samples (List[int]): samples of basis states in base 10 representation</span>
+<span class="sd">            num_wires (int): the number of qubits</span>
+<span class="sd">            dtype (type): Type of the internal integer array to be used. Can be</span>
+<span class="sd">                important to specify for large systems for memory allocation</span>
+<span class="sd">                purposes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[int]: basis states in binary representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">powers_of_two</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_wires</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">states_sampled_base_ten</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">powers_of_two</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">states_sampled_base_ten</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">circuit_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The hash of the circuit upon the last execution.</span>
+
+<span class="sd">        This can be used by devices in :meth:`~.apply` for parametric compilation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_circuit_hash</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the state vector of the circuit prior to measurement.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            Only state vector simulators support this property. Please see the</span>
+<span class="sd">            plugin documentation for more details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">density_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the reduced density matrix prior to measurement.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            Only state vector simulators support this property. Please see the</span>
+<span class="sd">            plugin documentation for more details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">analytic_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the (marginal) probability of each computational basis</span>
+<span class="sd">        state from the last run of the device.</span>
+
+<span class="sd">        PennyLane uses the convention</span>
+<span class="sd">        :math:`|q_0,q_1,\dots,q_{N-1}\rangle` where :math:`q_0` is the most</span>
+<span class="sd">        significant bit.</span>
+
+<span class="sd">        If no wires are specified, then all the basis states representable by</span>
+<span class="sd">        the device are considered and no marginalization takes place.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            :meth:`marginal_prob` may be used as a utility method</span>
+<span class="sd">            to calculate the marginal probability distribution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Iterable[Number, str], Number, str, Wires): wires to return</span>
+<span class="sd">                marginal probabilities for. Wires not provided are traced out of the system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[float]: list of the probabilities</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">estimate_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the estimated probability of each computational basis state</span>
+<span class="sd">        using the generated samples.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Iterable[Number, str], Number, str, Wires): wires to calculate</span>
+<span class="sd">                marginal probabilities for. Wires not provided are traced out of the system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[float]: list of the probabilities</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">wires</span> <span class="o">=</span> <span class="n">wires</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span>
+        <span class="c1"># convert to a wires object</span>
+        <span class="n">wires</span> <span class="o">=</span> <span class="n">Wires</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+        <span class="c1"># translate to wire labels used by device</span>
+        <span class="n">device_wires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_wires</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">[:,</span> <span class="n">device_wires</span><span class="p">]</span>
+
+        <span class="c1"># convert samples from a list of 0, 1 integers, to base 10 representation</span>
+        <span class="n">unraveled_indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">device_wires</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">unraveled_indices</span><span class="p">)</span>
+
+        <span class="c1"># count the basis state occurrences, and construct the probability vector</span>
+        <span class="n">basis_states</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span> <span class="o">**</span> <span class="nb">len</span><span class="p">(</span><span class="n">device_wires</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">prob</span><span class="p">[</span><span class="n">basis_states</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">R_DTYPE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return either the analytic probability or estimated probability of</span>
+<span class="sd">        each computational basis state.</span>
+
+<span class="sd">        If no :attr:`~.analytic` attributes exists for the device, then return the</span>
+<span class="sd">        estimated probability.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Iterable[Number, str], Number, str, Wires): wires to return</span>
+<span class="sd">                marginal probabilities for. Wires not provided are traced out of the system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[float]: list of the probabilities</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;analytic&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic_probability</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_probability</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">marginal_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prob</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the marginal probability of the computational basis</span>
+<span class="sd">        states by summing the probabiliites on the non-specified wires.</span>
+
+<span class="sd">        If no wires are specified, then all the basis states representable by</span>
+<span class="sd">        the device are considered and no marginalization takes place.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            If the provided wires are not in the order as they appear on the device,</span>
+<span class="sd">            the returned marginal probabilities take this permutation into account.</span>
+
+<span class="sd">            For example, if the addressable wires on this device are ``Wires([0, 1, 2])`` and</span>
+<span class="sd">            this function gets passed ``wires=[2, 0]``, then the returned marginal</span>
+<span class="sd">            probability vector will take this &#39;reversal&#39; of the two wires</span>
+<span class="sd">            into account:</span>
+
+<span class="sd">            .. math::</span>
+
+<span class="sd">                \mathbb{P}^{(2, 0)}</span>
+<span class="sd">                            = \left[</span>
+<span class="sd">                               |00\rangle, |10\rangle, |01\rangle, |11\rangle</span>
+<span class="sd">                              \right]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prob: The probabilities to return the marginal probabilities</span>
+<span class="sd">                for</span>
+<span class="sd">            wires (Iterable[Number, str], Number, str, Wires): wires to return</span>
+<span class="sd">                marginal probabilities for. Wires not provided</span>
+<span class="sd">                are traced out of the system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: array of the resulting marginal probabilities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">wires</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># no need to marginalize</span>
+            <span class="k">return</span> <span class="n">prob</span>
+
+        <span class="n">wires</span> <span class="o">=</span> <span class="n">Wires</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+        <span class="c1"># determine which subsystems are to be summed over</span>
+        <span class="n">inactive_wires</span> <span class="o">=</span> <span class="n">Wires</span><span class="o">.</span><span class="n">unique_wires</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">,</span> <span class="n">wires</span><span class="p">])</span>
+
+        <span class="c1"># translate to wire labels used by device</span>
+        <span class="n">device_wires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_wires</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+        <span class="n">inactive_device_wires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_wires</span><span class="p">(</span><span class="n">inactive_wires</span><span class="p">)</span>
+
+        <span class="c1"># reshape the probability so that each axis corresponds to a wire</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reshape</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">)</span>
+
+        <span class="c1"># sum over all inactive wires</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reduce_sum</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">inactive_device_wires</span><span class="o">.</span><span class="n">labels</span><span class="p">))</span>
+
+        <span class="c1"># The wires provided might not be in consecutive order (i.e., wires might be [2, 0]).</span>
+        <span class="c1"># If this is the case, we must permute the marginalized probability so that</span>
+        <span class="c1"># it corresponds to the orders of the wires passed.</span>
+        <span class="n">num_wires</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">device_wires</span><span class="p">)</span>
+        <span class="n">basis_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_basis_states</span><span class="p">(</span><span class="n">num_wires</span><span class="p">)</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">(</span>
+            <span class="n">basis_states</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">device_wires</span><span class="p">))]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">device_wires</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gather</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">perm</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">expval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic</span><span class="p">:</span>
+            <span class="c1"># exact expectation value</span>
+            <span class="n">eigvals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">observable</span><span class="o">.</span><span class="n">eigvals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">R_DTYPE</span><span class="p">)</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">observable</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dot</span><span class="p">(</span><span class="n">eigvals</span><span class="p">,</span> <span class="n">prob</span><span class="p">)</span>
+
+        <span class="c1"># estimate the ev</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">observable</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic</span><span class="p">:</span>
+            <span class="c1"># exact variance value</span>
+            <span class="n">eigvals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">observable</span><span class="o">.</span><span class="n">eigvals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">R_DTYPE</span><span class="p">)</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">observable</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dot</span><span class="p">((</span><span class="n">eigvals</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">prob</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dot</span><span class="p">(</span><span class="n">eigvals</span><span class="p">,</span> <span class="n">prob</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="c1"># estimate the variance</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">observable</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">):</span>
+
+        <span class="c1"># translate to wire labels used by device</span>
+        <span class="n">device_wires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_wires</span><span class="p">(</span><span class="n">observable</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">observable</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;PauliX&quot;</span><span class="p">,</span> <span class="s2">&quot;PauliY&quot;</span><span class="p">,</span> <span class="s2">&quot;PauliZ&quot;</span><span class="p">,</span> <span class="s2">&quot;Hadamard&quot;</span><span class="p">}:</span>
+            <span class="c1"># Process samples for observables with eigenvalues {1, -1}</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">[:,</span> <span class="n">device_wires</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="c1"># Replace the basis state in the computational basis with the correct eigenvalue.</span>
+        <span class="c1"># Extract only the columns of the basis samples required based on ``wires``.</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">[:,</span> <span class="n">device_wires</span><span class="p">]</span>
+        <span class="n">unraveled_indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">device_wires</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">unraveled_indices</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">observable</span><span class="o">.</span><span class="n">eigvals</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+</pre></div>
+
+            </div>
+              
+          </div>
+<div class="comment-container nano has-scrollbar">
+  <div class="nano-content">
+  <div id="comments">
+    <h3>Contents</h3>
+    
+    
+      <ul style="display: none;"><li><a></a></li></ul>
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+  <div class="xanadu-call-to-action-links">
+    <h3>Downloads</h3>
+    <div id="tutorial-type">_modules/pennylane/_qubit_device</div>
+    <div id="download-python-link">
+      <i class="fab fa-python"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Python script</div>
+    </div>
+    <div id="download-notebook-link">
+      <i class="fas fa-download"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Notebook</div>
+    </div>
+    <div id="github-view-link">
+      <i class="fab fa-github"></i>&nbsp;
+      <div class="call-to-action-desktop-view">View on GitHub</div>
+    </div>
+  </div>
+</div>
+</div>
+
+          <div class="clearfix"></div>
+        </div>
+
+
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle").click(function () {
+    $("#left-column").slideToggle("slow");
+  });
+</script>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-migrate-1.0.0.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'></script>
+<!-- Bootstrap core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- MDB core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+
+<script type="text/javascript" src="../../_static/js/nanoscroller.min.js"></script>
+<script type="text/javascript">
+    $('a.reference.internal').each(function(){
+      var link = $(this).attr("href");
+
+      var hash = link.split('#')[1];
+      var page = link.split('#')[0].split('/').slice(-1)[0].replace(".html", "");
+
+      if (hash == page) {
+        $(this).attr('href', link.split('#')[0]);
+      }
+    });
+
+    $(".document > .section").removeClass("section");
+    $(".comment-container .nano-content").css("height", $("#content").height());
+    $(".comment-container").css("height", $("#content").height());
+    $(".nano").nanoScroller();
+</script>
+<script type="text/javascript">
+    $(window).scroll(function(){
+      var scrollBottom = $(document).height() - $(window).height() - $(window).scrollTop();
+      if (scrollBottom < 342) {
+        $('.comment-container').css("height", "calc(100% - " + (342 - scrollBottom) + "px)");
+        $('.comment-container .nano-content').css("height", "calc(100% - 119px)");
+      }
+    });
+</script>
+ <script type="text/javascript">
+    if ($('.current').length) {
+        var target = $('.current')[0]
+        var rect = target.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            $(".nano").nanoScroller({ scrollTo: $('.current') });
+        } else {
+            $(".nano").nanoScroller({ scrollTop: 0 });
+        }
+    }
+    $(document).ready(function () {
+        $(".css-transitions-only-after-page-load").each(function (index, element) {
+            setTimeout(function () { $(element).removeClass("css-transitions-only-after-page-load") }, 10);
+        });
+        if (window.location.hash) {
+           var target = $("[id='"+window.location.hash.substr(1)+"']");
+           if (target.closest(".collapse").length) {
+              target.closest(".collapse").addClass("show");
+              target.closest(".collapse").prev().find(".rotate").addClass("up");
+           }
+        }
+    });
+</script>
+<script type="text/javascript">
+var downloadNote = $(".sphx-glr-download-link-note.admonition.note");
+if (downloadNote.length >= 1) {
+    var tutorialUrlArray = $("#tutorial-type").text().split('/');
+        tutorialUrlArray[0] = "examples"
+
+    var githubLink = "https://github.com/XanaduAI/pennylane/blob/master/" + tutorialUrlArray.join("/") + ".py",
+        pythonLink = $(".reference.download")[0].href,
+        notebookLink = $(".reference.download")[1].href,
+        notebookDownloadPath = notebookLink.split('_downloads')[1].split('/').pop();
+
+    $("#download-python-link").wrap("<a href=" + pythonLink + " data-behavior='call-to-action-event' data-response='Download Python script' download target='_blank'/>");
+    $("#download-notebook-link").wrap("<a href=" + notebookLink + " data-behavior='call-to-action-event' data-response='Download Notebook' download target='_blank'/>");
+    $("#github-view-link").wrap("<a href=" + githubLink + " data-behavior='call-to-action-event' data-response='View on Github' target='_blank'/>");
+} else {
+    $(".xanadu-call-to-action-links").hide();
+}
+</script>
+<script type="text/javascript">jQuery.noConflict(true);</script>
+        <footer class="page-footer text-md-left pt-4">
+  
+    <hr class="pb-0 mb-0">
+    <div class="container-fluid">
+      <div class="row   justify-content-md-center">
+        <div class="col-md-3">
+          <h5 class=" mb-1 footer-heading">Xanadu</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <p class="">Located in the heart of downtown Toronto, we've brought together exceptional minds from around the world to build quantum computers that are useful and available to people everywhere.</p>
+        </div>
+
+    <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">PennyLane</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://pennylane.ai/">Home page</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/pennylane">GitHub</a></li>
+            <li><a class="" href="https://pennylane.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://discuss.pennylane.ai/">Discussion forum</a></li>
+            <li><a class="" href="https://twitter.com/pennylaneai/">Twitter</a></li>
+          </ul>
+        </div>
+		<div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">Strawberry Fields</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://strawberryfields.ai/">Interactive</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/strawberryfields">GitHub</a></li>
+            <li><a class="" href="https://strawberryfields.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://u.strawberryfields.ai/slack/">Slack channel</a></li>
+          </ul>
+        </div>
+
+
+        <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">About</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://www.xanadu.ai/">Home</a></li>
+            <li><a class="" href="https://www.xanadu.ai/hardware/">Hardware</a></li>
+            <li><a class="" href="https://www.xanadu.ai/software/">Software</a></li>
+            <li><a class="" href="https://www.xanadu.ai/research">Research</a></li>
+            <li><a class="" href="https://medium.com/XanaduAI">Blog</a></li>
+            <li><a class="" href="https://www.xanadu.ai/about/">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <hr>
+
+    <!-- <hr class="pb-0 mb-0"> -->
+
+    <!--Social buttons-->
+    <div class="social-section text-center">
+        <ul class="list-unstyled list-inline mb-0">
+            <li class="list-inline-item"><a class="btn-fb" href="https://www.facebook.com/Xanadu-1312050742230493/"><i class="fab fa-facebook-f"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-tw" href="https://twitter.com/xanaduai"><i class="fab fa-twitter"> </i></a></li>
+            <li class="list-inline-item"><a class="" href="https://medium.com/xanaduai"><i class="fab fa-medium-m"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-li" href="https://www.linkedin.com/company/xanaduai/"><i class="fab fa-linkedin-in"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-git" href="https://github.com/XanaduAI"><i class="fab fa-github"> </i></a></li>
+        </ul>
+        <a href="https://xanadu.us17.list-manage.com/subscribe?u=725f07a1d1a4337416c3129fd&id=294b062630" style="font-size: initial;">Stay updated with our newsletter</a>
+    </div>
+    <!--/.Social buttons-->
+
+    <!--Copyright-->
+    <div class="footer-copyright py-3 mt-0 text-center">
+        <div class="container-fluid">
+            © Copyright 2018-2020 | Xanadu | All rights reserved
+            <br>
+             TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. 
+        </div>
+    </div>
+  </footer>
+  </body>
+</html>

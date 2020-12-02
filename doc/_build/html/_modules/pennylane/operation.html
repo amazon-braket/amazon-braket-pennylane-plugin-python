@@ -1,0 +1,2206 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Noto+Serif" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Material Design Bootstrap -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.14/css/mdb.min.css" rel="stylesheet">
+
+  <!-- nanoscroller -->
+  <link rel="stylesheet" type="text/css" href="../../_static/css/nanoscroller.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/x-mathjax-config">
+     MathJax.Hub.Config({
+       "HTML-CSS": { scale: 90, linebreaks: { automatic: true } },
+       TeX: {
+         Macros: {
+           pr : ['|\#1\\rangle\\langle\#1|',1],
+           ket: ['\\left| \#1\\right\\rangle',1],
+           bra: ['\\left\\langle \#1\\right|',1],
+           xket: ['\\left| \#1\\right\\rangle_x',1],
+           xbra: ['\\left\\langle \#1\\right|_x',1],
+           braket: ['\\langle \#1 \\rangle',1],
+           braketD: ['\\langle \#1 \\mid \#2 \\rangle',2],
+           braketT: ['\\langle \#1 \\mid \#2 \\mid \#3 \\rangle',3],
+           ketbra: ['| #1 \\rangle \\langle #2 |',2],
+           hc: ['\\text{h.c.}',0],
+           cc: ['\\text{c.c.}',0],
+           h: ['\\hat',0],
+           nn: ['\\nonumber',0],
+           di: ['\\frac{d}{d \#1}',1],
+           uu: ['\\mathcal{U}',0],
+           inn: ['\\text{in}',0],
+           out: ['\\text{out}',0],
+           vac: ['\\text{vac}',0],
+           I: ['\\hat{\\mathbf{1}}',0],
+           x: ['\\hat{x}',0],
+           p: ['\\hat{p}',0],
+           a: ['\\hat{a}',0],
+           ad: ['\\hat{a}^\\dagger',0],
+           n: ['\\hat{n}',0],
+           nbar: ['\\overline{n}',0],
+           sech: ['\\mathrm{sech~}',0],
+           tanh: ['\\mathrm{tanh~}',0],
+           re: ['\\text{Re}',0],
+           im: ['\\text{Im}',0],
+           tr: ['\\mathrm{Tr} #1',1],
+           sign: ['\\text{sign}',0],
+           overlr: ['\\overset\\leftrightarrow{\#1}',1],
+           overl: ['\\overset\leftarrow{\#1}',1],
+           overr: ['\\overset\rightarrow{\#1}',1],
+           avg: ['\\left< \#1 \\right>',1],
+           slashed: ['\\cancel{\#1}',1],
+           bold: ['\\boldsymbol{\#1}',1],
+           d: ['\\mathrm d',0],
+           expect: ["\\langle #1 \\rangle",1],
+           pde: ["\\frac{\\partial}{\\partial \#1}",1],
+           R: ["\\mathbb{R}",0],
+           C: ["\\mathbb{C}",0],
+           Ad: ["\\text{Ad}",0],
+           Var: ["\\text{Var}",0],
+           bx: ["\\mathbf{x}", 0],
+           bm: ["\\boldsymbol{\#1}",1]
+         }
+       }
+     });
+     </script>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-130507810-2"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-130507810-2');
+      </script>
+  
+    <title>pennylane.operation &#8212; Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</title>
+    <link rel="stylesheet" href="../../_static/xanadu.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body><!--Navbar-->
+<nav class="navbar navbar-expand-lg navbar-light white sticky-top">
+
+  <!-- Navbar brand -->
+  <a class="navbar-brand" href="https://pennylane.ai">
+    <img class="pr-1" src="../../_static/xanadu_x.png" width="28px"></img>
+    <img src="../../_static/pennylane.png" width="180px"></img>
+  </a>
+
+  <!-- Collapse button -->
+  <div class="row right">
+  <a href="#" class="btn navbar-toggler black-text mr-1 justify-content-center" id="mobile-toggle">
+    <i class="fas fa-search"></i>
+  </a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#basicExampleNav"
+    aria-controls="basicExampleNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+</div>
+
+  <!-- Collapsible content -->
+  <div class="collapse navbar-collapse" id="basicExampleNav">
+
+    <!-- Links -->
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/qml">Quantum machine learning
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/install.html">Install</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="https://pennylane.ai/plugins.html">Plugins</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.readthedocs.io">Documentation</a>
+          <span class="sr-only">(current)</span>
+      </li>
+    </ul>
+    <!-- Links -->
+
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/faq.html">
+          <i class="fab fas fa-question"></i> FAQ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://discuss.pennylane.ai">
+          <i class="fab fab fa-discourse"></i> Support
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/XanaduAI/pennyLane-forest">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </li>
+    </ul>
+  </div>
+  <!-- Collapsible content -->
+</nav>
+<!--/.Navbar-->
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+  <div id="left-column" class="nano css-transitions-only-after-page-load">
+    <div class="sphinxsidebar nano-content"><div class="sidebar-block search-block">
+  <div id="main-search">
+    <form action="../../search.html" method="GET" role="form">
+      <div class="md-input">
+        <input name="q" type="text" required>
+        <span class="bar"></span>
+        <label>Search</label>
+      </div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+  </div>
+</div>
+<div class="sidebar-block">
+<!--   <div class="sidebar-wrapper">
+    <h2>Table Of Contents</h2>
+  </div> -->
+  <div class="sidebar-toc">
+    <p class="caption">PennyLane-Braket</p>
+    <ul>
+      <li class="caption toctree-l1 ">
+        <a class="reference internal" href="../../index.html">Overview</a>
+      </li>
+    </ul>
+    
+    
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="content">
+          <div id="right-column">
+            
+            <div role="navigation" aria-label="breadcrumbs navigation">
+              <ol class="breadcrumb">
+                <li><a href="../../index.html">Docs</a></li>
+                
+                  <li><a href="../index.html">Module code</a></li>
+                
+                <li>pennylane.operation</li>
+              </ol>
+            </div>
+            
+            <div class="document clearer body">
+
+              
+  <h1>Source code for pennylane.operation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2018-2020 Xanadu Quantum Technologies Inc.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># pylint: disable=protected-access</span>
+<span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the abstract base classes for defining PennyLane</span>
+<span class="sd">operations and observables.</span>
+
+<span class="sd">Description</span>
+<span class="sd">-----------</span>
+
+<span class="sd">Qubit Operations</span>
+<span class="sd">~~~~~~~~~~~~~~~~</span>
+<span class="sd">The :class:`Operator` class serves as a base class for operators,</span>
+<span class="sd">and is inherited by both the :class:`Observable` class and the</span>
+<span class="sd">:class:`Operation` class. These classes are subclassed to implement quantum operations</span>
+<span class="sd">and measure observables in PennyLane.</span>
+
+<span class="sd">* Each :class:`~.Operator` subclass represents a general type of</span>
+<span class="sd">  map between physical states. Each instance of these subclasses</span>
+<span class="sd">  represents either</span>
+
+<span class="sd">  - an application of the operator or</span>
+<span class="sd">  - an instruction to measure and return the respective result.</span>
+
+<span class="sd">  Operators act on a sequence of wires (subsystems) using given parameter values.</span>
+
+<span class="sd">* Each :class:`~.Operation` subclass represents a type of quantum operation,</span>
+<span class="sd">  for example a unitary quantum gate. Each instance of these subclasses</span>
+<span class="sd">  represents an application of the operation with given parameter values to</span>
+<span class="sd">  a given sequence of wires (subsystems).</span>
+
+<span class="sd">* Each  :class:`~.Observable` subclass represents a type of physical observable.</span>
+<span class="sd">  Each instance of these subclasses represents an instruction to measure and</span>
+<span class="sd">  return the respective result for the given parameter values on a</span>
+<span class="sd">  sequence of wires (subsystems).</span>
+
+<span class="sd">Differentiation</span>
+<span class="sd">^^^^^^^^^^^^^^^</span>
+
+<span class="sd">In general, an :class:`Operation` is differentiable (at least using the finite-difference</span>
+<span class="sd">method) with respect to a parameter iff</span>
+
+<span class="sd">* the domain of that parameter is continuous.</span>
+
+<span class="sd">For an :class:`Operation` to be differentiable with respect to a parameter using the</span>
+<span class="sd">analytic method of differentiation, it must satisfy an additional constraint:</span>
+
+<span class="sd">* the parameter domain must be real.</span>
+
+<span class="sd">.. note::</span>
+
+<span class="sd">    These conditions are *not* sufficient for analytic differentiation. For example,</span>
+<span class="sd">    CV gates must also define a matrix representing their Heisenberg linear</span>
+<span class="sd">    transformation on the quadrature operators.</span>
+
+<span class="sd">For gates that *are* supported via the analytic method, the gradient recipe</span>
+<span class="sd">works as follows:</span>
+
+<span class="sd">.. math:: \frac{\partial}{\partial\phi_k}f = \sum_{i} c_i f(a_i \phi_k+s_i).</span>
+
+<span class="sd">where :math:`f` is the expectation value of an observable on a circuit that has</span>
+<span class="sd">been evolved by the operation being considered with parameter :math:`\phi_k`,</span>
+<span class="sd">there are multiple terms indexed with :math:`i` for each parameter :math:`\phi`</span>
+<span class="sd">and the :math:`[c_i, a_i, s_i]` are coefficients specific to the gate.</span>
+
+<span class="sd">The following specific case holds for example for qubit operations that are</span>
+<span class="sd">generated by one of the Pauli matrices and results in an overall positive and</span>
+<span class="sd">negative shift:</span>
+
+<span class="sd">.. math::</span>
+
+<span class="sd">    \frac{\partial}{\partial\phi_k}f = \frac{1}{2}\left[f \left( \phi_k+\frac{\pi}{2} \right) - f</span>
+<span class="sd">    \left( \phi_k-\frac{\pi}{2} \right)\right],</span>
+
+<span class="sd">i.e., so that :math:`[c_0, a_0, s_0]=[1/2, 1, \pi/2]` and :math:`[c_1, a_1, s_1]=[-1/2, 1, -\pi/2]`.</span>
+
+<span class="sd">CV Operation base classes</span>
+<span class="sd">~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">Due to additional requirements, continuous-variable (CV) operations must subclass the</span>
+<span class="sd">:class:`~.CVOperation` or :class:`~.CVObservable` classes instead of :class:`~.Operation`</span>
+<span class="sd">and :class:`~.Observable`.</span>
+
+<span class="sd">Differentiation</span>
+<span class="sd">^^^^^^^^^^^^^^^</span>
+
+<span class="sd">To enable gradient computation using the analytic method for Gaussian CV operations, in addition, you need to</span>
+<span class="sd">provide the static class method :meth:`~.CV._heisenberg_rep` that returns the Heisenberg representation of</span>
+<span class="sd">the operation given its list of parameters, namely:</span>
+
+<span class="sd">* For Gaussian CV Operations this method should return the matrix of the linear transformation carried out by the</span>
+<span class="sd">  operation on the vector of quadrature operators :math:`\mathbf{r}` for the given parameter</span>
+<span class="sd">  values.</span>
+
+<span class="sd">* For Gaussian CV Observables this method should return a real vector (first-order observables)</span>
+<span class="sd">  or symmetric matrix (second-order observables) of coefficients of the quadrature</span>
+<span class="sd">  operators :math:`\x` and :math:`\p`.</span>
+
+<span class="sd">PennyLane uses the convention :math:`\mathbf{r} = (\I, \x, \p)` for single-mode operations and observables</span>
+<span class="sd">and :math:`\mathbf{r} = (\I, \x_0, \p_0, \x_1, \p_1, \ldots)` for multi-mode operations and observables.</span>
+
+<span class="sd">.. note::</span>
+<span class="sd">    Non-Gaussian CV operations and observables are currently only supported via</span>
+<span class="sd">    the finite-difference method of gradient computation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span>
+<span class="kn">from</span> <span class="nn">pennylane.wires</span> <span class="k">import</span> <span class="n">Wires</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="k">import</span> <span class="n">multi_dot</span>
+
+<span class="kn">import</span> <span class="nn">pennylane</span> <span class="k">as</span> <span class="nn">qml</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">pauli_eigs</span>
+<span class="kn">from</span> <span class="nn">.variable</span> <span class="k">import</span> <span class="n">Variable</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Wire types</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">WiresEnum</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Integer enumeration class</span>
+<span class="sd">    to represent the number of wires</span>
+<span class="sd">    an operation acts on&quot;&quot;&quot;</span>
+
+    <span class="n">AnyWires</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">AllWires</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="n">AllWires</span> <span class="o">=</span> <span class="n">WiresEnum</span><span class="o">.</span><span class="n">AllWires</span>
+<span class="sd">&quot;&quot;&quot;IntEnum: An enumeration which represents all wires in the</span>
+<span class="sd">subsystem. It is equivalent to an integer with value 0.&quot;&quot;&quot;</span>
+
+<span class="n">AnyWires</span> <span class="o">=</span> <span class="n">WiresEnum</span><span class="o">.</span><span class="n">AnyWires</span>
+<span class="sd">&quot;&quot;&quot;IntEnum: An enumeration which represents any wires in the</span>
+<span class="sd">subsystem. It is equivalent to an integer with value -1.&quot;&quot;&quot;</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># ObservableReturnTypes types</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">ObservableReturnTypes</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enumeration class to represent the return types of an observable.&quot;&quot;&quot;</span>
+
+    <span class="n">Sample</span> <span class="o">=</span> <span class="s2">&quot;sample&quot;</span>
+    <span class="n">Variance</span> <span class="o">=</span> <span class="s2">&quot;var&quot;</span>
+    <span class="n">Expectation</span> <span class="o">=</span> <span class="s2">&quot;expval&quot;</span>
+    <span class="n">Probability</span> <span class="o">=</span> <span class="s2">&quot;probs&quot;</span>
+    <span class="n">State</span> <span class="o">=</span> <span class="s2">&quot;state&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the return types.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="n">Sample</span> <span class="o">=</span> <span class="n">ObservableReturnTypes</span><span class="o">.</span><span class="n">Sample</span>
+<span class="sd">&quot;&quot;&quot;Enum: An enumeration which represents sampling an observable.&quot;&quot;&quot;</span>
+
+<span class="n">Variance</span> <span class="o">=</span> <span class="n">ObservableReturnTypes</span><span class="o">.</span><span class="n">Variance</span>
+<span class="sd">&quot;&quot;&quot;Enum: An enumeration which represents returning the variance of</span>
+<span class="sd">an observable on specified wires.&quot;&quot;&quot;</span>
+
+<span class="n">Expectation</span> <span class="o">=</span> <span class="n">ObservableReturnTypes</span><span class="o">.</span><span class="n">Expectation</span>
+<span class="sd">&quot;&quot;&quot;Enum: An enumeration which represents returning the expectation</span>
+<span class="sd">value of an observable on specified wires.&quot;&quot;&quot;</span>
+
+<span class="n">Probability</span> <span class="o">=</span> <span class="n">ObservableReturnTypes</span><span class="o">.</span><span class="n">Probability</span>
+<span class="sd">&quot;&quot;&quot;Enum: An enumeration which represents returning probabilities</span>
+<span class="sd">of all computational basis states.&quot;&quot;&quot;</span>
+
+<span class="n">State</span> <span class="o">=</span> <span class="n">ObservableReturnTypes</span><span class="o">.</span><span class="n">State</span>
+<span class="sd">&quot;&quot;&quot;Enum: An enumeration which represents returning the state in the computational basis.&quot;&quot;&quot;</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Class property</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">ClassPropertyDescriptor</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="sd">&quot;&quot;&quot;Allows a class property to be defined&quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=too-few-public-methods</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fget</span><span class="p">,</span> <span class="n">fset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fget</span> <span class="o">=</span> <span class="n">fget</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fset</span> <span class="o">=</span> <span class="n">fset</span>
+
+    <span class="k">def</span> <span class="nf">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">klass</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">klass</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">klass</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">klass</span><span class="p">)()</span>
+
+    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fset</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;can&#39;t set attribute&quot;</span><span class="p">)</span>
+        <span class="n">type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fset</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">type_</span><span class="p">)(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the function as a class method, and store as an attribute.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="nb">classmethod</span><span class="p">,</span> <span class="nb">staticmethod</span><span class="p">)):</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="nb">classmethod</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fset</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="k">def</span> <span class="nf">classproperty</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The class property decorator&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="nb">classmethod</span><span class="p">,</span> <span class="nb">staticmethod</span><span class="p">)):</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">classmethod</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ClassPropertyDescriptor</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Base Operator class</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">Operator</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for quantum operators supported by a device.</span>
+
+<span class="sd">    The following class attributes must be defined for all Operators:</span>
+
+<span class="sd">    * :attr:`~.Operator.num_params`</span>
+<span class="sd">    * :attr:`~.Operator.num_wires`</span>
+<span class="sd">    * :attr:`~.Operator.par_domain`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params (tuple[float, int, array, Variable]): operator parameters</span>
+
+<span class="sd">    Keyword Args:</span>
+<span class="sd">        wires (Iterable[Number, str], Number, str, Wires): Wires that the operator acts on.</span>
+<span class="sd">            If not given, args[-1] is interpreted as wires.</span>
+<span class="sd">        do_queue (bool): Indicates whether the operator should be</span>
+<span class="sd">            immediately pushed into the Operator queue.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_check_domain</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1">#: bool: flag: should we perform a domain check for the parameters?</span>
+
+    <span class="k">def</span> <span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="n">copied_op</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">copied_op</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">copied_op</span><span class="o">.</span><span class="n">_wires</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span>
+        <span class="n">copied_op</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_inverse&quot;</span><span class="p">):</span>
+            <span class="n">copied_op</span><span class="o">.</span><span class="n">_inverse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span>
+
+        <span class="k">return</span> <span class="n">copied_op</span>
+
+    <span class="k">def</span> <span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="n">copied_op</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="c1"># The memo dict maps object ID to object, and is required by</span>
+        <span class="c1"># the deepcopy function to keep track of objects it has already</span>
+        <span class="c1"># deep copied.</span>
+        <span class="n">memo</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="n">copied_op</span>
+
+        <span class="k">for</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="o">==</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span>
+                <span class="c1"># Shallow copy the list of parameters. We avoid a deep copy</span>
+                <span class="c1"># here, since PyTorch does not support deep copying of tensors</span>
+                <span class="c1"># within a differentiable computation.</span>
+                <span class="n">copied_op</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Deep copy everything else.</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">copied_op</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">memo</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">copied_op</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Matrix representation of the operator</span>
+<span class="sd">        in the computational basis.</span>
+
+<span class="sd">        This is a *class method* that should be defined for all</span>
+<span class="sd">        new operations and observables, that returns the matrix representing</span>
+<span class="sd">        the operator in the computational basis.</span>
+
+<span class="sd">        This private method allows matrices to be computed</span>
+<span class="sd">        directly without instantiating the operators first.</span>
+
+<span class="sd">        To return the matrices of *instantiated* operators,</span>
+<span class="sd">        please use the :attr:`~.Operator.matrix` property instead.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; qml.RY._matrix(0.5)</span>
+<span class="sd">        &gt;&gt;&gt; array([[ 0.96891242+0.j, -0.24740396+0.j],</span>
+<span class="sd">                   [ 0.24740396+0.j,  0.96891242+0.j]])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: matrix representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Matrix representation of an instantiated operator</span>
+<span class="sd">        in the computational basis.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; U = qml.RY(0.5, wires=1)</span>
+<span class="sd">        &gt;&gt;&gt; U.matrix</span>
+<span class="sd">        &gt;&gt;&gt; array([[ 0.96891242+0.j, -0.24740396+0.j],</span>
+<span class="sd">                   [ 0.24740396+0.j,  0.96891242+0.j]])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: matrix representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_eigvals</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Eigenvalues of the operator.</span>
+
+<span class="sd">        This is a *class method* that should be defined for all</span>
+<span class="sd">        new operations and observables that returns the eigenvalues</span>
+<span class="sd">        of the operator. Note that the eigenvalues are not guaranteed</span>
+<span class="sd">        to be in any particular order.</span>
+
+<span class="sd">        This private method allows eigenvalues to be computed</span>
+<span class="sd">        directly without instantiating the operators first.</span>
+
+<span class="sd">        The default implementation relies on the presence of the</span>
+<span class="sd">        :attr:`_matrix` method.</span>
+
+<span class="sd">        To return the eigenvalues of *instantiated* operators,</span>
+<span class="sd">        please use the :attr:`~.Operator.eigvals` property instead.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; qml.RZ._eigvals(0.5)</span>
+<span class="sd">        &gt;&gt;&gt; array([0.96891242-0.24740396j, 0.96891242+0.24740396j])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: eigenvalue representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_matrix</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eigvals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Eigenvalues of an instantiated operator.</span>
+
+<span class="sd">        Note that the eigenvalues are not guaranteed to be in any</span>
+<span class="sd">        particular order.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; U = qml.RZ(0.5, wires=1)</span>
+<span class="sd">        &gt;&gt;&gt; U.eigvals</span>
+<span class="sd">        &gt;&gt;&gt; array([0.96891242-0.24740396j, 0.96891242+0.24740396j])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: eigvals representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">num_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of parameters the operator takes.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">num_wires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of wires the operator acts on.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">par_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Domain of the gate parameters.</span>
+
+<span class="sd">        * ``&#39;N&#39;``: natural numbers (including zero).</span>
+<span class="sd">        * ``&#39;R&#39;``: floats.</span>
+<span class="sd">        * ``&#39;A&#39;``: arrays of real or complex values.</span>
+<span class="sd">        * ``&#39;L&#39;``: list of arrays of real or complex values.</span>
+<span class="sd">        * ``None``: if there are no parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String for the name of the operator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># pylint: disable=too-many-branches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>  <span class="c1">#: str: name of the operator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue_idx</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1">#: int, None: index of the Operator in the circuit queue, or None if not in a queue</span>
+
+        <span class="k">if</span> <span class="n">wires</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify the wires that </span><span class="si">{}</span><span class="s2"> acts on&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wires</span> <span class="o">=</span> <span class="n">Wires</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>  <span class="c1">#: Wires: wires on which the operator acts</span>
+
+        <span class="c1"># check that the number of wires given corresponds to required number</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span> <span class="o">!=</span> <span class="n">AllWires</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span> <span class="o">!=</span> <span class="n">AnyWires</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wires</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: wrong number of wires. &quot;</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> wires given, </span><span class="si">{}</span><span class="s2"> expected.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wires</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: wrong number of parameters. &quot;</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> parameters passed, </span><span class="si">{}</span><span class="s2"> expected.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># check the validity of the params</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_check_domain</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_domain</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>  <span class="c1">#: list[Any]: parameters of the operator</span>
+
+        <span class="k">if</span> <span class="n">do_queue</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor-call-like representation.&quot;&quot;&quot;</span>
+        <span class="c1"># FIXME using self.parameters here instead of self.data is dangerous, it assumes the data can be evaluated</span>
+        <span class="c1"># which is only true if something suitable happens to remain in VariableRef.positional_arg_values etc. after</span>
+        <span class="c1"># the last evaluation.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">repr</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">])</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">, wires=</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(wires=</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">check_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">flattened</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check the validity of a parameter.</span>
+
+<span class="sd">        :class:`.Variable` instances can represent any real scalars (but not arrays).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            p (Number, array, Variable): parameter to check</span>
+<span class="sd">            flattened (bool): True means p is an element of a flattened parameter</span>
+<span class="sd">                sequence (affects the handling of &#39;A&#39; parameters)</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: parameter is not an element of the expected domain</span>
+<span class="sd">            ValueError: parameter is an element of an unknown domain</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Number, array, Variable: p</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=too-many-branches</span>
+        <span class="c1"># If parameter is a NumPy scalar, convert it into a Python scalar.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">Variable</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Array parameter expected, got a Variable, &quot;</span>
+                    <span class="s2">&quot;which can only represent real scalars.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">p</span>
+
+        <span class="c1"># p is not a Variable</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">flattened</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Flattened array parameter expected, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Array parameter expected, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+                    <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Real scalar parameter expected, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Natural number parameter expected, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Natural number parameter expected, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+                    <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;L&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: List parameter expected, got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">p</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;List elements must be Numpy arrays.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Unknown parameter domain &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wires of this operator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Wires: wires</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wires</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Current parameter values.</span>
+
+<span class="sd">        Fixed parameters are returned as is, free parameters represented by</span>
+<span class="sd">        :class:`.Variable` instances are replaced by their</span>
+<span class="sd">        current numerical value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[Any]: parameter values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO profiling</span>
+        <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Evaluate a single parameter.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="c1"># object arrays may have Variables inside them</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span><span class="p">:</span>
+                    <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">val</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">flat</span><span class="p">])</span>
+                    <span class="k">return</span> <span class="n">temp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">p</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="c1"># p is assumed to be a list of numpy arrays</span>
+                <span class="c1"># object arrays may have Variables inside them</span>
+                <span class="n">evaled_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">object</span><span class="p">:</span>
+                        <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">val</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">arr</span><span class="o">.</span><span class="n">flat</span><span class="p">])</span>
+                        <span class="n">evaled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                        <span class="k">return</span> <span class="n">evaled_list</span>
+                <span class="k">return</span> <span class="n">p</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">Variable</span><span class="p">):</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_domain</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">p</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">evaluate</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Append the operator to the Operator queue.&quot;&quot;&quot;</span>
+        <span class="n">qml</span><span class="o">.</span><span class="n">QueuingContext</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>  <span class="c1"># so pre-constructed Observable instances can be queued and returned in a single statement</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Base Operation class</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">Operation</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for quantum operations supported by a device.</span>
+
+<span class="sd">    As with :class:`~.Operator`, the following class attributes must be</span>
+<span class="sd">    defined for all operations:</span>
+
+<span class="sd">    * :attr:`~.Operator.num_params`</span>
+<span class="sd">    * :attr:`~.Operator.num_wires`</span>
+<span class="sd">    * :attr:`~.Operator.par_domain`</span>
+
+<span class="sd">    The following two class attributes are optional, but in most cases</span>
+<span class="sd">    should be clearly defined to avoid unexpected behavior during</span>
+<span class="sd">    differentiation.</span>
+
+<span class="sd">    * :attr:`~.Operation.grad_method`</span>
+<span class="sd">    * :attr:`~.Operation.grad_recipe`</span>
+
+<span class="sd">    Finally, there are some additional optional class attributes</span>
+<span class="sd">    that may be set, and used by certain quantum optimizers:</span>
+
+<span class="sd">    * :attr:`~.Operation.generator`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params (tuple[float, int, array, Variable]): operation parameters</span>
+
+<span class="sd">    Keyword Args:</span>
+<span class="sd">        wires (Sequence[int]): Subsystems it acts on. If not given, args[-1]</span>
+<span class="sd">            is interpreted as wires.</span>
+<span class="sd">        do_queue (bool): Indicates whether the operation should be</span>
+<span class="sd">            immediately pushed into a :class:`BaseQNode` circuit queue.</span>
+<span class="sd">            This flag is useful if there is some reason to run an Operation</span>
+<span class="sd">            outside of a BaseQNode context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=abstract-method</span>
+    <span class="n">string_for_inverse</span> <span class="o">=</span> <span class="s2">&quot;.inv&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">grad_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gradient computation method.</span>
+
+<span class="sd">        * ``&#39;A&#39;``: analytic differentiation using the parameter-shift method.</span>
+<span class="sd">        * ``&#39;F&#39;``: finite difference numerical differentiation.</span>
+<span class="sd">        * ``None``: the operation may not be differentiated.</span>
+
+<span class="sd">        Default is ``&#39;F&#39;``, or ``None`` if the Operation has zero parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;F&quot;</span>
+
+    <span class="n">grad_recipe</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;tuple(Union(list[list[float]], None)) or None: Gradient recipe for the</span>
+<span class="sd">        parameter-shift method.</span>
+
+<span class="sd">        This is a tuple with one nested list per operation parameter. For</span>
+<span class="sd">        parameter :math:`\phi_k`, the nested list contains elements of the form</span>
+<span class="sd">        :math:`[c_i, a_i, s_i]` where :math:`i` is the index of the</span>
+<span class="sd">        term, resulting in a gradient recipe of</span>
+
+<span class="sd">        .. math:: \frac{\partial}{\partial\phi_k}f = \sum_{i} c_i f(a_i \phi_k + s_i).</span>
+
+<span class="sd">        If ``None``, the default gradient recipe containing the two terms</span>
+<span class="sd">        :math:`[c_0, a_0, s_0]=[1/2, 1, \pi/2]` and :math:`[c_1, a_1,</span>
+<span class="sd">        s_1]=[-1/2, 1, -\pi/2]` is assumed for every parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">get_parameter_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Multiplier and shift for the given parameter, based on its gradient recipe.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            idx (int): parameter index</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float, float: multiplier, shift</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the gradient recipe for this parameter</span>
+        <span class="n">recipe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_recipe</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># Default values</span>
+        <span class="n">multiplier</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">shift</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># We set the default recipe following:</span>
+        <span class="c1"># ∂f(x) = c*f(x+s) - c*f(x-s)</span>
+        <span class="c1"># where we express a positive and a negative shift by default</span>
+        <span class="n">default_param_shift</span> <span class="o">=</span> <span class="p">[[</span><span class="n">multiplier</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">shift</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="n">multiplier</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="n">shift</span><span class="p">]]</span>
+        <span class="n">param_shift</span> <span class="o">=</span> <span class="n">default_param_shift</span> <span class="k">if</span> <span class="n">recipe</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">recipe</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="s2">&quot;mult&quot;</span><span class="p">):</span>
+            <span class="c1"># Parameter is a variable, we are in non-tape mode</span>
+            <span class="c1"># Need to use the internal multiplier in the Variable to update the</span>
+            <span class="c1"># multiplier and the shift</span>
+            <span class="n">var_mult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">mult</span>
+
+            <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">param_shift</span><span class="p">:</span>
+
+                <span class="c1"># Update the multiplier</span>
+                <span class="n">elem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">var_mult</span>
+                <span class="k">if</span> <span class="n">var_mult</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Update the shift</span>
+                    <span class="c1"># zero multiplier means the shift is unimportant</span>
+                    <span class="n">elem</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/=</span> <span class="n">var_mult</span>
+        <span class="k">return</span> <span class="n">param_shift</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">generator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generator of the operation.</span>
+
+<span class="sd">        A length-2 list ``[generator, scaling_factor]``, where</span>
+
+<span class="sd">        * ``generator`` is an existing PennyLane</span>
+<span class="sd">          operation class or :math:`2\times 2` Hermitian array</span>
+<span class="sd">          that acts as the generator of the current operation</span>
+
+<span class="sd">        * ``scaling_factor`` represents a scaling factor applied</span>
+<span class="sd">          to the generator operation</span>
+
+<span class="sd">        For example, if :math:`U(\theta)=e^{i0.7\theta \sigma_x}`, then</span>
+<span class="sd">        :math:`\sigma_x`, with scaling factor :math:`s`, is the generator</span>
+<span class="sd">        of operator :math:`U(\theta)`:</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            generator = [PauliX, 0.7]</span>
+
+<span class="sd">        Default is ``[None, 1]``, indicating the operation has no generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Boolean determining if the inverse of the operation was requested.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span>
+
+    <span class="nd">@inverse</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">boolean</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span> <span class="o">=</span> <span class="n">boolean</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">decomposition</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a template decomposing the operation into other</span>
+<span class="sd">        quantum operations.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">inv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Inverts the operation, such that the inverse will</span>
+<span class="sd">        be used for the computations by the specific device.</span>
+
+<span class="sd">        This method concatenates a string to the name of the operation,</span>
+<span class="sd">        to indicate that the inverse will be used for computations.</span>
+
+<span class="sd">        Any subsequent call of this method will toggle between the original</span>
+<span class="sd">        operation and the inverse of the operation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :class:`Operator`: operation to be inverted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">op_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">op_matrix</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="k">return</span> <span class="n">op_matrix</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eigvals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">op_eigvals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">op_eigvals</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">op_eigvals</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">base_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get base name of the operator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get and set the name of the operator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">+</span> <span class="n">Operation</span><span class="o">.</span><span class="n">string_for_inverse</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># check the grad_method validity</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grad_method</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="s2">&quot;An operation may only be differentiated with respect to real scalar parameters.&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_method</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="kc">None</span><span class="p">,</span>
+                <span class="s2">&quot;F&quot;</span><span class="p">,</span>
+            <span class="p">),</span> <span class="s2">&quot;Operations that depend on arrays containing free variables may only be differentiated using the F method.&quot;</span>
+
+        <span class="c1"># check the grad_recipe validity</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_method</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_recipe</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># default recipe for every parameter</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grad_recipe</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grad_recipe</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_params</span>
+                <span class="p">),</span> <span class="s2">&quot;Gradient recipe must have one entry for each parameter!&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_recipe</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Gradient recipe is only used by the A method!&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="n">do_queue</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DiagonalOperation</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for diagonal quantum operations supported by a device.</span>
+
+<span class="sd">    As with :class:`~.Operation`, the following class attributes must be</span>
+<span class="sd">    defined for all operations:</span>
+
+<span class="sd">    * :attr:`~.Operator.num_params`</span>
+<span class="sd">    * :attr:`~.Operator.num_wires`</span>
+<span class="sd">    * :attr:`~.Operator.par_domain`</span>
+
+<span class="sd">    The following two class attributes are optional, but in most cases</span>
+<span class="sd">    should be clearly defined to avoid unexpected behavior during</span>
+<span class="sd">    differentiation.</span>
+
+<span class="sd">    * :attr:`~.Operation.grad_method`</span>
+<span class="sd">    * :attr:`~.Operation.grad_recipe`</span>
+
+<span class="sd">    Finally, there are some additional optional class attributes</span>
+<span class="sd">    that may be set, and used by certain quantum optimizers:</span>
+
+<span class="sd">    * :attr:`~.Operation.generator`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params (tuple[float, int, array, Variable]): operation parameters</span>
+
+<span class="sd">    Keyword Args:</span>
+<span class="sd">        wires (Sequence[int]): Subsystems it acts on. If not given, args[-1]</span>
+<span class="sd">            is interpreted as wires.</span>
+<span class="sd">        do_queue (bool): Indicates whether the operation should be</span>
+<span class="sd">            immediately pushed into a :class:`BaseQNode` circuit queue.</span>
+<span class="sd">            This flag is useful if there is some reason to run an Operation</span>
+<span class="sd">            outside of a BaseQNode context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=abstract-method</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_eigvals</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Eigenvalues of the operator.</span>
+
+<span class="sd">        The order of the eigenvalues needs to match the order of</span>
+<span class="sd">        the computational basis vectors.</span>
+
+<span class="sd">        This is a *class method* that must be defined for all</span>
+<span class="sd">        new diagonal operations, that returns the eigenvalues</span>
+<span class="sd">        of the operator in the computational basis.</span>
+
+<span class="sd">        This private method allows eigenvalues to be computed</span>
+<span class="sd">        directly without instantiating the operators first.</span>
+
+<span class="sd">        To return the eigenvalues of *instantiated* operators,</span>
+<span class="sd">        please use the :attr:`~.Operator.eigvals` property instead.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; qml.RZ._eigvals(0.5)</span>
+<span class="sd">        &gt;&gt;&gt; array([0.96891242-0.24740396j, 0.96891242+0.24740396j])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: eigenvalue representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eigvals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Eigenvalues of an instantiated diagonal operation.</span>
+
+<span class="sd">        The order of the eigenvalues needs to match the order of</span>
+<span class="sd">        the computational basis vectors.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; U = qml.RZ(0.5, wires=1)</span>
+<span class="sd">        &gt;&gt;&gt; U.eigvals</span>
+<span class="sd">        &gt;&gt;&gt; array([0.96891242-0.24740396j, 0.96891242+0.24740396j])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: eigvals representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">eigvals</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_eigvals</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="n">Operation</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for quantum channels.</span>
+
+<span class="sd">    As with :class:`~.Operation`, the following class attributes must be</span>
+<span class="sd">    defined for all channels:</span>
+
+<span class="sd">    * :attr:`~.Operator.num_params`</span>
+<span class="sd">    * :attr:`~.Operator.num_wires`</span>
+<span class="sd">    * :attr:`~.Operator.par_domain`</span>
+
+<span class="sd">    To define a noisy channel, the following attribute of :class:`~.Channel`</span>
+<span class="sd">    can be used to list the corresponding Kraus matrices.</span>
+
+<span class="sd">    * :attr:`~.Channel._kraus_matrices`</span>
+
+<span class="sd">    The following two class attributes are optional, but in most cases</span>
+<span class="sd">    should be clearly defined to avoid unexpected behavior during</span>
+<span class="sd">    differentiation.</span>
+
+<span class="sd">    * :attr:`~.Operation.grad_method`</span>
+<span class="sd">    * :attr:`~.Operation.grad_recipe`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params (tuple[float, int, array, Variable]): operation parameters</span>
+
+<span class="sd">    Keyword Args:</span>
+<span class="sd">        wires (Sequence[int]): Subsystems the channel acts on. If not given, args[-1]</span>
+<span class="sd">            is interpreted as wires.</span>
+<span class="sd">        do_queue (bool): Indicates whether the operation should be</span>
+<span class="sd">            immediately pushed into a :class:`BaseQNode` circuit queue.</span>
+<span class="sd">            This flag is useful if there is some reason to run an Operation</span>
+<span class="sd">            outside of a BaseQNode context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=abstract-method</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_kraus_matrices</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Kraus matrices representing a quantum channel, specified in</span>
+<span class="sd">        the computational basis.</span>
+
+<span class="sd">        This is a class method that should be defined for all</span>
+<span class="sd">        new channels. It returns the Kraus matrices representing</span>
+<span class="sd">        the channel in the computational basis.</span>
+
+<span class="sd">        This private method allows matrices to be computed</span>
+<span class="sd">        directly without instantiating the channel first.</span>
+
+<span class="sd">        **Example**</span>
+
+<span class="sd">        &gt;&gt;&gt; qml.AmplitudeDamping._kraus_matrices(0.1)</span>
+<span class="sd">        &gt;&gt;&gt; [array([[1.       , 0.       ],</span>
+<span class="sd">        [0.       , 0.9486833]]), array([[0.        , 0.31622777],</span>
+<span class="sd">        [0.        , 0.        ]])]</span>
+
+<span class="sd">        To return the Kraus matrices of an *instantiated* channel,</span>
+<span class="sd">        please use the :attr:`~.Operator.kraus_matrices` property instead.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list(array): list of Kraus matrices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">kraus_matrices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Kraus matrices of an instantiated channel</span>
+<span class="sd">        in the computational basis.</span>
+
+<span class="sd">        ** Example**</span>
+
+<span class="sd">        &gt;&gt;&gt; U = qml.AmplitudeDamping(0.1, wires=1)</span>
+<span class="sd">        &gt;&gt;&gt; U.kraus_matrices</span>
+<span class="sd">        &gt;&gt;&gt; [array([[1.       , 0.       ],</span>
+<span class="sd">        [0.       , 0.9486833]]), array([[0.        , 0.31622777],</span>
+<span class="sd">        [0.        , 0.        ]])]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list(array): list of Kraus matrices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kraus_matrices</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="c1"># check parameters are valid</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;R&quot;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Channel probability parameters should be numbers between 0 and 1.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># check the grad_method validity</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;R&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Analytic gradients can not be used for quantum channels.&quot;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="n">do_queue</span><span class="p">)</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Base Observable class</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">Observable</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for observables supported by a device.</span>
+
+<span class="sd">    :class:`Observable` is used to describe Hermitian quantum observables.</span>
+
+<span class="sd">    As with :class:`~.Operator`, the following class attributes must be</span>
+<span class="sd">    defined for all observables:</span>
+
+<span class="sd">    * :attr:`~.Operator.num_params`</span>
+<span class="sd">    * :attr:`~.Operator.num_wires`</span>
+<span class="sd">    * :attr:`~.Operator.par_domain`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params (tuple[float, int, array, Variable]): observable parameters</span>
+
+<span class="sd">    Keyword Args:</span>
+<span class="sd">        wires (Sequence[int]): subsystems it acts on.</span>
+<span class="sd">            Currently, only one subsystem is supported.</span>
+<span class="sd">        do_queue (bool): Indicates whether the operation should be</span>
+<span class="sd">            immediately pushed into the Operator queue.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=abstract-method</span>
+    <span class="n">return_type</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_eigvals</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Eigenvalues of the observable.</span>
+
+<span class="sd">        The order of the eigenvalues needs to match the order of</span>
+<span class="sd">        the computational basis vectors when the observable is</span>
+<span class="sd">        diagonalized using :attr:`diagonalizing_gates`.</span>
+
+<span class="sd">        This is a *class method* that must be defined for all</span>
+<span class="sd">        new diagonal operations, that returns the eigenvalues</span>
+<span class="sd">        of the operator in the computational basis.</span>
+
+<span class="sd">        This private method allows eigenvalues to be computed</span>
+<span class="sd">        directly without instantiating the operators first.</span>
+
+<span class="sd">        To return the eigenvalues of *instantiated* operators,</span>
+<span class="sd">        please use the :attr:`~.Operator.eigvals` property instead.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; qml.PauliZ._eigvals()</span>
+<span class="sd">        &gt;&gt;&gt; array([1, -1])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: eigenvalue representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eigvals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Eigenvalues of an instantiated observable.</span>
+
+<span class="sd">        The order of the eigenvalues needs to match the order of</span>
+<span class="sd">        the computational basis vectors when the observable is</span>
+<span class="sd">        diagonalized using :attr:`diagonalizing_gates`. This is a</span>
+<span class="sd">        requirement for using qubit observables in quantum functions.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        &gt;&gt;&gt; U = qml.PauliZ(wires=1)</span>
+<span class="sd">        &gt;&gt;&gt; U.eigvals</span>
+<span class="sd">        &gt;&gt;&gt; array([1, -1])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: eigvals representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">eigvals</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># extract the arguments</span>
+        <span class="k">if</span> <span class="n">wires</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wires</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">,</span> <span class="n">do_queue</span><span class="o">=</span><span class="n">do_queue</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor-call-like representation.&quot;&quot;&quot;</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">temp</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Probability</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;(wires=</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="n">temp</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="fm">__rmatmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only perform tensor products between observables.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_obs_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Extracts the data from a Observable or Tensor and serializes it in an order-independent fashion.</span>
+
+<span class="sd">        This allows for comparison between observables that are equivalent, but are expressed</span>
+<span class="sd">        in different orders. For example, `qml.PauliX(0) @ qml.PauliZ(1)` and</span>
+<span class="sd">        `qml.PauliZ(1) @ qml.PauliX(0)` are equivalent observables with different orderings.</span>
+
+<span class="sd">        **Example**</span>
+
+<span class="sd">        &gt;&gt;&gt; tensor = qml.PauliX(0) @ qml.PauliZ(1)</span>
+<span class="sd">        &gt;&gt;&gt; print(tensor._obs_data())</span>
+<span class="sd">        {(&quot;PauliZ&quot;, &lt;Wires = [1]&gt;, ()), (&quot;PauliX&quot;, &lt;Wires = [0]&gt;, ())}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">non_identity_obs</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">ob</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">ob</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+            <span class="n">tensor</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">ob</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">ob</span><span class="o">.</span><span class="n">wires</span><span class="p">,</span> <span class="n">parameters</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">tensor</span>
+
+    <span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compares with another :class:`~.Hamiltonian`, :class:`~Tensor`, or :class:`~Observable`,</span>
+<span class="sd">        to determine if they are equivalent.</span>
+
+<span class="sd">        Observables/Hamiltonians are equivalent if they represent the same operator</span>
+<span class="sd">        (their matrix representations are equal), and they are defined on the same wires.</span>
+
+<span class="sd">        .. Warning::</span>
+
+<span class="sd">            The compare method does **not** check if the matrix representation</span>
+<span class="sd">            of a :class:`~.Hermitian` observable is equal to an equivalent</span>
+<span class="sd">            observable expressed in terms of Pauli matrices.</span>
+<span class="sd">            To do so would require the matrix form of Hamiltonians and Tensors</span>
+<span class="sd">            be calculated, which would drastically increase runtime.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if equivalent.</span>
+
+<span class="sd">        **Examples**</span>
+
+<span class="sd">        &gt;&gt;&gt; ob1 = qml.PauliX(0) @ qml.Identity(1)</span>
+<span class="sd">        &gt;&gt;&gt; ob2 = qml.Hamiltonian([1], [qml.PauliX(0)])</span>
+<span class="sd">        &gt;&gt;&gt; ob1.compare(ob2)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; ob1 = qml.PauliX(0)</span>
+<span class="sd">        &gt;&gt;&gt; ob2 = qml.Hermitian(np.array([[0, 1], [1, 0]]), 0)</span>
+<span class="sd">        &gt;&gt;&gt; ob1.compare(ob2)</span>
+<span class="sd">        False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Observable</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">_obs_data</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obs_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">qml</span><span class="o">.</span><span class="n">Hamiltonian</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Can only compare an Observable/Tensor, and a Hamiltonian/Observable/Tensor.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;The addition operation between Observables/Tensors/qml.Hamiltonian objects.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">Observable</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">qml</span><span class="o">.</span><span class="n">Hamiltonian</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">],</span> <span class="n">simplify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">qml</span><span class="o">.</span><span class="n">Hamiltonian</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">other</span> <span class="o">+</span> <span class="bp">self</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Cannot add Observable and {type(other)}&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;The scalar multiplication operation between a scalar and an Observable/Tensor.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">qml</span><span class="o">.</span><span class="n">Hamiltonian</span><span class="p">([</span><span class="n">a</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span> <span class="n">simplify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Cannot multiply Observable by {type(a)}&quot;</span><span class="p">)</span>
+
+    <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;The subtraction operation between Observables/Tensors/qml.Hamiltonian objects.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">Observable</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">qml</span><span class="o">.</span><span class="n">Hamiltonian</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Cannot subtract {type(other)} from Observable&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">diagonalizing_gates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the list of operations such that they</span>
+<span class="sd">        diagonalize the observable in the computational basis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list(qml.Operation): A list of gates that diagonalize</span>
+<span class="sd">            the observable in the computational basis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+
+<span class="k">class</span> <span class="nc">Tensor</span><span class="p">(</span><span class="n">Observable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container class representing tensor products of observables.</span>
+
+<span class="sd">    To create a tensor, simply initiate it like so:</span>
+
+<span class="sd">    &gt;&gt;&gt; T = Tensor(qml.PauliX(0), qml.Hermitian(A, [1, 2]))</span>
+
+<span class="sd">    You can also create a tensor from other Tensors:</span>
+
+<span class="sd">    &gt;&gt;&gt; T = Tensor(T, qml.PauliZ(4))</span>
+
+<span class="sd">    The ``@`` symbol can be used as a tensor product operation:</span>
+
+<span class="sd">    &gt;&gt;&gt; T = qml.PauliX(0) @ qml.Hadamard(2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=abstract-method</span>
+    <span class="n">return_type</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">par_domain</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>  <span class="c1"># pylint: disable=super-init-not-called</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">obs</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only perform tensor products between observables.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="n">copied_op</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">copied_op</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">copied_op</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span>
+        <span class="k">return</span> <span class="n">copied_op</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor-call-like representation.&quot;&quot;&quot;</span>
+
+        <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot; @ &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">repr</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">s</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Probability</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;(wires=</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;All constituent observable names making up the tensor product.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: list containing all observable names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">o</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_wires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of wires the tensor product acts on.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: number of wires</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;All wires in the system the tensor product acts on.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Wires: wires addressed by the observables in the tensor product</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Wires</span><span class="p">([</span><span class="n">o</span><span class="o">.</span><span class="n">wires</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raw parameters of all constituent observables in the tensor product.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[Any]: flattened list containing all dependent parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="p">[</span><span class="n">o</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sublist</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raw parameters of all constituent observables in the tensor product.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[Any]: flattened list containing all dependent parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluated parameter values of all constituent observables in the tensor product.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[list[Any]]: nested list containing the parameters per observable</span>
+<span class="sd">            in the tensor product</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">o</span><span class="o">.</span><span class="n">parameters</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">non_identity_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the non-identity observables contained in the tensor product.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[:class:`~.Observable`]: list containing the non-identity observables</span>
+<span class="sd">            in the tensor product</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">obs</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">qml</span><span class="o">.</span><span class="n">Identity</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">obs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only perform tensor products between observables.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__rmatmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only perform tensor products between observables.&quot;</span><span class="p">)</span>
+
+    <span class="fm">__imatmul__</span> <span class="o">=</span> <span class="fm">__matmul__</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eigvals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the eigenvalues of the specified tensor product observable.</span>
+
+<span class="sd">        This method uses pre-stored eigenvalues for standard observables where</span>
+<span class="sd">        possible.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: array containing the eigenvalues of the tensor product</span>
+<span class="sd">            observable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span>
+
+        <span class="n">standard_observables</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;PauliX&quot;</span><span class="p">,</span> <span class="s2">&quot;PauliY&quot;</span><span class="p">,</span> <span class="s2">&quot;PauliZ&quot;</span><span class="p">,</span> <span class="s2">&quot;Hadamard&quot;</span><span class="p">}</span>
+
+        <span class="c1"># observable should be Z^{\otimes n}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="o">=</span> <span class="n">pauli_eigs</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">))</span>
+
+        <span class="c1"># Sort observables lexicographically by the strings of the wire labels</span>
+        <span class="c1"># TODO: check for edge cases of the sorting, e.g. Tensor(Hermitian(obs, wires=[0, 2]),</span>
+        <span class="c1"># Hermitian(obs, wires=[1, 3, 4])</span>
+        <span class="c1"># Sorting the observables based on wires, so that the order of</span>
+        <span class="c1"># the eigenvalues is correct</span>
+        <span class="n">obs_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">labels</span><span class="p">])</span>
+
+        <span class="c1"># check if there are any non-standard observables (such as Identity)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">-</span> <span class="n">standard_observables</span><span class="p">:</span>
+            <span class="c1"># Tensor product of observables contains a mixture</span>
+            <span class="c1"># of standard and non-standard observables</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">obs_sorted</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">standard_observables</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">k</span><span class="p">:</span>
+                    <span class="c1"># Subgroup g contains only standard observables.</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span><span class="p">,</span> <span class="n">pauli_eigs</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">))))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Subgroup g contains only non-standard observables.</span>
+                    <span class="k">for</span> <span class="n">ns_ob</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+                        <span class="c1"># loop through all non-standard observables</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span><span class="p">,</span> <span class="n">ns_ob</span><span class="o">.</span><span class="n">eigvals</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigvals_cache</span>
+
+    <span class="k">def</span> <span class="nf">diagonalizing_gates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the gate set that diagonalizes a circuit according to the</span>
+<span class="sd">        specified tensor observable.</span>
+
+<span class="sd">        This method uses pre-stored eigenvalues for standard observables where</span>
+<span class="sd">        possible and stores the corresponding eigenvectors from the eigendecomposition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: list containing the gates diagonalizing the tensor observable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">diag_gates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">diag_gates</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">diagonalizing_gates</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">diag_gates</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Matrix representation of the tensor operator</span>
+<span class="sd">        in the computational basis.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        Note that the returned matrix *only includes explicitly</span>
+<span class="sd">        declared observables* making up the tensor product;</span>
+<span class="sd">        that is, it only returns the matrix for the specified</span>
+<span class="sd">        subsystem it is defined for.</span>
+
+<span class="sd">        &gt;&gt;&gt; O = qml.PauliZ(0) @ qml.PauliZ(2)</span>
+<span class="sd">        &gt;&gt;&gt; O.matrix</span>
+<span class="sd">        array([[ 1,  0,  0,  0],</span>
+<span class="sd">               [ 0, -1,  0,  0],</span>
+<span class="sd">               [ 0,  0, -1,  0],</span>
+<span class="sd">               [ 0,  0,  0,  1]])</span>
+
+<span class="sd">        To get the full :math:`2^3\times 2^3` Hermitian matrix</span>
+<span class="sd">        acting on the 3-qubit system, the identity on wire 1</span>
+<span class="sd">        must be explicitly included:</span>
+
+<span class="sd">        &gt;&gt;&gt; O = qml.PauliZ(0) @ qml.Identity(1) @ qml.PauliZ(2)</span>
+<span class="sd">        &gt;&gt;&gt; O.matrix</span>
+<span class="sd">        array([[ 1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">               [ 0., -1.,  0., -0.,  0., -0.,  0., -0.],</span>
+<span class="sd">               [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.],</span>
+<span class="sd">               [ 0., -0.,  0., -1.,  0., -0.,  0., -0.],</span>
+<span class="sd">               [ 0.,  0.,  0.,  0., -1., -0., -0., -0.],</span>
+<span class="sd">               [ 0., -0.,  0., -0., -0.,  1., -0.,  0.],</span>
+<span class="sd">               [ 0.,  0.,  0.,  0., -0., -0., -1., -0.],</span>
+<span class="sd">               [ 0., -0.,  0., -0., -0.,  0., -0.,  1.]])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array: matrix representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># group the observables based on what wires they act on</span>
+        <span class="n">U_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">wires</span><span class="o">.</span><span class="n">labels</span><span class="p">):</span>
+            <span class="c1"># extract the matrices of each diagonalizing gate</span>
+            <span class="n">mats</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">matrix</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">g</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mats</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># multiply all unitaries together before appending</span>
+                <span class="n">mats</span> <span class="o">=</span> <span class="p">[</span><span class="n">multi_dot</span><span class="p">(</span><span class="n">mats</span><span class="p">)]</span>
+
+            <span class="c1"># append diagonalizing unitary for specific wire to U_list</span>
+            <span class="n">U_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mats</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Return the Hermitian matrix representing the observable</span>
+        <span class="c1"># over the defined wires.</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">kron</span><span class="p">,</span> <span class="n">U_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">prune</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a pruned tensor product of observables by removing :class:`~.Identity` instances from</span>
+<span class="sd">        the observables building up the :class:`~.Tensor`.</span>
+
+<span class="sd">        The ``return_type`` attribute is preserved while pruning.</span>
+
+<span class="sd">        If the tensor product only contains one observable, then this observable instance is</span>
+<span class="sd">        returned.</span>
+
+<span class="sd">        Note that, as a result, this method can return observables that are not a :class:`~.Tensor`</span>
+<span class="sd">        instance.</span>
+
+<span class="sd">        **Example:**</span>
+
+<span class="sd">        Pruning that returns a :class:`~.Tensor`:</span>
+
+<span class="sd">        &gt;&gt;&gt; O = qml.PauliZ(0) @ qml.Identity(1) @ qml.PauliZ(2)</span>
+<span class="sd">        &gt;&gt;&gt; O.prune()</span>
+<span class="sd">        &lt;pennylane.operation.Tensor at 0x7fc1642d1590</span>
+<span class="sd">        &gt;&gt;&gt; [(o.name, o.wires) for o in O.prune().obs]</span>
+<span class="sd">        [(&#39;PauliZ&#39;, [0]), (&#39;PauliZ&#39;, [2])]</span>
+
+<span class="sd">        Pruning that returns a single observable:</span>
+
+<span class="sd">        &gt;&gt;&gt; O = qml.PauliZ(0) @ qml.Identity(1)</span>
+<span class="sd">        &gt;&gt;&gt; O_pruned = O.prune()</span>
+<span class="sd">        &gt;&gt;&gt; (O_pruned.name, O_pruned.wires)</span>
+<span class="sd">        (&#39;PauliZ&#39;, [0])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ~.Observable: the pruned tensor product of observables</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">non_identity_obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Return a single Identity as the tensor only contains Identities</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">Identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">non_identity_obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">non_identity_obs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">non_identity_obs</span><span class="p">)</span>
+
+        <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span>
+        <span class="k">return</span> <span class="n">obs</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># CV Operations and observables</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">class</span> <span class="nc">CV</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A mixin base class denoting a continuous-variable operation.&quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=no-member</span>
+
+    <span class="k">def</span> <span class="nf">heisenberg_expand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">wires</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Expand the given local Heisenberg-picture array into a full-system one.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            U (array[float]): array to expand (expected to be of the dimension ``1+2*self.num_wires``)</span>
+<span class="sd">            wires (Wires): wires on the device the array ``U`` should be expanded</span>
+<span class="sd">                to apply to</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if the size of the input matrix is invalid or `num_wires` is incorrect</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: expanded array, dimension ``1+2*num_wires``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">U_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
+        <span class="n">nw</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">U</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only order-1 and order-2 arrays supported.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">U_dim</span> <span class="o">!=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">nw</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Heisenberg matrix is the wrong size </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">U_dim</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">wires</span><span class="p">):</span>
+            <span class="c1"># no expansion necessary (U is a full-system matrix in the correct order)</span>
+            <span class="k">return</span> <span class="n">U</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wires</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Some observable wires </span><span class="si">{}</span><span class="s2"> do not exist on this device with wires </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">,</span> <span class="n">wires</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># get the indices that the operation&#39;s wires have on the device</span>
+        <span class="n">wire_indices</span> <span class="o">=</span> <span class="n">wires</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wires</span><span class="p">)</span>
+
+        <span class="c1"># expand U into the I, x_0, p_0, x_1, p_1, ... basis</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+
+        <span class="k">def</span> <span class="nf">loc</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+            <span class="s2">&quot;Returns the slice denoting the location of (x_w, p_w) in the basis.&quot;</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">w</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">ind</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">U</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+            <span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wire_indices</span><span class="p">):</span>
+                <span class="n">W</span><span class="p">[</span><span class="n">loc</span><span class="p">(</span><span class="n">w</span><span class="p">)]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">loc</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span>
+        <span class="k">elif</span> <span class="n">U</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+                <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+
+            <span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">k1</span><span class="p">,</span> <span class="n">w1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wire_indices</span><span class="p">):</span>
+                <span class="n">s1</span> <span class="o">=</span> <span class="n">loc</span><span class="p">(</span><span class="n">k1</span><span class="p">)</span>
+                <span class="n">d1</span> <span class="o">=</span> <span class="n">loc</span><span class="p">(</span><span class="n">w1</span><span class="p">)</span>
+
+                <span class="c1"># first column</span>
+                <span class="n">W</span><span class="p">[</span><span class="n">d1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># first row (for gates, the first row is always (1, 0, 0, ...), but not for observables!)</span>
+                <span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">d1</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">s1</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">k2</span><span class="p">,</span> <span class="n">w2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wire_indices</span><span class="p">):</span>
+                    <span class="n">W</span><span class="p">[</span><span class="n">d1</span><span class="p">,</span> <span class="n">loc</span><span class="p">(</span><span class="n">w2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">loc</span><span class="p">(</span><span class="n">k2</span><span class="p">)]</span>  <span class="c1"># block k1, k2 in U goes to w1, w2 in W.</span>
+        <span class="k">return</span> <span class="n">W</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_heisenberg_rep</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Heisenberg picture representation of the operation.</span>
+
+<span class="sd">        * For Gaussian CV gates, this method returns the matrix of the linear</span>
+<span class="sd">          transformation carried out by the gate for the given parameter values.</span>
+<span class="sd">          The method is not defined for non-Gaussian gates.</span>
+
+<span class="sd">          **The existence of this method is equivalent to setting** ``grad_method = &#39;A&#39;``.</span>
+
+<span class="sd">        * For observables, returns a real vector (first-order observables) or</span>
+<span class="sd">          symmetric matrix (second-order observables) of expansion coefficients</span>
+<span class="sd">          of the observable.</span>
+
+<span class="sd">        For single-mode Operations we use the basis :math:`\mathbf{r} = (\I, \x, \p)`.</span>
+<span class="sd">        For multi-mode Operations we use the basis :math:`\mathbf{r} = (\I, \x_0, \p_0, \x_1, \p_1, \ldots)`.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            For gates, we assume that the inverse transformation is obtained</span>
+<span class="sd">            by negating the first parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            p (Sequence[float]): parameter values for the transformation</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: :math:`\tilde{U}` or :math:`q`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=unused-argument</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@classproperty</span>
+    <span class="k">def</span> <span class="nf">supports_heisenberg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True iff the CV Operation has overridden the :meth:`~.CV._heisenberg_rep`</span>
+<span class="sd">        static method, thereby indicating that it is Gaussian and does not block the use</span>
+<span class="sd">        of the parameter-shift differentiation method if found between the differentiated gate</span>
+<span class="sd">        and an observable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">CV</span><span class="o">.</span><span class="n">_heisenberg_rep</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heisenberg_rep</span>
+
+
+<span class="k">class</span> <span class="nc">CVOperation</span><span class="p">(</span><span class="n">CV</span><span class="p">,</span> <span class="n">Operation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for continuous-variable quantum operations.&quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=abstract-method</span>
+
+    <span class="nd">@classproperty</span>
+    <span class="k">def</span> <span class="nf">supports_parameter_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns True iff the CV Operation supports the parameter-shift differentiation method.</span>
+<span class="sd">        This means that it has ``grad_method=&#39;A&#39;`` and</span>
+<span class="sd">        has overridden the :meth:`~.CV._heisenberg_rep` static method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_method</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_heisenberg</span>
+
+    <span class="k">def</span> <span class="nf">heisenberg_pd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Partial derivative of the Heisenberg picture transform matrix.</span>
+
+<span class="sd">        Computed using grad_recipe.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            idx (int): index of the parameter with respect to which the</span>
+<span class="sd">                partial derivative is computed.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: partial derivative</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the gradient recipe for this parameter</span>
+        <span class="n">recipe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_recipe</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># Default values</span>
+        <span class="n">multiplier</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># We set the default recipe to as follows:</span>
+        <span class="c1"># ∂f(x) = c*f(x+s) - c*f(x-s)</span>
+        <span class="n">default_param_shift</span> <span class="o">=</span> <span class="p">[[</span><span class="n">multiplier</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">shift</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="n">multiplier</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="n">shift</span><span class="p">]]</span>
+        <span class="n">param_shift</span> <span class="o">=</span> <span class="n">default_param_shift</span> <span class="k">if</span> <span class="n">recipe</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">recipe</span>
+
+        <span class="n">pd</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># partial derivative of the transformation</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+
+        <span class="n">original_p_idx</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">_a</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">param_shift</span><span class="p">:</span>
+            <span class="c1"># evaluate the transform at the shifted parameter values</span>
+            <span class="n">p</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">_a</span> <span class="o">*</span> <span class="n">original_p_idx</span> <span class="o">+</span> <span class="n">s</span>
+            <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heisenberg_rep</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>  <span class="c1"># pylint: disable=assignment-from-none</span>
+
+            <span class="k">if</span> <span class="n">pd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">pd</span> <span class="o">=</span> <span class="n">c</span> <span class="o">*</span> <span class="n">U</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pd</span> <span class="o">+=</span> <span class="n">c</span> <span class="o">*</span> <span class="n">U</span>
+
+        <span class="k">return</span> <span class="n">pd</span>
+
+    <span class="k">def</span> <span class="nf">heisenberg_tr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Heisenberg picture representation of the linear transformation carried</span>
+<span class="sd">        out by the gate at current parameter values.</span>
+
+<span class="sd">        Given a unitary quantum gate :math:`U`, we may consider its linear</span>
+<span class="sd">        transformation in the Heisenberg picture, :math:`U^\dagger(\cdot) U`.</span>
+
+<span class="sd">        If the gate is Gaussian, this linear transformation preserves the polynomial order</span>
+<span class="sd">        of any observables that are polynomials in :math:`\mathbf{r} = (\I, \x_0, \p_0, \x_1, \p_1, \ldots)`.</span>
+<span class="sd">        This also means it maps :math:`\text{span}(\mathbf{r})` into itself:</span>
+
+<span class="sd">        .. math:: U^\dagger \mathbf{r}_i U = \sum_j \tilde{U}_{ij} \mathbf{r}_j</span>
+
+<span class="sd">        For Gaussian CV gates, this method returns the transformation matrix for</span>
+<span class="sd">        the current parameter values of the Operation. The method is not defined</span>
+<span class="sd">        for non-Gaussian (and non-CV) gates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Wires): wires on the device that the observable gets applied to</span>
+<span class="sd">            inverse  (bool): if True, return the inverse transformation instead</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: if the specified operation is not Gaussian or is missing the `_heisenberg_rep` method</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: :math:`\tilde{U}`, the Heisenberg picture representation of the linear transformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">par_domain</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+                <span class="c1"># TODO: expand this for the new par domain class, for non-unitary matrices.</span>
+                <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># negate first parameter</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heisenberg_rep</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>  <span class="c1"># pylint: disable=assignment-from-none</span>
+
+        <span class="c1"># not defined?</span>
+        <span class="k">if</span> <span class="n">U</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> is not a Gaussian operation, or is missing the _heisenberg_rep method.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">heisenberg_expand</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">wires</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">CVObservable</span><span class="p">(</span><span class="n">CV</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for continuous-variable observables.</span>
+
+<span class="sd">    The class attribute :attr:`~.ev_order` can be defined to indicate</span>
+<span class="sd">    to PennyLane whether the corresponding CV observable is a polynomial in the</span>
+<span class="sd">    quadrature operators. If so,</span>
+
+<span class="sd">    * ``ev_order = 1`` indicates a first order polynomial in quadrature</span>
+<span class="sd">      operators :math:`(\x, \p)`.</span>
+
+<span class="sd">    * ``ev_order = 2`` indicates a second order polynomial in quadrature</span>
+<span class="sd">      operators :math:`(\x, \p)`.</span>
+
+<span class="sd">    If :attr:`~.ev_order` is not ``None``, then the Heisenberg representation</span>
+<span class="sd">    of the observable should be defined in the static method :meth:`~.CV._heisenberg_rep`,</span>
+<span class="sd">    returning an array of the correct dimension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint: disable=abstract-method</span>
+    <span class="n">ev_order</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1">#: None, int: if not None, the observable is a polynomial of the given order in `(x, p)`.</span>
+
+    <span class="k">def</span> <span class="nf">heisenberg_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Representation of the observable in the position/momentum operator basis.</span>
+
+<span class="sd">        Returns the expansion :math:`q` of the observable, :math:`Q`, in the</span>
+<span class="sd">        basis :math:`\mathbf{r} = (\I, \x_0, \p_0, \x_1, \p_1, \ldots)`.</span>
+
+<span class="sd">        * For first-order observables returns a real vector such</span>
+<span class="sd">          that :math:`Q = \sum_i q_i \mathbf{r}_i`.</span>
+
+<span class="sd">        * For second-order observables returns a real symmetric matrix</span>
+<span class="sd">          such that :math:`Q = \sum_{ij} q_{ij} \mathbf{r}_i \mathbf{r}_j`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Wires): wires on the device that the observable gets applied to</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: :math:`q`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heisenberg_rep</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>  <span class="c1"># pylint: disable=assignment-from-none</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">heisenberg_expand</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">wires</span><span class="p">)</span>
+</pre></div>
+
+            </div>
+              
+          </div>
+<div class="comment-container nano has-scrollbar">
+  <div class="nano-content">
+  <div id="comments">
+    <h3>Contents</h3>
+    
+    
+      <ul style="display: none;"><li><a></a></li></ul>
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+  <div class="xanadu-call-to-action-links">
+    <h3>Downloads</h3>
+    <div id="tutorial-type">_modules/pennylane/operation</div>
+    <div id="download-python-link">
+      <i class="fab fa-python"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Python script</div>
+    </div>
+    <div id="download-notebook-link">
+      <i class="fas fa-download"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Notebook</div>
+    </div>
+    <div id="github-view-link">
+      <i class="fab fa-github"></i>&nbsp;
+      <div class="call-to-action-desktop-view">View on GitHub</div>
+    </div>
+  </div>
+</div>
+</div>
+
+          <div class="clearfix"></div>
+        </div>
+
+
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle").click(function () {
+    $("#left-column").slideToggle("slow");
+  });
+</script>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-migrate-1.0.0.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'></script>
+<!-- Bootstrap core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- MDB core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+
+<script type="text/javascript" src="../../_static/js/nanoscroller.min.js"></script>
+<script type="text/javascript">
+    $('a.reference.internal').each(function(){
+      var link = $(this).attr("href");
+
+      var hash = link.split('#')[1];
+      var page = link.split('#')[0].split('/').slice(-1)[0].replace(".html", "");
+
+      if (hash == page) {
+        $(this).attr('href', link.split('#')[0]);
+      }
+    });
+
+    $(".document > .section").removeClass("section");
+    $(".comment-container .nano-content").css("height", $("#content").height());
+    $(".comment-container").css("height", $("#content").height());
+    $(".nano").nanoScroller();
+</script>
+<script type="text/javascript">
+    $(window).scroll(function(){
+      var scrollBottom = $(document).height() - $(window).height() - $(window).scrollTop();
+      if (scrollBottom < 342) {
+        $('.comment-container').css("height", "calc(100% - " + (342 - scrollBottom) + "px)");
+        $('.comment-container .nano-content').css("height", "calc(100% - 119px)");
+      }
+    });
+</script>
+ <script type="text/javascript">
+    if ($('.current').length) {
+        var target = $('.current')[0]
+        var rect = target.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            $(".nano").nanoScroller({ scrollTo: $('.current') });
+        } else {
+            $(".nano").nanoScroller({ scrollTop: 0 });
+        }
+    }
+    $(document).ready(function () {
+        $(".css-transitions-only-after-page-load").each(function (index, element) {
+            setTimeout(function () { $(element).removeClass("css-transitions-only-after-page-load") }, 10);
+        });
+        if (window.location.hash) {
+           var target = $("[id='"+window.location.hash.substr(1)+"']");
+           if (target.closest(".collapse").length) {
+              target.closest(".collapse").addClass("show");
+              target.closest(".collapse").prev().find(".rotate").addClass("up");
+           }
+        }
+    });
+</script>
+<script type="text/javascript">
+var downloadNote = $(".sphx-glr-download-link-note.admonition.note");
+if (downloadNote.length >= 1) {
+    var tutorialUrlArray = $("#tutorial-type").text().split('/');
+        tutorialUrlArray[0] = "examples"
+
+    var githubLink = "https://github.com/XanaduAI/pennylane/blob/master/" + tutorialUrlArray.join("/") + ".py",
+        pythonLink = $(".reference.download")[0].href,
+        notebookLink = $(".reference.download")[1].href,
+        notebookDownloadPath = notebookLink.split('_downloads')[1].split('/').pop();
+
+    $("#download-python-link").wrap("<a href=" + pythonLink + " data-behavior='call-to-action-event' data-response='Download Python script' download target='_blank'/>");
+    $("#download-notebook-link").wrap("<a href=" + notebookLink + " data-behavior='call-to-action-event' data-response='Download Notebook' download target='_blank'/>");
+    $("#github-view-link").wrap("<a href=" + githubLink + " data-behavior='call-to-action-event' data-response='View on Github' target='_blank'/>");
+} else {
+    $(".xanadu-call-to-action-links").hide();
+}
+</script>
+<script type="text/javascript">jQuery.noConflict(true);</script>
+        <footer class="page-footer text-md-left pt-4">
+  
+    <hr class="pb-0 mb-0">
+    <div class="container-fluid">
+      <div class="row   justify-content-md-center">
+        <div class="col-md-3">
+          <h5 class=" mb-1 footer-heading">Xanadu</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <p class="">Located in the heart of downtown Toronto, we've brought together exceptional minds from around the world to build quantum computers that are useful and available to people everywhere.</p>
+        </div>
+
+    <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">PennyLane</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://pennylane.ai/">Home page</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/pennylane">GitHub</a></li>
+            <li><a class="" href="https://pennylane.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://discuss.pennylane.ai/">Discussion forum</a></li>
+            <li><a class="" href="https://twitter.com/pennylaneai/">Twitter</a></li>
+          </ul>
+        </div>
+		<div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">Strawberry Fields</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://strawberryfields.ai/">Interactive</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/strawberryfields">GitHub</a></li>
+            <li><a class="" href="https://strawberryfields.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://u.strawberryfields.ai/slack/">Slack channel</a></li>
+          </ul>
+        </div>
+
+
+        <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">About</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://www.xanadu.ai/">Home</a></li>
+            <li><a class="" href="https://www.xanadu.ai/hardware/">Hardware</a></li>
+            <li><a class="" href="https://www.xanadu.ai/software/">Software</a></li>
+            <li><a class="" href="https://www.xanadu.ai/research">Research</a></li>
+            <li><a class="" href="https://medium.com/XanaduAI">Blog</a></li>
+            <li><a class="" href="https://www.xanadu.ai/about/">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <hr>
+
+    <!-- <hr class="pb-0 mb-0"> -->
+
+    <!--Social buttons-->
+    <div class="social-section text-center">
+        <ul class="list-unstyled list-inline mb-0">
+            <li class="list-inline-item"><a class="btn-fb" href="https://www.facebook.com/Xanadu-1312050742230493/"><i class="fab fa-facebook-f"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-tw" href="https://twitter.com/xanaduai"><i class="fab fa-twitter"> </i></a></li>
+            <li class="list-inline-item"><a class="" href="https://medium.com/xanaduai"><i class="fab fa-medium-m"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-li" href="https://www.linkedin.com/company/xanaduai/"><i class="fab fa-linkedin-in"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-git" href="https://github.com/XanaduAI"><i class="fab fa-github"> </i></a></li>
+        </ul>
+        <a href="https://xanadu.us17.list-manage.com/subscribe?u=725f07a1d1a4337416c3129fd&id=294b062630" style="font-size: initial;">Stay updated with our newsletter</a>
+    </div>
+    <!--/.Social buttons-->
+
+    <!--Copyright-->
+    <div class="footer-copyright py-3 mt-0 text-center">
+        <div class="container-fluid">
+            © Copyright 2018-2020 | Xanadu | All rights reserved
+            <br>
+             TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. 
+        </div>
+    </div>
+  </footer>
+  </body>
+</html>

@@ -1,6 +1,3 @@
 sphinx
-sphinx-rtd-theme
-sphinxcontrib-apidoc
-sphinxcontrib-bibtex
-pygments-github-lexers
+sphinx-automodapi
 pennylane>=0.11

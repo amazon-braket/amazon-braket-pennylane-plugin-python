@@ -1,6 +1,9 @@
-# PennyLane Braket plugin
+PennyLane Braket plugin
+#######################
 
 [![Code Style: Black](https://img.shields.io/badge/code_style-black-000000.svg)](https://github.com/psf/black)
+
+.. header-start-inclusion-marker-do-not-remove
 
 The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
 
@@ -11,43 +14,69 @@ The [Amazon Braket Python SDK](https://github.com/aws/amazon-braket-sdk-python) 
 library that provides a framework that you can use to interact with quantum computing hardware
 devices through Amazon Braket.
 
-[PennyLane](https://pennylane.readthedocs.io) is a machine learning library for optimization and automatic differentiation of hybrid quantum-classical computations.
+[PennyLane](https://pennylane.readthedocs.io) is a machine learning library for optimization and automatic 
+differentiation of hybrid quantum-classical computations.
 
+.. header-end-inclusion-marker-do-not-remove
 
-## Features
+The plugin documentation can be found here: `<https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/>`__.
 
-* Provides two devices to be used with PennyLane: `braket.aws.qubit` for running on the Braket service, and `braket.local.qubit` for running on Braket's local simulator.
+Features
+========
+
+* Provides two devices to be used with PennyLane: `braket.aws.qubit` for running on the Braket service, 
+and `braket.local.qubit` for running on Braket's local simulator.
 
 * Both devices support most core qubit PennyLane operations.
 
 * All PennyLane observables are supported.
 
-* Provides custom PennyLane operations to cover additional Braket operations: `ISWAP`, `PSWAP`, and many more. Every custom operation supports analytic
+* Provides custom PennyLane operations to cover additional Braket operations: `ISWAP`, `PSWAP`, and many more. 
+Every custom operation supports analytic
   differentiation.
 
-* Combine Amazon Braket with PennyLane's automatic differentiation and optimization.
+* Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
 
 
+Installation
+============
 
-## Prerequisites
-Before you begin working with the Amazon Braket PennyLane Plugin, make sure that you've installed or configured the following prerequisites.
+Before you begin working with the Amazon Braket PennyLane Plugin, make sure 
+that you installed or configured the following prerequisites.
 
-### Python 3.7.2 or greater
+Python 3.7.2 or greater
+-----------------------
+
 Download and install Python 3.7.2 or greater from [Python.org](https://www.python.org/downloads/).
 If you are using Windows, choose **Add Python to environment variables** before you begin the installation.
 
-### Amazon Braket SDK
-Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions in the [README](https://github.com/aws/amazon-braket-sdk-python#prerequisites).
+Amazon Braket SDK
+-----------------
 
-### PennyLane
+Make sure that your AWS account is onboarded to Amazon Braket, 
+as per the instructions in the [README](https://github.com/aws/amazon-braket-sdk-python#prerequisites).
+
+PennyLane
+---------
+
 Download and install [PennyLane](https://pennylane.ai/install.html):
 ```bash
-pip install dwave-ocean-sdk
+pip install pennylane
 ```
 
-## Install the Amazon Braket PennyLane Plugin
+Install the Amazon Braket PennyLane Plugin
+------------------------------------------
 
-You can install from source by cloning this repository and running a pip install command in the root directory of the repository:
+You can install the latest release of the PennyLane-Braket plugin as follows:
+
+XXX check!
+
+```bash
+pip install pennylane-braket
+```
+
+You can also install the development version from source by cloning this repository and running a 
+pip install command in the root directory of the repository:
 
 ```bash
 git clone https://github.com/aws/amazon-braket-pennylane-plugin-python.git
@@ -69,7 +98,8 @@ or alternatively from within Python:
 ```
 
 
-## Documentation
+Documentation
+-------------
 
 **To generate the API Reference HTML in your local environment**
 

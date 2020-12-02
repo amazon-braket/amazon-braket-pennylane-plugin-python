@@ -1,0 +1,1475 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Noto+Serif" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Material Design Bootstrap -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.14/css/mdb.min.css" rel="stylesheet">
+
+  <!-- nanoscroller -->
+  <link rel="stylesheet" type="text/css" href="_static/css/nanoscroller.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/x-mathjax-config">
+     MathJax.Hub.Config({
+       "HTML-CSS": { scale: 90, linebreaks: { automatic: true } },
+       TeX: {
+         Macros: {
+           pr : ['|\#1\\rangle\\langle\#1|',1],
+           ket: ['\\left| \#1\\right\\rangle',1],
+           bra: ['\\left\\langle \#1\\right|',1],
+           xket: ['\\left| \#1\\right\\rangle_x',1],
+           xbra: ['\\left\\langle \#1\\right|_x',1],
+           braket: ['\\langle \#1 \\rangle',1],
+           braketD: ['\\langle \#1 \\mid \#2 \\rangle',2],
+           braketT: ['\\langle \#1 \\mid \#2 \\mid \#3 \\rangle',3],
+           ketbra: ['| #1 \\rangle \\langle #2 |',2],
+           hc: ['\\text{h.c.}',0],
+           cc: ['\\text{c.c.}',0],
+           h: ['\\hat',0],
+           nn: ['\\nonumber',0],
+           di: ['\\frac{d}{d \#1}',1],
+           uu: ['\\mathcal{U}',0],
+           inn: ['\\text{in}',0],
+           out: ['\\text{out}',0],
+           vac: ['\\text{vac}',0],
+           I: ['\\hat{\\mathbf{1}}',0],
+           x: ['\\hat{x}',0],
+           p: ['\\hat{p}',0],
+           a: ['\\hat{a}',0],
+           ad: ['\\hat{a}^\\dagger',0],
+           n: ['\\hat{n}',0],
+           nbar: ['\\overline{n}',0],
+           sech: ['\\mathrm{sech~}',0],
+           tanh: ['\\mathrm{tanh~}',0],
+           re: ['\\text{Re}',0],
+           im: ['\\text{Im}',0],
+           tr: ['\\mathrm{Tr} #1',1],
+           sign: ['\\text{sign}',0],
+           overlr: ['\\overset\\leftrightarrow{\#1}',1],
+           overl: ['\\overset\leftarrow{\#1}',1],
+           overr: ['\\overset\rightarrow{\#1}',1],
+           avg: ['\\left< \#1 \\right>',1],
+           slashed: ['\\cancel{\#1}',1],
+           bold: ['\\boldsymbol{\#1}',1],
+           d: ['\\mathrm d',0],
+           expect: ["\\langle #1 \\rangle",1],
+           pde: ["\\frac{\\partial}{\\partial \#1}",1],
+           R: ["\\mathbb{R}",0],
+           C: ["\\mathbb{C}",0],
+           Ad: ["\\text{Ad}",0],
+           Var: ["\\text{Var}",0],
+           bx: ["\\mathbf{x}", 0],
+           bm: ["\\boldsymbol{\#1}",1]
+         }
+       }
+     });
+     </script>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-130507810-2"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-130507810-2');
+      </script>
+  
+    <title>Index &#8212; Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</title>
+    <link rel="stylesheet" href="_static/xanadu.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body><!--Navbar-->
+<nav class="navbar navbar-expand-lg navbar-light white sticky-top">
+
+  <!-- Navbar brand -->
+  <a class="navbar-brand" href="https://pennylane.ai">
+    <img class="pr-1" src="_static/xanadu_x.png" width="28px"></img>
+    <img src="_static/pennylane.png" width="180px"></img>
+  </a>
+
+  <!-- Collapse button -->
+  <div class="row right">
+  <a href="#" class="btn navbar-toggler black-text mr-1 justify-content-center" id="mobile-toggle">
+    <i class="fas fa-search"></i>
+  </a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#basicExampleNav"
+    aria-controls="basicExampleNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+</div>
+
+  <!-- Collapsible content -->
+  <div class="collapse navbar-collapse" id="basicExampleNav">
+
+    <!-- Links -->
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/qml">Quantum machine learning
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/install.html">Install</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="https://pennylane.ai/plugins.html">Plugins</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.readthedocs.io">Documentation</a>
+          <span class="sr-only">(current)</span>
+      </li>
+    </ul>
+    <!-- Links -->
+
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/faq.html">
+          <i class="fab fas fa-question"></i> FAQ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://discuss.pennylane.ai">
+          <i class="fab fab fa-discourse"></i> Support
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/XanaduAI/pennyLane-forest">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </li>
+    </ul>
+  </div>
+  <!-- Collapsible content -->
+</nav>
+<!--/.Navbar-->
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="#" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+  <div id="left-column" class="nano css-transitions-only-after-page-load">
+    <div class="sphinxsidebar nano-content"><div class="sidebar-block search-block">
+  <div id="main-search">
+    <form action="search.html" method="GET" role="form">
+      <div class="md-input">
+        <input name="q" type="text" required>
+        <span class="bar"></span>
+        <label>Search</label>
+      </div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+  </div>
+</div>
+<div class="sidebar-block">
+<!--   <div class="sidebar-wrapper">
+    <h2>Table Of Contents</h2>
+  </div> -->
+  <div class="sidebar-toc">
+    <p class="caption">PennyLane-Braket</p>
+    <ul>
+      <li class="caption toctree-l1 ">
+        <a class="reference internal" href="index.html">Overview</a>
+      </li>
+    </ul>
+    
+    
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="content">
+          <div id="right-column">
+            
+            <div role="navigation" aria-label="breadcrumbs navigation">
+              <ol class="breadcrumb">
+                <li><a href="index.html">Docs</a></li>
+                
+                <li>Index</li>
+              </ol>
+            </div>
+            
+            <div class="document clearer body">
+
+              
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ | <a href="#X"><strong>X</strong></a>
+ | <a href="#Y"><strong>Y</strong></a>
+ | <a href="#Z"><strong>Z</strong></a>
+ 
+</div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.access_state">access_state() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.access_state">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.active_wires">active_wires() (BraketAwsQubitDevice static method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.active_wires">(BraketLocalQubitDevice static method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.analytic_probability">analytic_probability() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.analytic_probability">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.apply">apply() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.apply">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.author">author (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.author">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.base_name">base_name (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.base_name">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.base_name">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.base_name">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.base_name">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.base_name">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.base_name">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.base_name">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.base_name">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.base_name">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.base_name">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.base_name">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.batch_execute">batch_execute() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.batch_execute">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code.html#module-braket.pennylane_plugin">braket.pennylane_plugin (module)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice">BraketAwsQubitDevice (class in braket.pennylane_plugin)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice">BraketLocalQubitDevice (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.cache">cache (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.cache">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.capabilities">capabilities() (braket.pennylane_plugin.BraketAwsQubitDevice class method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.capabilities">(braket.pennylane_plugin.BraketLocalQubitDevice class method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.check_domain">check_domain() (CPhaseShift method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.check_domain">(CPhaseShift00 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.check_domain">(CPhaseShift01 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.check_domain">(CPhaseShift10 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.check_domain">(CY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.check_domain">(ISWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.check_domain">(PSWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.check_domain">(V method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.check_domain">(XX method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.check_domain">(XY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.check_domain">(YY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.check_domain">(ZZ method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.check_validity">check_validity() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.check_validity">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.circuit">circuit (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.circuit">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.circuit_hash">circuit_hash (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.circuit_hash">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift">CPhaseShift (class in braket.pennylane_plugin)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00">CPhaseShift00 (class in braket.pennylane_plugin)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01">CPhaseShift01 (class in braket.pennylane_plugin)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10">CPhaseShift10 (class in braket.pennylane_plugin)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY">CY (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.decomposition">decomposition() (CPhaseShift static method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.decomposition">(CPhaseShift00 static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.decomposition">(CPhaseShift01 static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.decomposition">(CPhaseShift10 static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.decomposition">(CY static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.decomposition">(ISWAP static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.decomposition">(PSWAP static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.decomposition">(V static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.decomposition">(XX static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.decomposition">(XY static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.decomposition">(YY static method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.decomposition">(ZZ static method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.define_wire_map">define_wire_map() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.define_wire_map">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.density_matrix">density_matrix() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.density_matrix">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.do_check_domain">do_check_domain (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.do_check_domain">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.do_check_domain">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.do_check_domain">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.do_check_domain">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.do_check_domain">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.do_check_domain">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.do_check_domain">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.do_check_domain">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.do_check_domain">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.do_check_domain">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.do_check_domain">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.eigvals">eigvals (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.eigvals">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.eigvals">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.eigvals">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.eigvals">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.eigvals">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.eigvals">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.eigvals">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.eigvals">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.eigvals">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.eigvals">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.eigvals">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.estimate_probability">estimate_probability() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.estimate_probability">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.execute">execute() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.execute">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.execution_context">execution_context() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.execution_context">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.expval">expval() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.expval">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.generate_basis_states">generate_basis_states() (BraketAwsQubitDevice static method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.generate_basis_states">(BraketLocalQubitDevice static method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.generate_samples">generate_samples() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.generate_samples">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.generator">generator (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.generator">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.generator">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.generator">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.generator">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.generator">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.generator">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.generator">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.generator">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.generator">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.generator">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.generator">(ZZ attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.get_parameter_shift">get_parameter_shift() (CPhaseShift method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.get_parameter_shift">(CPhaseShift00 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.get_parameter_shift">(CPhaseShift01 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.get_parameter_shift">(CPhaseShift10 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.get_parameter_shift">(CY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.get_parameter_shift">(ISWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.get_parameter_shift">(PSWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.get_parameter_shift">(V method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.get_parameter_shift">(XX method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.get_parameter_shift">(XY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.get_parameter_shift">(YY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.get_parameter_shift">(ZZ method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.grad_method">grad_method (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.grad_method">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.grad_method">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.grad_method">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.grad_method">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.grad_method">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.grad_method">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.grad_method">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.grad_method">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.grad_method">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.grad_method">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.grad_method">(ZZ attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.grad_recipe">grad_recipe (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.grad_recipe">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.grad_recipe">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.grad_recipe">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.grad_recipe">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.grad_recipe">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.grad_recipe">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.grad_recipe">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.grad_recipe">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.grad_recipe">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.grad_recipe">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.grad_recipe">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.inv">inv() (CPhaseShift method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.inv">(CPhaseShift00 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.inv">(CPhaseShift01 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.inv">(CPhaseShift10 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.inv">(CY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.inv">(ISWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.inv">(PSWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.inv">(V method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.inv">(XX method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.inv">(XY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.inv">(YY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.inv">(ZZ method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.inverse">inverse (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.inverse">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.inverse">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.inverse">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.inverse">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.inverse">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.inverse">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.inverse">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.inverse">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.inverse">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.inverse">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.inverse">(ZZ attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP">ISWAP (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.map_wires">map_wires() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.map_wires">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.marginal_prob">marginal_prob() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.marginal_prob">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.matrix">matrix (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.matrix">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.matrix">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.matrix">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.matrix">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.matrix">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.matrix">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.matrix">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.matrix">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.matrix">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.matrix">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.matrix">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.name">name (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.name">(BraketLocalQubitDevice attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.name">(CPhaseShift attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.name">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.name">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.name">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.name">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.name">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.name">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.name">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.name">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.name">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.name">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.name">(ZZ attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.num_executions">num_executions (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.num_executions">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.num_params">num_params (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.num_params">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.num_params">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.num_params">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.num_params">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.num_params">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.num_params">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.num_params">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.num_params">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.num_params">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.num_params">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.num_params">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.num_wires">num_wires (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.num_wires">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.num_wires">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.num_wires">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.num_wires">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.num_wires">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.num_wires">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.num_wires">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.num_wires">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.num_wires">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.num_wires">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.num_wires">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.obs_queue">obs_queue (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.obs_queue">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.observables">observables (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.observables">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.op_queue">op_queue (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.op_queue">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.operations">operations (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.operations">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.par_domain">par_domain (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.par_domain">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.par_domain">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.par_domain">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.par_domain">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.par_domain">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.par_domain">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.par_domain">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.par_domain">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.par_domain">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.par_domain">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.par_domain">(ZZ attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.parallel">parallel (BraketAwsQubitDevice attribute)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.parameters">parameters (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.parameters">(BraketLocalQubitDevice attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.parameters">(CPhaseShift attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.parameters">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.parameters">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.parameters">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.parameters">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.parameters">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.parameters">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.parameters">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.parameters">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.parameters">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.parameters">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.parameters">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.pennylane_requires">pennylane_requires (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.pennylane_requires">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.post_apply">post_apply() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.post_apply">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.post_measure">post_measure() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.post_measure">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.pre_apply">pre_apply() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.pre_apply">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.pre_measure">pre_measure() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.pre_measure">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.probability">probability() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.probability">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP">PSWAP (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.queue">queue() (CPhaseShift method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.queue">(CPhaseShift00 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.queue">(CPhaseShift01 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.queue">(CPhaseShift10 method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.queue">(CY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.queue">(ISWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.queue">(PSWAP method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.queue">(V method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.queue">(XX method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.queue">(XY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.queue">(YY method)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.queue">(ZZ method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.reset">reset() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.reset">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.sample">sample() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.sample">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.sample_basis_states">sample_basis_states() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.sample_basis_states">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.short_name">short_name (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.short_name">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.shots">shots (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.shots">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.state">state (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.state">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.states_to_binary">states_to_binary() (BraketAwsQubitDevice static method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.states_to_binary">(BraketLocalQubitDevice static method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.statistics">statistics() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.statistics">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.string_for_inverse">string_for_inverse (CPhaseShift attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.string_for_inverse">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.string_for_inverse">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.string_for_inverse">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.string_for_inverse">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.string_for_inverse">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.string_for_inverse">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.string_for_inverse">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.string_for_inverse">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.string_for_inverse">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.string_for_inverse">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.string_for_inverse">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.supports_observable">supports_observable() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.supports_observable">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.supports_operation">supports_operation() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.supports_operation">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.task">task (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.task">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V">V (class in braket.pennylane_plugin)</a>
+</li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.var">var() (BraketAwsQubitDevice method)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.var">(BraketLocalQubitDevice method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.version">version (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.version">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.wire_map">wire_map (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.wire_map">(BraketLocalQubitDevice attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="code/api/braket.pennylane_plugin.BraketAwsQubitDevice.html#braket.pennylane_plugin.BraketAwsQubitDevice.wires">wires (BraketAwsQubitDevice attribute)</a>
+
+      <ul>
+        <li><a href="code/api/braket.pennylane_plugin.BraketLocalQubitDevice.html#braket.pennylane_plugin.BraketLocalQubitDevice.wires">(BraketLocalQubitDevice attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift.html#braket.pennylane_plugin.CPhaseShift.wires">(CPhaseShift attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift00.html#braket.pennylane_plugin.CPhaseShift00.wires">(CPhaseShift00 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift01.html#braket.pennylane_plugin.CPhaseShift01.wires">(CPhaseShift01 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CPhaseShift10.html#braket.pennylane_plugin.CPhaseShift10.wires">(CPhaseShift10 attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.CY.html#braket.pennylane_plugin.CY.wires">(CY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ISWAP.html#braket.pennylane_plugin.ISWAP.wires">(ISWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.PSWAP.html#braket.pennylane_plugin.PSWAP.wires">(PSWAP attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.V.html#braket.pennylane_plugin.V.wires">(V attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX.wires">(XX attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY.wires">(XY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY.wires">(YY attribute)</a>
+</li>
+        <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ.wires">(ZZ attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="X">X</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.XX.html#braket.pennylane_plugin.XX">XX (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.XY.html#braket.pennylane_plugin.XY">XY (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Y">Y</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.YY.html#braket.pennylane_plugin.YY">YY (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Z">Z</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="code/api/braket.pennylane_plugin.ZZ.html#braket.pennylane_plugin.ZZ">ZZ (class in braket.pennylane_plugin)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+            </div>
+              
+          </div>
+<div class="comment-container nano has-scrollbar">
+  <div class="nano-content">
+  <div id="comments">
+    <h3>Contents</h3>
+    
+    
+      <ul style="display: none;"><li><a></a></li></ul>
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+  <div class="xanadu-call-to-action-links">
+    <h3>Downloads</h3>
+    <div id="tutorial-type">genindex</div>
+    <div id="download-python-link">
+      <i class="fab fa-python"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Python script</div>
+    </div>
+    <div id="download-notebook-link">
+      <i class="fas fa-download"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Notebook</div>
+    </div>
+    <div id="github-view-link">
+      <i class="fab fa-github"></i>&nbsp;
+      <div class="call-to-action-desktop-view">View on GitHub</div>
+    </div>
+  </div>
+</div>
+</div>
+
+          <div class="clearfix"></div>
+        </div>
+
+
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="#" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle").click(function () {
+    $("#left-column").slideToggle("slow");
+  });
+</script>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-migrate-1.0.0.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'></script>
+<!-- Bootstrap core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- MDB core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+
+<script type="text/javascript" src="_static/js/nanoscroller.min.js"></script>
+<script type="text/javascript">
+    $('a.reference.internal').each(function(){
+      var link = $(this).attr("href");
+
+      var hash = link.split('#')[1];
+      var page = link.split('#')[0].split('/').slice(-1)[0].replace(".html", "");
+
+      if (hash == page) {
+        $(this).attr('href', link.split('#')[0]);
+      }
+    });
+
+    $(".document > .section").removeClass("section");
+    $(".comment-container .nano-content").css("height", $("#content").height());
+    $(".comment-container").css("height", $("#content").height());
+    $(".nano").nanoScroller();
+</script>
+<script type="text/javascript">
+    $(window).scroll(function(){
+      var scrollBottom = $(document).height() - $(window).height() - $(window).scrollTop();
+      if (scrollBottom < 342) {
+        $('.comment-container').css("height", "calc(100% - " + (342 - scrollBottom) + "px)");
+        $('.comment-container .nano-content').css("height", "calc(100% - 119px)");
+      }
+    });
+</script>
+ <script type="text/javascript">
+    if ($('.current').length) {
+        var target = $('.current')[0]
+        var rect = target.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            $(".nano").nanoScroller({ scrollTo: $('.current') });
+        } else {
+            $(".nano").nanoScroller({ scrollTop: 0 });
+        }
+    }
+    $(document).ready(function () {
+        $(".css-transitions-only-after-page-load").each(function (index, element) {
+            setTimeout(function () { $(element).removeClass("css-transitions-only-after-page-load") }, 10);
+        });
+        if (window.location.hash) {
+           var target = $("[id='"+window.location.hash.substr(1)+"']");
+           if (target.closest(".collapse").length) {
+              target.closest(".collapse").addClass("show");
+              target.closest(".collapse").prev().find(".rotate").addClass("up");
+           }
+        }
+    });
+</script>
+<script type="text/javascript">
+var downloadNote = $(".sphx-glr-download-link-note.admonition.note");
+if (downloadNote.length >= 1) {
+    var tutorialUrlArray = $("#tutorial-type").text().split('/');
+        tutorialUrlArray[0] = "examples"
+
+    var githubLink = "https://github.com/XanaduAI/pennylane/blob/master/" + tutorialUrlArray.join("/") + ".py",
+        pythonLink = $(".reference.download")[0].href,
+        notebookLink = $(".reference.download")[1].href,
+        notebookDownloadPath = notebookLink.split('_downloads')[1].split('/').pop();
+
+    $("#download-python-link").wrap("<a href=" + pythonLink + " data-behavior='call-to-action-event' data-response='Download Python script' download target='_blank'/>");
+    $("#download-notebook-link").wrap("<a href=" + notebookLink + " data-behavior='call-to-action-event' data-response='Download Notebook' download target='_blank'/>");
+    $("#github-view-link").wrap("<a href=" + githubLink + " data-behavior='call-to-action-event' data-response='View on Github' target='_blank'/>");
+} else {
+    $(".xanadu-call-to-action-links").hide();
+}
+</script>
+<script type="text/javascript">jQuery.noConflict(true);</script>
+        <footer class="page-footer text-md-left pt-4">
+  
+    <hr class="pb-0 mb-0">
+    <div class="container-fluid">
+      <div class="row   justify-content-md-center">
+        <div class="col-md-3">
+          <h5 class=" mb-1 footer-heading">Xanadu</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <p class="">Located in the heart of downtown Toronto, we've brought together exceptional minds from around the world to build quantum computers that are useful and available to people everywhere.</p>
+        </div>
+
+    <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">PennyLane</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://pennylane.ai/">Home page</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/pennylane">GitHub</a></li>
+            <li><a class="" href="https://pennylane.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://discuss.pennylane.ai/">Discussion forum</a></li>
+            <li><a class="" href="https://twitter.com/pennylaneai/">Twitter</a></li>
+          </ul>
+        </div>
+		<div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">Strawberry Fields</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://strawberryfields.ai/">Interactive</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/strawberryfields">GitHub</a></li>
+            <li><a class="" href="https://strawberryfields.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://u.strawberryfields.ai/slack/">Slack channel</a></li>
+          </ul>
+        </div>
+
+
+        <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">About</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://www.xanadu.ai/">Home</a></li>
+            <li><a class="" href="https://www.xanadu.ai/hardware/">Hardware</a></li>
+            <li><a class="" href="https://www.xanadu.ai/software/">Software</a></li>
+            <li><a class="" href="https://www.xanadu.ai/research">Research</a></li>
+            <li><a class="" href="https://medium.com/XanaduAI">Blog</a></li>
+            <li><a class="" href="https://www.xanadu.ai/about/">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <hr>
+
+    <!-- <hr class="pb-0 mb-0"> -->
+
+    <!--Social buttons-->
+    <div class="social-section text-center">
+        <ul class="list-unstyled list-inline mb-0">
+            <li class="list-inline-item"><a class="btn-fb" href="https://www.facebook.com/Xanadu-1312050742230493/"><i class="fab fa-facebook-f"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-tw" href="https://twitter.com/xanaduai"><i class="fab fa-twitter"> </i></a></li>
+            <li class="list-inline-item"><a class="" href="https://medium.com/xanaduai"><i class="fab fa-medium-m"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-li" href="https://www.linkedin.com/company/xanaduai/"><i class="fab fa-linkedin-in"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-git" href="https://github.com/XanaduAI"><i class="fab fa-github"> </i></a></li>
+        </ul>
+        <a href="https://xanadu.us17.list-manage.com/subscribe?u=725f07a1d1a4337416c3129fd&id=294b062630" style="font-size: initial;">Stay updated with our newsletter</a>
+    </div>
+    <!--/.Social buttons-->
+
+    <!--Copyright-->
+    <div class="footer-copyright py-3 mt-0 text-center">
+        <div class="container-fluid">
+            © Copyright 2018-2020 | Xanadu | All rights reserved
+            <br>
+             TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. 
+        </div>
+    </div>
+  </footer>
+  </body>
+</html>

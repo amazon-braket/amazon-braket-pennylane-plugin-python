@@ -1,0 +1,1158 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Noto+Serif" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Material Design Bootstrap -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.14/css/mdb.min.css" rel="stylesheet">
+
+  <!-- nanoscroller -->
+  <link rel="stylesheet" type="text/css" href="../../_static/css/nanoscroller.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/x-mathjax-config">
+     MathJax.Hub.Config({
+       "HTML-CSS": { scale: 90, linebreaks: { automatic: true } },
+       TeX: {
+         Macros: {
+           pr : ['|\#1\\rangle\\langle\#1|',1],
+           ket: ['\\left| \#1\\right\\rangle',1],
+           bra: ['\\left\\langle \#1\\right|',1],
+           xket: ['\\left| \#1\\right\\rangle_x',1],
+           xbra: ['\\left\\langle \#1\\right|_x',1],
+           braket: ['\\langle \#1 \\rangle',1],
+           braketD: ['\\langle \#1 \\mid \#2 \\rangle',2],
+           braketT: ['\\langle \#1 \\mid \#2 \\mid \#3 \\rangle',3],
+           ketbra: ['| #1 \\rangle \\langle #2 |',2],
+           hc: ['\\text{h.c.}',0],
+           cc: ['\\text{c.c.}',0],
+           h: ['\\hat',0],
+           nn: ['\\nonumber',0],
+           di: ['\\frac{d}{d \#1}',1],
+           uu: ['\\mathcal{U}',0],
+           inn: ['\\text{in}',0],
+           out: ['\\text{out}',0],
+           vac: ['\\text{vac}',0],
+           I: ['\\hat{\\mathbf{1}}',0],
+           x: ['\\hat{x}',0],
+           p: ['\\hat{p}',0],
+           a: ['\\hat{a}',0],
+           ad: ['\\hat{a}^\\dagger',0],
+           n: ['\\hat{n}',0],
+           nbar: ['\\overline{n}',0],
+           sech: ['\\mathrm{sech~}',0],
+           tanh: ['\\mathrm{tanh~}',0],
+           re: ['\\text{Re}',0],
+           im: ['\\text{Im}',0],
+           tr: ['\\mathrm{Tr} #1',1],
+           sign: ['\\text{sign}',0],
+           overlr: ['\\overset\\leftrightarrow{\#1}',1],
+           overl: ['\\overset\leftarrow{\#1}',1],
+           overr: ['\\overset\rightarrow{\#1}',1],
+           avg: ['\\left< \#1 \\right>',1],
+           slashed: ['\\cancel{\#1}',1],
+           bold: ['\\boldsymbol{\#1}',1],
+           d: ['\\mathrm d',0],
+           expect: ["\\langle #1 \\rangle",1],
+           pde: ["\\frac{\\partial}{\\partial \#1}",1],
+           R: ["\\mathbb{R}",0],
+           C: ["\\mathbb{C}",0],
+           Ad: ["\\text{Ad}",0],
+           Var: ["\\text{Var}",0],
+           bx: ["\\mathbf{x}", 0],
+           bm: ["\\boldsymbol{\#1}",1]
+         }
+       }
+     });
+     </script>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-130507810-2"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-130507810-2');
+      </script>
+  
+    <title>pennylane._device &#8212; Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</title>
+    <link rel="stylesheet" href="../../_static/xanadu.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body><!--Navbar-->
+<nav class="navbar navbar-expand-lg navbar-light white sticky-top">
+
+  <!-- Navbar brand -->
+  <a class="navbar-brand" href="https://pennylane.ai">
+    <img class="pr-1" src="../../_static/xanadu_x.png" width="28px"></img>
+    <img src="../../_static/pennylane.png" width="180px"></img>
+  </a>
+
+  <!-- Collapse button -->
+  <div class="row right">
+  <a href="#" class="btn navbar-toggler black-text mr-1 justify-content-center" id="mobile-toggle">
+    <i class="fas fa-search"></i>
+  </a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#basicExampleNav"
+    aria-controls="basicExampleNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+</div>
+
+  <!-- Collapsible content -->
+  <div class="collapse navbar-collapse" id="basicExampleNav">
+
+    <!-- Links -->
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/qml">Quantum machine learning
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/install.html">Install</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="https://pennylane.ai/plugins.html">Plugins</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.readthedocs.io">Documentation</a>
+          <span class="sr-only">(current)</span>
+      </li>
+    </ul>
+    <!-- Links -->
+
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/faq.html">
+          <i class="fab fas fa-question"></i> FAQ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://discuss.pennylane.ai">
+          <i class="fab fab fa-discourse"></i> Support
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/XanaduAI/pennyLane-forest">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </li>
+    </ul>
+  </div>
+  <!-- Collapsible content -->
+</nav>
+<!--/.Navbar-->
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+  <div id="left-column" class="nano css-transitions-only-after-page-load">
+    <div class="sphinxsidebar nano-content"><div class="sidebar-block search-block">
+  <div id="main-search">
+    <form action="../../search.html" method="GET" role="form">
+      <div class="md-input">
+        <input name="q" type="text" required>
+        <span class="bar"></span>
+        <label>Search</label>
+      </div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+  </div>
+</div>
+<div class="sidebar-block">
+<!--   <div class="sidebar-wrapper">
+    <h2>Table Of Contents</h2>
+  </div> -->
+  <div class="sidebar-toc">
+    <p class="caption">PennyLane-Braket</p>
+    <ul>
+      <li class="caption toctree-l1 ">
+        <a class="reference internal" href="../../index.html">Overview</a>
+      </li>
+    </ul>
+    
+    
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="content">
+          <div id="right-column">
+            
+            <div role="navigation" aria-label="breadcrumbs navigation">
+              <ol class="breadcrumb">
+                <li><a href="../../index.html">Docs</a></li>
+                
+                  <li><a href="../index.html">Module code</a></li>
+                
+                <li>pennylane._device</li>
+              </ol>
+            </div>
+            
+            <div class="document clearer body">
+
+              
+  <h1>Source code for pennylane._device</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2018-2020 Xanadu Quantum Technologies Inc.</span>
+
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains the :class:`Device` abstract base class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># pylint: disable=too-many-format-args</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">pennylane.operation</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">Operation</span><span class="p">,</span>
+    <span class="n">Observable</span><span class="p">,</span>
+    <span class="n">Sample</span><span class="p">,</span>
+    <span class="n">State</span><span class="p">,</span>
+    <span class="n">Variance</span><span class="p">,</span>
+    <span class="n">Expectation</span><span class="p">,</span>
+    <span class="n">Probability</span><span class="p">,</span>
+    <span class="n">Tensor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pennylane.qnodes</span> <span class="k">import</span> <span class="n">QuantumFunctionError</span>
+<span class="kn">from</span> <span class="nn">pennylane.wires</span> <span class="k">import</span> <span class="n">Wires</span><span class="p">,</span> <span class="n">WireError</span>
+
+
+<span class="k">class</span> <span class="nc">DeviceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised by a :class:`~.pennylane._device.Device` when it encounters an illegal</span>
+<span class="sd">    operation in the quantum circuit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">Device</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for PennyLane devices.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,</span>
+<span class="sd">            or iterable that contains unique labels for the subsystems as numbers (i.e., ``[-1, 0, 2]``)</span>
+<span class="sd">            or strings (``[&#39;ancilla&#39;, &#39;q1&#39;, &#39;q2&#39;]``). Default 1 if not specified.</span>
+<span class="sd">        shots (int): Number of circuit evaluations/random samples used to estimate</span>
+<span class="sd">            expectation values of observables. Defaults to 1000 if not specified.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pylint: disable=too-many-public-methods</span>
+    <span class="n">_capabilities</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="sd">&quot;&quot;&quot;The capabilities dictionary stores the properties of a device. Devices can add their</span>
+<span class="sd">    own custom properties and overwrite existing ones by overriding the ``capabilities()`` method.&quot;&quot;&quot;</span>
+
+    <span class="n">_circuits</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1">#: dict[str-&gt;Circuit]: circuit templates associated with this API class</span>
+    <span class="n">_asarray</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shots</span> <span class="o">=</span> <span class="n">shots</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wires</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="c1"># interpret wires as the number of consecutive wires</span>
+            <span class="n">wires</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wires</span> <span class="o">=</span> <span class="n">Wires</span><span class="p">(</span><span class="n">wires</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wires</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wire_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">define_wire_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wires</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_executions</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_op_queue</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_queue</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">{}</span><span class="s2"> device (wires=</span><span class="si">{}</span><span class="s2">, shots=</span><span class="si">{}</span><span class="s2">) at </span><span class="si">{}</span><span class="s2">&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shots</span><span class="p">,</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Verbose string representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="se">\n</span><span class="s2">Short name: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">Package: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">Plugin version: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">Author: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">Wires: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">Shots: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">author</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shots</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The full name of the device.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the string used to load the device.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">pennylane_requires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The current API version that the device plugin was made for.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The current version of the plugin.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">author</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The author(s) of the plugin.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">operations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the supported set of operations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            set[str]: the set of PennyLane operation names the device supports</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">observables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the supported set of observables.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            set[str]: the set of PennyLane observable names the device supports</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of circuit evaluations/random samples used to estimate</span>
+<span class="sd">        expectation values of observables&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shots</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;All wires that can be addressed on this device&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wires</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wire_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Ordered dictionary that defines the map from user-provided wire labels to</span>
+<span class="sd">        the wire labels used on this device&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wire_map</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_executions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of times this device is executed by the evaluation of QNodes</span>
+<span class="sd">        running on this device</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: number of executions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_executions</span>
+
+    <span class="nd">@shots</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">shots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shots</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Changes the number of shots.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            shots (int): number of circuit evaluations/random samples used to estimate</span>
+<span class="sd">                expectation values of observables</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DeviceError: if number of shots is less than 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">shots</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                <span class="s2">&quot;The specified number of shots needs to be at least 1. Got </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shots</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">define_wire_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the map from user-provided wire labels to the wire labels used by the device.</span>
+
+<span class="sd">        The default wire map maps the user wire labels to wire labels that are consecutive integers.</span>
+
+<span class="sd">        However, by overwriting this function, devices can specify their preferred, non-consecutive and/or non-integer</span>
+<span class="sd">        wire labels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Wires): user-provided wires for this device</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            OrderedDict: dictionary specifying the wire map</span>
+
+<span class="sd">        **Example**</span>
+
+<span class="sd">        &gt;&gt;&gt; dev = device(&#39;my.device&#39;, wires=[&#39;b&#39;, &#39;a&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; dev.wire_map()</span>
+<span class="sd">        OrderedDict( [(&lt;Wires = [&#39;a&#39;]&gt;, &lt;Wires = [0]&gt;), (&lt;Wires = [&#39;b&#39;]&gt;, &lt;Wires = [1]&gt;)])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">consecutive_wires</span> <span class="o">=</span> <span class="n">Wires</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_wires</span><span class="p">))</span>
+
+        <span class="n">wire_map</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">wires</span><span class="p">,</span> <span class="n">consecutive_wires</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">wire_map</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">map_wires</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Map the wire labels of wires using this device&#39;s wire map.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Wires): wires whose labels we want to map to the device&#39;s internal labelling scheme</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Wires: wires with new labels</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mapped_wires</span> <span class="o">=</span> <span class="n">wires</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wire_map</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">WireError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WireError</span><span class="p">(</span>
+                <span class="s2">&quot;Did not find some of the wires </span><span class="si">{}</span><span class="s2"> on device with wires </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">wires</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wires</span>
+                <span class="p">)</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+        <span class="k">return</span> <span class="n">mapped_wires</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">capabilities</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the capabilities of this device class.</span>
+
+<span class="sd">        Inheriting classes that change or add capabilities must override this method, for example via</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            @classmethod</span>
+<span class="sd">            def capabilities(cls):</span>
+<span class="sd">                capabilities = super().capabilities().copy()</span>
+<span class="sd">                capabilities.update(</span>
+<span class="sd">                    supports_inverse_operations=False,</span>
+<span class="sd">                    supports_a_new_capability=True,</span>
+<span class="sd">                )</span>
+<span class="sd">                return capabilities</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str-&gt;*]: results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_capabilities</span>
+
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">observables</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute a queue of quantum operations on the device and then measure the given observables.</span>
+
+<span class="sd">        For plugin developers: Instead of overwriting this, consider implementing a suitable subset of</span>
+<span class="sd">        :meth:`pre_apply`, :meth:`apply`, :meth:`post_apply`, :meth:`pre_measure`,</span>
+<span class="sd">        :meth:`expval`, :meth:`var`, :meth:`sample`, :meth:`post_measure`, and :meth:`execution_context`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            queue (Iterable[~.operation.Operation]): operations to execute on the device</span>
+<span class="sd">            observables (Iterable[~.operation.Observable]): observables to measure and return</span>
+<span class="sd">            parameters (dict[int, list[ParameterDependency]]): Mapping from free parameter index to the list of</span>
+<span class="sd">                :class:`Operations &lt;pennylane.operation.Operation&gt;` (in the queue) that depend on it.</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            return_native_type (bool): If True, return the result in whatever type the device uses</span>
+<span class="sd">                internally, otherwise convert it into array[float]. Default: False.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: measured value(s)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_validity</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">observables</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_op_queue</span> <span class="o">=</span> <span class="n">queue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_queue</span> <span class="o">=</span> <span class="n">observables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">execution_context</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pre_apply</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">queue</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">operation</span><span class="o">.</span><span class="n">wires</span><span class="p">,</span> <span class="n">operation</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">post_apply</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pre_measure</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observables</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+                    <span class="n">wires</span> <span class="o">=</span> <span class="p">[</span><span class="n">ob</span><span class="o">.</span><span class="n">wires</span> <span class="k">for</span> <span class="n">ob</span> <span class="ow">in</span> <span class="n">obs</span><span class="o">.</span><span class="n">obs</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">wires</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">wires</span>
+
+                <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Expectation</span><span class="p">:</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expval</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
+
+                <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Variance</span><span class="p">:</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">parameters</span><span class="p">))</span>
+
+                <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Sample</span><span class="p">:</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">obs</span><span class="o">.</span><span class="n">parameters</span><span class="p">)))</span>
+
+                <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Probability</span><span class="p">:</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="n">wires</span><span class="o">=</span><span class="n">wires</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+                <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">State</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span><span class="s2">&quot;Returning the state is not supported&quot;</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">QuantumFunctionError</span><span class="p">(</span>
+                        <span class="s2">&quot;Unsupported return type specified for observable </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">post_measure</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_op_queue</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_obs_queue</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># increment counter for number of executions of device</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_num_executions</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Ensures that a combination with sample does not put</span>
+            <span class="c1"># expvals and vars in superfluous arrays</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Sample</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observables</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">return_type</span> <span class="ow">is</span> <span class="n">Sample</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observables</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asarray</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">batch_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute a batch of quantum circuits on the device.</span>
+
+<span class="sd">        The circuits are represented by tapes, and they are executed one-by-one using the</span>
+<span class="sd">        device&#39;s ``execute`` method. The results are collected in a list.</span>
+
+<span class="sd">        For plugin developers: This function should be overwritten if the device can efficiently run multiple</span>
+<span class="sd">        circuits on a backend, for example using parallel and/or asynchronous executions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            circuits (list[.tapes.QuantumTape]): circuits to execute on the device</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[array[float]]: list of measured value(s)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">circuit</span> <span class="ow">in</span> <span class="n">circuits</span><span class="p">:</span>
+            <span class="c1"># we need to reset the device here, else it will</span>
+            <span class="c1"># not start the next computation in the zero state</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">operations</span><span class="p">,</span> <span class="n">circuit</span><span class="o">.</span><span class="n">observables</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">op_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The operation queue to be applied.</span>
+
+<span class="sd">        Note that this property can only be accessed within the execution context</span>
+<span class="sd">        of :meth:`~.execute`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if outside of the execution context</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[~.operation.Operation]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_op_queue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot access the operation queue outside of the execution context!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_op_queue</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">obs_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The observables to be measured and returned.</span>
+
+<span class="sd">        Note that this property can only be accessed within the execution context</span>
+<span class="sd">        of :meth:`~.execute`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if outside of the execution context</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[~.operation.Observable]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obs_queue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot access the observable value queue outside of the execution context!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obs_queue</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mapping from free parameter index to the list of</span>
+<span class="sd">        :class:`Operations &lt;~.Operation&gt;` in the device queue that depend on it.</span>
+
+<span class="sd">        Note that this property can only be accessed within the execution context</span>
+<span class="sd">        of :meth:`~.execute`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if outside of the execution context</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[int-&gt;list[ParameterDependency]]: the mapping</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot access the free parameter mapping outside of the execution context!&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span>
+
+    <span class="k">def</span> <span class="nf">pre_apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called during :meth:`execute` before the individual operations are executed.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">post_apply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called during :meth:`execute` after the individual operations have been executed.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">pre_measure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called during :meth:`execute` before the individual observables are measured.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">post_measure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called during :meth:`execute` after the individual observables have been measured.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">execution_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The device execution context used during calls to :meth:`execute`.</span>
+
+<span class="sd">        You can overwrite this function to return a context manager in case your</span>
+<span class="sd">        quantum library requires that;</span>
+<span class="sd">        all operations and method calls (including :meth:`apply` and :meth:`expval`)</span>
+<span class="sd">        are then evaluated within the context of this context manager (see the</span>
+<span class="sd">        source of :meth:`.Device.execute` for more details).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=no-self-use</span>
+        <span class="k">class</span> <span class="nc">MockContext</span><span class="p">:</span>  <span class="c1"># pylint: disable=too-few-public-methods</span>
+            <span class="sd">&quot;&quot;&quot;Mock class as a default for the with statement in execute().&quot;&quot;&quot;</span>
+
+            <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+            <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">MockContext</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">supports_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if an operation is supported by this device.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            operation (type or str): operation to be checked</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if `operation` is not a :class:`~.Operation` class or string</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: ``True`` iff supplied operation is supported</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">Operation</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">operation</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">operation</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">Operation</span><span class="o">.</span><span class="n">string_for_inverse</span><span class="p">):</span>
+                <span class="n">in_ops</span> <span class="o">=</span> <span class="n">operation</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">Operation</span><span class="o">.</span><span class="n">string_for_inverse</span><span class="p">)]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations</span>
+                <span class="c1"># TODO: update when all capabilities keys changed to &quot;supports_inverse_operations&quot;</span>
+                <span class="n">supports_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s2">&quot;supports_inverse_operations&quot;</span><span class="p">,</span> <span class="kc">False</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inverse_operations&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">in_ops</span> <span class="ow">and</span> <span class="n">supports_inv</span>
+
+            <span class="k">return</span> <span class="n">operation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">operations</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The given operation must either be a pennylane.Operation class or a string.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">supports_observable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if an observable is supported by this device. Raises a ValueError,</span>
+<span class="sd">         if not a subclass or string of an Observable was passed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            observable (type or str): observable to be checked</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if `observable` is not a :class:`~.Observable` class or string</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: ``True`` iff supplied observable is supported</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observable</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">observable</span><span class="p">,</span> <span class="n">Observable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">observable</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">observables</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observable</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+
+            <span class="c1"># This check regards observables that are also operations</span>
+            <span class="k">if</span> <span class="n">observable</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">Operation</span><span class="o">.</span><span class="n">string_for_inverse</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_operation</span><span class="p">(</span><span class="n">observable</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">Operation</span><span class="o">.</span><span class="n">string_for_inverse</span><span class="p">)])</span>
+
+            <span class="k">return</span> <span class="n">observable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">observables</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The given observable must either be a pennylane.Observable class or a string.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">check_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">observables</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks whether the operations and observables in queue are all supported by the device.</span>
+<span class="sd">        Includes checks for inverse operations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            queue (Iterable[~.operation.Operation]): quantum operation objects which are intended</span>
+<span class="sd">                to be applied on the device</span>
+<span class="sd">            observables (Iterable[~.operation.Observable]): observables which are intended</span>
+<span class="sd">                to be evaluated on the device</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DeviceError: if there are operations in the queue or observables that the device does</span>
+<span class="sd">                not support</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">queue</span><span class="p">:</span>
+
+            <span class="n">operation_name</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">name</span>
+
+            <span class="k">if</span> <span class="n">o</span><span class="o">.</span><span class="n">inverse</span><span class="p">:</span>
+                <span class="c1"># TODO: update when all capabilities keys changed to &quot;supports_inverse_operations&quot;</span>
+                <span class="n">supports_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s2">&quot;supports_inverse_operations&quot;</span><span class="p">,</span> <span class="kc">False</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inverse_operations&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">supports_inv</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                        <span class="s2">&quot;The inverse of gates are not supported on device </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="n">operation_name</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">base_name</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_operation</span><span class="p">(</span><span class="n">operation_name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                    <span class="s2">&quot;Gate </span><span class="si">{}</span><span class="s2"> not supported on device </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">operation_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observables</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+                <span class="c1"># TODO: update when all capabilities keys changed to &quot;supports_tensor_observables&quot;</span>
+                <span class="n">supports_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s2">&quot;supports_tensor_observables&quot;</span><span class="p">,</span> <span class="kc">False</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tensor_observables&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">supports_tensor</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                        <span class="s2">&quot;Tensor observables not supported on device </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+                    <span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">o</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_observable</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                            <span class="s2">&quot;Observable </span><span class="si">{}</span><span class="s2"> not supported on device </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="n">observable_name</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">name</span>
+
+                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">Operation</span><span class="p">)</span> <span class="ow">and</span> <span class="n">o</span><span class="o">.</span><span class="n">inverse</span><span class="p">:</span>
+                    <span class="c1"># TODO: update when all capabilities keys changed to &quot;supports_inverse_operations&quot;</span>
+                    <span class="n">supports_inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s2">&quot;supports_inverse_operations&quot;</span><span class="p">,</span> <span class="kc">False</span>
+                    <span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inverse_operations&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">supports_inv</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                            <span class="s2">&quot;The inverse of gates are not supported on device </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="n">observable_name</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">base_name</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_observable</span><span class="p">(</span><span class="n">observable_name</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                        <span class="s2">&quot;Observable </span><span class="si">{}</span><span class="s2"> not supported on device </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">observable_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply a quantum operation.</span>
+
+<span class="sd">        For plugin developers: this function should apply the operation on the device.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            operation (str): name of the operation</span>
+<span class="sd">            wires (Wires): wires that the operation is applied to</span>
+<span class="sd">            par (tuple): parameters for the operation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">expval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the expectation value of observable on specified wires.</span>
+
+<span class="sd">        Note: all arguments accept _lists_, which indicate a tensor</span>
+<span class="sd">        product of observables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            observable (str or list[str]): name of the observable(s)</span>
+<span class="sd">            wires (Wires): wires the observable(s) are to be measured on</span>
+<span class="sd">            par (tuple or list[tuple]]): parameters for the observable(s)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: expectation value :math:`\expect{A} = \bra{\psi}A\ket{\psi}`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the variance of observable on specified wires.</span>
+
+<span class="sd">        Note: all arguments support _lists_, which indicate a tensor</span>
+<span class="sd">        product of observables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            observable (str or list[str]): name of the observable(s)</span>
+<span class="sd">            wires (Wires): wires the observable(s) is to be measured on</span>
+<span class="sd">            par (tuple or list[tuple]]): parameters for the observable(s)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: if the device does not support variance computation</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: variance :math:`\mathrm{var}(A) = \bra{\psi}A^2\ket{\psi} - \bra{\psi}A\ket{\psi}^2`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Returning variances from QNodes not currently supported by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observable</span><span class="p">,</span> <span class="n">wires</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a sample of an observable.</span>
+
+<span class="sd">        The number of samples is determined by the value of ``Device.shots``,</span>
+<span class="sd">        which can be directly modified.</span>
+
+<span class="sd">        Note: all arguments support _lists_, which indicate a tensor</span>
+<span class="sd">        product of observables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            observable (str or list[str]): name of the observable(s)</span>
+<span class="sd">            wires (Wires): wires the observable(s) is to be measured on</span>
+<span class="sd">            par (tuple or list[tuple]]): parameters for the observable(s)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: if the device does not support sampling</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            array[float]: samples in an array of dimension ``(shots,)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Returning samples from QNodes not currently supported by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the (marginal) probability of each computational basis</span>
+<span class="sd">        state from the last run of the device.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wires (Sequence[int]): Sequence of wires to return</span>
+<span class="sd">                marginal probabilities for. Wires not provided</span>
+<span class="sd">                are traced out of the system.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            OrderedDict[tuple, float]: Dictionary mapping a tuple representing the state</span>
+<span class="sd">            to the resulting probability. The dictionary should be sorted such that the</span>
+<span class="sd">            state tuples are in lexicographical order.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Returning probability not currently supported by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the backend state.</span>
+
+<span class="sd">        After the reset, the backend should be as if it was just constructed.</span>
+<span class="sd">        Most importantly the quantum state is reset to its initial value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+</pre></div>
+
+            </div>
+              
+          </div>
+<div class="comment-container nano has-scrollbar">
+  <div class="nano-content">
+  <div id="comments">
+    <h3>Contents</h3>
+    
+    
+      <ul style="display: none;"><li><a></a></li></ul>
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+  <div class="xanadu-call-to-action-links">
+    <h3>Downloads</h3>
+    <div id="tutorial-type">_modules/pennylane/_device</div>
+    <div id="download-python-link">
+      <i class="fab fa-python"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Python script</div>
+    </div>
+    <div id="download-notebook-link">
+      <i class="fas fa-download"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Notebook</div>
+    </div>
+    <div id="github-view-link">
+      <i class="fab fa-github"></i>&nbsp;
+      <div class="call-to-action-desktop-view">View on GitHub</div>
+    </div>
+  </div>
+</div>
+</div>
+
+          <div class="clearfix"></div>
+        </div>
+
+
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle").click(function () {
+    $("#left-column").slideToggle("slow");
+  });
+</script>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-migrate-1.0.0.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'></script>
+<!-- Bootstrap core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- MDB core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+
+<script type="text/javascript" src="../../_static/js/nanoscroller.min.js"></script>
+<script type="text/javascript">
+    $('a.reference.internal').each(function(){
+      var link = $(this).attr("href");
+
+      var hash = link.split('#')[1];
+      var page = link.split('#')[0].split('/').slice(-1)[0].replace(".html", "");
+
+      if (hash == page) {
+        $(this).attr('href', link.split('#')[0]);
+      }
+    });
+
+    $(".document > .section").removeClass("section");
+    $(".comment-container .nano-content").css("height", $("#content").height());
+    $(".comment-container").css("height", $("#content").height());
+    $(".nano").nanoScroller();
+</script>
+<script type="text/javascript">
+    $(window).scroll(function(){
+      var scrollBottom = $(document).height() - $(window).height() - $(window).scrollTop();
+      if (scrollBottom < 342) {
+        $('.comment-container').css("height", "calc(100% - " + (342 - scrollBottom) + "px)");
+        $('.comment-container .nano-content').css("height", "calc(100% - 119px)");
+      }
+    });
+</script>
+ <script type="text/javascript">
+    if ($('.current').length) {
+        var target = $('.current')[0]
+        var rect = target.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            $(".nano").nanoScroller({ scrollTo: $('.current') });
+        } else {
+            $(".nano").nanoScroller({ scrollTop: 0 });
+        }
+    }
+    $(document).ready(function () {
+        $(".css-transitions-only-after-page-load").each(function (index, element) {
+            setTimeout(function () { $(element).removeClass("css-transitions-only-after-page-load") }, 10);
+        });
+        if (window.location.hash) {
+           var target = $("[id='"+window.location.hash.substr(1)+"']");
+           if (target.closest(".collapse").length) {
+              target.closest(".collapse").addClass("show");
+              target.closest(".collapse").prev().find(".rotate").addClass("up");
+           }
+        }
+    });
+</script>
+<script type="text/javascript">
+var downloadNote = $(".sphx-glr-download-link-note.admonition.note");
+if (downloadNote.length >= 1) {
+    var tutorialUrlArray = $("#tutorial-type").text().split('/');
+        tutorialUrlArray[0] = "examples"
+
+    var githubLink = "https://github.com/XanaduAI/pennylane/blob/master/" + tutorialUrlArray.join("/") + ".py",
+        pythonLink = $(".reference.download")[0].href,
+        notebookLink = $(".reference.download")[1].href,
+        notebookDownloadPath = notebookLink.split('_downloads')[1].split('/').pop();
+
+    $("#download-python-link").wrap("<a href=" + pythonLink + " data-behavior='call-to-action-event' data-response='Download Python script' download target='_blank'/>");
+    $("#download-notebook-link").wrap("<a href=" + notebookLink + " data-behavior='call-to-action-event' data-response='Download Notebook' download target='_blank'/>");
+    $("#github-view-link").wrap("<a href=" + githubLink + " data-behavior='call-to-action-event' data-response='View on Github' target='_blank'/>");
+} else {
+    $(".xanadu-call-to-action-links").hide();
+}
+</script>
+<script type="text/javascript">jQuery.noConflict(true);</script>
+        <footer class="page-footer text-md-left pt-4">
+  
+    <hr class="pb-0 mb-0">
+    <div class="container-fluid">
+      <div class="row   justify-content-md-center">
+        <div class="col-md-3">
+          <h5 class=" mb-1 footer-heading">Xanadu</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <p class="">Located in the heart of downtown Toronto, we've brought together exceptional minds from around the world to build quantum computers that are useful and available to people everywhere.</p>
+        </div>
+
+    <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">PennyLane</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://pennylane.ai/">Home page</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/pennylane">GitHub</a></li>
+            <li><a class="" href="https://pennylane.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://discuss.pennylane.ai/">Discussion forum</a></li>
+            <li><a class="" href="https://twitter.com/pennylaneai/">Twitter</a></li>
+          </ul>
+        </div>
+		<div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">Strawberry Fields</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://strawberryfields.ai/">Interactive</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/strawberryfields">GitHub</a></li>
+            <li><a class="" href="https://strawberryfields.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://u.strawberryfields.ai/slack/">Slack channel</a></li>
+          </ul>
+        </div>
+
+
+        <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">About</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://www.xanadu.ai/">Home</a></li>
+            <li><a class="" href="https://www.xanadu.ai/hardware/">Hardware</a></li>
+            <li><a class="" href="https://www.xanadu.ai/software/">Software</a></li>
+            <li><a class="" href="https://www.xanadu.ai/research">Research</a></li>
+            <li><a class="" href="https://medium.com/XanaduAI">Blog</a></li>
+            <li><a class="" href="https://www.xanadu.ai/about/">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <hr>
+
+    <!-- <hr class="pb-0 mb-0"> -->
+
+    <!--Social buttons-->
+    <div class="social-section text-center">
+        <ul class="list-unstyled list-inline mb-0">
+            <li class="list-inline-item"><a class="btn-fb" href="https://www.facebook.com/Xanadu-1312050742230493/"><i class="fab fa-facebook-f"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-tw" href="https://twitter.com/xanaduai"><i class="fab fa-twitter"> </i></a></li>
+            <li class="list-inline-item"><a class="" href="https://medium.com/xanaduai"><i class="fab fa-medium-m"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-li" href="https://www.linkedin.com/company/xanaduai/"><i class="fab fa-linkedin-in"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-git" href="https://github.com/XanaduAI"><i class="fab fa-github"> </i></a></li>
+        </ul>
+        <a href="https://xanadu.us17.list-manage.com/subscribe?u=725f07a1d1a4337416c3129fd&id=294b062630" style="font-size: initial;">Stay updated with our newsletter</a>
+    </div>
+    <!--/.Social buttons-->
+
+    <!--Copyright-->
+    <div class="footer-copyright py-3 mt-0 text-center">
+        <div class="container-fluid">
+            © Copyright 2018-2020 | Xanadu | All rights reserved
+            <br>
+             TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. 
+        </div>
+    </div>
+  </footer>
+  </body>
+</html>

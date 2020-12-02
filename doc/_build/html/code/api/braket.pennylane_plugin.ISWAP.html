@@ -1,0 +1,880 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Noto+Serif" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Material Design Bootstrap -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.14/css/mdb.min.css" rel="stylesheet">
+
+  <!-- nanoscroller -->
+  <link rel="stylesheet" type="text/css" href="../../_static/css/nanoscroller.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="text/x-mathjax-config">
+     MathJax.Hub.Config({
+       "HTML-CSS": { scale: 90, linebreaks: { automatic: true } },
+       TeX: {
+         Macros: {
+           pr : ['|\#1\\rangle\\langle\#1|',1],
+           ket: ['\\left| \#1\\right\\rangle',1],
+           bra: ['\\left\\langle \#1\\right|',1],
+           xket: ['\\left| \#1\\right\\rangle_x',1],
+           xbra: ['\\left\\langle \#1\\right|_x',1],
+           braket: ['\\langle \#1 \\rangle',1],
+           braketD: ['\\langle \#1 \\mid \#2 \\rangle',2],
+           braketT: ['\\langle \#1 \\mid \#2 \\mid \#3 \\rangle',3],
+           ketbra: ['| #1 \\rangle \\langle #2 |',2],
+           hc: ['\\text{h.c.}',0],
+           cc: ['\\text{c.c.}',0],
+           h: ['\\hat',0],
+           nn: ['\\nonumber',0],
+           di: ['\\frac{d}{d \#1}',1],
+           uu: ['\\mathcal{U}',0],
+           inn: ['\\text{in}',0],
+           out: ['\\text{out}',0],
+           vac: ['\\text{vac}',0],
+           I: ['\\hat{\\mathbf{1}}',0],
+           x: ['\\hat{x}',0],
+           p: ['\\hat{p}',0],
+           a: ['\\hat{a}',0],
+           ad: ['\\hat{a}^\\dagger',0],
+           n: ['\\hat{n}',0],
+           nbar: ['\\overline{n}',0],
+           sech: ['\\mathrm{sech~}',0],
+           tanh: ['\\mathrm{tanh~}',0],
+           re: ['\\text{Re}',0],
+           im: ['\\text{Im}',0],
+           tr: ['\\mathrm{Tr} #1',1],
+           sign: ['\\text{sign}',0],
+           overlr: ['\\overset\\leftrightarrow{\#1}',1],
+           overl: ['\\overset\leftarrow{\#1}',1],
+           overr: ['\\overset\rightarrow{\#1}',1],
+           avg: ['\\left< \#1 \\right>',1],
+           slashed: ['\\cancel{\#1}',1],
+           bold: ['\\boldsymbol{\#1}',1],
+           d: ['\\mathrm d',0],
+           expect: ["\\langle #1 \\rangle",1],
+           pde: ["\\frac{\\partial}{\\partial \#1}",1],
+           R: ["\\mathbb{R}",0],
+           C: ["\\mathbb{C}",0],
+           Ad: ["\\text{Ad}",0],
+           Var: ["\\text{Var}",0],
+           bx: ["\\mathbf{x}", 0],
+           bm: ["\\boldsymbol{\#1}",1]
+         }
+       }
+     });
+     </script>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-130507810-2"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-130507810-2');
+      </script>
+  
+    <title>braket.pennylane_plugin.ISWAP &#8212; Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</title>
+    <link rel="stylesheet" href="../../_static/xanadu.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="braket.pennylane_plugin.PSWAP" href="braket.pennylane_plugin.PSWAP.html" />
+    <link rel="prev" title="braket.pennylane_plugin.CY" href="braket.pennylane_plugin.CY.html" /> 
+  </head><body><!--Navbar-->
+<nav class="navbar navbar-expand-lg navbar-light white sticky-top">
+
+  <!-- Navbar brand -->
+  <a class="navbar-brand" href="https://pennylane.ai">
+    <img class="pr-1" src="../../_static/xanadu_x.png" width="28px"></img>
+    <img src="../../_static/pennylane.png" width="180px"></img>
+  </a>
+
+  <!-- Collapse button -->
+  <div class="row right">
+  <a href="#" class="btn navbar-toggler black-text mr-1 justify-content-center" id="mobile-toggle">
+    <i class="fas fa-search"></i>
+  </a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#basicExampleNav"
+    aria-controls="basicExampleNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+</div>
+
+  <!-- Collapsible content -->
+  <div class="collapse navbar-collapse" id="basicExampleNav">
+
+    <!-- Links -->
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/qml">Quantum machine learning
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/install.html">Install</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="https://pennylane.ai/plugins.html">Plugins</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.readthedocs.io">Documentation</a>
+          <span class="sr-only">(current)</span>
+      </li>
+    </ul>
+    <!-- Links -->
+
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <li class="nav-item">
+        <a class="nav-link" href="https://pennylane.ai/faq.html">
+          <i class="fab fas fa-question"></i> FAQ
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://discuss.pennylane.ai">
+          <i class="fab fab fa-discourse"></i> Support
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/XanaduAI/pennyLane-forest">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </li>
+    </ul>
+  </div>
+  <!-- Collapsible content -->
+</nav>
+<!--/.Navbar-->
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="braket.pennylane_plugin.PSWAP.html" title="braket.pennylane_plugin.PSWAP"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="braket.pennylane_plugin.CY.html" title="braket.pennylane_plugin.CY"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../code.html" accesskey="U">pennylane-braket</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="container-wrapper">
+  <div id="left-column" class="nano css-transitions-only-after-page-load">
+    <div class="sphinxsidebar nano-content"><div class="sidebar-block search-block">
+  <div id="main-search">
+    <form action="../../search.html" method="GET" role="form">
+      <div class="md-input">
+        <input name="q" type="text" required>
+        <span class="bar"></span>
+        <label>Search</label>
+      </div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+  </div>
+</div>
+<div class="sidebar-block">
+<!--   <div class="sidebar-wrapper">
+    <h2>Table Of Contents</h2>
+  </div> -->
+  <div class="sidebar-toc">
+    <p class="caption">PennyLane-Braket</p>
+    <ul>
+      <li class="caption toctree-l1 ">
+        <a class="reference internal" href="../../index.html">Overview</a>
+      </li>
+    </ul>
+    
+    
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../code.html">pennylane-braket</a></li>
+</ul>
+
+    
+  </div>
+</div>
+      
+    </div>
+  </div>
+        <div id="content">
+          <div id="right-column">
+            
+            <div role="navigation" aria-label="breadcrumbs navigation">
+              <ol class="breadcrumb">
+                <li><a href="../../index.html">Docs</a></li>
+                
+                  <li><a href="../../code.html">pennylane-braket</a></li>
+                
+                <li>braket.pennylane_plugin.ISWAP</li>
+              </ol>
+            </div>
+            
+            <div class="document clearer body">
+
+              
+  <div class="section" id="braket-pennylane-plugin-iswap">
+<h1>braket.pennylane_plugin.ISWAP<a class="headerlink" href="#braket-pennylane-plugin-iswap" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="braket.pennylane_plugin.ISWAP">
+<em class="property">class </em><code class="descname">ISWAP</code><span class="sig-paren">(</span><em>wires</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/braket/pennylane_plugin/ops.html#ISWAP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#braket.pennylane_plugin.ISWAP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pennylane.operation.Operation</span></code></p>
+<p>ISWAP gate.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathtt{ISWAP} = \begin{bmatrix}
+    1 &amp; 0 &amp; 0 &amp; 0 \\
+    0 &amp; 0 &amp; i &amp; 0 \\
+    0 &amp; i &amp; 0 &amp; 0 \\
+    0 &amp; 0 &amp; 0 &amp; 1
+\end{bmatrix}.\end{split}\]</div>
+<p><strong>Details:</strong></p>
+<ul class="simple">
+<li>Number of wires: 2</li>
+<li>Number of parameters: 0</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wires</strong> (<em>int</em>) – the subsystem the gate acts on</td>
+</tr>
+</tbody>
+</table>
+<a class="attr-details-header collapse-header" data-toggle="collapse" href="#attrDetails" aria-expanded="false" aria-controls="attrDetails">
+   <h2 style="font-size: 24px;">
+      <i class="fas fa-angle-down rotate" style="float: right;"></i> Attributes
+   </h2>
+</a>
+<div class="collapse" id="attrDetails"><table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.base_name" title="braket.pennylane_plugin.ISWAP.base_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_name</span></code></a></td>
+<td>Get base name of the operator.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.do_check_domain" title="braket.pennylane_plugin.ISWAP.do_check_domain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">do_check_domain</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.eigvals" title="braket.pennylane_plugin.ISWAP.eigvals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eigvals</span></code></a></td>
+<td>Eigenvalues of an instantiated operator.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.generator" title="braket.pennylane_plugin.ISWAP.generator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generator</span></code></a></td>
+<td>Generator of the operation.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.grad_method" title="braket.pennylane_plugin.ISWAP.grad_method"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grad_method</span></code></a></td>
+<td>Gradient computation method.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.grad_recipe" title="braket.pennylane_plugin.ISWAP.grad_recipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grad_recipe</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.inverse" title="braket.pennylane_plugin.ISWAP.inverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">inverse</span></code></a></td>
+<td>Boolean determining if the inverse of the operation was requested.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.matrix" title="braket.pennylane_plugin.ISWAP.matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">matrix</span></code></a></td>
+<td>Matrix representation of an instantiated operator in the computational basis.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.name" title="braket.pennylane_plugin.ISWAP.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></td>
+<td>Get and set the name of the operator.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.num_params" title="braket.pennylane_plugin.ISWAP.num_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_params</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.num_wires" title="braket.pennylane_plugin.ISWAP.num_wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_wires</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.par_domain" title="braket.pennylane_plugin.ISWAP.par_domain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">par_domain</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.parameters" title="braket.pennylane_plugin.ISWAP.parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code></a></td>
+<td>Current parameter values.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.string_for_inverse" title="braket.pennylane_plugin.ISWAP.string_for_inverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">string_for_inverse</span></code></a></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.wires" title="braket.pennylane_plugin.ISWAP.wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wires</span></code></a></td>
+<td>Wires of this operator.</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.base_name">
+<code class="descname">base_name</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.base_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get base name of the operator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.do_check_domain">
+<code class="descname">do_check_domain</code><em class="property"> = True</em><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.do_check_domain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.eigvals">
+<code class="descname">eigvals</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.eigvals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Eigenvalues of an instantiated operator.</p>
+<p>Note that the eigenvalues are not guaranteed to be in any
+particular order.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">RZ</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span><span class="o">.</span><span class="n">eigvals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([</span><span class="mf">0.96891242</span><span class="o">-</span><span class="mf">0.24740396</span><span class="n">j</span><span class="p">,</span> <span class="mf">0.96891242</span><span class="o">+</span><span class="mf">0.24740396</span><span class="n">j</span><span class="p">])</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">eigvals representation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.generator">
+<code class="descname">generator</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of the operation.</p>
+<p>A length-2 list <code class="docutils literal notranslate"><span class="pre">[generator,</span> <span class="pre">scaling_factor]</span></code>, where</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">generator</span></code> is an existing PennyLane
+operation class or <span class="math notranslate nohighlight">\(2\times 2\)</span> Hermitian array
+that acts as the generator of the current operation</li>
+<li><code class="docutils literal notranslate"><span class="pre">scaling_factor</span></code> represents a scaling factor applied
+to the generator operation</li>
+</ul>
+<p>For example, if <span class="math notranslate nohighlight">\(U(\theta)=e^{i0.7\theta \sigma_x}\)</span>, then
+<span class="math notranslate nohighlight">\(\sigma_x\)</span>, with scaling factor <span class="math notranslate nohighlight">\(s\)</span>, is the generator
+of operator <span class="math notranslate nohighlight">\(U(\theta)\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">generator</span> <span class="o">=</span> <span class="p">[</span><span class="n">PauliX</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Default is <code class="docutils literal notranslate"><span class="pre">[None,</span> <span class="pre">1]</span></code>, indicating the operation has no generator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.grad_method">
+<code class="descname">grad_method</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.grad_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gradient computation method.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">'A'</span></code>: analytic differentiation using the parameter-shift method.</li>
+<li><code class="docutils literal notranslate"><span class="pre">'F'</span></code>: finite difference numerical differentiation.</li>
+<li><code class="docutils literal notranslate"><span class="pre">None</span></code>: the operation may not be differentiated.</li>
+</ul>
+<p>Default is <code class="docutils literal notranslate"><span class="pre">'F'</span></code>, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the Operation has zero parameters.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.grad_recipe">
+<code class="descname">grad_recipe</code><em class="property"> = None</em><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.grad_recipe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.inverse">
+<code class="descname">inverse</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.inverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean determining if the inverse of the operation was requested.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.matrix">
+<code class="descname">matrix</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation of an instantiated operator
+in the computational basis.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">qml</span><span class="o">.</span><span class="n">RY</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">wires</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span><span class="o">.</span><span class="n">matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([[</span> <span class="mf">0.96891242</span><span class="o">+</span><span class="mf">0.</span><span class="n">j</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.24740396</span><span class="o">+</span><span class="mf">0.</span><span class="n">j</span><span class="p">],</span>
+<span class="go">           [ 0.24740396+0.j,  0.96891242+0.j]])</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">matrix representation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.name">
+<code class="descname">name</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get and set the name of the operator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.num_params">
+<code class="descname">num_params</code><em class="property"> = 0</em><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.num_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.num_wires">
+<code class="descname">num_wires</code><em class="property"> = 2</em><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.num_wires" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.par_domain">
+<code class="descname">par_domain</code><em class="property"> = None</em><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.par_domain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current parameter values.</p>
+<p>Fixed parameters are returned as is, free parameters represented by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code> instances are replaced by their
+current numerical value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">parameter values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list[Any]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.string_for_inverse">
+<code class="descname">string_for_inverse</code><em class="property"> = '.inv'</em><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.string_for_inverse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="braket.pennylane_plugin.ISWAP.wires">
+<code class="descname">wires</code><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.wires" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wires of this operator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">wires</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Wires</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div><a class="meth-details-header collapse-header" data-toggle="collapse" href="#methDetails" aria-expanded="false" aria-controls="methDetails">
+   <h2 style="font-size: 24px;">
+      <i class="fas fa-angle-down rotate" style="float: right;"></i> Methods
+   </h2>
+</a>
+<div class="collapse" id="methDetails"><table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.check_domain" title="braket.pennylane_plugin.ISWAP.check_domain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_domain</span></code></a>(p[,&nbsp;flattened])</td>
+<td>Check the validity of a parameter.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.decomposition" title="braket.pennylane_plugin.ISWAP.decomposition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decomposition</span></code></a>(wires)</td>
+<td>Returns a template decomposing the operation into other quantum operations.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.get_parameter_shift" title="braket.pennylane_plugin.ISWAP.get_parameter_shift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parameter_shift</span></code></a>(idx[,&nbsp;shift])</td>
+<td>Multiplier and shift for the given parameter, based on its gradient recipe.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.inv" title="braket.pennylane_plugin.ISWAP.inv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">inv</span></code></a>()</td>
+<td>Inverts the operation, such that the inverse will be used for the computations by the specific device.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#braket.pennylane_plugin.ISWAP.queue" title="braket.pennylane_plugin.ISWAP.queue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">queue</span></code></a>()</td>
+<td>Append the operator to the Operator queue.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="braket.pennylane_plugin.ISWAP.check_domain">
+<code class="descname">check_domain</code><span class="sig-paren">(</span><em>p</em>, <em>flattened=False</em><span class="sig-paren">)</span><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.check_domain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the validity of a parameter.</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code> instances can represent any real scalars (but not arrays).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>p</strong> (<em>Number</em><em>, </em><em>array</em><em>, </em><em>Variable</em>) – parameter to check</li>
+<li><strong>flattened</strong> (<em>bool</em>) – True means p is an element of a flattened parameter
+sequence (affects the handling of ‘A’ parameters)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first simple">
+<li><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code> – parameter is not an element of the expected domain</li>
+<li><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code> – parameter is an element of an unknown domain</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">p</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Number, array, Variable</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="braket.pennylane_plugin.ISWAP.decomposition">
+<em class="property">static </em><code class="descname">decomposition</code><span class="sig-paren">(</span><em>wires</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/braket/pennylane_plugin/ops.html#ISWAP.decomposition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.decomposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a template decomposing the operation into other
+quantum operations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="braket.pennylane_plugin.ISWAP.get_parameter_shift">
+<code class="descname">get_parameter_shift</code><span class="sig-paren">(</span><em>idx</em>, <em>shift=1.5707963267948966</em><span class="sig-paren">)</span><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.get_parameter_shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplier and shift for the given parameter, based on its gradient recipe.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idx</strong> (<em>int</em>) – parameter index</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">multiplier, shift</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float, float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="braket.pennylane_plugin.ISWAP.inv">
+<code class="descname">inv</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.inv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverts the operation, such that the inverse will
+be used for the computations by the specific device.</p>
+<p>This method concatenates a string to the name of the operation,
+to indicate that the inverse will be used for computations.</p>
+<p>Any subsequent call of this method will toggle between the original
+operation and the inverse of the operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">operation to be inverted</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Operator</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="braket.pennylane_plugin.ISWAP.queue">
+<code class="descname">queue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#braket.pennylane_plugin.ISWAP.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append the operator to the Operator queue.</p>
+</dd></dl>
+
+</div><script type="text/javascript">
+   $(".collapse-header").click(function () {
+       $(this).children('h2').eq(0).children('i').eq(0).toggleClass("up");
+   })
+</script></dd></dl>
+
+</div>
+
+
+            </div>
+              
+  <div class="footer-relations">
+    
+      <div class="pull-left">
+        <a class="btn btn-xanadu" href="braket.pennylane_plugin.CY.html" title="previous chapter (use the left arrow)"><i class="fas fa-arrow-left"></i> Previous</a>
+      </div>
+    
+      <div class="pull-right">
+        <a class="btn btn-xanadu" href="braket.pennylane_plugin.PSWAP.html" title="next chapter (use the right arrow)">Next <i class="fas fa-arrow-right"></i></a>
+      </div>
+    </div>
+    <div class="clearer"></div>
+  
+          </div>
+<div class="comment-container nano has-scrollbar">
+  <div class="nano-content">
+  <div id="comments">
+    <h3>Contents</h3>
+    
+    
+      <ul style="display: none;"><li><a></a></li></ul>
+      <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../support.html">Support</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_remote.html">The remote Braket device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devices/braket_local.html">The local Braket device</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../code.html">pennylane-braket</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../code.html#classes">Classes</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.BraketAwsQubitDevice.html">braket.pennylane_plugin.BraketAwsQubitDevice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.BraketLocalQubitDevice.html">braket.pennylane_plugin.BraketLocalQubitDevice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.CPhaseShift.html">braket.pennylane_plugin.CPhaseShift</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.CPhaseShift00.html">braket.pennylane_plugin.CPhaseShift00</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.CPhaseShift01.html">braket.pennylane_plugin.CPhaseShift01</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.CPhaseShift10.html">braket.pennylane_plugin.CPhaseShift10</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.CY.html">braket.pennylane_plugin.CY</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">braket.pennylane_plugin.ISWAP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.PSWAP.html">braket.pennylane_plugin.PSWAP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.V.html">braket.pennylane_plugin.V</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.XX.html">braket.pennylane_plugin.XX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.XY.html">braket.pennylane_plugin.XY</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.YY.html">braket.pennylane_plugin.YY</a></li>
+<li class="toctree-l3"><a class="reference internal" href="braket.pennylane_plugin.ZZ.html">braket.pennylane_plugin.ZZ</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../code.html#class-inheritance-diagram">Class Inheritance Diagram</a></li>
+</ul>
+</li>
+</ul>
+
+    
+  </div>
+  <div class="xanadu-call-to-action-links">
+    <h3>Downloads</h3>
+    <div id="tutorial-type">code/api/braket.pennylane_plugin.ISWAP</div>
+    <div id="download-python-link">
+      <i class="fab fa-python"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Python script</div>
+    </div>
+    <div id="download-notebook-link">
+      <i class="fas fa-download"></i>&nbsp;
+      <div class="call-to-action-desktop-view">Download Notebook</div>
+    </div>
+    <div id="github-view-link">
+      <i class="fab fa-github"></i>&nbsp;
+      <div class="call-to-action-desktop-view">View on GitHub</div>
+    </div>
+  </div>
+</div>
+</div>
+
+          <div class="clearfix"></div>
+        </div>
+
+
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="braket.pennylane_plugin.PSWAP.html" title="braket.pennylane_plugin.PSWAP"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="braket.pennylane_plugin.CY.html" title="braket.pennylane_plugin.CY"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Amazon Braket PennyLane Plugin 0.5.2.dev0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../code.html" >pennylane-braket</a> &#187;</li> 
+      </ul>
+    </div>
+<script type="text/javascript">
+  $("#mobile-toggle").click(function () {
+    $("#left-column").slideToggle("slow");
+  });
+</script>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-migrate-1.0.0.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js'></script>
+<!-- Bootstrap core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- MDB core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+
+<script type="text/javascript" src="../../_static/js/nanoscroller.min.js"></script>
+<script type="text/javascript">
+    $('a.reference.internal').each(function(){
+      var link = $(this).attr("href");
+
+      var hash = link.split('#')[1];
+      var page = link.split('#')[0].split('/').slice(-1)[0].replace(".html", "");
+
+      if (hash == page) {
+        $(this).attr('href', link.split('#')[0]);
+      }
+    });
+
+    $(".document > .section").removeClass("section");
+    $(".comment-container .nano-content").css("height", $("#content").height());
+    $(".comment-container").css("height", $("#content").height());
+    $(".nano").nanoScroller();
+</script>
+<script type="text/javascript">
+    $(window).scroll(function(){
+      var scrollBottom = $(document).height() - $(window).height() - $(window).scrollTop();
+      if (scrollBottom < 342) {
+        $('.comment-container').css("height", "calc(100% - " + (342 - scrollBottom) + "px)");
+        $('.comment-container .nano-content').css("height", "calc(100% - 119px)");
+      }
+    });
+</script>
+ <script type="text/javascript">
+    if ($('.current').length) {
+        var target = $('.current')[0]
+        var rect = target.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+            $(".nano").nanoScroller({ scrollTo: $('.current') });
+        } else {
+            $(".nano").nanoScroller({ scrollTop: 0 });
+        }
+    }
+    $(document).ready(function () {
+        $(".css-transitions-only-after-page-load").each(function (index, element) {
+            setTimeout(function () { $(element).removeClass("css-transitions-only-after-page-load") }, 10);
+        });
+        if (window.location.hash) {
+           var target = $("[id='"+window.location.hash.substr(1)+"']");
+           if (target.closest(".collapse").length) {
+              target.closest(".collapse").addClass("show");
+              target.closest(".collapse").prev().find(".rotate").addClass("up");
+           }
+        }
+    });
+</script>
+<script type="text/javascript">
+var downloadNote = $(".sphx-glr-download-link-note.admonition.note");
+if (downloadNote.length >= 1) {
+    var tutorialUrlArray = $("#tutorial-type").text().split('/');
+        tutorialUrlArray[0] = "examples"
+
+    var githubLink = "https://github.com/XanaduAI/pennylane/blob/master/" + tutorialUrlArray.join("/") + ".py",
+        pythonLink = $(".reference.download")[0].href,
+        notebookLink = $(".reference.download")[1].href,
+        notebookDownloadPath = notebookLink.split('_downloads')[1].split('/').pop();
+
+    $("#download-python-link").wrap("<a href=" + pythonLink + " data-behavior='call-to-action-event' data-response='Download Python script' download target='_blank'/>");
+    $("#download-notebook-link").wrap("<a href=" + notebookLink + " data-behavior='call-to-action-event' data-response='Download Notebook' download target='_blank'/>");
+    $("#github-view-link").wrap("<a href=" + githubLink + " data-behavior='call-to-action-event' data-response='View on Github' target='_blank'/>");
+} else {
+    $(".xanadu-call-to-action-links").hide();
+}
+</script>
+<script type="text/javascript">jQuery.noConflict(true);</script>
+        <footer class="page-footer text-md-left pt-4">
+  
+    <hr class="pb-0 mb-0">
+    <div class="container-fluid">
+      <div class="row   justify-content-md-center">
+        <div class="col-md-3">
+          <h5 class=" mb-1 footer-heading">Xanadu</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <p class="">Located in the heart of downtown Toronto, we've brought together exceptional minds from around the world to build quantum computers that are useful and available to people everywhere.</p>
+        </div>
+
+    <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">PennyLane</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://pennylane.ai/">Home page</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/pennylane">GitHub</a></li>
+            <li><a class="" href="https://pennylane.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://discuss.pennylane.ai/">Discussion forum</a></li>
+            <li><a class="" href="https://twitter.com/pennylaneai/">Twitter</a></li>
+          </ul>
+        </div>
+		<div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">Strawberry Fields</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://strawberryfields.ai/">Interactive</a></li>
+            <li><a class="" href="https://github.com/XanaduAI/strawberryfields">GitHub</a></li>
+            <li><a class="" href="https://strawberryfields.readthedocs.io/">Documentation</a></li>
+            <li><a class="" href="https://u.strawberryfields.ai/slack/">Slack channel</a></li>
+          </ul>
+        </div>
+
+
+        <div class="col-md-2 col-4">
+          <h5 class=" mb-1 footer-heading">About</h5>
+          <hr width=100px class="d-inline-block mt-0 mb-1 Deep-purple accent-4">
+          <ul class="list-unstyled">
+            <li><a class="" href="https://www.xanadu.ai/">Home</a></li>
+            <li><a class="" href="https://www.xanadu.ai/hardware/">Hardware</a></li>
+            <li><a class="" href="https://www.xanadu.ai/software/">Software</a></li>
+            <li><a class="" href="https://www.xanadu.ai/research">Research</a></li>
+            <li><a class="" href="https://medium.com/XanaduAI">Blog</a></li>
+            <li><a class="" href="https://www.xanadu.ai/about/">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <hr>
+
+    <!-- <hr class="pb-0 mb-0"> -->
+
+    <!--Social buttons-->
+    <div class="social-section text-center">
+        <ul class="list-unstyled list-inline mb-0">
+            <li class="list-inline-item"><a class="btn-fb" href="https://www.facebook.com/Xanadu-1312050742230493/"><i class="fab fa-facebook-f"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-tw" href="https://twitter.com/xanaduai"><i class="fab fa-twitter"> </i></a></li>
+            <li class="list-inline-item"><a class="" href="https://medium.com/xanaduai"><i class="fab fa-medium-m"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-li" href="https://www.linkedin.com/company/xanaduai/"><i class="fab fa-linkedin-in"> </i></a></li>
+            <li class="list-inline-item"><a class="btn-git" href="https://github.com/XanaduAI"><i class="fab fa-github"> </i></a></li>
+        </ul>
+        <a href="https://xanadu.us17.list-manage.com/subscribe?u=725f07a1d1a4337416c3129fd&id=294b062630" style="font-size: initial;">Stay updated with our newsletter</a>
+    </div>
+    <!--/.Social buttons-->
+
+    <!--Copyright-->
+    <div class="footer-copyright py-3 mt-0 text-center">
+        <div class="container-fluid">
+            © Copyright 2018-2020 | Xanadu | All rights reserved
+            <br>
+             TensorFlow, the TensorFlow logo and any related marks are trademarks of Google Inc. 
+        </div>
+    </div>
+  </footer>
+  </body>
+</html>
