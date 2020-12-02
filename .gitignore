@@ -23,7 +23,6 @@ build_files.tar.gz
 /.pytest_cache
 /.mypy_cache
 
-/doc/code/
-/doc/_build
+
 /build
 /venv
