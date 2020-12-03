@@ -3,9 +3,7 @@ PennyLane-Braket Plugin
 
 :Release: |release|
 
-!TODO: image!
-
-.. image:: _static/puzzle_braket.png
+.. image:: _static/pl-braket.png
     :align: center
     :width: 70%
     :target: javascript:void(0);
@@ -55,7 +53,8 @@ and simply replace ``'default.qubit'`` with the ``'braket.local.qubit'`` or the 
 
     dev = qml.device('braket.XXX.qubit', [...])
 
-Tutorials that showcase the braket devices are the demos !TODO: link to demos!.
+Tutorials that showcase the braket devices can be found `on the PennyLane <LINK_PENNYLANE!>`_
+and `Amazon Braket <LINK_AWS!>`_ websites.
 
 .. toctree::
    :maxdepth: 2
