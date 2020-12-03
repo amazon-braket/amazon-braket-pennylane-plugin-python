@@ -11,7 +11,9 @@ where parallelization is needed to handle the exponential scaling notorious to s
 Usage
 ~~~~~
 
-After the Braket SDK and the plugin are installed, you immediately have access to the Braket devices in PennyLane.
+After the Braket SDK and the plugin are installed, and once you
+`signed up for Amazon Braket <https://docs.aws.amazon.com/braket/latest/developerguide/braket-enable-overview.html>`_,
+you immediately have access to the Braket devices in PennyLane.
 
 Instantiate an AWS device that communicates with the Braket service like this:
 
@@ -19,7 +21,8 @@ Instantiate an AWS device that communicates with the Braket service like this:
 >>> s3 = ("my-bucket", "my-prefix")
 >>> remote_device = qml.device("braket.aws.qubit", device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1", s3_destination_folder=s3, wires=2)
 
-In this example, the string ``arn:aws:braket:::device/quantum-simulator/amazon/sv1`` is the ARN that identifies the SV1 device. Other supported devices and their ARNs can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_. Note that the plugin works with digital (qubit) circuit-based devices only.
+In this example, the string ``arn:aws:braket:::device/quantum-simulator/amazon/sv1`` is the ARN that identifies the SV1 device. Other supported devices and their ARNs can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
+Note that the plugin works with digital (qubit) gate-based devices only.
 
 This device can then be used just like other devices for the definition and evaluation of QNodes within PennyLane.
 
@@ -56,7 +59,7 @@ lead to significant speedups of your optimization pipeline.
 
 The maximum number of circuits that can be executed in parallel is specified by the ``max_parallel`` argument.
 
->>> remote_device = qml.device('braket.aws.qubit', [... ,] max_parallel=20)
+>>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True, max_parallel=20)
 
 Make sure that this number is not larger than the maximum number of workers set for your account.
 

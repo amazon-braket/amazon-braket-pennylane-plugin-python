@@ -11,7 +11,9 @@ on a paid-for remote service.
 Usage
 ~~~~~
 
-After the Braket SDK and the plugin are installed, you immediately have access to the Braket devices in PennyLane.
+After the Braket SDK and the plugin are installed, and once you
+`signed up for Amazon Braket <https://docs.aws.amazon.com/braket/latest/developerguide/braket-enable-overview.html>`_,
+you immediately have access to the Braket devices in PennyLane.
 
 To instantiate the local Braket simulator, simply use:
 
