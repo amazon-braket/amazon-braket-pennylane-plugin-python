@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.2 (2020-12-02)
+
+### Bug Fixes and Other Changes
+
+ * Unwrap `tensor`s into a NumPy `array`s in `apply()`
+
 ## v0.5.1.post0 (2020-12-01)
 
 ### Documentation Changes
