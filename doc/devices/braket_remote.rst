@@ -12,7 +12,7 @@ Usage
 ~~~~~
 
 After the Braket SDK and the plugin are installed, and once you
-`signed up for Amazon Braket <https://docs.aws.amazon.com/braket/latest/developerguide/braket-enable-overview.html>`_,
+`sign up for Amazon Braket <https://docs.aws.amazon.com/braket/latest/developerguide/braket-enable-overview.html>`_,
 you have access to the remote Braket device in PennyLane.
 
 Instantiate an AWS device that communicates with the Braket service like this:
