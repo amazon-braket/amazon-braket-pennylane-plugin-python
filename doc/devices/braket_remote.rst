@@ -4,9 +4,7 @@ The remote Braket device
 The remote device of the PennyLane-Braket plugin runs quantum computations on Amazon Braket's remote service.
 The remote service provides access to hardware providers and a high-performance simulator backend.
 
-A list of hardware providers can be found `here <https://aws.amazon.com/braket/hardware-providers/>`_.
-The `State Vector Simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-sv1>`_
-is a fully managed high-performance simulator, and is suitable for executing circuits with high qubit numbers that are too difficult to run locally.
+A list of available quantum devices and their features can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
 
 Usage
 ~~~~~
