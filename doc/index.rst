@@ -54,7 +54,7 @@ and simply replace ``'default.qubit'`` with the ``'braket.local.qubit'`` or the 
     dev = qml.device('braket.XXX.qubit', [...])
 
 Tutorials that showcase the braket devices can be found `on the PennyLane <LINK_PENNYLANE!>`_
-and `Amazon Braket <LINK_AWS!>`_ websites.
+and `Amazon Braket <LINK_AWS!>`_ examples GitHub repository.
 
 .. toctree::
    :maxdepth: 2
