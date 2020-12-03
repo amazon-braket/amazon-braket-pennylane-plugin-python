@@ -127,7 +127,7 @@ Integration tests
 *****************
 
 To run the integration tests, set the ``AWS_PROFILE`` as explained in the amazon-braket-sdk-python
-`README <https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md>`_
+`README <https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md>`_:
 
 .. code-block:: bash
 
