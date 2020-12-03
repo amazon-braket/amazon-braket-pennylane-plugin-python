@@ -34,7 +34,7 @@ For example:
         qml.CNOT(wires=[0, 1])
         return qml.expval(qml.PauliZ(0)), var(qml.PauliZ(1))
 
-When executed, the circuit with perform the computation on the local computer.
+When executed, the circuit will perform the computation on the local machine.
 
 >>> circuit(0.2, 0.1, 0.3)
 array([0.97517033, 0.04904283])
