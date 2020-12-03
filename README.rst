@@ -64,7 +64,7 @@ You can then install the latest release of the PennyLane-Braket plugin as follow
 
 .. code-block:: bash
 
-    pip install  amazon-braket-pennylane-plugin
+    pip install amazon-braket-pennylane-plugin
 
 
 You can also install the development version from source by cloning this repository and running a 
@@ -194,4 +194,3 @@ License
 This project is licensed under the Apache-2.0 License.
 
 .. license-end-inclusion-marker-do-not-remove
-
