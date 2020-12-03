@@ -228,9 +228,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             is desired. Default: None
         parallel (bool): Indicates whether to use parallel execution for gradient calculations.
             Default: False
-        max_parallel (int): Maximum number of tasks to run on AWS in parallel.
-            Batch creation will fail if this value is greater than the maximum allowed
-            concurrent tasks on the device.
+        max_parallel (int, optional): Maximum number of tasks to run on AWS in parallel.
+            Batch creation will fail if this value is greater than the maximum allowed concurrent
+            tasks on the device. If unspecified, uses defaults specified in ``AwsDevice``.
             Ignored if ``parallel=False``.
         max_connections (int): The maximum number of connections in the Boto3 connection pool.
             Also the maximum number of thread pool workers for the batch.
@@ -238,7 +238,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_retries (int): The maximum number of retries to use for batch execution.
             When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
             times. Ignored if ``parallel=False``.
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket AwsDevice for PennyLane"
     short_name = "braket.aws.qubit"
@@ -254,7 +254,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         aws_session: Optional[AwsSession] = None,
         parallel: bool = False,
-        max_parallel: int = AwsQuantumTaskBatch.MAX_PARALLEL_DEFAULT,
+        max_parallel: Optional[int] = None,
         max_connections: int = AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         max_retries: int = AwsQuantumTaskBatch.MAX_RETRIES,
         **run_kwargs,
@@ -342,7 +342,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             then the device runs in analytic mode (calculations will be exact);
             the device's ``shots`` property is set to 1 and ignored.
             Default: 0
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket LocalSimulator for PennyLane"
     short_name = "braket.local.qubit"
