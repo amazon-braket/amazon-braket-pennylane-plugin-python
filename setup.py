@@ -13,7 +13,7 @@
 
 from setuptools import find_namespace_packages, setup
 
-with open("README.md", "r") as fh:
+with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 with open("src/braket/pennylane_plugin/_version.py") as f:
@@ -55,6 +55,7 @@ setup(
             "pytest-rerunfailures",
             "pytest-xdist",
             "sphinx",
+            "sphinx-automodapi",
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",

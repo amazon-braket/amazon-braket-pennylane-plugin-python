@@ -1,92 +1,80 @@
-Amazon Braket PennyLane Plugin
-##############################
+PennyLane-Braket Plugin
+#######################
 
 :Release: |release|
-:Date: |today|
 
+.. image:: _static/pl-braket.png
+    :align: center
+    :width: 70%
+    :target: javascript:void(0);
 
-The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
+|
 
-* ```braket.aws.qubit``` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
+.. include:: ../README.rst
+  :start-after:	header-start-inclusion-marker-do-not-remove
+  :end-before: header-end-inclusion-marker-do-not-remove
 
-* ```braket.local.qubit``` for running with the Amazon Braket SDK's local simulator
+Once the Pennylane-Braket plugin is installed, the provided Braket devices can be accessed straight
+away in PennyLane, without the need to import any additional packages.
 
-The `Amazon Braket Python SDK  <https://github.com/aws/amazon-braket-sdk-python>`_ is an open source
-library. It provides a framework that you can use to interact with quantum computing hardware
-devices through Amazon Braket.
+Devices
+~~~~~~~
 
-`PennyLane <https://pennylane.readthedocs.io>`_ is a machine learning library for optimization and automatic differentiation of hybrid quantum-classical computations.
+This plugin provides two Braket devices for use with PennyLane:
 
+.. devicegalleryitem::
+    :name: 'braket.aws.qubit'
+    :description: Runs circuits on the remote Amazon Braket service.
+    :link: devices/braket_remote.html
 
-Providing Feedback and Getting Help
-======
+.. devicegalleryitem::
+    :name: 'braket.local.qubit'
+    :description: Runs circuits on the Braket SDK's local simulator.
+    :link: devices/braket_local.html
 
-To provide feedback or request support, please contact the Amazon Braket team at amazon-braket-preview-support@amazon.com.
+.. raw:: html
 
-**Important**
+        <div style='clear:both'></div>
+        </br>
 
-If you **Star** or **Watch** this repository, or if you submit a pull request, other users with access to this repository can see your user name in the list of watchers. To remain anonymous, do not **Watch** or **Star** this repository, do not post any comments, and do not submit a pull request.
+While the local device helps with small-scale simulations and rapid prototyping,
+the remote device provides access different backends of the Amazon Braket service, such as
+high performance simulators and quantum hardware.
 
-Features
-======
+Tutorials
+~~~~~~~~~
 
-Provides two devices to be used with PennyLane:
+To see the PennyLane-Braket plugin in action, you can use any of the qubit-based `demos
+from the PennyLane documentation <https://pennylane.ai/qml/demonstrations.html>`_, for example
+the tutorial on `qubit rotation <https://pennylane.ai/qml/demos/tutorial_qubit_rotation.html>`_,
+and simply replace ``'default.qubit'`` with the ``'braket.local.qubit'`` or the ``'braket.aws.qubit'`` device:
 
-* ```braket.aws.qubit``` for running on the Braket service, and 
+.. code-block:: python
 
-* ```braket.local.qubit``` for running on Braket's local simulator.
+    dev = qml.device('braket.XXX.qubit', [...])
 
-* All provided devices support most core qubit PennyLane operations.
-
-* All PennyLane observables are supported with the exception of ``qml.Hermitian``.
-
-* Provides custom PennyLane operations to cover additional Braket operations: ``ISWAP``, ``PSWAP``, and many more. Every custom operation supports analytic
-  differentiation.
-
-* Combine Amazon Braket with PennyLane's automatic differentiation and optimization.
-
-To get started with the plugin, follow the :ref:`installation steps <installation>`, then see the :ref:`usage <usage>` page.
-
-Authors
-=======
-
-`Amazon Braket <https://aws.amazon.com/braket/>`_, `Xanadu <https://www.xanadu.ai/>`_
-
-If you are doing research using PennyLane, please cite these papers:
-
-    Ville Bergholm, Josh Izaac, Maria Schuld, Christian Gogolin, and Nathan Killoran.
-    *PennyLane: Automatic differentiation of hybrid quantum-classical computations.* 2018.
-    `arXiv:1811.04968 <https://arxiv.org/abs/1811.04968>`_
-
-    Maria Schuld, Ville Bergholm, Christian Gogolin, Josh Izaac, and Nathan Killoran.
-    *Evaluating analytic gradients on quantum hardware.* 2018.
-    `Phys. Rev. A 99, 032331 <https://journals.aps.org/pra/abstract/10.1103/PhysRevA.99.032331>`_
-
-
-Contents
-========
-
-.. rst-class:: contents local topic
+Tutorials that showcase the Braket devices can be found on the  `PennyLane website <https://pennylane.ai/qml/demonstrations.html>`_
+and the `Amazon Braket <https://github.com/aws/amazon-braket-examples>`_ examples GitHub repository.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Getting started
+   :titlesonly:
+   :hidden:
 
    installation
-   usage
+   support
 
-.. rst-class:: contents local topic
+.. toctree::
+   :maxdepth: 2
+   :caption: Usage
+   :hidden:
+
+   devices/braket_remote
+   devices/braket_local
 
 .. toctree::
    :maxdepth: 1
-   :caption: Code details
+   :caption: API
+   :hidden:
 
-   _apidoc/modules
-
-.. rst-class:: contents local topic
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials (external links)
-
-   Demonstrations <https://pennylane.ai/qml/demonstrations.html>
+   code

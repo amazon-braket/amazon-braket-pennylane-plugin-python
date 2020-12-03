@@ -121,19 +121,23 @@ class CPhaseShift(Operation):
 
     Controlled phase shift gate phasing the :math:`| 11 \rangle` state.
 
-    .. math:: \mathtt{CPhaseShift}(\phi) = \begin{bmatrix}
-            1 & 0 & 0 & 0 \\
-            0 & 1 & 0 & 0 \\
-            0 & 0 & 1 & 0 \\
-            0 & 0 & 0 & e^{i \phi}
-        \end{bmatrix}.
+    .. math::
+
+      \mathtt{CPhaseShift}(\phi) = \begin{bmatrix}
+          1 & 0 & 0 & 0 \\
+          0 & 1 & 0 & 0 \\
+          0 & 0 & 1 & 0 \\
+          0 & 0 & 0 & e^{i \phi}
+      \end{bmatrix}.
 
     **Details:**
 
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
+
         \frac{d}{d \phi} \mathtt{CPhaseShift}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift}(\phi + \pi / 2)
             + \mathtt{CPhaseShift}(\phi - \pi / 2) \right]
@@ -179,6 +183,7 @@ class CPhaseShift00(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{CPhaseShift00}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift00}(\phi + \pi / 2)
@@ -229,6 +234,7 @@ class CPhaseShift01(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{CPhaseShift01}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift01}(\phi + \pi / 2)
@@ -277,6 +283,7 @@ class CPhaseShift10(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{CPhaseShift10}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift10}(\phi + \pi / 2)
@@ -363,6 +370,7 @@ class PSWAP(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{PSWAP}(\phi)
         = \frac{1}{2} \left[ \mathtt{PSWAP}(\phi + \pi / 2) + \mathtt{PSWAP}(\phi - \pi / 2) \right]
@@ -408,6 +416,7 @@ class XY(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{XY}(\phi)
         = \frac{1}{2} \left[ \mathtt{XY}(\phi + \pi / 2) + \mathtt{XY}(\phi - \pi / 2) \right]
@@ -454,6 +463,7 @@ class XX(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{XX}(\phi)
         = \frac{1}{2} \left[ \mathtt{XX}(\phi + \pi / 2) + \mathtt{XX}(\phi - \pi / 2) \right]
@@ -500,6 +510,7 @@ class YY(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{YY}(\phi)
         = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) + \mathtt{YY}(\phi - \pi / 2) \right]
@@ -546,6 +557,7 @@ class ZZ(Operation):
     * Number of wires: 2
     * Number of parameters: 1
     * Gradient recipe:
+
     .. math::
         \frac{d}{d \phi} \mathtt{ZZ}(\phi)
         = \frac{1}{2} \left[ \mathtt{ZZ}(\phi + \pi / 2) + \mathtt{ZZ}(\phi - \pi / 2) \right]

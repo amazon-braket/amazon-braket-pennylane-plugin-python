@@ -3,10 +3,10 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = braket-pennylane-plugin
+SPHINXBUILD   = python3 -msphinx
+SPHINXPROJ    = PennyLane-Braket
 SOURCEDIR     = .
-BUILDDIR      = ../build/documentation
+BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
