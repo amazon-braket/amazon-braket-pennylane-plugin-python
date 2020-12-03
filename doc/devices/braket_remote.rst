@@ -5,7 +5,7 @@ The remote device of the PennyLane-Braket plugin runs quantum computations on Am
 The remote service provides access to hardware providers and a high-performance simulator backend.
 
 A list of hardware providers can be found `here <https://aws.amazon.com/braket/hardware-providers/>`_.
-The `simulator <https://aws.amazon.com/braket/features/>`_ is particularly suited for executing circuits with high qubit numbers,
+The `State Vector Simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-sv1>`_ is a fully managed, high-performance simulator, and is suited for executing circuits with high qubit numbers that are too difficult to run locally.
 where parallelization is needed to handle the exponential scaling notorious to simulating quantum computations on classical hardware.
 
 Usage
@@ -83,4 +83,3 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.XX
     braket.pennylane_plugin.YY
     braket.pennylane_plugin.ZZ
-
