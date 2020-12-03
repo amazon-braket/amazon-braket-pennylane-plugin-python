@@ -5,15 +5,14 @@ The remote device of the PennyLane-Braket plugin runs quantum computations on Am
 The remote service provides access to hardware providers and a high-performance simulator backend.
 
 A list of hardware providers can be found `here <https://aws.amazon.com/braket/hardware-providers/>`_.
-The `simulator <https://aws.amazon.com/braket/features/>`_ is particularly suited for executing circuits with high qubit numbers,
-where parallelization is needed to handle the exponential scaling notorious to simulating quantum computations on classical hardware.
+The `simulator <https://aws.amazon.com/braket/features/>`_ is particularly suited for circuits with high qubit numbers.
 
 Usage
 ~~~~~
 
 After the Braket SDK and the plugin are installed, and once you
 `signed up for Amazon Braket <https://docs.aws.amazon.com/braket/latest/developerguide/braket-enable-overview.html>`_,
-you immediately have access to the Braket devices in PennyLane.
+you have access to the remote Braket device in PennyLane.
 
 Instantiate an AWS device that communicates with the Braket service like this:
 
@@ -62,6 +61,11 @@ The maximum number of circuits that can be executed in parallel is specified by 
 >>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True, max_parallel=20)
 
 Make sure that this number is not larger than the maximum number of workers set for your account.
+
+The Braket remote device has the capability to retry failed circuit executions, up to 3 times per circuit by default.
+You can set a timeout by using the ``poll_timeout_seconds`` argument;
+the device will retry circuits that do not complete within the timeout.
+A timeout of 30 to 60 seconds is recommended for circuits with fewer than 25 qubits.
 
 
 Supported operations
