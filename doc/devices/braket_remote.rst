@@ -47,7 +47,7 @@ Enabling the parallel execution of multiple circuits
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Where supported by the backend of the Amazon Braket service, the remote device can be used to execute multiple
-quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parralel=True`` argument:
+quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parallel=True`` argument:
 
 >>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True)
 
@@ -86,5 +86,4 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.XX
     braket.pennylane_plugin.YY
     braket.pennylane_plugin.ZZ
-
 

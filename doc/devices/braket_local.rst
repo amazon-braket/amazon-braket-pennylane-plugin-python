@@ -2,7 +2,7 @@ The local Braket device
 =======================
 
 The local device of the PennyLane-Braket plugin runs quantum computations on the local Braket SDK. This
-could be either utilizing the processors of your own PC, or those of a server that hosts a notebook you are running.
+could be either utilizing the processors of your own PC, or those of a [Braket notebook instance](https://docs.aws.amazon.com/braket/latest/developerguide/braket-get-started-create-notebook.html) hosted on AWS.
 
 This device is useful for small-scale simulations in which the time of sending a job to a remote service would add
 an unnecessary overhead. It can also be used for rapid prototyping before running a computation
@@ -36,7 +36,7 @@ For example:
         qml.CNOT(wires=[0, 1])
         return qml.expval(qml.PauliZ(0)), var(qml.PauliZ(1))
 
-When executed, the circuit with perform the computation on the local computer.
+When executed, the circuit will perform the computation on the local machine.
 
 >>> circuit(0.2, 0.1, 0.3)
 array([0.97517033, 0.04904283])
