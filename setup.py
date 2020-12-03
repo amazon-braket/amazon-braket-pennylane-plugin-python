@@ -55,6 +55,7 @@ setup(
             "pytest-rerunfailures",
             "pytest-xdist",
             "sphinx",
+            "sphinx-automodapi",
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
