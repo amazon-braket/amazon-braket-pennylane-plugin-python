@@ -13,7 +13,11 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, re
+import os
+import re
+import sys
+
+from directives import CustomDeviceGalleryItemDirective
 
 from braket import pennylane_plugin
 
@@ -22,7 +26,7 @@ from braket import pennylane_plugin
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("_ext"))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath('.')), 'doc'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 
 # -- General configuration ------------------------------------------------
 
@@ -41,8 +45,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
-    'sphinx.ext.viewcode',
-    "sphinx_automodapi.automodapi"
+    "sphinx.ext.viewcode",
+    "sphinx_automodapi.automodapi",
 ]
 
 autosummary_generate = True
@@ -52,7 +56,7 @@ automodsumm_inherited_members = True
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates', 'xanadu_theme']
+templates_path = ["_templates", "xanadu_theme"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -111,7 +115,7 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#html_theme = "sphinx_rtd_theme"
+# html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -135,12 +139,12 @@ todo_include_todos = True
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = '_static/favicon.ico'
+html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -228,40 +232,31 @@ html_sidebars = {
 htmlhelp_basename = "AmazonBraketPennyLanePlugindoc"
 
 # # -- Xanadu theme ---------------------------------------------------------
-html_theme = 'xanadu_theme'
-html_theme_path = ['.']
+html_theme = "xanadu_theme"
+html_theme_path = ["."]
 
 # Register the theme as an extension to generate a sitemap.xml
 # extensions.append("guzzle_sphinx_theme")
 
 # xanadu theme options (see theme.conf for more information)
 html_theme_options = {
-
     # Set the path to a special layout to include for the homepage
     # "index_template": "special_index.html",
-
     # Set the name of the project to appear in the left sidebar.
     "project_nav_name": "PennyLane-Braket",
-
     # Set your Disqus short name to enable comments
     # "disqus_comments_shortname": "pennylane-1",
-
     # Set you GA account ID to enable tracking
     "google_analytics_account": "UA-130507810-2",
-
     # Path to a touch icon
     "touch_icon": "logo_new.png",
-
     # Specify a base_url used to generate sitemap.xml links. If not
     # specified, then no sitemap will be built.
     # "base_url": ""
-
     # Allow a separate homepage from the master_doc
     # "homepage": "index",
-
     # Allow the project link to be overriden to a custom URL.
     # "projectlink": "http://myproject.url",
-
     "large_toc": True,
     # colors
     "navigation_button": "#19b37b",
@@ -276,8 +271,8 @@ html_theme_options = {
     # "gallery_dirs": "tutorials",
 }
 
-edit_on_github_project = 'aws/amazon-braket-pennylane-plugin-python'
-edit_on_github_branch = 'main/doc'
+edit_on_github_project = "aws/amazon-braket-pennylane-plugin-python"
+edit_on_github_branch = "main/doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -347,16 +342,14 @@ texinfo_documents = [
 # ============================================================
 
 # the order in which autodoc lists the documented members
-autodoc_member_order = 'bysource'
+autodoc_member_order = "bysource"
 
 # inheritance_diagram graphviz attributes
-inheritance_node_attrs = dict(color='lightskyblue1', style='filled')
+inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
 
-#autodoc_default_flags = ['members']
+# autodoc_default_flags = ['members']
 autosummary_generate = True
 
-from directives import CustomDeviceGalleryItemDirective
 
 def setup(app):
-    app.add_directive('devicegalleryitem', CustomDeviceGalleryItemDirective)
-
+    app.add_directive("devicegalleryitem", CustomDeviceGalleryItemDirective)
