@@ -7,8 +7,8 @@ PennyLane Braket plugin
 
 The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
 
-* `braket.aws.qubit` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
-* `braket.local.qubit` for running with the Amazon Braket SDK's local simulator
+* ``braket.aws.qubit`` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
+* ``braket.local.qubit`` for running with the Amazon Braket SDK's local simulator
 
 .. header-start-inclusion-marker-do-not-remove
 
@@ -26,16 +26,15 @@ The plugin documentation can be found here: `<https://amazon-braket-pennylane-pl
 Features
 ========
 
-* Provides two devices to be used with PennyLane: `braket.aws.qubit` for running on the Braket service, 
-and `braket.local.qubit` for running on Braket's local simulator.
+* Provides two devices to be used with PennyLane: ``braket.aws.qubit`` for running on the Braket service,
+and ``braket.local.qubit`` for running on Braket's local simulator.
 
 * Both devices support most core qubit PennyLane operations.
 
 * All PennyLane observables are supported.
 
-* Provides custom PennyLane operations to cover additional Braket operations: `ISWAP`, `PSWAP`, and many more. 
-Every custom operation supports analytic
-  differentiation.
+* Provides custom PennyLane operations to cover additional Braket operations: ``ISWAP``, ``PSWAP``, and many more.
+  Every custom operation supports analytic differentiation.
 
 * Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
 
@@ -63,11 +62,9 @@ that you installed or configured the following prerequisites:
 
 You can then install the latest release of the PennyLane-Braket plugin as follows:
 
-!TODO: check package name!
-
 .. code-block:: bash
 
-    pip install pennylane-braket
+    pip install amazon-braket-pennylane
 
 
 You can also install the development version from source by cloning this repository and running a 
@@ -80,7 +77,7 @@ pip install command in the root directory of the repository:
     pip install .
 
 
-You can check your currently installed version of `amazon-braket-pennylane-plugin` with `pip show`:
+You can check your currently installed version of ``amazon-braket-pennylane-plugin`` with ``pip show``:
 
 .. code-block:: bash
 
@@ -129,7 +126,7 @@ To run linters and unit tests:
 Integration tests
 *****************
 
-To run the integration tests, set the `AWS_PROFILE` as explained in the amazon-braket-sdk-python
+To run the integration tests, set the ``AWS_PROFILE`` as explained in the amazon-braket-sdk-python
 `README <https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md>`_
 
 .. code-block:: bash
@@ -137,8 +134,8 @@ To run the integration tests, set the `AWS_PROFILE` as explained in the amazon-b
     export AWS_PROFILE=Your_Profile_Name
 
 
-Running the integration tests creates an S3 bucket in the same account as the `AWS_PROFILE`
-with the following naming convention `amazon-braket-pennylane-plugin-integ-tests-{account_id}`.
+Running the integration tests creates an S3 bucket in the same account as the ``AWS_PROFILE``
+with the following naming convention ``amazon-braket-pennylane-plugin-integ-tests-{account_id}``.
 
 Run the integration tests with:
 
@@ -155,7 +152,7 @@ To run an individual integration test:
 Documentation
 ~~~~~~~~~~~~~
 
-To build the HTML documentation, go to the top-level directory and run:
+To build the HTML documentation, go to the ``doc/`` directory and run:
 
 .. code-block:: bash
 
