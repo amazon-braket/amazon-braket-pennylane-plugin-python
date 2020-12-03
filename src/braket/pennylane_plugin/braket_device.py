@@ -228,9 +228,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             is desired. Default: None
         parallel (bool): Indicates whether to use parallel execution for gradient calculations.
             Default: False
-        max_parallel (int): Maximum number of tasks to run on AWS in parallel.
-            Batch creation will fail if this value is greater than the maximum allowed
-            concurrent tasks on the device.
+        max_parallel (int, optional): Maximum number of tasks to run on AWS in parallel.
+            Batch creation will fail if this value is greater than the maximum allowed concurrent
+            tasks on the device. If unspecified, uses defaults defined in ``AwsDevice``.
             Ignored if ``parallel=False``.
         max_connections (int): The maximum number of connections in the Boto3 connection pool.
             Also the maximum number of thread pool workers for the batch.
@@ -254,7 +254,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         aws_session: Optional[AwsSession] = None,
         parallel: bool = False,
-        max_parallel: int = AwsQuantumTaskBatch.MAX_PARALLEL_DEFAULT,
+        max_parallel: Optional[int] = None,
         max_connections: int = AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         max_retries: int = AwsQuantumTaskBatch.MAX_RETRIES,
         **run_kwargs,

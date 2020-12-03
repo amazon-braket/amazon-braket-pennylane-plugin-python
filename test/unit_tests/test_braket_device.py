@@ -350,7 +350,7 @@ def test_batch_execute_parallel(mock_run_batch):
         [CIRCUIT, CIRCUIT],
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
-        max_parallel=AwsQuantumTaskBatch.MAX_PARALLEL_DEFAULT,
+        max_parallel=None,
         max_connections=AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
