@@ -27,7 +27,7 @@ Features
 ========
 
 * Provides two devices to be used with PennyLane: ``braket.aws.qubit`` for running on the Braket service,
-and ``braket.local.qubit`` for running on Braket's local simulator.
+  and ``braket.local.qubit`` for running on Braket's local simulator.
 
 * Both devices support most core qubit PennyLane operations.
 
