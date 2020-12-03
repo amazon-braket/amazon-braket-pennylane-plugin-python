@@ -6,7 +6,7 @@ The remote service provides access to hardware providers and a high-performance 
 
 A list of hardware providers can be found `here <https://aws.amazon.com/braket/hardware-providers/>`_.
 The `State Vector Simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-sv1>`_
-is a fully managed high-performance simulator, and is suited for executing circuits with high qubit numbers that are too difficult to run locally.
+is a fully managed high-performance simulator, and is suitable for executing circuits with high qubit numbers that are too difficult to run locally.
 
 Usage
 ~~~~~
