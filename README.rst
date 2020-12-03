@@ -152,13 +152,13 @@ To run an individual integration test:
 Documentation
 ~~~~~~~~~~~~~
 
-To build the HTML documentation, go to the ``doc/`` directory and run:
+To build the HTML documentation, run:
 
 .. code-block:: bash
 
-  $ make html
+  tox -e docs
 
-The documentation can then be found in the ``doc/_build/html/`` directory.
+The documentation can then be found in the ``doc/build/documentation/html/`` directory.
 
 .. installation-end-inclusion-marker-do-not-remove
 
