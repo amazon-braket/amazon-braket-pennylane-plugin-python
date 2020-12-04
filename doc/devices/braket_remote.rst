@@ -45,8 +45,9 @@ Enabling the parallel execution of multiple circuits
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Where supported by the backend of the Amazon Braket service, the remote device can be used to execute multiple
-quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parallel=True`` argument:
+quantum circuits in parallel. To unlock this feature, make sure `tape mode <https://pennylane.readthedocs.io/en/stable/code/qml_tape.html>`_ is enabled in PennyLane, and then instantiate the device using the ``parallel=True`` argument:
 
+>>> qml.enable_tape()
 >>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True)
 
 The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account specifications.
@@ -59,7 +60,7 @@ The maximum number of circuits that can be executed in parallel is specified by 
 
 >>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True, max_parallel=20)
 
-Make sure that this number is not larger than the maximum number of workers set for your account.
+Make sure that this number is not larger than the maximum number of concurrent tasks allowed for your account on the backend you choose. See the `Braket developer guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-quotas.html>`_ for more details.
 
 The Braket remote device has the capability to retry failed circuit executions, up to 3 times per circuit by default.
 You can set a timeout by using the ``poll_timeout_seconds`` argument;
