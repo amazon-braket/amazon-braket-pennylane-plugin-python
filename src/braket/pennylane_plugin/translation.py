@@ -15,9 +15,10 @@ from functools import singledispatch
 from typing import FrozenSet, Type
 
 import pennylane as qml
+from pennylane.operation import Observable, ObservableReturnTypes, Operation
+
 from braket.circuits import Gate, ResultType, gates, observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
-from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 _OPERATION_MAP = {
     "Hadamard": gates.H,

@@ -14,9 +14,9 @@
 """Tests for batch execution of jobs on AWS"""
 import pennylane as qml
 import pytest
-from braket.aws import AwsDevice
 from pennylane import numpy as np
 
+from braket.aws import AwsDevice
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 
 

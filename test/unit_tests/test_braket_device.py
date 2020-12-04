@@ -18,16 +18,15 @@ from unittest.mock import Mock, PropertyMock, patch
 import numpy as anp
 import pennylane as qml
 import pytest
-from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, Instruction, Observable, gates, result_types
-from braket.device_schema import DeviceActionType
-from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QubitDevice
 from pennylane import numpy as np
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
 from pennylane.wires import Wires
 
+from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
+from braket.circuits import Circuit, Instruction, Observable, gates, result_types
+from braket.device_schema import DeviceActionType
 from braket.pennylane_plugin import (
     CY,
     ISWAP,
@@ -44,6 +43,7 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
     V,
 )
+from braket.tasks import GateModelQuantumTaskResult
 
 SHOTS = 10000
 
