@@ -35,22 +35,22 @@ Code details
 # pylint: disable=invalid-name
 from typing import FrozenSet, List, Optional, Sequence, Union
 
+from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
+from braket.circuits import Circuit, Instruction
+from braket.device_schema import DeviceActionType
+from braket.devices import Device, LocalSimulator
+from braket.simulator import BraketSimulator
+from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import CircuitGraph, QubitDevice
 from pennylane import numpy as np
 from pennylane.operation import Expectation, Observable, Operation, Probability, Sample, Variance
 from pennylane.qnodes import QuantumFunctionError
 
-from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
-from braket.circuits import Circuit, Instruction
-from braket.device_schema import DeviceActionType
-from braket.devices import Device, LocalSimulator
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
     translate_result_type,
 )
-from braket.simulator import BraketSimulator
-from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 
 from ._version import __version__
 
