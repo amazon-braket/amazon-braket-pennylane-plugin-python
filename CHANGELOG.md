@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.3 (2020-12-04)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #46 from aws/infra/update-pl-min-ver
+ * Merge pull request #45 from aws/documentation/enable-tape
+ * Merge pull request #44 from aws/fix/batch-default
+ * Minor wording fix
+ * Use max_parallel=None as default for batching
+
+### Documentation Changes
+
+ * Mention tape mode and link to AWS quota details
+
+### Testing and Release Infrastructure
+
+ * Update minimum dependency versions
+ * PennyLane docs theme
+
 ## v0.5.2 (2020-12-02)
 
 ### Bug Fixes and Other Changes
