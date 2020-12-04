@@ -27,8 +27,8 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk>=1.3.0",
-        "pennylane @ git+https://github.com/PennyLaneAI/pennylane.git",
+        "amazon-braket-sdk>=1.4.1",
+        "pennylane>=0.13.0",
     ],
     entry_points={
         "pennylane.plugins": [
@@ -61,7 +61,7 @@ setup(
             "tox",
         ]
     },
-    url="https://github.com/aws/amazon-braket-pennyLane-plugin-python",
+    url="https://github.com/aws/amazon-braket-pennylane-plugin-python",
     author="Amazon Web Services",
     description=(
         "An open source framework for using Amazon Braket devices with the PennyLane"
