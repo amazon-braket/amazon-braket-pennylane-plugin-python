@@ -1,3 +1,3 @@
 sphinx
 sphinx-automodapi
-pennylane>=0.11
+pennylane>=0.13

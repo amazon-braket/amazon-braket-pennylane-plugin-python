@@ -27,7 +27,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk>=1.4.1",
+        "amazon-braket-sdk>=1.5.0",
         "pennylane>=0.13.0",
     ],
     entry_points={
@@ -71,7 +71,7 @@ setup(
     long_description_content_type="text/markdown",
     keywords="Amazon AWS Quantum",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
