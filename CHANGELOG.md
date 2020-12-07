@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.0 (2020-12-07)
+
+### Breaking Changes
+
+ * Prime repo for public release
+
 ## v0.5.3 (2020-12-04)
 
 ### Bug Fixes and Other Changes
