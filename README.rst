@@ -1,9 +1,18 @@
 PennyLane Braket plugin
 #######################
 
+.. image:: https://img.shields.io/pypi/v/amazon-braket-pennylane-plugin.svg
+    :alt: Latest Version
+    :target: https://pypi.python.org/pypi/amazon-braket-pennylane-plugin
+.. image:: https://img.shields.io/pypi/pyversions/amazon-braket-pennylane-plugin.svg
+    :alt: Supported Python Versions
+    :target: https://pypi.python.org/pypi/amazon-braket-pennylane-plugin
 .. image:: https://img.shields.io/badge/code_style-black-000000.svg
     :alt: Code Style: Black
     :target: https://github.com/psf/black
+.. image:: https://readthedocs.org/projects/amazon-braket-pennylane-plugin-python/badge/?version=latest
+    :alt: Documentation Status
+    :target: https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/?badge=latest
 
 The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
 
