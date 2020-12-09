@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.0.post0 (2020-12-09)
+
+### Testing and Release Infrastructure
+
+ * Auto-publish to PyPi
+
 ## v1.0.0 (2020-12-07)
 
 ### Breaking Changes
