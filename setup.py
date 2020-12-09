@@ -68,7 +68,7 @@ setup(
         " quantum machine learning library"
     ),
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     keywords="Amazon AWS Quantum",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
