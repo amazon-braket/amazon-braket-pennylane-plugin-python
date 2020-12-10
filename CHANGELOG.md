@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.0.post1 (2020-12-10)
+
+### Testing and Release Infrastructure
+
+ * Fix link formatting in README
+
 ## v1.0.0.post0 (2020-12-09)
 
 ### Testing and Release Infrastructure
