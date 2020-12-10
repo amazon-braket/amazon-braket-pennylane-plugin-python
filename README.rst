@@ -21,11 +21,11 @@ The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to w
 
 .. header-start-inclusion-marker-do-not-remove
 
-The `Amazon Braket Python SDK <https://github.com/aws/amazon-braket-sdk-python>`_ is an open source
+The `Amazon Braket Python SDK <https://github.com/aws/amazon-braket-sdk-python>`__ is an open source
 library that provides a framework to interact with quantum computing hardware
 devices and simulators through Amazon Braket.
 
-`PennyLane <https://pennylane.readthedocs.io>`_ is a machine learning library for optimization and automatic
+`PennyLane <https://pennylane.readthedocs.io>`__ is a machine learning library for optimization and automatic
 differentiation of hybrid quantum-classical computations.
 
 .. header-end-inclusion-marker-do-not-remove
@@ -56,13 +56,13 @@ Before you begin working with the Amazon Braket PennyLane Plugin, make sure
 that you installed or configured the following prerequisites:
 
 
-* Download and install `Python 3.7.2 <https://www.python.org/downloads/>`_ or greater.
+* Download and install `Python 3.7.2 <https://www.python.org/downloads/>`__ or greater.
   If you are using Windows, choose the option *Add Python to environment variables* before you begin the installation.
 
 * Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions
-  `here <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_.
+  `here <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`__.
 
-* Download and install `PennyLane <https://pennylane.ai/install.html>`_:
+* Download and install `PennyLane <https://pennylane.ai/install.html>`__:
 
   .. code-block:: bash
 
@@ -136,7 +136,7 @@ Integration tests
 *****************
 
 To run the integration tests, set the ``AWS_PROFILE`` as explained in the amazon-braket-sdk-python
-`README <https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md>`_:
+`README <https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md>`__:
 
 .. code-block:: bash
 
@@ -175,7 +175,7 @@ Contributing
 ============
 
 We welcome contributions - simply fork the repository of this plugin, and then make a
-`pull request <https://help.github.com/articles/about-pull-requests/>`_ containing your contribution.
+`pull request <https://help.github.com/articles/about-pull-requests/>`__ containing your contribution.
 All contributers to this plugin will be listed as authors on the releases.
 
 We also encourage bug reports, suggestions for new features and enhancements, and even links to cool projects
