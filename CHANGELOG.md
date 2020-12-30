@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.0.post2 (2020-12-30)
+
+### Testing and Release Infrastructure
+
+ * Add build badge
+ * Use GitHub Actions for CI
+
 ## v1.0.0.post1 (2020-12-10)
 
 ### Testing and Release Infrastructure
