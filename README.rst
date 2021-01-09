@@ -10,6 +10,9 @@ PennyLane Braket plugin
 .. image:: https://img.shields.io/github/workflow/status/aws/amazon-braket-pennylane-plugin-python/Python%20package/main?logo=github
     :alt: Build Status
     :target: https://github.com/aws/amazon-braket-pennylane-plugin-python/actions?query=workflow%3A%22Python+package%22
+.. image:: https://codecov.io/gh/aws/amazon-braket-pennylane-plugin-python/branch/main/graph/badge.svg?token=VPPM8BJKW4
+    :alt: codecov
+    :target: https://codecov.io/gh/aws/amazon-braket-pennylane-plugin-python
 .. image:: https://img.shields.io/readthedocs/amazon-braket-pennylane-plugin-python.svg?logo=read-the-docs
     :alt: Documentation Status
     :target: https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/?badge=latest
