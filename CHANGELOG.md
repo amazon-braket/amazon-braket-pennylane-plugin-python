@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.0.post3 (2021-01-12)
+
+### Testing and Release Infrastructure
+
+ * Enable Codecov
+
 ## v1.0.0.post2 (2020-12-30)
 
 ### Testing and Release Infrastructure
