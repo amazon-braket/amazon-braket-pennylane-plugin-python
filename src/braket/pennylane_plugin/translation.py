@@ -14,40 +14,71 @@
 from functools import singledispatch
 from typing import FrozenSet, Type
 
+import numpy as np
 import pennylane as qml
 from braket.circuits import Gate, ResultType, gates, observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 _OPERATION_MAP = {
+    # pennylane operations
     "Hadamard": gates.H,
+    "Hadamard.inv": gates.H,
     "PauliX": gates.X,
+    "PauliX.inv": gates.X,
     "PauliY": gates.Y,
+    "PauliY.inv": gates.Y,
     "PauliZ": gates.Z,
-    "CNOT": gates.CNot,
-    "CY": gates.CY,
-    "CZ": gates.CZ,
+    "PauliZ.inv": gates.Z,
     "S": gates.S,
+    "S.inv": gates.Si,
     "T": gates.T,
-    "V": gates.V,
-    "PhaseShift": gates.PhaseShift,
-    "CPhaseShift": gates.CPhaseShift,
-    "CPhaseShift00": gates.CPhaseShift00,
-    "CPhaseShift01": gates.CPhaseShift01,
-    "CPhaseShift10": gates.CPhaseShift10,
-    "RX": gates.Rx,
-    "RY": gates.Ry,
-    "RZ": gates.Rz,
+    "T.inv": gates.Ti,
+    "SX": gates.V,
+    "SX.inv": gates.Vi,
+    "CNOT": gates.CNot,
+    "CNOT.inv": gates.CNot,
+    "CZ": gates.CZ,
+    "CZ.inv": gates.CZ,
+    "CY": gates.CY,
+    "CY.inv": gates.CY,
     "SWAP": gates.Swap,
+    "SWAP.inv": gates.Swap,
     "CSWAP": gates.CSwap,
-    "ISWAP": gates.ISwap,
-    "PSWAP": gates.PSwap,
-    "XY": gates.XY,
-    "XX": gates.XX,
-    "YY": gates.YY,
-    "ZZ": gates.ZZ,
+    "CSWAP.inv": gates.CSwap,
     "Toffoli": gates.CCNot,
+    "Toffoli.inv": gates.CCNot,
+    "RX": gates.Rx,
+    "RX.inv": gates.Rx,
+    "RY": gates.Ry,
+    "RY.inv": gates.Ry,
+    "RZ": gates.Rz,
+    "RZ.inv": gates.Rz,
+    "PhaseShift": gates.PhaseShift,
+    "PhaseShift.inv": gates.PhaseShift,
     "QubitUnitary": gates.Unitary,
+    "QubitUnitary.inv": gates.Unitary,
+    # plugin operations
+    "CPhaseShift": gates.CPhaseShift,
+    "CPhaseShift.inv": gates.CPhaseShift,
+    "CPhaseShift00": gates.CPhaseShift00,
+    "CPhaseShift00.inv": gates.CPhaseShift00,
+    "CPhaseShift01": gates.CPhaseShift01,
+    "CPhaseShift01.inv": gates.CPhaseShift01,
+    "CPhaseShift10": gates.CPhaseShift10,
+    "CPhaseShift10.inv": gates.CPhaseShift10,
+    "ISWAP": gates.ISwap,
+    "ISWAP.inv": gates.PSwap,
+    "PSWAP": gates.PSwap,
+    "PSWAP.inv": gates.PSwap,
+    "XY": gates.XY,
+    "XY.inv": gates.XY,
+    "XX": gates.XX,
+    "XX.inv": gates.XX,
+    "YY": gates.YY,
+    "YY.inv": gates.YY,
+    "ZZ": gates.ZZ,
+    "ZZ.inv": gates.ZZ,
 }
 
 
@@ -70,6 +101,57 @@ def translate_operation(operation: Operation) -> Type[Gate]:
         Type[Gate]: The `Gate` class corresponding to the given operation
     """
     return _OPERATION_MAP[operation.name]
+
+
+def translate_parameters(parameters, operation: Operation):
+    """Modifies the parameters of the gate, particularly to translate between
+    Pennylane and Braket inverse operations.
+
+    Args:
+        parameters (List[int]): The list of parameters for the given operation
+        operation (Operation): The Pennylane ``Operation`` to which the parameter list belongs
+
+    Returns:
+        List[int]: The translated list of parameters
+    """
+    if not operation.inverse:
+        return parameters
+
+    # these gates are inverted by flipping the sign of the angle
+    rotation_gates = [
+        "RX",
+        "RY",
+        "RZ",
+        "PhaseShift",
+        "CPhaseShift",
+        "CPhaseShift00",
+        "CPhaseShift01",
+        "CPhaseShift10",
+        "PSWAP",
+        "XY",
+        "XX",
+        "YY",
+        "ZZ",
+    ]
+
+    if operation.base_name in rotation_gates:
+        phi = parameters[0]
+        return [-phi]
+
+    # these gates are inverted by inverting the unitary matrix
+    matrix_gates = [
+        "QubitUnitary",
+    ]
+
+    if operation.base_name in matrix_gates:
+        U = np.asarray(parameters[0])
+        return [U.T.conj()]
+
+    # ISWAP gets inverted to PSWAP(3*pi/2)
+    if operation.base_name == "ISWAP":
+        return [3 * np.pi / 2]
+
+    return parameters
 
 
 def translate_result_type(observable: Observable) -> ResultType:

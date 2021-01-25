@@ -49,6 +49,7 @@ from pennylane.qnodes import QuantumFunctionError
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
+    translate_parameters,
     translate_result_type,
 )
 
@@ -93,6 +94,13 @@ class BraketQubitDevice(QubitDevice):
         super().reset()
         self._circuit = None
         self._task = None
+
+    @classmethod
+    def capabilities(cls):
+        """Add support for inverse"""
+        capabilities = super().capabilities().copy()
+        capabilities.update(supports_inverse_operations=True)
+        return capabilities
 
     @property
     def operations(self) -> FrozenSet[str]:
@@ -181,7 +189,10 @@ class BraketQubitDevice(QubitDevice):
                     f"Braket PennyLane plugin does not support operation {operation.name}."
                 )
 
-            params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
+            old_params = [
+                p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters
+            ]
+            params = translate_parameters(old_params, operation)
 
             ins = Instruction(op(*params), operation.wires.tolist())
             circuit.add_instruction(ins)

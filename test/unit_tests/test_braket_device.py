@@ -29,7 +29,6 @@ from pennylane.tape import QuantumTape
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import (
-    CY,
     ISWAP,
     PSWAP,
     XX,
@@ -42,7 +41,6 @@ from braket.pennylane_plugin import (
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
-    V,
 )
 
 SHOTS = 10000
@@ -111,32 +109,76 @@ testdata = [
     (qml.T, gates.T, [0], []),
     (qml.CNOT, gates.CNot, [0, 1], []),
     (qml.CZ, gates.CZ, [0, 1], []),
-    (qml.PhaseShift, gates.PhaseShift, [0], [np.pi]),
-    (qml.RX, gates.Rx, [0], [np.pi]),
-    (qml.RY, gates.Ry, [0], [np.pi]),
-    (qml.RZ, gates.Rz, [0], [np.pi]),
+    (qml.PhaseShift, gates.PhaseShift, [0], [anp.pi]),
+    (qml.RX, gates.Rx, [0], [anp.pi]),
+    (qml.RY, gates.Ry, [0], [anp.pi]),
+    (qml.RZ, gates.Rz, [0], [anp.pi]),
     (qml.SWAP, gates.Swap, [0, 1], []),
     (qml.CSWAP, gates.CSwap, [0, 1, 2], []),
     (qml.Toffoli, gates.CCNot, [0, 1, 2], []),
     (qml.QubitUnitary, gates.Unitary, [0], [np.array([[0, 1], [1, 0]])]),
-    (V, gates.V, [0], []),
-    (CY, gates.CY, [0, 1], []),
-    (CPhaseShift, gates.CPhaseShift, [0, 1], [np.pi]),
-    (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi]),
-    (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi]),
-    (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi]),
+    (qml.SX, gates.V, [0], []),
+    (qml.CY, gates.CY, [0, 1], []),
+    (CPhaseShift, gates.CPhaseShift, [0, 1], [anp.pi]),
+    (CPhaseShift00, gates.CPhaseShift00, [0, 1], [anp.pi]),
+    (CPhaseShift01, gates.CPhaseShift01, [0, 1], [anp.pi]),
+    (CPhaseShift10, gates.CPhaseShift10, [0, 1], [anp.pi]),
     (ISWAP, gates.ISwap, [0, 1], []),
-    (PSWAP, gates.PSwap, [0, 1], [np.pi]),
-    (XY, gates.XY, [0, 1], [np.pi]),
-    (XX, gates.XX, [0, 1], [np.pi]),
-    (YY, gates.YY, [0, 1], [np.pi]),
-    (ZZ, gates.ZZ, [0, 1], [np.pi]),
+    (PSWAP, gates.PSwap, [0, 1], [anp.pi]),
+    (XY, gates.XY, [0, 1], [anp.pi]),
+    (XX, gates.XX, [0, 1], [anp.pi]),
+    (YY, gates.YY, [0, 1], [anp.pi]),
+    (ZZ, gates.ZZ, [0, 1], [anp.pi]),
 ]
 
 testdata_inverses = [
-    (qml.S, gates.Si),
-    (qml.T, gates.Ti),
-    (V, gates.Vi),
+    (qml.Hadamard, gates.H, [], [], [0]),
+    (qml.PauliX, gates.X, [], [], [0]),
+    (qml.PauliY, gates.Y, [], [], [0]),
+    (qml.PauliZ, gates.Z, [], [], [0]),
+    (qml.Hadamard, gates.H, [], [], [0]),
+    (qml.S, gates.Si, [], [], [0]),
+    (qml.T, gates.Ti, [], [], [0]),
+    (qml.SX, gates.Vi, [], [], [0]),
+    (qml.CNOT, gates.CNot, [], [], [0, 1]),
+    (qml.CZ, gates.CZ, [], [], [0, 1]),
+    (qml.CY, gates.CY, [], [], [0, 1]),
+    (qml.SWAP, gates.Swap, [], [], [0, 1]),
+    (qml.CSWAP, gates.CSwap, [], [], [0, 1, 2]),
+    (qml.Toffoli, gates.CCNot, [], [], [0, 1, 2]),
+    (qml.RX, gates.Rx, [0.15], [-0.15], [0]),
+    (qml.RY, gates.Ry, [0.15], [-0.15], [0]),
+    (qml.RZ, gates.Rz, [0.15], [-0.15], [0]),
+    (qml.PhaseShift, gates.PhaseShift, [0.15], [-0.15], [0]),
+    (
+        qml.QubitUnitary,
+        gates.Unitary,
+        [
+            1
+            / anp.sqrt(2)
+            * np.array(
+                [[1, 0, 0, 1j], [0, 1j, 1, 0], [0, 1j, -1, 0], [1, 0, 0, -1j]], dtype=complex
+            )
+        ],
+        [
+            1
+            / anp.sqrt(2)
+            * np.array(
+                [[1, 0, 0, 1], [0, -1j, -1j, 0], [0, 1, -1, 0], [-1j, 0, 0, 1j]], dtype=complex
+            )
+        ],
+        [0, 1],
+    ),
+    (CPhaseShift, gates.CPhaseShift, [0.15], [-0.15], [0, 1]),
+    (CPhaseShift00, gates.CPhaseShift00, [0.15], [-0.15], [0, 1]),
+    (CPhaseShift01, gates.CPhaseShift01, [0.15], [-0.15], [0, 1]),
+    (CPhaseShift10, gates.CPhaseShift10, [0.15], [-0.15], [0, 1]),
+    (ISWAP, gates.PSwap, [], [3 * anp.pi / 2], [0, 1]),
+    (PSWAP, gates.PSwap, [0.15], [-0.15], [0, 1]),
+    (XY, gates.XY, [0.15], [-0.15], [0, 1]),
+    (XX, gates.XX, [0.15], [-0.15], [0, 1]),
+    (YY, gates.YY, [0.15], [-0.15], [0, 1]),
+    (ZZ, gates.ZZ, [0.15], [-0.15], [0, 1]),
 ]
 
 
@@ -159,16 +201,15 @@ def test_apply(pl_op, braket_gate, qubits, params):
     assert circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
 
 
-@pytest.mark.xfail
-@pytest.mark.parametrize("pl_op, braket_gate", testdata_inverses)
-def test_apply_inverse_gates(pl_op, braket_gate):
+@pytest.mark.parametrize("pl_op, braket_gate, params, inv_params, qubits", testdata_inverses)
+def test_apply_inverse_gates(pl_op, braket_gate, params, inv_params, qubits):
     """
     Tests that the correct Braket gate is applied for the inverse of each PennyLane operations
     where the inverse is defined.
     """
-    dev = _device(wires=1)
-    circuit = dev.apply([pl_op(wires=0).inv()])
-    assert circuit == Circuit().add_instruction(Instruction(braket_gate(), 0))
+    dev = _device(wires=len(qubits))
+    circuit = dev.apply([pl_op(*params, wires=qubits).inv()])
+    assert circuit == Circuit().add_instruction(Instruction(braket_gate(*inv_params), qubits))
 
 
 def test_apply_unused_qubits():

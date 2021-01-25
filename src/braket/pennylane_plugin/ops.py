@@ -31,7 +31,7 @@ Operations
 ----------
 
 .. autosummary::
-    V
+    SX
     CY
     CPhaseShift
     CPhaseShift00
@@ -50,70 +50,6 @@ Code details
 import numpy as np
 import pennylane as qml
 from pennylane.operation import Operation
-
-
-class V(Operation):
-    r""" V(wires)
-
-    Square root of the Pauli X (NOT) gate.
-
-    .. math:: \mathtt{V} = \frac{1}{2} \begin{bmatrix}
-            1 + i & 1 - i \\
-            1 - i & 1 + i
-        \end{bmatrix}.
-
-    **Details:**
-
-    * Number of wires: 1
-    * Number of parameters: 0
-
-    Args:
-        wires (int): the subsystem the gate acts on
-    """
-    num_params = 0
-    num_wires = 1
-    par_domain = None
-
-    @classmethod
-    def _matrix(cls, *params):
-        return np.array([[0.5 + 0.5j, 0.5 - 0.5j], [0.5 - 0.5j, 0.5 + 0.5j]], dtype=complex)
-
-
-class CY(Operation):
-    r""" CY(wires)
-
-    The controlled-Y operator.
-
-    .. math:: \mathtt{CY} = \begin{bmatrix}
-            1 & 0 & 0 & 0 \\
-            0 & 1 & 0 & 0 \\
-            0 & 0 & 0 & -i \\
-            0 & 0 & i & 0
-        \end{bmatrix}.
-
-    **Details:**
-
-    * Number of wires: 2
-    * Number of parameters: 0
-
-    Args:
-        wires (int): the subsystem the gate acts on
-    """
-    num_params = 0
-    num_wires = 2
-    par_domain = None
-
-    @classmethod
-    def _matrix(cls, *params):
-        return np.array(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, -1.0j],
-                [0.0, 0.0, +1.0j, 0.0],
-            ],
-            dtype=complex,
-        )
 
 
 class CPhaseShift(Operation):
