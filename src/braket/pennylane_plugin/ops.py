@@ -31,8 +31,6 @@ Operations
 ----------
 
 .. autosummary::
-    SX
-    CY
     CPhaseShift
     CPhaseShift00
     CPhaseShift01

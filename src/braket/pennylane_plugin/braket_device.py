@@ -49,7 +49,6 @@ from pennylane.qnodes import QuantumFunctionError
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
-    translate_parameters,
     translate_result_type,
 )
 
@@ -182,19 +181,13 @@ class BraketQubitDevice(QubitDevice):
 
         # Add operations to Braket Circuit object
         for operation in operations + rotations:
-            try:
-                op = translate_operation(operation)
-            except KeyError:
+            if operation.base_name not in supported_operations():
                 raise NotImplementedError(
                     f"Braket PennyLane plugin does not support operation {operation.name}."
                 )
-
-            old_params = [
-                p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters
-            ]
-            params = translate_parameters(old_params, operation)
-
-            ins = Instruction(op(*params), operation.wires.tolist())
+            params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
+            gate = translate_operation(operation, params)
+            ins = Instruction(gate, operation.wires.tolist())
             circuit.add_instruction(ins)
 
         unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}
