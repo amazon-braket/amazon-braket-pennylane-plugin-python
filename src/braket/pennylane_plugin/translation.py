@@ -194,21 +194,21 @@ def _(c_phase_shift: CPhaseShift, parameters):
 
 
 @translate_operation.register
-def _(c_phase_shift: CPhaseShift00, parameters):
+def _(c_phase_shift_00: CPhaseShift00, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift00(-phi) if c_phase_shift.inverse else gates.CPhaseShift00(phi)
+    return gates.CPhaseShift00(-phi) if c_phase_shift_00.inverse else gates.CPhaseShift00(phi)
 
 
 @translate_operation.register
-def _(c_phase_shift: CPhaseShift01, parameters):
+def _(c_phase_shift_01: CPhaseShift01, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift01(-phi) if c_phase_shift.inverse else gates.CPhaseShift01(phi)
+    return gates.CPhaseShift01(-phi) if c_phase_shift_01.inverse else gates.CPhaseShift01(phi)
 
 
 @translate_operation.register
-def _(c_phase_shift: CPhaseShift10, parameters):
+def _(c_phase_shift_10: CPhaseShift10, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift10(-phi) if c_phase_shift.inverse else gates.CPhaseShift10(phi)
+    return gates.CPhaseShift10(-phi) if c_phase_shift_10.inverse else gates.CPhaseShift10(phi)
 
 
 @translate_operation.register
