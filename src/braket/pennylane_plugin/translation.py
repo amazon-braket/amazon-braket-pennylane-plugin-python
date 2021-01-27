@@ -33,39 +33,6 @@ from braket.pennylane_plugin.ops import (
     CPhaseShift10,
 )
 
-_OPERATION_MAP = {
-    # pennylane operations
-    "Hadamard": gates.H,
-    "PauliX": gates.X,
-    "PauliY": gates.Y,
-    "PauliZ": gates.Z,
-    "S": gates.S,
-    "T": gates.T,
-    "SX": gates.V,
-    "CNOT": gates.CNot,
-    "CZ": gates.CZ,
-    "CY": gates.CY,
-    "SWAP": gates.Swap,
-    "CSWAP": gates.CSwap,
-    "Toffoli": gates.CCNot,
-    "RX": gates.Rx,
-    "RY": gates.Ry,
-    "RZ": gates.Rz,
-    "PhaseShift": gates.PhaseShift,
-    "QubitUnitary": gates.Unitary,
-    # plugin operations
-    "CPhaseShift": gates.CPhaseShift,
-    "CPhaseShift00": gates.CPhaseShift00,
-    "CPhaseShift01": gates.CPhaseShift01,
-    "CPhaseShift10": gates.CPhaseShift10,
-    "ISWAP": gates.ISwap,
-    "PSWAP": gates.PSwap,
-    "XY": gates.XY,
-    "XX": gates.XX,
-    "YY": gates.YY,
-    "ZZ": gates.ZZ,
-}
-
 
 def supported_operations() -> FrozenSet[str]:
     """Returns the operations supported by the plugin.
@@ -73,7 +40,7 @@ def supported_operations() -> FrozenSet[str]:
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
-    return frozenset(_OPERATION_MAP.keys())
+    return frozenset(op.__name__ for op in translate_operation.registry)
 
 
 @singledispatch
