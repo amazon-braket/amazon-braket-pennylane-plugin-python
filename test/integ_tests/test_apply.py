@@ -37,7 +37,7 @@ np.random.seed(42)
 
 # list of all non-parametrized single-qubit gates,
 # along with the PennyLane operation name
-single_qubit = [qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.S, qml.T]
+single_qubit = [qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.S, qml.SX, qml.T]
 
 # List of all non-parametrized single-qubit gates with inverses.
 single_qubit_inverse = [qml.S, qml.T]
@@ -46,7 +46,7 @@ single_qubit_inverse = [qml.S, qml.T]
 single_qubit_param = [qml.PhaseShift, qml.RX, qml.RY, qml.RZ]
 
 # list of all non-parametrized two-qubit gates
-two_qubit = [qml.CNOT, qml.CZ, qml.SWAP, ISWAP]
+two_qubit = [qml.CNOT, qml.CY, qml.CZ, qml.SWAP, ISWAP]
 
 # list of all three-qubit gates
 three_qubit = [qml.CSWAP, qml.Toffoli]
