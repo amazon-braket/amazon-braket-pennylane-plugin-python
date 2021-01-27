@@ -35,12 +35,8 @@ np.random.seed(42)
 
 # =========================================================
 
-# list of all non-parametrized single-qubit gates,
-# along with the PennyLane operation name
+# list of all non-parametrized single-qubit gates
 single_qubit = [qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.S, qml.SX, qml.T]
-
-# List of all non-parametrized single-qubit gates with inverses.
-single_qubit_inverse = [qml.S, qml.T]
 
 # list of all parametrized single-qubit gates
 single_qubit_param = [qml.PhaseShift, qml.RX, qml.RY, qml.RZ]
@@ -90,29 +86,7 @@ class TestHardwareApply:
         """Test single-qubit gates without parameters"""
         dev = device(1)
         state = init_state(1)
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0])
-            op(wires=[0])
-            return qml.probs(wires=range(1))
-
-        assert np.allclose(circuit(), np.abs(op._matrix() @ state) ** 2, **tol)
-
-    @pytest.mark.xfail
-    @pytest.mark.parametrize("op", single_qubit_inverse)
-    def test_single_qubit_no_parameters_inverse(self, init_state, device, op, tol):
-        """Test inverses of single-qubit gates without parameters, where applicable"""
-        dev = device(1)
-        state = init_state(1)
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0])
-            op(wires=[0]).inv()
-            return qml.probs(wires=range(1))
-
-        assert np.allclose(circuit(), np.abs(op._matrix().H @ state) ** 2, **tol)
+        TestHardwareApply.assert_op_and_inverse(op, dev, state, [0], tol, [])
 
     @pytest.mark.parametrize("theta", [0.5432, -0.232])
     @pytest.mark.parametrize("op", single_qubit_param)
@@ -120,28 +94,14 @@ class TestHardwareApply:
         """Test parametrized single-qubit gates"""
         dev = device(1)
         state = init_state(1)
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0])
-            op(theta, wires=[0])
-            return qml.probs(wires=range(1))
-
-        assert np.allclose(circuit(), np.abs(op._matrix(theta) @ state) ** 2, **tol)
+        TestHardwareApply.assert_op_and_inverse(op, dev, state, [0], tol, [theta])
 
     @pytest.mark.parametrize("op", two_qubit)
     def test_two_qubit_no_parameters(self, init_state, device, op, tol):
         """Test two qubit gates with no parameters"""
         dev = device(2)
         state = init_state(2)
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0, 1])
-            op(wires=[0, 1])
-            return qml.probs(wires=range(2))
-
-        assert np.allclose(circuit(), np.abs(op._matrix() @ state) ** 2, **tol)
+        TestHardwareApply.assert_op_and_inverse(op, dev, state, [0, 1], tol, [])
 
     @pytest.mark.parametrize("theta", [0.5432, -0.232])
     @pytest.mark.parametrize("op", two_qubit_param)
@@ -149,31 +109,15 @@ class TestHardwareApply:
         """Test PauliX application"""
         dev = device(2)
         state = init_state(2)
-
         dev.pre_measure()
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0, 1])
-            op(theta, wires=[0, 1])
-            return qml.probs(wires=range(2))
-
-        assert np.allclose(circuit(), np.abs(op._matrix(theta) @ state) ** 2, **tol)
+        TestHardwareApply.assert_op_and_inverse(op, dev, state, [0, 1], tol, [theta])
 
     @pytest.mark.parametrize("op", three_qubit)
     def test_three_qubit_no_parameters(self, init_state, device, op, tol):
         dev = device(3)
         state = init_state(3)
-
         dev.pre_measure()
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0, 1, 2])
-            op(wires=[0, 1, 2])
-            return qml.probs(wires=range(3))
-
-        assert np.allclose(circuit(), np.abs(op._matrix() @ state) ** 2, **tol)
+        TestHardwareApply.assert_op_and_inverse(op, dev, state, [0, 1, 2], tol, [])
 
     @pytest.mark.parametrize("mat", [U, U2])
     def test_qubit_unitary(self, init_state, device, mat, tol):
@@ -181,14 +125,7 @@ class TestHardwareApply:
         dev = device(N)
         state = init_state(N)
         wires = list(range(N))
-
-        @qml.qnode(dev)
-        def circuit():
-            qml.QubitStateVector.decomposition(state, wires=wires)
-            qml.QubitUnitary(mat, wires=wires)
-            return qml.probs(wires=wires)
-
-        assert np.allclose(circuit(), np.abs(mat @ state) ** 2, **tol)
+        TestHardwareApply.assert_op_and_inverse(qml.QubitUnitary, dev, state, wires, tol, [mat])
 
     def test_rotation(self, init_state, device, tol):
         """Test three axis rotation gate"""
@@ -199,12 +136,22 @@ class TestHardwareApply:
         b = 1.3432
         c = -0.654
 
+        TestHardwareApply.assert_op_and_inverse(qml.Rot, dev, state, [0], tol, [a, b, c])
+
+    @staticmethod
+    def assert_op_and_inverse(op, dev, state, wires, tol, op_args):
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0])
-            qml.Rot(a, b, c, wires=[0])
-            return qml.probs(wires=range(1))
+            qml.QubitStateVector.decomposition(state, wires=wires)
+            op(*op_args, wires=wires)
+            return qml.probs(wires=wires)
 
-        assert np.allclose(
-            circuit(), np.abs(qml.Rot(a, b, c, wires=[0]).matrix @ state) ** 2, **tol
-        )
+        assert np.allclose(circuit(), np.abs(op._matrix(*op_args) @ state) ** 2, **tol)
+
+        @qml.qnode(dev)
+        def circuit_inv():
+            qml.QubitStateVector.decomposition(state, wires=wires)
+            op(*op_args, wires=wires).inv()
+            return qml.probs(wires=wires)
+
+        assert np.allclose(circuit_inv(), np.abs(op._matrix(*op_args).conj().T @ state) ** 2, **tol)

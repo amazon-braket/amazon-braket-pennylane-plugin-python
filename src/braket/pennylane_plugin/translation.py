@@ -64,22 +64,22 @@ def _translate_operation(operation: Operation, _parameters) -> Gate:
 
 
 @_translate_operation.register
-def _(_h: qml.Hadamard, _parameters):
+def _(h: qml.Hadamard, _parameters):
     return gates.H()
 
 
 @_translate_operation.register
-def _(_x: qml.PauliX, _parameters):
+def _(x: qml.PauliX, _parameters):
     return gates.X()
 
 
 @_translate_operation.register
-def _(_y: qml.PauliY, _parameters):
+def _(y: qml.PauliY, _parameters):
     return gates.Y()
 
 
 @_translate_operation.register
-def _(_z: qml.PauliZ, _parameters):
+def _(z: qml.PauliZ, _parameters):
     return gates.Z()
 
 
@@ -89,42 +89,42 @@ def _(s: qml.S, _parameters):
 
 
 @_translate_operation.register
-def _(t: qml.T, _parameters):
-    return gates.Ti() if t.inverse else gates.T()
-
-
-@_translate_operation.register
 def _(sx: qml.SX, _parameters):
     return gates.Vi() if sx.inverse else gates.V()
 
 
 @_translate_operation.register
-def _(_cnot: qml.CNOT, _parameters):
+def _(t: qml.T, _parameters):
+    return gates.Ti() if t.inverse else gates.T()
+
+
+@_translate_operation.register
+def _(cnot: qml.CNOT, _parameters):
     return gates.CNot()
 
 
 @_translate_operation.register
-def _(_cz: qml.CZ, _parameters):
-    return gates.CZ()
-
-
-@_translate_operation.register
-def _(_cy: qml.CY, _parameters):
+def _(cy: qml.CY, _parameters):
     return gates.CY()
 
 
 @_translate_operation.register
-def _(_swap: qml.SWAP, _parameters):
+def _(cz: qml.CZ, _parameters):
+    return gates.CZ()
+
+
+@_translate_operation.register
+def _(swap: qml.SWAP, _parameters):
     return gates.Swap()
 
 
 @_translate_operation.register
-def _(_cswap: qml.CSWAP, _parameters):
+def _(cswap: qml.CSWAP, _parameters):
     return gates.CSwap()
 
 
 @_translate_operation.register
-def _(_toffoli: qml.Toffoli, _parameters):
+def _(toffoli: qml.Toffoli, _parameters):
     return gates.CCNot()
 
 
@@ -155,7 +155,7 @@ def _(phase_shift: qml.PhaseShift, parameters):
 @_translate_operation.register
 def _(qubit_unitary: qml.QubitUnitary, parameters):
     U = np.asarray(parameters[0])
-    return gates.Unitary(U.T.conj()) if qubit_unitary.inverse else gates.Unitary(U)
+    return gates.Unitary(U.conj().T) if qubit_unitary.inverse else gates.Unitary(U)
 
 
 @_translate_operation.register
