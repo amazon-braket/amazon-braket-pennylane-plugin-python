@@ -181,10 +181,6 @@ class BraketQubitDevice(QubitDevice):
 
         # Add operations to Braket Circuit object
         for operation in operations + rotations:
-            if operation.base_name not in supported_operations():
-                raise NotImplementedError(
-                    f"Braket PennyLane plugin does not support operation {operation.name}."
-                )
             params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
             gate = translate_operation(operation, params)
             ins = Instruction(gate, operation.wires.tolist())

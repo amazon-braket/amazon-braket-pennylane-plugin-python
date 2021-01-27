@@ -228,6 +228,7 @@ def test_apply_unsupported():
     dev = _device(wires=2)
     mock_op = Mock()
     mock_op.name = "foo"
+    mock_op.parameters = []
 
     operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), mock_op]
     dev.apply(operations)

@@ -1,5 +1,5 @@
-PennyLane Braket plugin
-#######################
+Amazon Braket PennyLane Plugin
+##############################
 
 .. image:: https://img.shields.io/pypi/v/amazon-braket-pennylane-plugin.svg
     :alt: Latest Version
@@ -41,8 +41,8 @@ The plugin documentation can be found here: `<https://amazon-braket-pennylane-pl
 Features
 ========
 
-* Provides two devices to be used with PennyLane: ``braket.aws.qubit`` for running on the Braket service,
-  and ``braket.local.qubit`` for running on Braket's local simulator.
+* Provides two devices to be used with PennyLane: ``braket.aws.qubit`` for running on the Amazon Braket service,
+  and ``braket.local.qubit`` for running on the Amazon Braket SDK's local simulator.
 
 * Both devices support most core qubit PennyLane operations.
 
