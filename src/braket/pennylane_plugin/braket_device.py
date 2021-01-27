@@ -94,6 +94,13 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
 
+    @classmethod
+    def capabilities(cls):
+        """Add support for inverse"""
+        capabilities = super().capabilities().copy()
+        capabilities.update(supports_inverse_operations=True)
+        return capabilities
+
     @property
     def operations(self) -> FrozenSet[str]:
         """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
@@ -174,16 +181,13 @@ class BraketQubitDevice(QubitDevice):
 
         # Add operations to Braket Circuit object
         for operation in operations + rotations:
-            try:
-                op = translate_operation(operation)
-            except KeyError:
+            if operation.base_name not in supported_operations():
                 raise NotImplementedError(
                     f"Braket PennyLane plugin does not support operation {operation.name}."
                 )
-
             params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
-
-            ins = Instruction(op(*params), operation.wires.tolist())
+            gate = translate_operation(operation, params)
+            ins = Instruction(gate, operation.wires.tolist())
             circuit.add_instruction(ins)
 
         unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}

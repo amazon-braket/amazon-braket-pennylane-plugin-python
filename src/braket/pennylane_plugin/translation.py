@@ -12,43 +12,26 @@
 # language governing permissions and limitations under the License.
 
 from functools import singledispatch
-from typing import FrozenSet, Type
+from typing import FrozenSet
 
+import numpy as np
 import pennylane as qml
 from braket.circuits import Gate, ResultType, gates, observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
-_OPERATION_MAP = {
-    "Hadamard": gates.H,
-    "PauliX": gates.X,
-    "PauliY": gates.Y,
-    "PauliZ": gates.Z,
-    "CNOT": gates.CNot,
-    "CY": gates.CY,
-    "CZ": gates.CZ,
-    "S": gates.S,
-    "T": gates.T,
-    "V": gates.V,
-    "PhaseShift": gates.PhaseShift,
-    "CPhaseShift": gates.CPhaseShift,
-    "CPhaseShift00": gates.CPhaseShift00,
-    "CPhaseShift01": gates.CPhaseShift01,
-    "CPhaseShift10": gates.CPhaseShift10,
-    "RX": gates.Rx,
-    "RY": gates.Ry,
-    "RZ": gates.Rz,
-    "SWAP": gates.Swap,
-    "CSWAP": gates.CSwap,
-    "ISWAP": gates.ISwap,
-    "PSWAP": gates.PSwap,
-    "XY": gates.XY,
-    "XX": gates.XX,
-    "YY": gates.YY,
-    "ZZ": gates.ZZ,
-    "Toffoli": gates.CCNot,
-    "QubitUnitary": gates.Unitary,
-}
+from braket.pennylane_plugin.ops import (
+    ISWAP,
+    PSWAP,
+    XX,
+    XY,
+    YY,
+    ZZ,
+    CPhaseShift,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+)
 
 
 def supported_operations() -> FrozenSet[str]:
@@ -57,19 +40,181 @@ def supported_operations() -> FrozenSet[str]:
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
-    return frozenset(_OPERATION_MAP.keys())
+    return frozenset(op.__name__ for op in _translate_operation.registry) - {"object"}
 
 
-def translate_operation(operation: Operation) -> Type[Gate]:
-    """Translates a PennyLane ``Operation`` into the corresponding Braket gate.
+def translate_operation(operation: Operation, parameters) -> Gate:
+    """Translates a PennyLane ``Operation`` into the corresponding Braket ``Gate``.
 
     Args:
-        operation (Operation): The Pennylane ``Operation`` to translate
+        operation (Operation): The PennyLane ``Operation`` to translate
+        parameters: The parameters of the operation
 
     Returns:
-        Type[Gate]: The `Gate` class corresponding to the given operation
+        Gate: The Braket gate corresponding to the given operation
     """
-    return _OPERATION_MAP[operation.name]
+    return _translate_operation(operation, parameters)
+
+
+@singledispatch
+def _translate_operation(operation: Operation, _parameters) -> Gate:
+    raise NotImplementedError(
+        f"Braket PennyLane plugin does not support operation {operation.name}."
+    )
+
+
+@_translate_operation.register
+def _(_h: qml.Hadamard, _parameters):
+    return gates.H()
+
+
+@_translate_operation.register
+def _(_x: qml.PauliX, _parameters):
+    return gates.X()
+
+
+@_translate_operation.register
+def _(_y: qml.PauliY, _parameters):
+    return gates.Y()
+
+
+@_translate_operation.register
+def _(_z: qml.PauliZ, _parameters):
+    return gates.Z()
+
+
+@_translate_operation.register
+def _(s: qml.S, _parameters):
+    return gates.Si() if s.inverse else gates.S()
+
+
+@_translate_operation.register
+def _(t: qml.T, _parameters):
+    return gates.Ti() if t.inverse else gates.T()
+
+
+@_translate_operation.register
+def _(sx: qml.SX, _parameters):
+    return gates.Vi() if sx.inverse else gates.V()
+
+
+@_translate_operation.register
+def _(_cnot: qml.CNOT, _parameters):
+    return gates.CNot()
+
+
+@_translate_operation.register
+def _(_cz: qml.CZ, _parameters):
+    return gates.CZ()
+
+
+@_translate_operation.register
+def _(_cy: qml.CY, _parameters):
+    return gates.CY()
+
+
+@_translate_operation.register
+def _(_swap: qml.SWAP, _parameters):
+    return gates.Swap()
+
+
+@_translate_operation.register
+def _(_cswap: qml.CSWAP, _parameters):
+    return gates.CSwap()
+
+
+@_translate_operation.register
+def _(_toffoli: qml.Toffoli, _parameters):
+    return gates.CCNot()
+
+
+@_translate_operation.register
+def _(rx: qml.RX, parameters):
+    phi = parameters[0]
+    return gates.Rx(-phi) if rx.inverse else gates.Rx(phi)
+
+
+@_translate_operation.register
+def _(ry: qml.RY, parameters):
+    phi = parameters[0]
+    return gates.Ry(-phi) if ry.inverse else gates.Ry(phi)
+
+
+@_translate_operation.register
+def _(rz: qml.RZ, parameters):
+    phi = parameters[0]
+    return gates.Rz(-phi) if rz.inverse else gates.Rz(phi)
+
+
+@_translate_operation.register
+def _(phase_shift: qml.PhaseShift, parameters):
+    phi = parameters[0]
+    return gates.PhaseShift(-phi) if phase_shift.inverse else gates.PhaseShift(phi)
+
+
+@_translate_operation.register
+def _(qubit_unitary: qml.QubitUnitary, parameters):
+    U = np.asarray(parameters[0])
+    return gates.Unitary(U.T.conj()) if qubit_unitary.inverse else gates.Unitary(U)
+
+
+@_translate_operation.register
+def _(c_phase_shift: CPhaseShift, parameters):
+    phi = parameters[0]
+    return gates.CPhaseShift(-phi) if c_phase_shift.inverse else gates.CPhaseShift(phi)
+
+
+@_translate_operation.register
+def _(c_phase_shift_00: CPhaseShift00, parameters):
+    phi = parameters[0]
+    return gates.CPhaseShift00(-phi) if c_phase_shift_00.inverse else gates.CPhaseShift00(phi)
+
+
+@_translate_operation.register
+def _(c_phase_shift_01: CPhaseShift01, parameters):
+    phi = parameters[0]
+    return gates.CPhaseShift01(-phi) if c_phase_shift_01.inverse else gates.CPhaseShift01(phi)
+
+
+@_translate_operation.register
+def _(c_phase_shift_10: CPhaseShift10, parameters):
+    phi = parameters[0]
+    return gates.CPhaseShift10(-phi) if c_phase_shift_10.inverse else gates.CPhaseShift10(phi)
+
+
+@_translate_operation.register
+def _(iswap: ISWAP, _parameters):
+    return gates.PSwap(3 * np.pi / 2) if iswap.inverse else gates.ISwap()
+
+
+@_translate_operation.register
+def _(pswap: PSWAP, parameters):
+    phi = parameters[0]
+    return gates.PSwap(-phi) if pswap.inverse else gates.PSwap(phi)
+
+
+@_translate_operation.register
+def _(xy: XY, parameters):
+    phi = parameters[0]
+    return gates.XY(-phi) if xy.inverse else gates.XY(phi)
+
+
+@_translate_operation.register
+def _(xx: XX, parameters):
+    phi = parameters[0]
+    return gates.XX(-phi) if xx.inverse else gates.XX(phi)
+
+
+@_translate_operation.register
+def _(yy: YY, parameters):
+    phi = parameters[0]
+    return gates.YY(-phi) if yy.inverse else gates.YY(phi)
+
+
+@_translate_operation.register
+def _(zz: ZZ, parameters):
+    phi = parameters[0]
+    return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
 
 def translate_result_type(observable: Observable) -> ResultType:

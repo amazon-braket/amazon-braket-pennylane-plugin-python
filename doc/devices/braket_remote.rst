@@ -78,8 +78,6 @@ The PennyLane-Braket plugin provides the following framework-specific operations
 from :mod:`braket.pennylane_plugin.ops <.ops>`:
 
 .. autosummary::
-    braket.pennylane_plugin.V
-    braket.pennylane_plugin.CY
     braket.pennylane_plugin.CPhaseShift
     braket.pennylane_plugin.CPhaseShift00
     braket.pennylane_plugin.CPhaseShift01

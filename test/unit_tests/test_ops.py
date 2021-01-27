@@ -18,7 +18,6 @@ import pytest
 from braket.circuits import gates
 
 from braket.pennylane_plugin import (
-    CY,
     ISWAP,
     PSWAP,
     XX,
@@ -29,12 +28,9 @@ from braket.pennylane_plugin import (
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
-    V,
 )
 
 testdata = [
-    (V, gates.V, []),
-    (CY, gates.CY, []),
     (CPhaseShift, gates.CPhaseShift, [math.pi]),
     (CPhaseShift00, gates.CPhaseShift00, [math.pi]),
     (CPhaseShift01, gates.CPhaseShift01, [math.pi]),
