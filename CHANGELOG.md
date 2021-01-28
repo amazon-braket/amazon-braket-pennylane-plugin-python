@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.1 (2021-01-28)
+
+### Bug Fixes and Other Changes
+
+ * Add inverses to integ tests
+ * Merge pull request #53 from aws/inverse
+ * integ test fix
+ * small refactors
+
 ## v1.0.0.post3 (2021-01-12)
 
 ### Testing and Release Infrastructure
