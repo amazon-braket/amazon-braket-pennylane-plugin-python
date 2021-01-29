@@ -514,6 +514,22 @@ def test_invalid_device_type():
     _device(wires=2, device_type="foo", shots=None)
 
 
+def test_wires():
+    """Test if the apply method supports custom wire labels"""
+
+    wires = ["A", 0, "B", -1]
+    dev = _device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=0)
+
+    ops = [qml.RX(0.1, wires="A"), qml.CNOT(wires=[0, "B"]), qml.RY(0.3, wires=-1)]
+    target_wires = [[0], [1, 2], [3]]
+    circ = dev.apply(ops)
+
+    for op, targets in zip(circ.instructions, target_wires):
+        wires = op.target
+        for w, t in zip(wires, targets):
+            assert w == t
+
+
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties")
 @patch.object(AwsDevice, "refresh_metadata", return_value=None)
