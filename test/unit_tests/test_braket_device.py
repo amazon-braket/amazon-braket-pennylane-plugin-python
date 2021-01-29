@@ -26,8 +26,6 @@ from pennylane import QubitDevice
 from pennylane import numpy as np
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
-from pennylane.wires import Wires
-from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin import (
     ISWAP,
