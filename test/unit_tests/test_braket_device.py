@@ -237,7 +237,7 @@ def test_apply_unsupported():
 def test_apply_unwrap_tensor():
     """Test that apply() unwraps tensors from the PennyLane version of NumPy into standard NumPy
     arrays (or floats)"""
-    dev = _device(wires=0)
+    dev = _device(wires=1)
 
     a = anp.array(0.6)  # array
     b = np.array(0.5, requires_grad=True)  # tensor
