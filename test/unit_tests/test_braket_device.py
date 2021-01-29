@@ -27,6 +27,7 @@ from pennylane import numpy as np
 from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
 from pennylane.wires import Wires
+from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin import (
     ISWAP,
@@ -255,18 +256,14 @@ def test_execute(mock_create):
     mock_create.return_value = TASK
     dev = _device(wires=4, foo="bar")
 
-    circuit = qml.CircuitGraph(
-        [
-            qml.Hadamard(wires=0),
-            qml.CNOT(wires=[0, 1]),
-            qml.probs(wires=[0]),
-            qml.expval(qml.PauliX(1)),
-            qml.var(qml.PauliY(2)),
-            qml.sample(qml.PauliZ(3)),
-        ],
-        {},
-        wires=Wires([0, 1, 2, 3]),
-    )
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
     results = dev.execute(circuit)
 
     assert np.allclose(
@@ -351,18 +348,14 @@ def test_batch_execute_parallel(mock_run_batch):
     dev = _device(wires=4, foo="bar", parallel=True)
     assert dev.parallel is True
 
-    circuit = qml.CircuitGraph(
-        [
-            qml.Hadamard(wires=0),
-            qml.CNOT(wires=[0, 1]),
-            qml.probs(wires=[0]),
-            qml.expval(qml.PauliX(1)),
-            qml.var(qml.PauliY(2)),
-            qml.sample(qml.PauliZ(3)),
-        ],
-        {},
-        wires=Wires([0, 1, 2, 3]),
-    )
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
     circuits = [circuit, circuit]
     batch_results = dev.batch_execute(circuits)
     for results in batch_results:
@@ -448,16 +441,12 @@ def test_execute_all_samples(mock_create):
     mock_create.return_value = task
     dev = _device(wires=3)
 
-    circuit = qml.CircuitGraph(
-        [
-            qml.Hadamard(wires=0),
-            qml.CNOT(wires=[0, 1]),
-            qml.sample(qml.Hadamard(0) @ qml.Identity(1)),
-            qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2])),
-        ],
-        {},
-        wires=Wires([0, 1, 2]),
-    )
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.sample(qml.Hadamard(0) @ qml.Identity(1))
+        qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
+
     assert dev.execute(circuit).shape == (2, 4)
 
 
