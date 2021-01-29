@@ -33,8 +33,7 @@ Code details
 """
 
 # pylint: disable=invalid-name
-from typing import FrozenSet, List, Optional, Sequence, Union, Iterable
-from numbers import Number
+from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
