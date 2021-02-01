@@ -72,7 +72,7 @@ braket_results = [
 @pytest.mark.parametrize("return_type, braket_result", zip(pl_return_types, braket_results))
 def test_translate_result_type_observable(return_type, braket_result):
     """Tests if a PennyLane return type that involves an observable is successfully converted into a
-    Braket result"""
+    Braket result using translate_result_type"""
     obs = qml.Hadamard(0)
     obs.return_type = return_type
     braket_result_calculated = translate_result_type(obs)
@@ -82,10 +82,29 @@ def test_translate_result_type_observable(return_type, braket_result):
 
 def test_translate_result_type_probs():
     """Tests if a PennyLane probability return type is successfully converted into a Braket
-    result."""
+    result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
     braket_result_calculated = translate_result_type(mp)
 
     braket_result = Probability([0])
 
     assert braket_result == braket_result_calculated
+
+
+def test_translate_result_type_unsupported_return():
+    """Tests if a NotImplementedError is raised by translate_result_type for an unknown
+    return_type"""
+    obs = qml.Hadamard(0)
+    obs.return_type = None
+
+    with pytest.raises(NotImplementedError, match="Unsupported return type"):
+        translate_result_type(obs)
+
+
+def test_translate_result_type_unsupported_obs():
+    """Tests if a TypeError is raised by translate_result_type for an unknown observable"""
+    obs = qml.S(wires=0)
+    obs.return_type = None
+
+    with pytest.raises(TypeError, match="Unsupported observable"):
+        translate_result_type(obs)
