@@ -226,9 +226,13 @@ def translate_result_type(observable: Observable) -> ResultType:
     Returns:
         ResultType: The Braket result type corresponding to the given observable
     """
-    braket_observable = _translate_observable(observable)
     return_type = observable.return_type
     targets = observable.wires.tolist()
+
+    if return_type is ObservableReturnTypes.Probability:
+        return Probability(targets)
+
+    braket_observable = _translate_observable(observable)
 
     if return_type is ObservableReturnTypes.Expectation:
         return Expectation(braket_observable, targets)
@@ -236,8 +240,6 @@ def translate_result_type(observable: Observable) -> ResultType:
         return Variance(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Sample:
         return Sample(braket_observable, targets)
-    elif return_type is ObservableReturnTypes.Probability:
-        return Probability(targets)
     else:
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
