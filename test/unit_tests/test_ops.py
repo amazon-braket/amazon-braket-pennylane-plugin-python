@@ -14,14 +14,12 @@
 import math
 
 import numpy as np
+import pennylane as qml
 import pytest
 from braket.circuits import gates, observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
-import pennylane as qml
-from braket.pennylane_plugin.translation import translate_result_type
-
-from pennylane.tape.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
+from pennylane.tape.measure import MeasurementProcess
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import (
@@ -36,6 +34,7 @@ from braket.pennylane_plugin import (
     CPhaseShift01,
     CPhaseShift10,
 )
+from braket.pennylane_plugin.translation import translate_result_type
 
 testdata = [
     (CPhaseShift, gates.CPhaseShift, [math.pi]),
