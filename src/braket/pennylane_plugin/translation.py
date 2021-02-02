@@ -222,7 +222,8 @@ def translate_result_type(observable: Observable, targets: List[int]) -> ResultT
 
     Args:
         observable (Observable): The PennyLane ``Observable`` to translate
-        targets (List[int]): The target wires of the observable using a consecutive integer wire ordering
+        targets (List[int]): The target wires of the observable using a consecutive integer wire
+            ordering
 
     Returns:
         ResultType: The Braket result type corresponding to the given observable
