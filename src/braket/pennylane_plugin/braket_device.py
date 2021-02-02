@@ -33,7 +33,7 @@ Code details
 """
 
 # pylint: disable=invalid-name
-from typing import FrozenSet, List, Optional, Sequence, Union
+from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
@@ -61,7 +61,9 @@ class BraketQubitDevice(QubitDevice):
     r"""Abstract Amazon Braket qubit device for PennyLane.
 
     Args:
-        wires (int): the number of modes to initialize the device in.
+        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+            or iterable that contains unique labels for the subsystems as numbers
+            (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device (Device): The Amazon Braket device to use with PennyLane.
         shots (int): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to 0,
@@ -76,7 +78,7 @@ class BraketQubitDevice(QubitDevice):
 
     def __init__(
         self,
-        wires: int,
+        wires: Union[int, Iterable],
         device: Device,
         *,
         shots: int,
@@ -124,7 +126,8 @@ class BraketQubitDevice(QubitDevice):
             **run_kwargs,
         )
         for observable in circuit.observables:
-            braket_circuit.add_result_type(translate_result_type(observable))
+            dev_wires = self.map_wires(observable.wires).tolist()
+            braket_circuit.add_result_type(translate_result_type(observable, dev_wires))
         return braket_circuit
 
     def statistics(
@@ -183,7 +186,8 @@ class BraketQubitDevice(QubitDevice):
         for operation in operations + rotations:
             params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
             gate = translate_operation(operation, params)
-            ins = Instruction(gate, operation.wires.tolist())
+            dev_wires = self.map_wires(operation.wires).tolist()
+            ins = Instruction(gate, dev_wires)
             circuit.add_instruction(ins)
 
         unused = set(range(self.num_wires)) - {int(qubit) for qubit in circuit.qubits}
@@ -197,16 +201,18 @@ class BraketQubitDevice(QubitDevice):
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
 
-    @staticmethod
-    def _get_statistic(braket_result, observable):
-        return braket_result.get_value_by_result_type(translate_result_type(observable))
+    def _get_statistic(self, braket_result, observable):
+        dev_wires = self.map_wires(observable.wires).tolist()
+        return braket_result.get_value_by_result_type(translate_result_type(observable, dev_wires))
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):
     r"""Amazon Braket AwsDevice qubit device for PennyLane.
 
     Args:
-        wires (int): the number of modes to initialize the device in.
+        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+            or iterable that contains unique labels for the subsystems as numbers
+            (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
             run circuits; The corresponding AwsDevice must support quantum
             circuits via JAQCD. You can get device ARNs using ``AwsDevice.get_devices``,
@@ -245,7 +251,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     def __init__(
         self,
-        wires: int,
+        wires: Union[int, Iterable],
         device_arn: str,
         s3_destination_folder: AwsSession.S3DestinationFolder,
         *,
@@ -333,7 +339,9 @@ class BraketLocalQubitDevice(BraketQubitDevice):
     r"""Amazon Braket LocalSimulator qubit device for PennyLane.
 
     Args:
-        wires (int): the number of modes to initialize the device in.
+        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+            or iterable that contains unique labels for the subsystems as numbers
+            (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         backend (Union[str, BraketSimulator]): The name of the simulator backend or
             the actual simulator instance to use for simulation. Defaults to the
             ``default`` simulator backend name.
@@ -349,7 +357,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
 
     def __init__(
         self,
-        wires: int,
+        wires: Union[int, Iterable],
         backend: Union[str, BraketSimulator] = "default",
         *,
         shots: int = 0,

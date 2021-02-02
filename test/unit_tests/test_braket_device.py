@@ -236,7 +236,7 @@ def test_apply_unsupported():
 def test_apply_unwrap_tensor():
     """Test that apply() unwraps tensors from the PennyLane version of NumPy into standard NumPy
     arrays (or floats)"""
-    dev = _device(wires=0)
+    dev = _device(wires=1)
 
     a = anp.array(0.6)  # array
     b = np.array(0.5, requires_grad=True)  # tensor
@@ -499,6 +499,22 @@ def test_qpu_0_shots():
 def test_invalid_device_type():
     """Tests that BraketDevice cannot be instantiated with an unknown device type"""
     _device(wires=2, device_type="foo", shots=None)
+
+
+def test_wires():
+    """Test if the apply method supports custom wire labels"""
+
+    wires = ["A", 0, "B", -1]
+    dev = _device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=0)
+
+    ops = [qml.RX(0.1, wires="A"), qml.CNOT(wires=[0, "B"]), qml.RY(0.3, wires=-1)]
+    target_wires = [[0], [1, 2], [3]]
+    circ = dev.apply(ops)
+
+    for op, targets in zip(circ.instructions, target_wires):
+        wires = op.target
+        for w, t in zip(wires, targets):
+            assert w == t
 
 
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)

@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 from functools import singledispatch
-from typing import FrozenSet
+from typing import FrozenSet, List
 
 import numpy as np
 import pennylane as qml
@@ -217,17 +217,18 @@ def _(zz: ZZ, parameters):
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
 
-def translate_result_type(observable: Observable) -> ResultType:
+def translate_result_type(observable: Observable, targets: List[int]) -> ResultType:
     """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
 
     Args:
         observable (Observable): The PennyLane ``Observable`` to translate
+        targets (List[int]): The target wires of the observable using a consecutive integer wire
+            ordering
 
     Returns:
         ResultType: The Braket result type corresponding to the given observable
     """
     return_type = observable.return_type
-    targets = observable.wires.tolist()
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
