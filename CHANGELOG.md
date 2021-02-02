@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.2 (2021-02-02)
+
+### Bug Fixes and Other Changes
+
+ * Improved wires support
+ * Fix probability returns
+
 ## v1.0.1 (2021-01-28)
 
 ### Bug Fixes and Other Changes
