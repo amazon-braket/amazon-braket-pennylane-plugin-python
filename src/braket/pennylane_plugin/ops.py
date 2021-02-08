@@ -233,7 +233,7 @@ class CPhaseShift10(Operation):
     grad_method = "A"
 
     @staticmethod
-    def decomposition(phi, wires):
+    def decomposition(phi: float, wires):
         return [
             qml.PauliX(wires[1]),
             qml.PhaseShift(phi / 2, wires=[wires[0]]),
@@ -366,10 +366,11 @@ class XY(Operation):
 
     @staticmethod
     def decomposition(phi, wires):
+        wires_reversed = list(reversed(wires))
         return [
-            qml.CNOT(wires=reversed(wires)),
+            qml.CNOT(wires=wires_reversed),
             qml.CRX(-phi, wires=wires),
-            qml.CNOT(wires=reversed(wires)),
+            qml.CNOT(wires=wires_reversed),
         ]
 
     @classmethod
