@@ -364,6 +364,14 @@ class XY(Operation):
     par_domain = "R"
     grad_method = "A"
 
+    @staticmethod
+    def decomposition(phi, wires):
+        return [
+            qml.CNOT(wires=reversed(wires)),
+            qml.CRX(-phi, wires=wires),
+            qml.CNOT(wires=reversed(wires)),
+        ]
+
     @classmethod
     def _matrix(cls, *params):
         phi = params[0]
@@ -410,6 +418,14 @@ class XX(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
+
+    @staticmethod
+    def decomposition(phi, wires):
+        return [
+            qml.CNOT(wires=wires),
+            qml.RX(phi, wires=[wires[0]]),
+            qml.CNOT(wires=wires),
+        ]
 
     @classmethod
     def _matrix(cls, *params):
@@ -458,6 +474,16 @@ class YY(Operation):
     par_domain = "R"
     grad_method = "A"
 
+    @staticmethod
+    def decomposition(phi, wires):
+        return [
+            qml.CZ(wires=wires),
+            qml.CNOT(wires=wires),
+            qml.RX(phi, wires=[wires[0]]),
+            qml.CNOT(wires=wires),
+            qml.CZ(wires=wires),
+        ]
+
     @classmethod
     def _matrix(cls, *params):
         phi = params[0]
@@ -504,6 +530,14 @@ class ZZ(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
+
+    @staticmethod
+    def decomposition(phi, wires):
+        return [
+            qml.CNOT(wires=wires),
+            qml.RZ(phi, wires=[wires[1]]),
+            qml.CNOT(wires=wires),
+        ]
 
     @classmethod
     def _matrix(cls, *params):
