@@ -233,7 +233,7 @@ class CPhaseShift10(Operation):
     grad_method = "A"
 
     @staticmethod
-    def decomposition(phi: float, wires):
+    def decomposition(phi, wires):
         return [
             qml.PauliX(wires[1]),
             qml.PhaseShift(phi / 2, wires=[wires[0]]),
