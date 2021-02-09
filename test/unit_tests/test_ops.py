@@ -30,21 +30,69 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
 )
 
-testdata = [
-    (CPhaseShift, gates.CPhaseShift, [math.pi]),
-    (CPhaseShift00, gates.CPhaseShift00, [math.pi]),
-    (CPhaseShift01, gates.CPhaseShift01, [math.pi]),
-    (CPhaseShift10, gates.CPhaseShift10, [math.pi]),
-    (ISWAP, gates.ISwap, []),
-    (PSWAP, gates.PSwap, [math.pi]),
-    (XY, gates.XY, [math.pi]),
-    (XX, gates.XX, [math.pi]),
-    (YY, gates.YY, [math.pi]),
-    (ZZ, gates.ZZ, [math.pi]),
+testdata_fixed = [(ISWAP, gates.ISwap)]
+
+testdata_parametrized = [
+    (CPhaseShift, gates.CPhaseShift),
+    (CPhaseShift00, gates.CPhaseShift00),
+    (CPhaseShift01, gates.CPhaseShift01),
+    (CPhaseShift10, gates.CPhaseShift10),
+    (PSWAP, gates.PSwap),
+    (XY, gates.XY),
+    (XX, gates.XX),
+    (YY, gates.YY),
+    (ZZ, gates.ZZ),
 ]
 
 
-@pytest.mark.parametrize("pl_op, braket_gate, params", testdata)
-def test_matrices(pl_op, braket_gate, params):
-    """Tests that the matrices of the custom operations are correct."""
-    assert np.allclose(pl_op._matrix(*params), braket_gate(*params).to_matrix())
+@pytest.mark.parametrize("pl_op, braket_gate", testdata_fixed)
+def test_fixed_ops(pl_op, braket_gate):
+    """Tests that the matrices and decompositions of fixed custom operations are correct."""
+    assert np.allclose(pl_op._matrix(), braket_gate().to_matrix())
+    _assert_decomposition(pl_op, [])
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", testdata_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_parametrized_ops(pl_op, braket_gate, angle):
+    """Tests that the matrices and decompositions of parametrized custom operations are correct."""
+    assert np.allclose(pl_op._matrix(angle), braket_gate(angle).to_matrix())
+    _assert_decomposition(pl_op, [angle])
+
+
+def _assert_decomposition(pl_op, params):
+    num_wires = pl_op.num_wires
+    dimension = 2 ** num_wires
+    num_indices = 2 * num_wires
+    wires = list(range(num_wires))
+
+    contraction_parameters = [
+        np.reshape(np.eye(dimension), [2] * num_indices),
+        list(range(num_indices)),
+    ]
+    index_substitutions = {i: i + num_wires for i in range(num_wires)}
+    next_index = num_indices
+    # Heterogeneous matrix chain multiplication using tensor contraction
+    for gate in reversed(pl_op.decomposition(*params, wires=wires)):
+        gate_wires = gate.wires.tolist()
+
+        # Upper indices, which will be traced out
+        contravariant = [index_substitutions[i] for i in gate_wires]
+
+        # Lower indices, which will replace the contracted indices in the matrix
+        covariant = list(range(next_index, next_index + len(gate_wires)))
+
+        indices = contravariant + covariant
+        # `gate.matrix` as type-(len(contravariant), len(covariant)) tensor
+        gate_tensor = np.reshape(gate.matrix, [2] * len(indices))
+
+        contraction_parameters += [gate_tensor, indices]
+        next_index += len(gate_wires)
+        index_substitutions.update({gate_wires[i]: covariant[i] for i in range(len(gate_wires))})
+
+    # Ensure matrix is in the correct order
+    new_indices = wires + [index_substitutions[i] for i in range(num_wires)]
+    contraction_parameters.append(new_indices)
+
+    actual_matrix = np.reshape(np.einsum(*contraction_parameters), [dimension, dimension])
+    assert np.allclose(actual_matrix, pl_op._matrix(*params))
