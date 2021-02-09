@@ -366,14 +366,13 @@ class XY(Operation):
 
     @staticmethod
     def decomposition(phi, wires):
-        # XX * YY
         return [
+            qml.Hadamard(wires=[wires[0]]),
             qml.CY(wires=wires),
-            qml.RY(-phi / 2, wires=[wires[0]]),
-            qml.S(wires=[wires[0]]),
-            qml.CZ(wires=wires),
-            qml.RX(-phi / 2, wires=[wires[0]]),
-            qml.CNOT(wires=wires),
+            qml.RY(phi / 2, wires=[wires[0]]),
+            qml.RX(-phi / 2, wires=[wires[1]]),
+            qml.CY(wires=wires),
+            qml.Hadamard(wires=[wires[0]]),
         ]
 
     @classmethod
