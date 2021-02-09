@@ -366,11 +366,14 @@ class XY(Operation):
 
     @staticmethod
     def decomposition(phi, wires):
-        wires_reversed = list(reversed(wires))
+        # XX * YY
         return [
-            qml.CNOT(wires=wires_reversed),
-            qml.CRX(-phi, wires=wires),
-            qml.CNOT(wires=wires_reversed),
+            qml.CY(wires=wires),
+            qml.RY(-phi / 2, wires=[wires[0]]),
+            qml.S(wires=[wires[0]]),
+            qml.CZ(wires=wires),
+            qml.RX(-phi / 2, wires=[wires[0]]),
+            qml.CNOT(wires=wires),
         ]
 
     @classmethod
