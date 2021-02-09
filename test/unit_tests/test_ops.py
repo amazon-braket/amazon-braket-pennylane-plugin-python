@@ -73,7 +73,7 @@ def _assert_decomposition(pl_op, params):
     index_substitutions = {i: i + num_wires for i in range(num_wires)}
     next_index = num_indices
     # Heterogeneous matrix chain multiplication using tensor contraction
-    for gate in pl_op.decomposition(*params, wires=wires):
+    for gate in reversed(pl_op.decomposition(*params, wires=wires)):
         gate_wires = gate.wires.tolist()
 
         # Upper indices, which will be traced out

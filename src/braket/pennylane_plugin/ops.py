@@ -478,11 +478,9 @@ class YY(Operation):
     @staticmethod
     def decomposition(phi, wires):
         return [
-            qml.CZ(wires=wires),
-            qml.CNOT(wires=wires),
-            qml.RX(phi, wires=[wires[0]]),
-            qml.CNOT(wires=wires),
-            qml.CZ(wires=wires),
+            qml.CY(wires=wires),
+            qml.RY(phi, wires=[wires[0]]),
+            qml.CY(wires=wires),
         ]
 
     @classmethod
