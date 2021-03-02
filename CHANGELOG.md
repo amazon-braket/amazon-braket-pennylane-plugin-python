@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.0 (2021-02-10)
+
+### Features
+
+ * Decompositions of XY and Ising gates
+
 ## v1.0.2 (2021-02-02)
 
 ### Bug Fixes and Other Changes
