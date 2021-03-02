@@ -38,7 +38,7 @@ jobs:
         flake8
     - name: Run unit tests
       run: |
-        coverage run -m pytest {posargs}
+        coverage run -m pytest
         coverage combine
         coverage report
         coverage xml
