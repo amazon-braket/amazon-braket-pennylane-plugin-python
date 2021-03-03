@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.0.post0 (2021-03-03)
+
+### Testing and Release Infrastructure
+
+ * Update tests for AwsDevice implementation
+
 ## v1.1.0 (2021-02-10)
 
 ### Features
