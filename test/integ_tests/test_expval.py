@@ -20,7 +20,7 @@ from pennylane import numpy as np
 np.random.seed(42)
 
 
-@pytest.mark.parametrize("shots", [0, 8192])
+@pytest.mark.parametrize("shots", [None, 8192])
 class TestExpval:
     """Test expectation values"""
 
@@ -164,7 +164,7 @@ class TestExpval:
         assert np.allclose(circuit(), expected, **tol)
 
     def test_nondiff_param(self, device):
-        """Test that the device can be successfully executed in tape-mode with the Autograd
+        """Test that the device can be successfully executed with the Autograd
         interface when some of the arguments are tensors with requires_grad=False"""
 
         dev1 = device(1)
@@ -173,31 +173,25 @@ class TestExpval:
         if not dev1.analytic:
             pytest.skip("This test is designed to work in analytic mode")
 
-        qml.enable_tape()
+        def circuit(x, y):
+            qml.RX(x[0], wires=0)
+            qml.Rot(*x[1:], wires=0)
+            qml.RY(y[0], wires=0)
+            return qml.expval(qml.PauliZ(0))
 
-        try:
+        x = np.array([0.1, 0.2, 0.3, 0.4], requires_grad=False)
+        y = np.array([0.5], requires_grad=True)
 
-            def circuit(x, y):
-                qml.RX(x[0], wires=0)
-                qml.Rot(*x[1:], wires=0)
-                qml.RY(y[0], wires=0)
-                return qml.expval(qml.PauliZ(0))
+        qnode1 = qml.QNode(circuit, dev1, interface="autograd")
+        qnode2 = qml.QNode(circuit, dev2, interface="autograd")
 
-            x = np.array([0.1, 0.2, 0.3, 0.4], requires_grad=False)
-            y = np.array([0.5], requires_grad=True)
+        r1 = qnode1(x, y)
+        r2 = qnode2(x, y)
 
-            qnode1 = qml.QNode(circuit, dev1, interface="autograd")
-            qnode2 = qml.QNode(circuit, dev2, interface="autograd")
-
-            r1 = qnode1(x, y)
-            r2 = qnode2(x, y)
-
-            assert np.allclose(r1, r2)
-        finally:
-            qml.disable_tape()
+        assert np.allclose(r1, r2)
 
 
-@pytest.mark.parametrize("shots", [0, 8192])
+@pytest.mark.parametrize("shots", [None, 8192])
 class TestTensorExpval:
     """Test tensor expectation values"""
 
