@@ -22,9 +22,8 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskB
 from braket.circuits import Circuit, Instruction, Observable, gates, result_types
 from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
-from pennylane import QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane import QuantumFunctionError
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin import (
@@ -456,21 +455,21 @@ def test_non_jaqcd_device(name_mock):
 def test_simulator_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=None)
-    assert dev.shots == None
+    assert dev.shots is None
     assert dev.analytic
 
 
 def test_local_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = BraketLocalQubitDevice(wires=2)
-    assert dev.shots == None
+    assert dev.shots is None
     assert dev.analytic
 
 
 def test_local_0_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = BraketLocalQubitDevice(wires=2, shots=None)
-    assert dev.shots == None
+    assert dev.shots is None
     assert dev.analytic
 
 

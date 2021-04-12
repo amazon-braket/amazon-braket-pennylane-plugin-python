@@ -14,8 +14,8 @@ import pennylane as qml
 import pytest
 from braket.circuits import observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
-from pennylane.operation import ObservableReturnTypes
 from pennylane.measure import MeasurementProcess
+from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin.translation import translate_result_type
