@@ -225,6 +225,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             and the device ARN points to a simulator, the device runs
             in analytic mode (calculations will be exact). Trying to use analytic mode
             with QPUs will fail.
+            Default: None
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -269,6 +270,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         if shots is None and device_type == AwsDeviceType.QPU:
             raise ValueError("QPU devices require the number of shots to be specified")
+
+        if not (device_type == AwsDeviceType.SIMULATOR or device_type == AwsDeviceType.QPU):
+            raise ValueError(f"Invalid device type: {device_type}")
 
         super().__init__(wires, device, shots=shots, **run_kwargs)
         self._s3_folder = s3_destination_folder

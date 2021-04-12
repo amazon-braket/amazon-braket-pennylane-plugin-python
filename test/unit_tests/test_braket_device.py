@@ -456,42 +456,28 @@ def test_non_jaqcd_device(name_mock):
 def test_simulator_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=None)
-    assert dev.shots == 1
-    assert dev.analytic
-
-
-def test_simulator_0_shots():
-    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
-    assert dev.shots == 1
+    assert dev.shots == None
     assert dev.analytic
 
 
 def test_local_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = BraketLocalQubitDevice(wires=2)
-    assert dev.shots == 1
+    assert dev.shots == None
     assert dev.analytic
 
 
 def test_local_0_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = BraketLocalQubitDevice(wires=2, shots=0)
-    assert dev.shots == 1
+    dev = BraketLocalQubitDevice(wires=2, shots=None)
+    assert dev.shots == None
     assert dev.analytic
 
 
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
-    dev = _aws_device(wires=2, shots=None)
-    assert dev.shots == AwsDevice.DEFAULT_SHOTS_QPU
-    assert not dev.analytic
-
-
-@pytest.mark.xfail(raises=ValueError)
-def test_qpu_0_shots():
-    """Tests that QPUs can not be instantiated with 0 shots"""
-    _aws_device(wires=2, shots=0)
+    with pytest.raises(ValueError, match="QPU devices require the number of shots to be specified"):
+        _aws_device(wires=2, shots=None)
 
 
 @pytest.mark.xfail(raises=ValueError)
@@ -504,7 +490,7 @@ def test_wires():
     """Test if the apply method supports custom wire labels"""
 
     wires = ["A", 0, "B", -1]
-    dev = _aws_device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    dev = _aws_device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=None)
 
     ops = [qml.RX(0.1, wires="A"), qml.CNOT(wires=[0, "B"]), qml.RY(0.3, wires=-1)]
     target_wires = [[0], [1, 2], [3]]
