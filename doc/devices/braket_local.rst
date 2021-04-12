@@ -42,7 +42,7 @@ array([0.97517033, 0.04904283])
 Device options
 ~~~~~~~~~~~~~~
 
-You can set ``shots`` to 0 to get exact results instead of results calculated from samples.
+You can set ``shots`` to ``None`` to get exact results instead of results calculated from samples.
 
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
