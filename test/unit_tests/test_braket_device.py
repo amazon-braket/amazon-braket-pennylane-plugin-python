@@ -24,7 +24,7 @@ from braket.device_schema import DeviceActionType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QubitDevice
 from pennylane import numpy as np
-from pennylane.qnodes import QuantumFunctionError
+from pennylane import QuantumFunctionError
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin import (
