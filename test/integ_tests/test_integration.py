@@ -29,7 +29,7 @@ class TestDeviceIntegration:
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
         assert dev.num_wires == 2
-        assert dev.shots == None
+        assert dev.shots is None
         assert dev.short_name == d
 
     def test_args_aws(self):
