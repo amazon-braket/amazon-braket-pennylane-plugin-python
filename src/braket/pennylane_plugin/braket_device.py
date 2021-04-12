@@ -66,9 +66,8 @@ class BraketQubitDevice(QubitDevice):
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device (Device): The Amazon Braket device to use with PennyLane.
         shots (int): Number of circuit evaluations or random samples included,
-            to estimate expectation values of observables. If this value is set to 0,
+            to estimate expectation values of observables. If this value is set to ``None``,
             the device runs in analytic mode (calculations will be exact).
-            The device's ``shots`` property is set to 1 and ignored.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
@@ -84,8 +83,7 @@ class BraketQubitDevice(QubitDevice):
         shots: int,
         **run_kwargs,
     ):
-        # `shots` cannot be set to 0, but is ignored anyways
-        super().__init__(wires, shots or 1, analytic=shots == 0)
+        super().__init__(wires, shots=shots)
         self._device = device
         self._circuit = None
         self._task = None
@@ -223,12 +221,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             results before timing out.
         poll_interval_seconds (float): The polling interval for results in seconds.
         shots (int): Number of circuit evaluations or random samples included,
-            to estimate expectation values of observables. If this value is set to 0
+            to estimate expectation values of observables. If this value is set to ``None``
             and the device ARN points to a simulator, the device runs
-            in analytic mode (calculations will be exact). The device's
-            ``shots`` property is set to 1 and ignored; trying to use 0 shots
+            in analytic mode (calculations will be exact). Trying to use analytic mode
             with QPUs will fail.
-            Defaults to 1000 for QPUs and 0 for simulators.
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -270,18 +266,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             raise ValueError(f"Device {device.name} does not support quantum circuits")
 
         device_type = device.type
-        if shots is not None:
-            if shots == 0 and device_type == AwsDeviceType.QPU:
-                raise ValueError("QPU devices do not support 0 shots")
-            num_shots = shots
-        elif device_type == AwsDeviceType.SIMULATOR:
-            num_shots = AwsDevice.DEFAULT_SHOTS_SIMULATOR
-        elif device_type == AwsDeviceType.QPU:
-            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
-        else:
-            raise ValueError(f"Invalid device type: {device_type}")
 
-        super().__init__(wires, device, shots=num_shots, **run_kwargs)
+        if shots is None and device_type == AwsDeviceType.QPU:
+            raise ValueError("QPU devices require the number of shots to be specified")
+
+        super().__init__(wires, device, shots=shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
@@ -346,10 +335,9 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             the actual simulator instance to use for simulation. Defaults to the
             ``default`` simulator backend name.
         shots (int): Number of circuit evaluations or random samples included,
-            to estimate expectation values of observables. If this value is set to 0,
-            then the device runs in analytic mode (calculations will be exact);
-            the device's ``shots`` property is set to 1 and ignored.
-            Default: 0
+            to estimate expectation values of observables. If this value is set to ``None``,
+            then the device runs in analytic mode (calculations will be exact).
+            Default: None
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket LocalSimulator for PennyLane"
@@ -360,7 +348,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         wires: Union[int, Iterable],
         backend: Union[str, BraketSimulator] = "default",
         *,
-        shots: int = 0,
+        shots: Optional[int] = None,
         **run_kwargs,
     ):
         device = LocalSimulator(backend)
