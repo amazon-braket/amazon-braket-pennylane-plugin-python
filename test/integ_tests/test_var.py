@@ -19,7 +19,7 @@ import pytest
 np.random.seed(42)
 
 
-@pytest.mark.parametrize("shots", [0, 8192])
+@pytest.mark.parametrize("shots", [None, 8192])
 class TestVar:
     """Tests for the variance"""
 
@@ -62,7 +62,7 @@ class TestVar:
         assert np.allclose(circuit(), expected, **tol)
 
 
-@pytest.mark.parametrize("shots", [0, 8192])
+@pytest.mark.parametrize("shots", [None, 8192])
 class TestTensorVar:
     """Tests for variance of tensor observables"""
 
