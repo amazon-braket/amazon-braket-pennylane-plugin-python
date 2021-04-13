@@ -466,8 +466,8 @@ def test_local_default_shots():
     assert dev.analytic
 
 
-def test_local_0_shots():
-    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+def test_local_None_shots():
+    """Tests that the simulator devices are analytic if ``shots`` is specified to be `None`."""
     dev = BraketLocalQubitDevice(wires=2, shots=None)
     assert dev.shots is None
     assert dev.analytic
