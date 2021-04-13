@@ -125,10 +125,7 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
 def test_batch_execution_of_gradient_tf(device, shots, mocker):
     """Test that the output of a parallelized execution of batch circuits to evaluate the
     gradient is correct in comparison to default.qubit when using the tf interface."""
-    try:
-        import tensorflow as tf
-    except ImportError:
-        pytest.skip("This test requires installation of TensorFlow")
+    tf = pytest.importorskip("tensorflow", minversion="2.4")
 
     qubits = 2
     layers = 2
