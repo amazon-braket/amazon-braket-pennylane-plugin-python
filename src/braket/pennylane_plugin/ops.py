@@ -25,7 +25,18 @@ These operations can be imported via
 
 .. code-block:: python
 
-    from braket.pennylane_braket.ops import CPHASE, ISWAP, PSWAP
+    from braket.pennylane_plugin import (
+        ISWAP,
+        PSWAP,
+        XX,
+        XY,
+        YY,
+        ZZ,
+        CPhaseShift,
+        CPhaseShift00,
+        CPhaseShift01,
+        CPhaseShift10,
+    )
 
 Operations
 ----------
@@ -45,9 +56,11 @@ Operations
 Code details
 ~~~~~~~~~~~~
 """
+
 import numpy as np
 import pennylane as qml
 from pennylane.operation import Operation
+from pennylane.ops.qubit import four_term_grad_recipe
 
 
 class CPhaseShift(Operation):
@@ -97,7 +110,7 @@ class CPhaseShift(Operation):
 
     @classmethod
     def _matrix(cls, *params):
-        return np.diag([1.0, 1.0, 1.0, np.exp(1.0j * params[0])])
+        return np.diag(np.array([1.0, 1.0, 1.0, np.exp(1.0j * params[0])], dtype=complex))
 
 
 class CPhaseShift00(Operation):
@@ -148,7 +161,7 @@ class CPhaseShift00(Operation):
 
     @classmethod
     def _matrix(cls, *params):
-        return np.diag([np.exp(1.0j * params[0]), 1.0, 1.0, 1.0])
+        return np.diag(np.array([np.exp(1.0j * params[0]), 1.0, 1.0, 1.0], dtype=complex))
 
 
 class CPhaseShift01(Operation):
@@ -197,7 +210,7 @@ class CPhaseShift01(Operation):
 
     @classmethod
     def _matrix(cls, *params):
-        return np.diag([1.0, np.exp(1.0j * params[0]), 1.0, 1.0])
+        return np.diag(np.array([1.0, np.exp(1.0j * params[0]), 1.0, 1.0], dtype=complex))
 
 
 class CPhaseShift10(Operation):
@@ -246,7 +259,7 @@ class CPhaseShift10(Operation):
 
     @classmethod
     def _matrix(cls, *params):
-        return np.diag([1.0, 1.0, np.exp(1.0j * params[0]), 1.0])
+        return np.diag(np.array([1.0, 1.0, np.exp(1.0j * params[0]), 1.0], dtype=complex))
 
 
 class ISWAP(Operation):
@@ -284,7 +297,7 @@ class ISWAP(Operation):
 
     @classmethod
     def _matrix(cls, *params):
-        return np.diag([1, 1j, 1j, 1])[[0, 2, 1, 3]]
+        return np.diag(np.array([1, 1j, 1j, 1], dtype=complex))[[0, 2, 1, 3]]
 
 
 class PSWAP(Operation):
@@ -330,7 +343,9 @@ class PSWAP(Operation):
     @classmethod
     def _matrix(cls, *params):
         phi = params[0]
-        return np.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]
+        return np.diag(np.array([1, np.exp(1j * phi), np.exp(1j * phi), 1], dtype=complex))[
+            [0, 2, 1, 3]
+        ]
 
 
 class XY(Operation):
@@ -349,11 +364,18 @@ class XY(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe:
+    * Gradient recipe: The XY operator satisfies a four-term parameter-shift rule
+      (see Appendix F, https://arxiv.org/abs/2104.05695):
 
-    .. math::
-        \frac{d}{d \phi} \mathtt{XY}(\phi)
-        = \frac{1}{2} \left[ \mathtt{XY}(\phi + \pi / 2) + \mathtt{XY}(\phi - \pi / 2) \right]
+      .. math::
+          \frac{d}{d\phi}f(XY(\phi))
+          = c_+ \left[ f(XY(\phi + a)) - f(XY(\phi - a)) \right]
+          - c_- \left[ f(XY(\phi + b)) - f(XY(\phi - b)) \right]
+
+      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      - :math:`a = \pi/2`
+      - :math:`b = 3\pi/2`
+      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
 
     Args:
         phi (float): the phase angle
@@ -363,6 +385,7 @@ class XY(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
+    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):
@@ -407,11 +430,18 @@ class XX(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe:
+    * Gradient recipe: The XX operator satisfies a four-term parameter-shift rule
+      (see Appendix F, https://arxiv.org/abs/2104.05695):
 
-    .. math::
-        \frac{d}{d \phi} \mathtt{XX}(\phi)
-        = \frac{1}{2} \left[ \mathtt{XX}(\phi + \pi / 2) + \mathtt{XX}(\phi - \pi / 2) \right]
+      .. math::
+          \frac{d}{d\phi}f(XX(\phi))
+          = c_+ \left[ f(XX(\phi + a)) - f(XX(\phi - a)) \right]
+          - c_- \left[ f(XX(\phi + b)) - f(XX(\phi - b)) \right]
+
+      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      - :math:`a = \pi/2`
+      - :math:`b = 3\pi/2`
+      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
 
     Args:
         phi (float): the phase angle
@@ -421,6 +451,7 @@ class XX(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
+    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):
@@ -462,11 +493,18 @@ class YY(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe:
+    * Gradient recipe: The YY operator satisfies a four-term parameter-shift rule
+      (see Appendix F, https://arxiv.org/abs/2104.05695):
 
-    .. math::
-        \frac{d}{d \phi} \mathtt{YY}(\phi)
-        = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) + \mathtt{YY}(\phi - \pi / 2) \right]
+      .. math::
+          \frac{d}{d\phi}f(YY(\phi))
+          = c_+ \left[ f(YY(\phi + a)) - f(YY(\phi - a)) \right]
+          - c_- \left[ f(YY(\phi + b)) - f(YY(\phi - b)) \right]
+
+      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      - :math:`a = \pi/2`
+      - :math:`b = 3\pi/2`
+      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
 
     Args:
         phi (float): the phase angle
@@ -476,6 +514,7 @@ class YY(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
+    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):
@@ -517,11 +556,18 @@ class ZZ(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe:
+    * Gradient recipe: The ZZ operator satisfies a four-term parameter-shift rule
+      (see Appendix F, https://arxiv.org/abs/2104.05695):
 
-    .. math::
-        \frac{d}{d \phi} \mathtt{ZZ}(\phi)
-        = \frac{1}{2} \left[ \mathtt{ZZ}(\phi + \pi / 2) + \mathtt{ZZ}(\phi - \pi / 2) \right]
+      .. math::
+          \frac{d}{d\phi}f(ZZ(\phi))
+          = c_+ \left[ f(ZZ(\phi + a)) - f(ZZ(\phi - a)) \right]
+          - c_- \left[ f(ZZ(\phi + b)) - f(ZZ(\phi - b)) \right]
+
+      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      - :math:`a = \pi/2`
+      - :math:`b = 3\pi/2`
+      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
 
     Args:
         phi (float): the phase angle
@@ -531,6 +577,7 @@ class ZZ(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
+    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):
@@ -545,4 +592,4 @@ class ZZ(Operation):
         phi = params[0]
         pos_phase = np.exp(1.0j * phi / 2)
         neg_phase = np.exp(-1.0j * phi / 2)
-        return np.diag([neg_phase, pos_phase, pos_phase, neg_phase])
+        return np.diag(np.array([neg_phase, pos_phase, pos_phase, neg_phase], dtype=complex))

@@ -12,7 +12,9 @@
 # language governing permissions and limitations under the License.
 
 import math
+from unittest.mock import patch
 
+import autograd
 import numpy as np
 import pytest
 from braket.circuits import gates
@@ -58,6 +60,19 @@ def test_parametrized_ops(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
     assert np.allclose(pl_op._matrix(angle), braket_gate(angle).to_matrix())
     _assert_decomposition(pl_op, [angle])
+
+
+@patch("braket.pennylane_plugin.ops.np", new=autograd.numpy)
+@pytest.mark.parametrize("pl_op, braket_gate", testdata_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_param_shift(pl_op, braket_gate, angle):
+    """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
+    op = pl_op(angle, wires=list(range(pl_op.num_wires)))
+    param_shifted = sum(
+        [shift[0] * pl_op._matrix(angle + shift[2]) for shift in op.get_parameter_shift(0)]
+    )
+    direct_calculation = autograd.deriv(pl_op._matrix)(angle)
+    assert np.allclose(param_shifted, direct_calculation)
 
 
 def _assert_decomposition(pl_op, params):
