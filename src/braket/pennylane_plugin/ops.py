@@ -372,7 +372,7 @@ class XY(Operation):
           = c_+ \left[ f(XY(\phi + a)) - f(XY(\phi - a)) \right]
           - c_- \left[ f(XY(\phi + b)) - f(XY(\phi - b)) \right]
 
-      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      where :math:`f` is an expectation value depending on :math:`XY(\phi)`, and
       - :math:`a = \pi/2`
       - :math:`b = 3\pi/2`
       - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
@@ -438,7 +438,7 @@ class XX(Operation):
           = c_+ \left[ f(XX(\phi + a)) - f(XX(\phi - a)) \right]
           - c_- \left[ f(XX(\phi + b)) - f(XX(\phi - b)) \right]
 
-      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      where :math:`f` is an expectation value depending on :math:`XX(\phi)`, and
       - :math:`a = \pi/2`
       - :math:`b = 3\pi/2`
       - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
@@ -501,7 +501,7 @@ class YY(Operation):
           = c_+ \left[ f(YY(\phi + a)) - f(YY(\phi - a)) \right]
           - c_- \left[ f(YY(\phi + b)) - f(YY(\phi - b)) \right]
 
-      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      where :math:`f` is an expectation value depending on :math:`YY(\phi)`, and
       - :math:`a = \pi/2`
       - :math:`b = 3\pi/2`
       - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
@@ -564,7 +564,7 @@ class ZZ(Operation):
           = c_+ \left[ f(ZZ(\phi + a)) - f(ZZ(\phi - a)) \right]
           - c_- \left[ f(ZZ(\phi + b)) - f(ZZ(\phi - b)) \right]
 
-      where :math:`f` is an expectation value depending on :math:`CR_x(\phi)`, and
+      where :math:`f` is an expectation value depending on :math:`ZZ(\phi)`, and
       - :math:`a = \pi/2`
       - :math:`b = 3\pi/2`
       - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
