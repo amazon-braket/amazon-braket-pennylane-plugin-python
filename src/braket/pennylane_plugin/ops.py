@@ -368,15 +368,15 @@ class XY(Operation):
       (see Appendix F, https://arxiv.org/abs/2104.05695):
 
       .. math::
-          \frac{d}{d\phi}f(XY(\phi))
+          \frac{d}{d \phi} f(XY(\phi))
           = c_+ \left[ f(XY(\phi + a)) - f(XY(\phi - a)) \right]
           - c_- \left[ f(XY(\phi + b)) - f(XY(\phi - b)) \right]
 
       where :math:`f` is an expectation value depending on :math:`XY(\phi)`, and
 
-      - :math:`a = \pi/2`
-      - :math:`b = 3\pi/2`
-      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
+      - :math:`a = \pi / 2`
+      - :math:`b = 3 \pi / 2`
+      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4 \sqrt{2}}`
 
     Args:
         phi (float): the phase angle
@@ -431,19 +431,11 @@ class XX(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe: The XX operator satisfies a four-term parameter-shift rule
-      (see Appendix F, https://arxiv.org/abs/2104.05695):
+    * Gradient recipe:
 
-      .. math::
-          \frac{d}{d\phi}f(XX(\phi))
-          = c_+ \left[ f(XX(\phi + a)) - f(XX(\phi - a)) \right]
-          - c_- \left[ f(XX(\phi + b)) - f(XX(\phi - b)) \right]
-
-      where :math:`f` is an expectation value depending on :math:`XX(\phi)`, and
-
-      - :math:`a = \pi/2`
-      - :math:`b = 3\pi/2`
-      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
+    .. math::
+        \frac{d}{d \phi} \mathtt{XX}(\phi)
+        = \frac{1}{2} \left[ \mathtt{XX}(\phi + \pi / 2) + \mathtt{XX}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
@@ -453,7 +445,6 @@ class XX(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
-    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):
@@ -495,19 +486,11 @@ class YY(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe: The YY operator satisfies a four-term parameter-shift rule
-      (see Appendix F, https://arxiv.org/abs/2104.05695):
+    * Gradient recipe:
 
-      .. math::
-          \frac{d}{d\phi}f(YY(\phi))
-          = c_+ \left[ f(YY(\phi + a)) - f(YY(\phi - a)) \right]
-          - c_- \left[ f(YY(\phi + b)) - f(YY(\phi - b)) \right]
-
-      where :math:`f` is an expectation value depending on :math:`YY(\phi)`, and
-
-      - :math:`a = \pi/2`
-      - :math:`b = 3\pi/2`
-      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
+    .. math::
+        \frac{d}{d \phi} \mathtt{YY}(\phi)
+        = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) + \mathtt{YY}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
@@ -517,7 +500,6 @@ class YY(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
-    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):
@@ -559,19 +541,11 @@ class ZZ(Operation):
 
     * Number of wires: 2
     * Number of parameters: 1
-    * Gradient recipe: The ZZ operator satisfies a four-term parameter-shift rule
-      (see Appendix F, https://arxiv.org/abs/2104.05695):
+    * Gradient recipe:
 
-      .. math::
-          \frac{d}{d\phi}f(ZZ(\phi))
-          = c_+ \left[ f(ZZ(\phi + a)) - f(ZZ(\phi - a)) \right]
-          - c_- \left[ f(ZZ(\phi + b)) - f(ZZ(\phi - b)) \right]
-
-      where :math:`f` is an expectation value depending on :math:`ZZ(\phi)`, and
-
-      - :math:`a = \pi/2`
-      - :math:`b = 3\pi/2`
-      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4\sqrt{2}}`
+    .. math::
+        \frac{d}{d \phi} \mathtt{ZZ}(\phi)
+        = \frac{1}{2} \left[ \mathtt{ZZ}(\phi + \pi / 2) + \mathtt{ZZ}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
@@ -581,7 +555,6 @@ class ZZ(Operation):
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
-    grad_recipe = four_term_grad_recipe
 
     @staticmethod
     def decomposition(phi, wires):

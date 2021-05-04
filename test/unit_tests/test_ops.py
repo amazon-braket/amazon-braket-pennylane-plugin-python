@@ -11,11 +11,13 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import itertools
 import math
 from unittest.mock import patch
 
-import autograd
+from autograd import deriv, numpy as anp
 import numpy as np
+import pennylane as qml
 import pytest
 from braket.circuits import gates
 
@@ -32,9 +34,9 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
 )
 
-testdata_fixed = [(ISWAP, gates.ISwap)]
+gates_2q_fixed = [(ISWAP, gates.ISwap)]
 
-testdata_parametrized = [
+gates_2q_parametrized = [
     (CPhaseShift, gates.CPhaseShift),
     (CPhaseShift00, gates.CPhaseShift00),
     (CPhaseShift01, gates.CPhaseShift01),
@@ -46,33 +48,49 @@ testdata_parametrized = [
     (ZZ, gates.ZZ),
 ]
 
+observables_1q = [
+    obs._matrix() for obs in[qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
+]
+observables_2q = [
+    np.kron(obs1, obs2) for obs1, obs2 in itertools.product(observables_1q, observables_1q)
+]
 
-@pytest.mark.parametrize("pl_op, braket_gate", testdata_fixed)
-def test_fixed_ops(pl_op, braket_gate):
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_fixed)
+def test_ops_fixed(pl_op, braket_gate):
     """Tests that the matrices and decompositions of fixed custom operations are correct."""
     assert np.allclose(pl_op._matrix(), braket_gate().to_matrix())
     _assert_decomposition(pl_op, [])
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", testdata_parametrized)
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
-def test_parametrized_ops(pl_op, braket_gate, angle):
+def test_ops_parametrized(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
     assert np.allclose(pl_op._matrix(angle), braket_gate(angle).to_matrix())
     _assert_decomposition(pl_op, [angle])
 
 
-@patch("braket.pennylane_plugin.ops.np", new=autograd.numpy)
-@pytest.mark.parametrize("pl_op, braket_gate", testdata_parametrized)
+@patch("braket.pennylane_plugin.ops.np", new=anp)
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
-def test_param_shift(pl_op, braket_gate, angle):
+@pytest.mark.parametrize("observable", observables_2q)
+def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
-    op = pl_op(angle, wires=list(range(pl_op.num_wires)))
-    param_shifted = sum(
-        [shift[0] * pl_op._matrix(angle + shift[2]) for shift in op.get_parameter_shift(0)]
-    )
-    direct_calculation = autograd.deriv(pl_op._matrix)(angle)
-    assert np.allclose(param_shifted, direct_calculation)
+    summands = []
+    for shift in pl_op(angle, wires=[0, 1]).get_parameter_shift(0):
+        shifted = pl_op._matrix(angle + shift[2])
+        summands.append(
+            shift[0] * np.matmul(np.matmul(np.transpose(np.conj(shifted)), observable), shifted)
+        )
+    from_shifts = sum(summands)
+
+    def conj_obs_gate(angle):
+        mat = pl_op._matrix(angle)
+        return anp.matmul(anp.matmul(anp.transpose(anp.conj(mat)), observable), mat)
+    direct_calculation = deriv(conj_obs_gate)(angle)
+
+    assert np.allclose(from_shifts, direct_calculation)
 
 
 def _assert_decomposition(pl_op, params):
