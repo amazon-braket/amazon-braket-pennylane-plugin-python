@@ -15,10 +15,11 @@ import itertools
 import math
 from unittest.mock import patch
 
-from autograd import deriv, numpy as anp
 import numpy as np
 import pennylane as qml
 import pytest
+from autograd import deriv
+from autograd import numpy as anp
 from braket.circuits import gates
 
 from braket.pennylane_plugin import (
@@ -49,7 +50,7 @@ gates_2q_parametrized = [
 ]
 
 observables_1q = [
-    obs._matrix() for obs in[qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
+    obs._matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
 ]
 observables_2q = [
     np.kron(obs1, obs2) for obs1, obs2 in itertools.product(observables_1q, observables_1q)
@@ -88,6 +89,7 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     def conj_obs_gate(angle):
         mat = pl_op._matrix(angle)
         return anp.matmul(anp.matmul(anp.transpose(anp.conj(mat)), observable), mat)
+
     direct_calculation = deriv(conj_obs_gate)(angle)
 
     assert np.allclose(from_shifts, direct_calculation)
