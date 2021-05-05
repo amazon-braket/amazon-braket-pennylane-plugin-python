@@ -266,14 +266,18 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             raise ValueError(f"Device {device.name} does not support quantum circuits")
 
         device_type = device.type
-
-        if shots is None and device_type == AwsDeviceType.QPU:
-            raise ValueError("QPU devices require the number of shots to be specified")
-
-        if not (device_type == AwsDeviceType.SIMULATOR or device_type == AwsDeviceType.QPU):
+        if shots is not None:
+            if shots == 0 and device_type == AwsDeviceType.QPU:
+                raise ValueError("QPU devices do not support 0 shots")
+            num_shots = shots
+        elif device_type == AwsDeviceType.SIMULATOR:
+            num_shots = AwsDevice.DEFAULT_SHOTS_SIMULATOR
+        elif device_type == AwsDeviceType.QPU:
+            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
+        else:
             raise ValueError(f"Invalid device type: {device_type}")
 
-        super().__init__(wires, device, shots=shots, **run_kwargs)
+        super().__init__(wires, device, shots=num_shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds

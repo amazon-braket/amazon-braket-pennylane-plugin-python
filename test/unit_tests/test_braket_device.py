@@ -507,8 +507,15 @@ def test_local_qubit_execute(mock_run, shots):
 
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
-    with pytest.raises(ValueError, match="QPU devices require the number of shots to be specified"):
-        _aws_device(wires=2, shots=None)
+    dev = _aws_device(wires=2, shots=None)
+    assert dev.shots == AwsDevice.DEFAULT_SHOTS_QPU
+    assert not dev.analytic
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_qpu_0_shots():
+    """Tests that QPUs can not be instantiated with 0 shots"""
+    _aws_device(wires=2, shots=0)
 
 
 @pytest.mark.xfail(raises=ValueError)
