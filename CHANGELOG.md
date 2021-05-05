@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.1 (2021-05-04)
+
+### Bug Fixes and Other Changes
+
+ * Correct parameter-shift rules
+
+## v1.1.0.post2 (2021-04-26)
+
+### Testing and Release Infrastructure
+
+ * Crank up coverage to 100%
+
 ## v1.1.0.post1 (2021-03-11)
 
 ### Testing and Release Infrastructure

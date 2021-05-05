@@ -21,6 +21,7 @@ import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
 from braket.circuits import Circuit, Instruction, Observable, gates, result_types
 from braket.device_schema import DeviceActionType
+from braket.devices import LocalSimulator
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
@@ -40,6 +41,7 @@ from braket.pennylane_plugin import (
     CPhaseShift01,
     CPhaseShift10,
 )
+from braket.pennylane_plugin.braket_device import BraketQubitDevice
 
 SHOTS = 10000
 
@@ -473,6 +475,29 @@ def test_local_None_shots():
     assert dev.analytic
 
 
+@patch.object(LocalSimulator, "run")
+@pytest.mark.parametrize("shots", [0, 1000])
+def test_local_qubit_execute(mock_run, shots):
+    """Tests that the local qubit device is run with the correct arguments"""
+    mock_run.return_value = TASK
+    dev = BraketLocalQubitDevice(wires=4, shots=shots, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    dev.execute(circuit)
+    mock_run.assert_called_with(
+        CIRCUIT,
+        shots=shots,
+        foo="bar",
+    )
+
+
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
     with pytest.raises(ValueError, match="QPU devices require the number of shots to be specified"):
@@ -499,6 +524,23 @@ def test_wires():
         wires = op.target
         for w, t in zip(wires, targets):
             assert w == t
+
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_run_task_unimplemented():
+    """Tests that an error is thrown when _run_task is not implemented"""
+    dev = DummyLocalQubitDevice(wires=2, device=None, shots=1000)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0, 1])
+
+    dev.execute(circuit)
+
+
+class DummyLocalQubitDevice(BraketQubitDevice):
+    short_name = "dummy"
 
 
 def _noop(*args, **kwargs):
