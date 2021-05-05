@@ -461,6 +461,13 @@ def test_simulator_default_shots():
     assert dev.analytic
 
 
+def test_simulator_0_shots():
+    """Tests that simulator devices are analytic if ``shots`` is zero"""
+    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    assert dev.shots is None
+    assert dev.analytic
+
+
 def test_local_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = BraketLocalQubitDevice(wires=2)
