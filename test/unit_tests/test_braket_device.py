@@ -468,6 +468,13 @@ def test_local_default_shots():
     assert dev.analytic
 
 
+def test_local_zero_shots():
+    """Test that the local simulator device is analytic if ``shots=0``"""
+    dev = BraketLocalQubitDevice(wires=2, shots=0)
+    assert dev.shots is None
+    assert dev.analytic
+
+
 def test_local_None_shots():
     """Tests that the simulator devices are analytic if ``shots`` is specified to be `None`."""
     dev = BraketLocalQubitDevice(wires=2, shots=None)

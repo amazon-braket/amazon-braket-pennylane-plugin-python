@@ -82,7 +82,7 @@ class BraketQubitDevice(QubitDevice):
         shots: int,
         **run_kwargs,
     ):
-        super().__init__(wires, shots=shots)
+        super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
         self._task = None
