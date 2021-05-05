@@ -66,6 +66,16 @@ You can set a timeout by using the ``poll_timeout_seconds`` argument;
 the device will retry circuits that do not complete within the timeout.
 A timeout of 30 to 60 seconds is recommended for circuits with fewer than 25 qubits.
 
+Device options
+~~~~~~~~~~~~~~
+
+The default value of ``shots`` is ``None``. In this case:
+
+- If the device ARN points to a simulator, the device runs in analytic mode (calculations will be
+  exact).
+- If the device ARN points to a QPU, a default nonzero number of shots will be fixed.
+
+Analytic-mode is not available for QPUs and setting ``shots=0`` will raise an error.
 
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
