@@ -222,8 +222,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         shots (int): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to ``None``
             and the device ARN points to a simulator, the device runs
-            in analytic mode (calculations will be exact). Trying to use analytic mode
-            with QPUs will fail.
+            in analytic mode (calculations will be exact). If this value is set to ``None`` and the
+            device ARN points to a QPU, a default nonzero number of shots will be used. Analytic
+            mode is not available on QPU and setting ``shots=0`` will raise an error.
             Default: None
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
