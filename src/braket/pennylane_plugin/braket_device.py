@@ -65,8 +65,8 @@ class BraketQubitDevice(QubitDevice):
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device (Device): The Amazon Braket device to use with PennyLane.
         shots (int): Number of circuit evaluations or random samples included,
-            to estimate expectation values of observables. If this value is set to ``None``,
-            the device runs in analytic mode (calculations will be exact).
+            to estimate expectation values of observables. If this value is set to ``None`` or
+            ``0``, the device runs in analytic mode (calculations will be exact).
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
@@ -338,8 +338,8 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             the actual simulator instance to use for simulation. Defaults to the
             ``default`` simulator backend name.
         shots (int): Number of circuit evaluations or random samples included,
-            to estimate expectation values of observables. If this value is set to ``None``,
-            then the device runs in analytic mode (calculations will be exact).
+            to estimate expectation values of observables. If this value is set to ``None`` or
+            ``0``, then the device runs in analytic mode (calculations will be exact).
             Default: None
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
