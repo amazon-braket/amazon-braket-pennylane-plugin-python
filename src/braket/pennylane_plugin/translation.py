@@ -17,7 +17,14 @@ from typing import FrozenSet, List
 import numpy as np
 import pennylane as qml
 from braket.circuits import Gate, ResultType, gates, noises, observables
-from braket.circuits.result_types import Expectation, Probability, Sample, Variance
+from braket.circuits.result_types import (
+    DensityMatrix,
+    Expectation,
+    Probability,
+    Sample,
+    StateVector,
+    Variance,
+)
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import (
@@ -260,13 +267,17 @@ def _(zz: ZZ, parameters):
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
 
-def translate_result_type(observable: Observable, targets: List[int]) -> ResultType:
+def translate_result_type(
+    observable: Observable, targets: List[int], supports_sv: bool, supports_dm: bool
+) -> ResultType:
     """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
 
     Args:
         observable (Observable): The PennyLane ``Observable`` to translate
         targets (List[int]): The target wires of the observable using a consecutive integer wire
             ordering
+        supports_sv: True if the Braket device supports the StateVector result type
+        supports_dm: True if the Braket device supports the DensityMatrix result type
 
     Returns:
         ResultType: The Braket result type corresponding to the given observable
@@ -275,6 +286,13 @@ def translate_result_type(observable: Observable, targets: List[int]) -> ResultT
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
+
+    if return_type is ObservableReturnTypes.State:
+        if not targets and supports_sv:
+            return StateVector()
+        if supports_dm:
+            return DensityMatrix(targets)
+        raise NotImplementedError(f"Unsupported return type: {return_type}")
 
     braket_observable = _translate_observable(observable)
 

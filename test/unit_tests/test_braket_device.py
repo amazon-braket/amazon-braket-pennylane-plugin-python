@@ -21,6 +21,7 @@ import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
 from braket.circuits import Circuit, Instruction, Observable, gates, noises, result_types
 from braket.device_schema import DeviceActionType
+from braket.device_schema.jaqcd_device_action_properties import JaqcdDeviceActionProperties
 from braket.devices import LocalSimulator
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QubitDevice
@@ -45,6 +46,19 @@ from braket.pennylane_plugin import (
 from braket.pennylane_plugin.braket_device import BraketQubitDevice
 
 SHOTS = 10000
+
+ACTION_PROPERTIES = JaqcdDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.jaqcd.program",
+            "version": ["1"],
+            "supportedOperations": ["x", "y"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0}
+            ],
+        }
+    )
+)
 
 RESULT = GateModelQuantumTaskResult.from_string(
     json.dumps(
@@ -583,7 +597,7 @@ def _noop(*args, **kwargs):
 def _aws_device(
     properties_mock, type_mock, wires, device_type=AwsDeviceType.QPU, shots=SHOTS, **kwargs
 ):
-    properties_mock.action = {DeviceActionType.JAQCD: "foo"}
+    properties_mock.action = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
     type_mock.return_value = device_type
     return BraketAwsQubitDevice(
         wires=wires,
@@ -598,7 +612,7 @@ def _aws_device(
 @patch.object(AwsDevice, "__init__", _noop)
 @patch.object(AwsDevice, "properties")
 def _bad_aws_device(properties_mock, wires, **kwargs):
-    properties_mock.action = {DeviceActionType.ANNEALING: "foo"}
+    properties_mock.action = {DeviceActionType.ANNEALING: ACTION_PROPERTIES}
     properties_mock.type = AwsDeviceType.QPU
     return BraketAwsQubitDevice(
         wires=wires,

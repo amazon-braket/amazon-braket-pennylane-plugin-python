@@ -33,6 +33,7 @@ Code details
 """
 
 # pylint: disable=invalid-name
+import warnings
 from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
@@ -43,7 +44,15 @@ from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import CircuitGraph, QubitDevice
 from pennylane import numpy as np
-from pennylane.operation import Expectation, Observable, Operation, Probability, Sample, Variance
+from pennylane.operation import (
+    Expectation,
+    Observable,
+    Operation,
+    Probability,
+    Sample,
+    State,
+    Variance,
+)
 from pennylane.qnodes import QuantumFunctionError
 
 from braket.pennylane_plugin.translation import (
@@ -54,7 +63,7 @@ from braket.pennylane_plugin.translation import (
 
 from ._version import __version__
 
-RETURN_TYPES = [Expectation, Variance, Sample, Probability]
+RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
 
 
 class BraketQubitDevice(QubitDevice):
@@ -90,6 +99,7 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
         self._run_kwargs = run_kwargs
+        self._check_supported_result_types()
 
     def reset(self):
         super().reset()
@@ -127,7 +137,9 @@ class BraketQubitDevice(QubitDevice):
         )
         for observable in circuit.observables:
             dev_wires = self.map_wires(observable.wires).tolist()
-            braket_circuit.add_result_type(translate_result_type(observable, dev_wires))
+            braket_circuit.add_result_type(
+                translate_result_type(observable, dev_wires, self._supports_sv, self._supports_dm)
+            )
         return braket_circuit
 
     def statistics(
@@ -198,12 +210,32 @@ class BraketQubitDevice(QubitDevice):
 
         return circuit
 
+    def _check_supported_result_types(self):
+        try:
+            supported_result_types = self._device.properties.action[
+                "braket.ir.jaqcd.program"
+            ].supportedResultTypes
+        except AttributeError:
+            warnings.warn("Device does not support any gate-based result types")
+            self._supports_sv = False
+            self._supports_dm = False
+            return
+
+        self._supports_sv = any(
+            result_type.name == "StateVector" for result_type in supported_result_types
+        )
+        self._supports_dm = any(
+            result_type.name == "DensityMatrix" for result_type in supported_result_types
+        )
+
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
 
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
-        return braket_result.get_value_by_result_type(translate_result_type(observable, dev_wires))
+        return braket_result.get_value_by_result_type(
+            translate_result_type(observable, dev_wires, self._supports_sv, self._supports_dm)
+        )
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):

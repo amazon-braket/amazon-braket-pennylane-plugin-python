@@ -57,6 +57,8 @@ devices = sv_devices + dm_devices
 # List of all device shortnames
 shortname_and_backends = [(d.short_name, backend) for (d, backend) in devices]
 
+# List of local devices
+local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_sv")]
 
 # ==========================================================
 # AWS resources
@@ -143,6 +145,17 @@ def sv_device(request, shots, extra_kwargs):
 
 @pytest.fixture(params=dm_devices)
 def dm_device(request, shots, extra_kwargs):
+    """Fixture to initialize and return a PennyLane device"""
+    device, backend = request.param
+
+    def _device(n):
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
+
+    return _device
+
+
+@pytest.fixture(params=local_devices)
+def local_device(request, shots, extra_kwargs):
     """Fixture to initialize and return a PennyLane device"""
     device, backend = request.param
 
