@@ -16,7 +16,7 @@ from typing import FrozenSet, List
 
 import numpy as np
 import pennylane as qml
-from braket.circuits import Gate, ResultType, gates, observables
+from braket.circuits import Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import Expectation, Probability, Sample, Variance
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
@@ -156,6 +156,49 @@ def _(phase_shift: qml.PhaseShift, parameters):
 def _(qubit_unitary: qml.QubitUnitary, parameters):
     U = np.asarray(parameters[0])
     return gates.Unitary(U.conj().T) if qubit_unitary.inverse else gates.Unitary(U)
+
+
+@_translate_operation.register
+def _(amplitude_damping: qml.AmplitudeDamping, parameters):
+    gamma = parameters[0]
+    return noises.AmplitudeDamping(gamma)
+
+
+@_translate_operation.register
+def _(generalized_amplitude_damping: qml.GeneralizedAmplitudeDamping, parameters):
+    gamma = parameters[0]
+    probability = parameters[1]
+    return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
+
+
+@_translate_operation.register
+def _(phase_damping: qml.PhaseDamping, parameters):
+    gamma = parameters[0]
+    return noises.PhaseDamping(gamma)
+
+
+@_translate_operation.register
+def _(depolarizing_channel: qml.DepolarizingChannel, parameters):
+    probability = parameters[0]
+    return noises.Depolarizing(probability)
+
+
+@_translate_operation.register
+def _(bit_flip: qml.BitFlip, parameters):
+    probability = parameters[0]
+    return noises.BitFlip(probability)
+
+
+@_translate_operation.register
+def _(phase_flip: qml.PhaseFlip, parameters):
+    probability = parameters[0]
+    return noises.PhaseFlip(probability)
+
+
+@_translate_operation.register
+def _(qubit_channel: qml.QubitChannel, parameters):
+    K_list = [np.asarray(matrix) for matrix in parameters[0]]
+    return noises.Kraus(K_list)
 
 
 @_translate_operation.register

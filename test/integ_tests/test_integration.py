@@ -16,7 +16,7 @@ import numpy as np
 import pennylane as qml
 import pkg_resources
 import pytest
-from conftest import shortnames
+from conftest import shortname_and_backends
 
 ENTRY_POINTS = {entry.name: entry for entry in pkg_resources.iter_entry_points("pennylane.plugins")}
 
@@ -24,13 +24,13 @@ ENTRY_POINTS = {entry.name: entry for entry in pkg_resources.iter_entry_points("
 class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
-    @pytest.mark.parametrize("d", shortnames)
+    @pytest.mark.parametrize("d", shortname_and_backends)
     def test_load_device(self, d, extra_kwargs):
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
         assert dev.num_wires == 2
         assert dev.shots == 1
-        assert dev.short_name == d
+        assert dev.short_name == d[0]
 
     def test_args_aws(self):
         """Test that BraketAwsDevice requires correct arguments"""
@@ -42,7 +42,7 @@ class TestDeviceIntegration:
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
             qml.device("braket.local.qubit")
 
-    @pytest.mark.parametrize("d", shortnames)
+    @pytest.mark.parametrize("d", shortname_and_backends)
     @pytest.mark.parametrize("shots", [0, 8192])
     def test_one_qubit_circuit(self, shots, d, tol, extra_kwargs):
         """Test that devices provide correct result for a simple circuit"""
@@ -63,6 +63,7 @@ class TestDeviceIntegration:
         assert np.allclose(circuit(a, b, c), np.cos(a) * np.sin(b), **tol)
 
     @staticmethod
-    def _device(device_name, wires, extra_kwargs):
+    def _device(shortname_and_backend, wires, extra_kwargs):
+        device_name, backend = shortname_and_backend
         device_class = ENTRY_POINTS[device_name].load()
-        return qml.device(device_name, wires=wires, **extra_kwargs(device_class))
+        return qml.device(device_name, wires=wires, **extra_kwargs(device_class, backend))

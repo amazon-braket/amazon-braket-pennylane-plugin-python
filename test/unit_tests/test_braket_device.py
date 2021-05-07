@@ -19,7 +19,7 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, Instruction, Observable, gates, result_types
+from braket.circuits import Circuit, Instruction, Observable, gates, noises, result_types
 from braket.device_schema import DeviceActionType
 from braket.devices import LocalSimulator
 from braket.tasks import GateModelQuantumTaskResult
@@ -130,6 +130,18 @@ testdata = [
     (XX, gates.XX, [0, 1], [anp.pi]),
     (YY, gates.YY, [0, 1], [anp.pi]),
     (ZZ, gates.ZZ, [0, 1], [anp.pi]),
+    (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
+    (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
+    (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1]),
+    (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1]),
+    (qml.BitFlip, noises.BitFlip, [0], [0.1]),
+    (qml.PhaseFlip, noises.PhaseFlip, [0], [0.1]),
+    (
+        qml.QubitChannel,
+        noises.Kraus,
+        [0],
+        [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
+    ),
 ]
 
 testdata_inverses = [
@@ -469,26 +481,29 @@ def test_simulator_0_shots():
     assert dev.analytic
 
 
-def test_local_default_shots():
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_default_shots(backend):
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = BraketLocalQubitDevice(wires=2)
+    dev = BraketLocalQubitDevice(wires=2, backend=backend)
     assert dev.shots == 1
     assert dev.analytic
 
 
-def test_local_0_shots():
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_0_shots(backend):
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = BraketLocalQubitDevice(wires=2, shots=0)
+    dev = BraketLocalQubitDevice(wires=2, backend=backend, shots=0)
     assert dev.shots == 1
     assert dev.analytic
 
 
 @patch.object(LocalSimulator, "run")
 @pytest.mark.parametrize("shots", [0, 1000])
-def test_local_qubit_execute(mock_run, shots):
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_qubit_execute(mock_run, shots, backend):
     """Tests that the local qubit device is run with the correct arguments"""
     mock_run.return_value = TASK
-    dev = BraketLocalQubitDevice(wires=4, shots=shots, foo="bar")
+    dev = BraketLocalQubitDevice(wires=4, backend=backend, shots=shots, foo="bar")
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
