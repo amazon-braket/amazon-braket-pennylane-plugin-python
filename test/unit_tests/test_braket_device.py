@@ -547,6 +547,14 @@ def test_wires():
             assert w == t
 
 
+def test_supported_ops_cached():
+    """Test that the supported operations are cached after one call."""
+    dev = _aws_device(wires=2)
+
+    assert dev._supported_ops is None
+
+    ops = dev.operations
+    assert dev._supported_ops == ops
 @pytest.mark.xfail(raises=NotImplementedError)
 def test_run_task_unimplemented():
     """Tests that an error is thrown when _run_task is not implemented"""
