@@ -23,9 +23,8 @@ from braket.circuits import Circuit, Instruction, Observable, gates, result_type
 from braket.device_schema import DeviceActionType
 from braket.devices import LocalSimulator
 from braket.tasks import GateModelQuantumTaskResult
-from pennylane import QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane.qnodes import QuantumFunctionError
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin import (
@@ -42,7 +41,7 @@ from braket.pennylane_plugin import (
     CPhaseShift01,
     CPhaseShift10,
 )
-from braket.pennylane_plugin.braket_device import BraketQubitDevice
+from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 
 SHOTS = 10000
 
@@ -457,29 +456,43 @@ def test_non_jaqcd_device(name_mock):
 
 def test_simulator_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=None)
-    assert dev.shots == 1
+    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=Shots.DEFAULT)
+    assert dev.shots is None
     assert dev.analytic
 
 
 def test_simulator_0_shots():
-    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    """Tests that simulator devices are analytic if ``shots`` is zero"""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
-    assert dev.shots == 1
+    assert dev.shots is None
+    assert dev.analytic
+
+
+def test_simulator_none_shots():
+    """Tests that simulator devices are analytic if ``shots`` is None"""
+    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=None)
+    assert dev.shots is None
     assert dev.analytic
 
 
 def test_local_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = BraketLocalQubitDevice(wires=2)
-    assert dev.shots == 1
+    assert dev.shots is None
     assert dev.analytic
 
 
-def test_local_0_shots():
-    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+def test_local_zero_shots():
+    """Test that the local simulator device is analytic if ``shots=0``"""
     dev = BraketLocalQubitDevice(wires=2, shots=0)
-    assert dev.shots == 1
+    assert dev.shots is None
+    assert dev.analytic
+
+
+def test_local_none_shots():
+    """Tests that the simulator devices are analytic if ``shots`` is specified to be `None`."""
+    dev = BraketLocalQubitDevice(wires=2, shots=None)
+    assert dev.shots is None
     assert dev.analytic
 
 
@@ -508,7 +521,7 @@ def test_local_qubit_execute(mock_run, shots):
 
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
-    dev = _aws_device(wires=2, shots=None)
+    dev = _aws_device(wires=2, shots=Shots.DEFAULT)
     assert dev.shots == AwsDevice.DEFAULT_SHOTS_QPU
     assert not dev.analytic
 
@@ -529,7 +542,7 @@ def test_wires():
     """Test if the apply method supports custom wire labels"""
 
     wires = ["A", 0, "B", -1]
-    dev = _aws_device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    dev = _aws_device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=None)
 
     ops = [qml.RX(0.1, wires="A"), qml.CNOT(wires=[0, "B"]), qml.RY(0.3, wires=-1)]
     target_wires = [[0], [1, 2], [3]]

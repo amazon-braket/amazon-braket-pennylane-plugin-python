@@ -20,11 +20,10 @@ from pennylane import numpy as np
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 
 
-@pytest.mark.parametrize("shots", [0])
+@pytest.mark.parametrize("shots", [None])
 def test_batch_execution_of_gradient(device, shots, mocker):
     """Test that the output of a parallelized execution of batch circuits to evaluate the
     gradient is correct in comparison to default.qubit."""
-    qml.enable_tape()
     qubits = 2
     layers = 2
 
@@ -64,10 +63,8 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     expected_circuits = qubits * layers * 3 * 2
     assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
-    qml.disable_tape()
 
-
-@pytest.mark.parametrize("shots", [0])
+@pytest.mark.parametrize("shots", [None])
 def test_batch_execution_of_gradient_torch(device, shots, mocker):
     """Test that the output of a parallelized execution of batch circuits to evaluate the
     gradient is correct in comparison to default.qubit when using the torch interface."""
@@ -76,7 +73,6 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     except ImportError:
         pytest.skip("This test requires installation of torch")
 
-    qml.enable_tape()
     qubits = 2
     layers = 2
 
@@ -124,19 +120,13 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     expected_circuits = qubits * layers * 3 * 2
     assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
-    qml.disable_tape()
 
-
-@pytest.mark.parametrize("shots", [0])
+@pytest.mark.parametrize("shots", [None])
 def test_batch_execution_of_gradient_tf(device, shots, mocker):
     """Test that the output of a parallelized execution of batch circuits to evaluate the
     gradient is correct in comparison to default.qubit when using the tf interface."""
-    try:
-        import tensorflow as tf
-    except ImportError:
-        pytest.skip("This test requires installation of TensorFlow")
+    tf = pytest.importorskip("tensorflow", minversion="2.4")
 
-    qml.enable_tape()
     qubits = 2
     layers = 2
 
@@ -180,5 +170,3 @@ def test_batch_execution_of_gradient_tf(device, shots, mocker):
 
     expected_circuits = qubits * layers * 3 * 2
     assert len(spy2.call_args_list[0][0][1]) == expected_circuits
-
-    qml.disable_tape()
