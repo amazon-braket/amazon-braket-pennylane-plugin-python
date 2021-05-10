@@ -32,9 +32,10 @@ Code details
 ~~~~~~~~~~~~
 """
 
+from enum import Enum, auto
+
 # pylint: disable=invalid-name
 from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
-from enum import Enum, auto
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
@@ -59,6 +60,7 @@ RETURN_TYPES = [Expectation, Variance, Sample, Probability]
 
 class Shots(Enum):
     """Used to specify the default number of shots in BraketAwsQubitDevice"""
+
     DEFAULT = auto()
 
 
@@ -348,7 +350,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         backend (Union[str, BraketSimulator]): The name of the simulator backend or
             the actual simulator instance to use for simulation. Defaults to the
             ``default`` simulator backend name.
-        shots (int): Number of circuit evaluations or random samples included,
+        shots (int or None): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to ``None`` or
             ``0``, then the device runs in analytic mode (calculations will be exact).
             Default: None
@@ -362,7 +364,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         wires: Union[int, Iterable],
         backend: Union[str, BraketSimulator] = "default",
         *,
-        shots: Optional[int] = None,
+        shots: Union[int, None] = None,
         **run_kwargs,
     ):
         device = LocalSimulator(backend)
