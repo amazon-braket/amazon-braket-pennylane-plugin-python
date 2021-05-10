@@ -34,6 +34,7 @@ Code details
 
 # pylint: disable=invalid-name
 from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
+from enum import Enum, auto
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
@@ -56,6 +57,11 @@ from ._version import __version__
 RETURN_TYPES = [Expectation, Variance, Sample, Probability]
 
 
+class Shots(Enum):
+    """Used to specify the default number of shots in BraketAwsQubitDevice"""
+    DEFAULT = auto()
+
+
 class BraketQubitDevice(QubitDevice):
     r"""Abstract Amazon Braket qubit device for PennyLane.
 
@@ -64,7 +70,7 @@ class BraketQubitDevice(QubitDevice):
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device (Device): The Amazon Braket device to use with PennyLane.
-        shots (int): Number of circuit evaluations or random samples included,
+        shots (int or None): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to ``None`` or
             ``0``, the device runs in analytic mode (calculations will be exact).
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
@@ -79,7 +85,7 @@ class BraketQubitDevice(QubitDevice):
         wires: Union[int, Iterable],
         device: Device,
         *,
-        shots: int,
+        shots: Union[int, None],
         **run_kwargs,
     ):
         super().__init__(wires, shots=shots or None)
@@ -252,7 +258,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         device_arn: str,
         s3_destination_folder: AwsSession.S3DestinationFolder,
         *,
-        shots: Optional[int] = None,
+        shots: Union[int, None, Shots] = Shots.DEFAULT,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         aws_session: Optional[AwsSession] = None,
@@ -267,16 +273,17 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             raise ValueError(f"Device {device.name} does not support quantum circuits")
 
         device_type = device.type
-        if shots is not None:
-            if shots == 0 and device_type == AwsDeviceType.QPU:
-                raise ValueError("QPU devices do not support 0 shots")
-            num_shots = shots
-        elif device_type == AwsDeviceType.SIMULATOR:
-            num_shots = AwsDevice.DEFAULT_SHOTS_SIMULATOR
-        elif device_type == AwsDeviceType.QPU:
-            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
-        else:
+        if device_type not in (AwsDeviceType.SIMULATOR, AwsDeviceType.QPU):
             raise ValueError(f"Invalid device type: {device_type}")
+
+        if shots == Shots.DEFAULT and device_type == AwsDeviceType.SIMULATOR:
+            num_shots = AwsDevice.DEFAULT_SHOTS_SIMULATOR
+        elif shots == Shots.DEFAULT and device_type == AwsDeviceType.QPU:
+            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
+        elif (shots is None or shots == 0) and device_type == AwsDeviceType.QPU:
+            raise ValueError("QPU devices do not support 0 shots")
+        else:
+            num_shots = shots
 
         super().__init__(wires, device, shots=num_shots, **run_kwargs)
         self._s3_folder = s3_destination_folder
