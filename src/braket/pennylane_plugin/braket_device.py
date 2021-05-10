@@ -225,13 +225,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         poll_timeout_seconds (float): Total time in seconds to wait for
             results before timing out.
         poll_interval_seconds (float): The polling interval for results in seconds.
-        shots (int): Number of circuit evaluations or random samples included,
-            to estimate expectation values of observables. If this value is set to ``None``
-            and the device ARN points to a simulator, the device runs
-            in analytic mode (calculations will be exact). If this value is set to ``None`` and the
-            device ARN points to a QPU, a default nonzero number of shots will be used. Analytic
-            mode is not available on QPU and setting ``shots=0`` will raise an error.
-            Default: None
+        shots (int, None or Shots.DEFAULT): Number of circuit evaluations or random samples
+            included, to estimate expectation values of observables. If set to Shots.DEFAULT,
+            uses the default number of shots specified by the remote device. If ``shots`` is set
+            to ``0`` or ``None``, the device runs in analytic mode (calculations will be exact).
+            Analytic mode is not available on QPU and hence an error will be raised.
+            Default: Shots.DEFAULT
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None

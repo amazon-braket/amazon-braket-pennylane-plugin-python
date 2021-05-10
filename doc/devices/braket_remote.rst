@@ -69,13 +69,12 @@ A timeout of 30 to 60 seconds is recommended for circuits with fewer than 25 qub
 Device options
 ~~~~~~~~~~~~~~
 
-The default value of ``shots`` is ``None``. In this case:
+The default value of the ``shots`` argument is ``Shots.DEFAULT``, resulting in the default number of
+shots specified by the remote device being used. For example, a simulator device may default to
+analytic mode while a QPU must pick a finite number of shots.
 
-- If the device ARN points to a simulator, the device runs in analytic mode (calculations will be
-  exact).
-- If the device ARN points to a QPU, a default nonzero number of shots will be fixed.
-
-Analytic-mode is not available for QPUs and setting ``shots=0`` will raise an error.
+Setting ``shots=0`` or ``shots=None`` will cause the device to run in analytic mode. If the device
+ARN points to a QPU, analytic mode is not available and an error will be raised.
 
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
