@@ -287,9 +287,9 @@ def translate_result_type(
         return Probability(targets)
 
     if return_type is ObservableReturnTypes.State:
-        if not targets and 'StateVector' in supported_result_types:
+        if not targets and "StateVector" in supported_result_types:
             return StateVector()
-        elif 'DensityMatrix' in supported_result_types:
+        elif "DensityMatrix" in supported_result_types:
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 

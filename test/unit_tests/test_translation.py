@@ -65,7 +65,9 @@ def test_translate_result_type_state_vector():
     """Tests if a PennyLane state vector return type is successfully converted into a Braket
     result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.State)
-    braket_result_calculated = translate_result_type(mp, [], frozenset(['StateVector', 'DensityMatrix']))
+    braket_result_calculated = translate_result_type(
+        mp, [], frozenset(["StateVector", "DensityMatrix"])
+    )
 
     braket_result = StateVector()
 
@@ -76,7 +78,7 @@ def test_translate_result_type_density_matrix():
     """Tests if a PennyLane density matrix return type is successfully converted into a Braket
     result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.State)
-    braket_result_calculated = translate_result_type(mp, [], frozenset(['DensityMatrix']))
+    braket_result_calculated = translate_result_type(mp, [], frozenset(["DensityMatrix"]))
 
     braket_result = DensityMatrix()
 
@@ -87,7 +89,9 @@ def test_translate_result_type_density_matrix_partial():
     """Tests if a PennyLane partial density matrix return type is successfully converted into a
     Braket result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.State, wires=[0])
-    braket_result_calculated = translate_result_type(mp, [0], frozenset(['StateVector', 'DensityMatrix']))
+    braket_result_calculated = translate_result_type(
+        mp, [0], frozenset(["StateVector", "DensityMatrix"])
+    )
 
     braket_result = DensityMatrix([0])
 

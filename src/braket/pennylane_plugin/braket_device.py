@@ -32,10 +32,9 @@ Code details
 ~~~~~~~~~~~~
 """
 
-from enum import Enum, auto
-
 # pylint: disable=invalid-name
 import warnings
+from enum import Enum, auto
 from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
@@ -224,9 +223,10 @@ class BraketQubitDevice(QubitDevice):
             warnings.warn("Device does not support any gate-based result types")
             self._braket_result_types = frozenset()
             return
-            
-        self._braket_result_types = frozenset(result_type.name for result_type in supported_result_types)
 
+        self._braket_result_types = frozenset(
+            result_type.name for result_type in supported_result_types
+        )
 
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
