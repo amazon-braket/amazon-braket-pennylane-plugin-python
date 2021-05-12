@@ -26,7 +26,7 @@ class TestState:
     def test_full_state(self, local_device, shots, tol):
         """Tests if the correct state vector or full density matrix is returned"""
         dev = local_device(1)
-        supports_sv = dev._supports_sv
+        supports_sv = 'StateVector' in dev._braket_result_types
 
         @qml.qnode(dev)
         def circuit():

@@ -268,7 +268,7 @@ def _(zz: ZZ, parameters):
 
 
 def translate_result_type(
-    observable: Observable, targets: List[int], supports_sv: bool, supports_dm: bool
+    observable: Observable, targets: List[int], supported_result_types: FrozenSet[str]
 ) -> ResultType:
     """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
 
@@ -276,8 +276,7 @@ def translate_result_type(
         observable (Observable): The PennyLane ``Observable`` to translate
         targets (List[int]): The target wires of the observable using a consecutive integer wire
             ordering
-        supports_sv: True if the Braket device supports the StateVector result type
-        supports_dm: True if the Braket device supports the DensityMatrix result type
+        supported_result_types (FrozenSet[str]): Braket result types supported by the Braket device
 
     Returns:
         ResultType: The Braket result type corresponding to the given observable
@@ -288,9 +287,9 @@ def translate_result_type(
         return Probability(targets)
 
     if return_type is ObservableReturnTypes.State:
-        if not targets and supports_sv:
+        if not targets and 'StateVector' in supported_result_types:
             return StateVector()
-        if supports_dm:
+        elif 'DensityMatrix' in supported_result_types:
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 

@@ -138,7 +138,7 @@ class BraketQubitDevice(QubitDevice):
         for observable in circuit.observables:
             dev_wires = self.map_wires(observable.wires).tolist()
             braket_circuit.add_result_type(
-                translate_result_type(observable, dev_wires, self._supports_sv, self._supports_dm)
+                translate_result_type(observable, dev_wires, self._braket_result_types)
             )
         return braket_circuit
 
@@ -217,16 +217,11 @@ class BraketQubitDevice(QubitDevice):
             ].supportedResultTypes
         except AttributeError:
             warnings.warn("Device does not support any gate-based result types")
-            self._supports_sv = False
-            self._supports_dm = False
+            self._braket_result_types = frozenset()
             return
+            
+        self._braket_result_types = frozenset(result_type.name for result_type in supported_result_types)
 
-        self._supports_sv = any(
-            result_type.name == "StateVector" for result_type in supported_result_types
-        )
-        self._supports_dm = any(
-            result_type.name == "DensityMatrix" for result_type in supported_result_types
-        )
 
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
@@ -234,7 +229,7 @@ class BraketQubitDevice(QubitDevice):
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
         return braket_result.get_value_by_result_type(
-            translate_result_type(observable, dev_wires, self._supports_sv, self._supports_dm)
+            translate_result_type(observable, dev_wires, self._braket_result_types)
         )
 
 
