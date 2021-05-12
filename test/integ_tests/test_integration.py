@@ -29,7 +29,7 @@ class TestDeviceIntegration:
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
         assert dev.num_wires == 2
-        assert dev.shots == 1
+        assert dev.shots is None
         assert dev.short_name == d[0]
 
     def test_args_aws(self):
@@ -43,7 +43,7 @@ class TestDeviceIntegration:
             qml.device("braket.local.qubit")
 
     @pytest.mark.parametrize("d", shortname_and_backends)
-    @pytest.mark.parametrize("shots", [0, 8192])
+    @pytest.mark.parametrize("shots", [None, 8192])
     def test_one_qubit_circuit(self, shots, d, tol, extra_kwargs):
         """Test that devices provide correct result for a simple circuit"""
         dev = TestDeviceIntegration._device(d, 1, extra_kwargs)

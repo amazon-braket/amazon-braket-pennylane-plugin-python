@@ -21,8 +21,8 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from pennylane.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
-from pennylane.tape import MeasurementProcess
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin.translation import translate_result_type
