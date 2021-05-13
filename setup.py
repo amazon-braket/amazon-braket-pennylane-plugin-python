@@ -33,7 +33,7 @@ setup(
         + "git+https://github.com/aws/amazon-braket-schemas-python@noise_simulation",
         "amazon-braket-default-simulator @ "
         + "git+https://github.com/aws/amazon-braket-default-simulator-python@noise_simulation",
-        "pennylane==0.15.1",
+        "pennylane>=0.15.1",
     ],
     entry_points={
         "pennylane.plugins": [
