@@ -562,6 +562,8 @@ def test_supported_ops_cached():
 
     ops = dev.operations
     assert dev._supported_ops == ops
+
+
 @pytest.mark.xfail(raises=NotImplementedError)
 def test_run_task_unimplemented():
     """Tests that an error is thrown when _run_task is not implemented"""
