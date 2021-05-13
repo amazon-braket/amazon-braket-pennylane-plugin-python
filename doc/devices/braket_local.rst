@@ -47,8 +47,7 @@ You can set ``shots`` to ``None`` (default) to get exact results instead of resu
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
 
-The device support all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_,
-with the exception of the PennyLane ``QubitUnitary`` and ``Rot`` gates and ``Hermitian`` observable.
+The device supports all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_.
 
 The PennyLane-Braket plugin provides the following framework-specific operations for PennyLane, which can be imported
 from :mod:`braket.pennylane_plugin.ops <.ops>`:
