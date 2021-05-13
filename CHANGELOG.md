@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.0 (2021-05-11)
+
+### Features
+
+ * Bring functionality in line with PennyLane v0.15.0 release
+
 ## v1.1.1 (2021-05-04)
 
 ### Bug Fixes and Other Changes
