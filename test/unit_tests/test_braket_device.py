@@ -42,6 +42,7 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
 )
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
+import braket.pennylane_plugin.braket_device
 
 SHOTS = 10000
 
@@ -554,14 +555,15 @@ def test_wires():
             assert w == t
 
 
-def test_supported_ops_cached():
-    """Test that the supported operations are cached after one call."""
-    dev = _aws_device(wires=2)
+def test_supported_ops_set(monkeypatch):
+    """Test that the supported operations set correctly when the device is
+    created."""
 
-    assert dev._supported_ops is None
-
-    ops = dev.operations
-    assert dev._supported_ops == ops
+    test_ops = ["TestOperation"]
+    with monkeypatch.context() as m:
+        m.setattr(braket.pennylane_plugin.braket_device, "supported_operations", lambda: test_ops)
+        dev = _aws_device(wires=2)
+        assert dev.operations == test_ops
 
 
 @pytest.mark.xfail(raises=NotImplementedError)

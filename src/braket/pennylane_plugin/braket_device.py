@@ -95,7 +95,7 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
         self._run_kwargs = run_kwargs
-        self._supported_ops = None
+        self._supported_ops = supported_operations()
 
     def reset(self):
         super().reset()
@@ -112,8 +112,6 @@ class BraketQubitDevice(QubitDevice):
     @property
     def operations(self) -> FrozenSet[str]:
         """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
-        if self._supported_ops is None:
-            self._supported_ops = supported_operations()
         return self._supported_ops
 
     @property
