@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.2.1 (2021-05-13)
+
+### Bug Fixes and Other Changes
+
+ * cache supported ops in the device
+ * Merge pull request #68 from antalszava/patch-2
+ * Update setup.py to ease PennyLane pinning
+
+### Documentation Changes
+
+ * Correct supported gates
+
 ## v1.2.0 (2021-05-11)
 
 ### Features
