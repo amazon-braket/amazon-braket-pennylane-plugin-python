@@ -23,7 +23,7 @@ Amazon Braket PennyLane Plugin
 The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
 
 * ``braket.aws.qubit`` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
-* ``braket.local.qubit`` for running with the Amazon Braket SDK's local simulator
+* ``braket.local.qubit`` for running the Amazon Braket SDK’s local simulator where you can optionally specify the backend (“default”, “braket_sv”, “braket_dm” etc)
 
 .. header-start-inclusion-marker-do-not-remove
 

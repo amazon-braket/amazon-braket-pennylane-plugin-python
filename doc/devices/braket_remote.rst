@@ -96,3 +96,10 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.XX
     braket.pennylane_plugin.YY
     braket.pennylane_plugin.ZZ
+    braket.pennylane_plugin.AmplitudeDamping
+    braket.pennylane_plugin.GeneralizedAmplitudeDamping
+    braket.pennylane_plugin.PhaseDamping
+    braket.pennylane_plugin.DepolarizingChannel
+    braket.pennylane_plugin.BitFlip
+    braket.pennylane_plugin.PhaseFlip
+    braket.pennylane_plugin.QubitChannel
