@@ -556,7 +556,7 @@ def test_wires():
 
 
 def test_supported_ops_set(monkeypatch):
-    """Test that the supported operations set correctly when the device is
+    """Test that the supported operations are set correctly when the device is
     created."""
 
     test_ops = ["TestOperation"]
