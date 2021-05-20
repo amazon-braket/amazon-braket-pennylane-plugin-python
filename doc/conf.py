@@ -26,8 +26,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 
 from directives import CustomDeviceGalleryItemDirective  # noqa: E402
 
-from braket import pennylane_plugin  # noqa: E402
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -79,7 +77,8 @@ add_module_names = False
 # built documents.
 
 # The full version, including alpha/beta/rc tags.
-release = pennylane_plugin.__version__
+with open("../src/braket/pennylane_plugin/_version.py") as f:
+    release = f.readlines()[-1].split()[-1].strip("\"'")
 
 # The short X.Y version.
 version = re.match(r"^(\d+\.\d+)", release).expand(r"\1")
