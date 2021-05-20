@@ -27,12 +27,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk @ "
-        + "git+https://github.com/aws/amazon-braket-sdk-python@noise_simulation",
-        "amazon-braket-schemas @ "
-        + "git+https://github.com/aws/amazon-braket-schemas-python@noise_simulation",
-        "amazon-braket-default-simulator @ "
-        + "git+https://github.com/aws/amazon-braket-default-simulator-python@noise_simulation",
+        "amazon-braket-sdk>=1.5.0",
         "pennylane>=0.15.1",
     ],
     entry_points={

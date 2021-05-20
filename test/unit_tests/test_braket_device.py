@@ -28,6 +28,7 @@ from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.tape import QuantumTape
 
+import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import (
     ISWAP,
     PSWAP,
@@ -43,7 +44,6 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
 )
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
-import braket.pennylane_plugin.braket_device
 
 SHOTS = 10000
 
