@@ -18,7 +18,10 @@ To instantiate the local Braket simulator, simply use:
 .. code-block:: python
 
     import pennylane as qml
-    device_local = qml.device("braket.local.qubit", wires=2)
+    device_local = qml.device("braket.local.qubit", wires=2) # local state vector simulator
+    # device_local = qml.device("braket.local.qubit", backend="default", wires=2) # local state vector simulator
+    # device_local = qml.device("braket.local.qubit", backend="braket_sv", wires=2) # local state vector simulator
+    # device_local = qml.device("braket.local.qubit", backend="braket_dm", wires=2) # local state vector simulator
 
 You can define and evaluate quantum nodes with these devices just as you would with any other PennyLane device.
 
@@ -63,3 +66,11 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.XX
     braket.pennylane_plugin.YY
     braket.pennylane_plugin.ZZ
+    braket.pennylane_plugin.AmplitudeDamping
+    braket.pennylane_plugin.GeneralizedAmplitudeDamping
+    braket.pennylane_plugin.PhaseDamping
+    braket.pennylane_plugin.DepolarizingChannel
+    braket.pennylane_plugin.BitFlip
+    braket.pennylane_plugin.PhaseFlip
+    braket.pennylane_plugin.QubitChannel
+

@@ -37,9 +37,7 @@ This plugin provides two Braket devices for use with PennyLane:
         <div style='clear:both'></div>
         </br>
 
-While the local device helps with small-scale simulations and rapid prototyping,
-the remote device provides access different backends of the Amazon Braket service, such as
-high performance simulators and quantum hardware.
+While the local device helps with small-scale simulations and rapid prototyping, the remote device allows you to run larger simulations or access quantum hardware via the Amazon Braket service.
 
 Tutorials
 ~~~~~~~~~

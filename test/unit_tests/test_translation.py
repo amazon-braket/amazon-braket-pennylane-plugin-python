@@ -13,7 +13,14 @@
 import pennylane as qml
 import pytest
 from braket.circuits import observables
-from braket.circuits.result_types import Expectation, Probability, Sample, Variance
+from braket.circuits.result_types import (
+    DensityMatrix,
+    Expectation,
+    Probability,
+    Sample,
+    StateVector,
+    Variance,
+)
 from pennylane.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
@@ -38,7 +45,7 @@ def test_translate_result_type_observable(return_type, braket_result):
     Braket result using translate_result_type"""
     obs = qml.Hadamard(0)
     obs.return_type = return_type
-    braket_result_calculated = translate_result_type(obs, [0])
+    braket_result_calculated = translate_result_type(obs, [0], frozenset())
 
     assert braket_result == braket_result_calculated
 
@@ -47,11 +54,56 @@ def test_translate_result_type_probs():
     """Tests if a PennyLane probability return type is successfully converted into a Braket
     result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
-    braket_result_calculated = translate_result_type(mp, [0])
+    braket_result_calculated = translate_result_type(mp, [0], frozenset())
 
     braket_result = Probability([0])
 
     assert braket_result == braket_result_calculated
+
+
+def test_translate_result_type_state_vector():
+    """Tests if a PennyLane state vector return type is successfully converted into a Braket
+    result using translate_result_type"""
+    mp = MeasurementProcess(ObservableReturnTypes.State)
+    braket_result_calculated = translate_result_type(
+        mp, [], frozenset(["StateVector", "DensityMatrix"])
+    )
+
+    braket_result = StateVector()
+
+    assert braket_result == braket_result_calculated
+
+
+def test_translate_result_type_density_matrix():
+    """Tests if a PennyLane density matrix return type is successfully converted into a Braket
+    result using translate_result_type"""
+    mp = MeasurementProcess(ObservableReturnTypes.State)
+    braket_result_calculated = translate_result_type(mp, [], frozenset(["DensityMatrix"]))
+
+    braket_result = DensityMatrix()
+
+    assert braket_result == braket_result_calculated
+
+
+def test_translate_result_type_density_matrix_partial():
+    """Tests if a PennyLane partial density matrix return type is successfully converted into a
+    Braket result using translate_result_type"""
+    mp = MeasurementProcess(ObservableReturnTypes.State, wires=[0])
+    braket_result_calculated = translate_result_type(
+        mp, [0], frozenset(["StateVector", "DensityMatrix"])
+    )
+
+    braket_result = DensityMatrix([0])
+
+    assert braket_result == braket_result_calculated
+
+
+def test_translate_result_type_state_unimplemented():
+    """Tests if a NotImplementedError is raised by translate_result_type when a PennyLane state
+    return type is converted while not supported by the device"""
+    mp = MeasurementProcess(ObservableReturnTypes.State)
+    with pytest.raises(NotImplementedError, match="Unsupported return type"):
+        translate_result_type(mp, [0], frozenset())
 
 
 def test_translate_result_type_unsupported_return():
@@ -61,7 +113,7 @@ def test_translate_result_type_unsupported_return():
     obs.return_type = None
 
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
-        translate_result_type(obs, [0])
+        translate_result_type(obs, [0], frozenset())
 
 
 def test_translate_result_type_unsupported_obs():
@@ -70,4 +122,4 @@ def test_translate_result_type_unsupported_obs():
     obs.return_type = None
 
     with pytest.raises(TypeError, match="Unsupported observable"):
-        translate_result_type(obs, [0])
+        translate_result_type(obs, [0], frozenset())

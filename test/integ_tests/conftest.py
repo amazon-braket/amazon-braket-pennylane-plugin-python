@@ -37,16 +37,28 @@ U2 = np.array([[0, 1, 1, 1], [1, 0, 1, -1], [1, -1, 0, 1], [1, 1, -1, 0]]) / np.
 # single qubit Hermitian observable
 A = np.array([[1.02789352, 1.61296440 - 0.3498192j], [1.61296440 + 0.3498192j, 1.23920938 + 0j]])
 
+# single qubit Kraus operator
+K = [
+    np.array([[0.4 - 0.4j, 0.4 + 0.4j], [0.4 + 0.4j, 0.4 - 0.4j]]),
+    np.array([[0, 0.6j], [-0.6j, 0]]),
+]
+
+# two qubit Kraus operator
+K2 = [np.kron(mat1, mat2) for mat1 in K for mat2 in K]
 
 # ==========================================================
 # PennyLane devices
 
 # List of all devices.
-devices = [BraketAwsQubitDevice, BraketLocalQubitDevice]
+sv_devices = [(BraketAwsQubitDevice, DEVICE_ARN), (BraketLocalQubitDevice, "braket_sv")]
+dm_devices = [(BraketLocalQubitDevice, "braket_dm")]
+devices = sv_devices + dm_devices
 
 # List of all device shortnames
-shortnames = [d.short_name for d in devices]
+shortname_and_backends = [(d.short_name, backend) for (d, backend) in devices]
 
+# List of local devices
+local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_sv")]
 
 # ==========================================================
 # AWS resources
@@ -112,10 +124,43 @@ def init_state(scope="session"):
 @pytest.fixture(params=devices)
 def device(request, shots, extra_kwargs):
     """Fixture to initialize and return a PennyLane device"""
-    device = request.param
+    device, backend = request.param
 
     def _device(n):
-        return device(wires=n, shots=shots, **extra_kwargs(device))
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
+
+    return _device
+
+
+@pytest.fixture(params=sv_devices)
+def sv_device(request, shots, extra_kwargs):
+    """Fixture to initialize and return a PennyLane device"""
+    device, backend = request.param
+
+    def _device(n):
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
+
+    return _device
+
+
+@pytest.fixture(params=dm_devices)
+def dm_device(request, shots, extra_kwargs):
+    """Fixture to initialize and return a PennyLane device"""
+    device, backend = request.param
+
+    def _device(n):
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
+
+    return _device
+
+
+@pytest.fixture(params=local_devices)
+def local_device(request, shots, extra_kwargs):
+    """Fixture to initialize and return a PennyLane device"""
+    device, backend = request.param
+
+    def _device(n):
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
 
     return _device
 
@@ -124,11 +169,14 @@ def device(request, shots, extra_kwargs):
 def extra_kwargs(s3):
     """Fixture to determine extra kwargs for devices"""
 
-    def _extra_kwargs(device_class):
+    def _extra_kwargs(device_class, backend):
         signature = inspect.signature(device_class).parameters
         kwargs = {}
         if "device_arn" in signature:
-            kwargs["device_arn"] = DEVICE_ARN
+            kwargs["device_arn"] = backend
+        else:
+            kwargs["backend"] = backend
+
         if "s3_destination_folder" in signature:
             kwargs["s3_destination_folder"] = s3
         return kwargs

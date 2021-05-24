@@ -32,9 +32,9 @@ Code details
 ~~~~~~~~~~~~
 """
 
-from enum import Enum, auto
-
 # pylint: disable=invalid-name
+import warnings
+from enum import Enum, auto
 from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
@@ -45,7 +45,15 @@ from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane.operation import Expectation, Observable, Operation, Probability, Sample, Variance
+from pennylane.operation import (
+    Expectation,
+    Observable,
+    Operation,
+    Probability,
+    Sample,
+    State,
+    Variance,
+)
 
 from braket.pennylane_plugin.translation import (
     supported_operations,
@@ -55,7 +63,7 @@ from braket.pennylane_plugin.translation import (
 
 from ._version import __version__
 
-RETURN_TYPES = [Expectation, Variance, Sample, Probability]
+RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
 
 
 class Shots(Enum):
@@ -96,6 +104,7 @@ class BraketQubitDevice(QubitDevice):
         self._task = None
         self._run_kwargs = run_kwargs
         self._supported_ops = supported_operations()
+        self._check_supported_result_types()
 
     def reset(self):
         super().reset()
@@ -133,7 +142,9 @@ class BraketQubitDevice(QubitDevice):
         )
         for observable in circuit.observables:
             dev_wires = self.map_wires(observable.wires).tolist()
-            braket_circuit.add_result_type(translate_result_type(observable, dev_wires))
+            braket_circuit.add_result_type(
+                translate_result_type(observable, dev_wires, self._braket_result_types)
+            )
         return braket_circuit
 
     def statistics(
@@ -204,12 +215,28 @@ class BraketQubitDevice(QubitDevice):
 
         return circuit
 
+    def _check_supported_result_types(self):
+        try:
+            supported_result_types = self._device.properties.action[
+                "braket.ir.jaqcd.program"
+            ].supportedResultTypes
+        except AttributeError:
+            warnings.warn("Device does not support any gate-based result types")
+            self._braket_result_types = frozenset()
+            return
+
+        self._braket_result_types = frozenset(
+            result_type.name for result_type in supported_result_types
+        )
+
     def _run_task(self, circuit):
         raise NotImplementedError("Need to implement task runner")
 
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
-        return braket_result.get_value_by_result_type(translate_result_type(observable, dev_wires))
+        return braket_result.get_value_by_result_type(
+            translate_result_type(observable, dev_wires, self._braket_result_types)
+        )
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):

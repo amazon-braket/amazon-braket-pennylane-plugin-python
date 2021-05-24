@@ -19,14 +19,16 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, Instruction, Observable, gates, result_types
+from braket.circuits import Circuit, Instruction, Observable, gates, noises, result_types
 from braket.device_schema import DeviceActionType
+from braket.device_schema.jaqcd_device_action_properties import JaqcdDeviceActionProperties
 from braket.devices import LocalSimulator
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.tape import QuantumTape
 
+import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import (
     ISWAP,
     PSWAP,
@@ -42,9 +44,21 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
 )
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
-import braket.pennylane_plugin.braket_device
 
 SHOTS = 10000
+
+ACTION_PROPERTIES = JaqcdDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.jaqcd.program",
+            "version": ["1"],
+            "supportedOperations": ["x", "y"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0}
+            ],
+        }
+    )
+)
 
 RESULT = GateModelQuantumTaskResult.from_string(
     json.dumps(
@@ -130,6 +144,18 @@ testdata = [
     (XX, gates.XX, [0, 1], [anp.pi]),
     (YY, gates.YY, [0, 1], [anp.pi]),
     (ZZ, gates.ZZ, [0, 1], [anp.pi]),
+    (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
+    (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
+    (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1]),
+    (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1]),
+    (qml.BitFlip, noises.BitFlip, [0], [0.1]),
+    (qml.PhaseFlip, noises.PhaseFlip, [0], [0.1]),
+    (
+        qml.QubitChannel,
+        noises.Kraus,
+        [0],
+        [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
+    ),
 ]
 
 testdata_inverses = [
@@ -476,33 +502,37 @@ def test_simulator_none_shots():
     assert dev.analytic
 
 
-def test_local_default_shots():
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_default_shots(backend):
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = BraketLocalQubitDevice(wires=2)
+    dev = BraketLocalQubitDevice(wires=2, backend=backend)
     assert dev.shots is None
     assert dev.analytic
 
 
-def test_local_zero_shots():
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_zero_shots(backend):
     """Test that the local simulator device is analytic if ``shots=0``"""
-    dev = BraketLocalQubitDevice(wires=2, shots=0)
+    dev = BraketLocalQubitDevice(wires=2, backend=backend, shots=0)
     assert dev.shots is None
     assert dev.analytic
 
 
-def test_local_none_shots():
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_none_shots(backend):
     """Tests that the simulator devices are analytic if ``shots`` is specified to be `None`."""
-    dev = BraketLocalQubitDevice(wires=2, shots=None)
+    dev = BraketLocalQubitDevice(wires=2, backend=backend, shots=None)
     assert dev.shots is None
     assert dev.analytic
 
 
 @patch.object(LocalSimulator, "run")
 @pytest.mark.parametrize("shots", [0, 1000])
-def test_local_qubit_execute(mock_run, shots):
+@pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
+def test_local_qubit_execute(mock_run, shots, backend):
     """Tests that the local qubit device is run with the correct arguments"""
     mock_run.return_value = TASK
-    dev = BraketLocalQubitDevice(wires=4, shots=shots, foo="bar")
+    dev = BraketLocalQubitDevice(wires=4, backend=backend, shots=shots, foo="bar")
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
@@ -593,7 +623,7 @@ def _noop(*args, **kwargs):
 def _aws_device(
     properties_mock, type_mock, wires, device_type=AwsDeviceType.QPU, shots=SHOTS, **kwargs
 ):
-    properties_mock.action = {DeviceActionType.JAQCD: "foo"}
+    properties_mock.action = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
     type_mock.return_value = device_type
     return BraketAwsQubitDevice(
         wires=wires,
@@ -608,7 +638,7 @@ def _aws_device(
 @patch.object(AwsDevice, "__init__", _noop)
 @patch.object(AwsDevice, "properties")
 def _bad_aws_device(properties_mock, wires, **kwargs):
-    properties_mock.action = {DeviceActionType.ANNEALING: "foo"}
+    properties_mock.action = {DeviceActionType.ANNEALING: ACTION_PROPERTIES}
     properties_mock.type = AwsDeviceType.QPU
     return BraketAwsQubitDevice(
         wires=wires,

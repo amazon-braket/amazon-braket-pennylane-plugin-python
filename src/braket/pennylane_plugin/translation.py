@@ -16,8 +16,15 @@ from typing import FrozenSet, List
 
 import numpy as np
 import pennylane as qml
-from braket.circuits import Gate, ResultType, gates, observables
-from braket.circuits.result_types import Expectation, Probability, Sample, Variance
+from braket.circuits import Gate, ResultType, gates, noises, observables
+from braket.circuits.result_types import (
+    DensityMatrix,
+    Expectation,
+    Probability,
+    Sample,
+    StateVector,
+    Variance,
+)
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import (
@@ -159,6 +166,49 @@ def _(qubit_unitary: qml.QubitUnitary, parameters):
 
 
 @_translate_operation.register
+def _(amplitude_damping: qml.AmplitudeDamping, parameters):
+    gamma = parameters[0]
+    return noises.AmplitudeDamping(gamma)
+
+
+@_translate_operation.register
+def _(generalized_amplitude_damping: qml.GeneralizedAmplitudeDamping, parameters):
+    gamma = parameters[0]
+    probability = parameters[1]
+    return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
+
+
+@_translate_operation.register
+def _(phase_damping: qml.PhaseDamping, parameters):
+    gamma = parameters[0]
+    return noises.PhaseDamping(gamma)
+
+
+@_translate_operation.register
+def _(depolarizing_channel: qml.DepolarizingChannel, parameters):
+    probability = parameters[0]
+    return noises.Depolarizing(probability)
+
+
+@_translate_operation.register
+def _(bit_flip: qml.BitFlip, parameters):
+    probability = parameters[0]
+    return noises.BitFlip(probability)
+
+
+@_translate_operation.register
+def _(phase_flip: qml.PhaseFlip, parameters):
+    probability = parameters[0]
+    return noises.PhaseFlip(probability)
+
+
+@_translate_operation.register
+def _(qubit_channel: qml.QubitChannel, parameters):
+    K_list = [np.asarray(matrix) for matrix in parameters[0]]
+    return noises.Kraus(K_list)
+
+
+@_translate_operation.register
 def _(c_phase_shift: CPhaseShift, parameters):
     phi = parameters[0]
     return gates.CPhaseShift(-phi) if c_phase_shift.inverse else gates.CPhaseShift(phi)
@@ -217,13 +267,16 @@ def _(zz: ZZ, parameters):
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
 
-def translate_result_type(observable: Observable, targets: List[int]) -> ResultType:
+def translate_result_type(
+    observable: Observable, targets: List[int], supported_result_types: FrozenSet[str]
+) -> ResultType:
     """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
 
     Args:
         observable (Observable): The PennyLane ``Observable`` to translate
         targets (List[int]): The target wires of the observable using a consecutive integer wire
             ordering
+        supported_result_types (FrozenSet[str]): Braket result types supported by the Braket device
 
     Returns:
         ResultType: The Braket result type corresponding to the given observable
@@ -232,6 +285,13 @@ def translate_result_type(observable: Observable, targets: List[int]) -> ResultT
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
+
+    if return_type is ObservableReturnTypes.State:
+        if not targets and "StateVector" in supported_result_types:
+            return StateVector()
+        elif "DensityMatrix" in supported_result_types:
+            return DensityMatrix(targets)
+        raise NotImplementedError(f"Unsupported return type: {return_type}")
 
     braket_observable = _translate_observable(observable)
 

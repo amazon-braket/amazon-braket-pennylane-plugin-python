@@ -15,7 +15,7 @@
 import numpy as np
 import pennylane as qml
 import pytest
-from conftest import U2, U
+from conftest import K2, U2, K, U
 
 from braket.pennylane_plugin import (
     ISWAP,
@@ -49,6 +49,15 @@ three_qubit = [qml.CSWAP, qml.Toffoli]
 
 # list of all parametrized two-qubit gates
 two_qubit_param = [CPhaseShift, CPhaseShift00, CPhaseShift01, CPhaseShift10, PSWAP, XY, XX, YY, ZZ]
+
+# list of all single-qubit single-parameter noise operations
+single_qubit_noise = [
+    qml.AmplitudeDamping,
+    qml.PhaseDamping,
+    qml.DepolarizingChannel,
+    qml.BitFlip,
+    qml.PhaseFlip,
+]
 
 
 @pytest.mark.parametrize("shots", [8192])
@@ -138,6 +147,32 @@ class TestHardwareApply:
 
         TestHardwareApply.assert_op_and_inverse(qml.Rot, dev, state, [0], tol, [a, b, c])
 
+    @pytest.mark.parametrize("prob", [0.0, 0.42])
+    @pytest.mark.parametrize("op", single_qubit_noise)
+    def test_single_qubit_noise(self, init_state, dm_device, op, prob, tol):
+        """Test parametrized single-qubit noise operations"""
+        dev = dm_device(1)
+        state = init_state(1)
+        TestHardwareApply.assert_noise_op(op, dev, state, [0], tol, [prob])
+
+    @pytest.mark.parametrize("gamma", [0.0, 0.42])
+    @pytest.mark.parametrize("prob", [0.0, 0.42])
+    def test_generalized_amplitude_damping(self, init_state, dm_device, gamma, prob, tol):
+        """Test parametrized GeneralizedAmplitudeDamping"""
+        dev = dm_device(1)
+        state = init_state(1)
+        TestHardwareApply.assert_noise_op(
+            qml.GeneralizedAmplitudeDamping, dev, state, [0], tol, [gamma, prob]
+        )
+
+    @pytest.mark.parametrize("kraus", [K, K2])
+    def test_qubit_channel(self, init_state, dm_device, kraus, tol):
+        N = int(np.log2(len(kraus[0])))
+        dev = dm_device(N)
+        state = init_state(N)
+        wires = list(range(N))
+        TestHardwareApply.assert_noise_op(qml.QubitChannel, dev, state, wires, tol, [kraus])
+
     @staticmethod
     def assert_op_and_inverse(op, dev, state, wires, tol, op_args):
         @qml.qnode(dev)
@@ -155,3 +190,21 @@ class TestHardwareApply:
             return qml.probs(wires=wires)
 
         assert np.allclose(circuit_inv(), np.abs(op._matrix(*op_args).conj().T @ state) ** 2, **tol)
+
+    @staticmethod
+    def assert_noise_op(op, dev, state, wires, tol, op_args):
+        @qml.qnode(dev)
+        def circuit():
+            qml.QubitStateVector.decomposition(state, wires=wires)
+            op(*op_args, wires=wires)
+            return qml.probs(wires=wires)
+
+        def expected_probs():
+            initial_dm = np.outer(state, state.conj())
+            final_dm = sum(
+                matrix @ initial_dm @ matrix.conj().T
+                for matrix in op(*op_args, wires=wires).kraus_matrices
+            )
+            return np.diagonal(final_dm)
+
+        assert np.allclose(circuit(), expected_probs(), **tol)
