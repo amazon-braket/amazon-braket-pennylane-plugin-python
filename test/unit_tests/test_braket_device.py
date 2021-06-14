@@ -596,6 +596,42 @@ def test_supported_ops_set(monkeypatch):
         assert dev.operations == test_ops
 
 
+def test_projection():
+    """Test that the Projector observable is correctly supported."""
+    dev = BraketLocalQubitDevice(wires=2)
+
+    theta_1 = 1.5
+    theta_2 = 1.6
+
+    @qml.qnode(dev)
+    def f():
+        qml.RY(theta_1, wires=0)
+        qml.RY(theta_2, wires=1)
+        return qml.expval(qml.Projector([0, 1], wires=range(2)))
+
+    p_01 = np.cos(theta_1 / 2) ** 2 * np.sin(theta_2 / 2) ** 2
+    print(p_01)
+
+    assert np.allclose(f(), p_01)
+
+    @qml.qnode(dev)
+    def f():
+        qml.RY(theta_1, wires=0)
+        qml.RY(theta_2, wires=1)
+        return qml.var(qml.Projector([0, 1], wires=range(2)))
+
+    assert np.allclose(f(), p_01 - p_01 ** 2)
+
+    @qml.qnode(dev)
+    def f():
+        qml.RY(theta_1, wires=0)
+        qml.RY(theta_2, wires=1)
+        return qml.sample(qml.Projector([0, 1], wires=range(2)))
+
+    samples = f(shots=100).tolist()
+    assert set(samples) == {0, 1}
+
+
 @pytest.mark.xfail(raises=NotImplementedError)
 def test_run_task_unimplemented():
     """Tests that an error is thrown when _run_task is not implemented"""
