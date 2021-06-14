@@ -341,5 +341,16 @@ def _(h: qml.Hermitian):
 
 
 @_translate_observable.register
+def _(p: qml.Projector):
+    bitstring = p.parameters[0]
+    wires = len(bitstring)
+    indx = sum(b * 2 ** (wires - i - 1) for i, b in enumerate(bitstring))
+
+    h = np.zeros((2 ** wires, 2 ** wires))
+    h[indx, indx] = 1
+    return observables.Hermitian(h)
+
+
+@_translate_observable.register
 def _(t: qml.operation.Tensor):
     return observables.TensorProduct([_translate_observable(factor) for factor in t.obs])
