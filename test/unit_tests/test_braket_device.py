@@ -598,37 +598,23 @@ def test_supported_ops_set(monkeypatch):
 
 def test_projection():
     """Test that the Projector observable is correctly supported."""
-    dev = BraketLocalQubitDevice(wires=2)
+    wires = 2
+    dev = BraketLocalQubitDevice(wires=wires)
 
-    theta_1 = 1.5
-    theta_2 = 1.6
+    thetas = [1.5, 1.6]
+    p_01 = np.cos(thetas[0] / 2) ** 2 * np.sin(thetas[1] / 2) ** 2
 
-    @qml.qnode(dev)
-    def f():
-        qml.RY(theta_1, wires=0)
-        qml.RY(theta_2, wires=1)
-        return qml.expval(qml.Projector([0, 1], wires=range(2)))
+    def f(thetas, **kwargs):
+        [qml.RY(thetas[i], wires=i) for i in range(wires)]
 
-    p_01 = np.cos(theta_1 / 2) ** 2 * np.sin(theta_2 / 2) ** 2
-    print(p_01)
+    measure_types = ["expval", "var", "sample"]
+    projector = qml.Projector([0, 1], wires=range(wires))
 
-    assert np.allclose(f(), p_01)
+    fs = [qml.map(f, [projector], dev, measure=m) for m in measure_types]
+    assert np.allclose(fs[0](thetas), p_01)
+    assert np.allclose(fs[1](thetas), p_01 - p_01 ** 2)
 
-    @qml.qnode(dev)
-    def f():
-        qml.RY(theta_1, wires=0)
-        qml.RY(theta_2, wires=1)
-        return qml.var(qml.Projector([0, 1], wires=range(2)))
-
-    assert np.allclose(f(), p_01 - p_01 ** 2)
-
-    @qml.qnode(dev)
-    def f():
-        qml.RY(theta_1, wires=0)
-        qml.RY(theta_2, wires=1)
-        return qml.sample(qml.Projector([0, 1], wires=range(2)))
-
-    samples = f(shots=100).tolist()
+    samples = fs[2](thetas, shots=100)[0].tolist()
     assert set(samples) == {0, 1}
 
 
