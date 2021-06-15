@@ -87,7 +87,7 @@ class CPhaseShift(Operation):
 
         \frac{d}{d \phi} \mathtt{CPhaseShift}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift}(\phi + \pi / 2)
-            + \mathtt{CPhaseShift}(\phi - \pi / 2) \right]
+            - \mathtt{CPhaseShift}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the controlled phase angle
@@ -134,7 +134,7 @@ class CPhaseShift00(Operation):
     .. math::
         \frac{d}{d \phi} \mathtt{CPhaseShift00}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift00}(\phi + \pi / 2)
-            + \mathtt{CPhaseShift00}(\phi - \pi / 2) \right]
+            - \mathtt{CPhaseShift00}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the controlled phase angle
@@ -185,7 +185,7 @@ class CPhaseShift01(Operation):
     .. math::
         \frac{d}{d \phi} \mathtt{CPhaseShift01}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift01}(\phi + \pi / 2)
-            + \mathtt{CPhaseShift01}(\phi - \pi / 2) \right]
+            - \mathtt{CPhaseShift01}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the controlled phase angle
@@ -234,7 +234,7 @@ class CPhaseShift10(Operation):
     .. math::
         \frac{d}{d \phi} \mathtt{CPhaseShift10}(\phi)
         = \frac{1}{2} \left[ \mathtt{CPhaseShift10}(\phi + \pi / 2)
-            + \mathtt{CPhaseShift10}(\phi - \pi / 2) \right]
+            - \mathtt{CPhaseShift10}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the controlled phase angle
@@ -320,7 +320,7 @@ class PSWAP(Operation):
 
     .. math::
         \frac{d}{d \phi} \mathtt{PSWAP}(\phi)
-        = \frac{1}{2} \left[ \mathtt{PSWAP}(\phi + \pi / 2) + \mathtt{PSWAP}(\phi - \pi / 2) \right]
+        = \frac{1}{2} \left[ \mathtt{PSWAP}(\phi + \pi / 2) - \mathtt{PSWAP}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
@@ -435,7 +435,7 @@ class XX(Operation):
 
     .. math::
         \frac{d}{d \phi} \mathtt{XX}(\phi)
-        = \frac{1}{2} \left[ \mathtt{XX}(\phi + \pi / 2) + \mathtt{XX}(\phi - \pi / 2) \right]
+        = \frac{1}{2} \left[ \mathtt{XX}(\phi + \pi / 2) - \mathtt{XX}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
@@ -490,7 +490,7 @@ class YY(Operation):
 
     .. math::
         \frac{d}{d \phi} \mathtt{YY}(\phi)
-        = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) + \mathtt{YY}(\phi - \pi / 2) \right]
+        = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) - \mathtt{YY}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
@@ -545,7 +545,7 @@ class ZZ(Operation):
 
     .. math::
         \frac{d}{d \phi} \mathtt{ZZ}(\phi)
-        = \frac{1}{2} \left[ \mathtt{ZZ}(\phi + \pi / 2) + \mathtt{ZZ}(\phi - \pi / 2) \right]
+        = \frac{1}{2} \left[ \mathtt{ZZ}(\phi + \pi / 2) - \mathtt{ZZ}(\phi - \pi / 2) \right]
 
     Args:
         phi (float): the phase angle
