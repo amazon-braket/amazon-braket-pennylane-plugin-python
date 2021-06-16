@@ -86,7 +86,7 @@ class BraketQubitDevice(QubitDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
-    pennylane_requires = ">=0.15.1"
+    pennylane_requires = ">=0.16.0"
     version = __version__
     author = "Amazon Web Services"
 
