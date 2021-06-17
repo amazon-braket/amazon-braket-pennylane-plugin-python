@@ -31,8 +31,6 @@ from braket.pennylane_plugin import (
     CPhaseShift10,
 )
 
-gates_2q_fixed = [(ISWAP, gates.ISwap)]
-
 gates_2q_parametrized = [
     (CPhaseShift00, gates.CPhaseShift00),
     (CPhaseShift01, gates.CPhaseShift01),
