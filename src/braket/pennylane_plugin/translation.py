@@ -246,7 +246,7 @@ def _(xy: XY, parameters):
 
 
 @_translate_operation.register
-def _(xx: qml.XX, parameters):
+def _(xx: qml.IsingXX, parameters):
     phi = parameters[0]
     return gates.XX(-phi) if xx.inverse else gates.XX(phi)
 
@@ -258,7 +258,7 @@ def _(yy: YY, parameters):
 
 
 @_translate_operation.register
-def _(zz: qml.ZZ, parameters):
+def _(zz: qml.IsingZZ, parameters):
     phi = parameters[0]
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
