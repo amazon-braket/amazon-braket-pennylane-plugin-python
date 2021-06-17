@@ -18,13 +18,9 @@ import pytest
 from conftest import K2, U2, K, U
 
 from braket.pennylane_plugin import (
-    ISWAP,
     PSWAP,
-    XX,
     XY,
     YY,
-    ZZ,
-    CPhaseShift,
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
@@ -42,13 +38,13 @@ single_qubit = [qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.S, qml.SX,
 single_qubit_param = [qml.PhaseShift, qml.RX, qml.RY, qml.RZ]
 
 # list of all non-parametrized two-qubit gates
-two_qubit = [qml.CNOT, qml.CY, qml.CZ, qml.SWAP, ISWAP]
+two_qubit = [qml.CNOT, qml.CY, qml.CZ, qml.SWAP, qml.ISWAP]
 
 # list of all three-qubit gates
 three_qubit = [qml.CSWAP, qml.Toffoli]
 
 # list of all parametrized two-qubit gates
-two_qubit_param = [CPhaseShift, CPhaseShift00, CPhaseShift01, CPhaseShift10, PSWAP, XY, XX, YY, ZZ]
+two_qubit_param = [qml.ControlledPhaseShift, CPhaseShift00, CPhaseShift01, CPhaseShift10, PSWAP, XY, qml.IsingXX, YY, qml.IsingZZ]
 
 # list of all single-qubit single-parameter noise operations
 single_qubit_noise = [

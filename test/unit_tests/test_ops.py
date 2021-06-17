@@ -23,13 +23,9 @@ from autograd import numpy as anp
 from braket.circuits import gates
 
 from braket.pennylane_plugin import (
-    ISWAP,
     PSWAP,
-    XX,
     XY,
     YY,
-    ZZ,
-    CPhaseShift,
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
@@ -38,15 +34,12 @@ from braket.pennylane_plugin import (
 gates_2q_fixed = [(ISWAP, gates.ISwap)]
 
 gates_2q_parametrized = [
-    (CPhaseShift, gates.CPhaseShift),
     (CPhaseShift00, gates.CPhaseShift00),
     (CPhaseShift01, gates.CPhaseShift01),
     (CPhaseShift10, gates.CPhaseShift10),
     (PSWAP, gates.PSwap),
     (XY, gates.XY),
-    (XX, gates.XX),
     (YY, gates.YY),
-    (ZZ, gates.ZZ),
 ]
 
 observables_1q = [
