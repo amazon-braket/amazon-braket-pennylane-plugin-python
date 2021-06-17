@@ -28,13 +28,9 @@ from braket.circuits.result_types import (
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import (
-    ISWAP,
     PSWAP,
-    XX,
     XY,
     YY,
-    ZZ,
-    CPhaseShift,
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
@@ -209,7 +205,7 @@ def _(qubit_channel: qml.QubitChannel, parameters):
 
 
 @_translate_operation.register
-def _(c_phase_shift: CPhaseShift, parameters):
+def _(c_phase_shift: qml.ControlledPhaseShift, parameters):
     phi = parameters[0]
     return gates.CPhaseShift(-phi) if c_phase_shift.inverse else gates.CPhaseShift(phi)
 
@@ -233,7 +229,7 @@ def _(c_phase_shift_10: CPhaseShift10, parameters):
 
 
 @_translate_operation.register
-def _(iswap: ISWAP, _parameters):
+def _(iswap: qml.ISWAP, _parameters):
     return gates.PSwap(3 * np.pi / 2) if iswap.inverse else gates.ISwap()
 
 
@@ -250,7 +246,7 @@ def _(xy: XY, parameters):
 
 
 @_translate_operation.register
-def _(xx: XX, parameters):
+def _(xx: qml.XX, parameters):
     phi = parameters[0]
     return gates.XX(-phi) if xx.inverse else gates.XX(phi)
 
@@ -262,7 +258,7 @@ def _(yy: YY, parameters):
 
 
 @_translate_operation.register
-def _(zz: ZZ, parameters):
+def _(zz: qml.ZZ, parameters):
     phi = parameters[0]
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
