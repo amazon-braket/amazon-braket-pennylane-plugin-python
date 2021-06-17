@@ -48,13 +48,6 @@ observables_2q = [
 ]
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_fixed)
-def test_ops_fixed(pl_op, braket_gate):
-    """Tests that the matrices and decompositions of fixed custom operations are correct."""
-    assert np.allclose(pl_op._matrix(), braket_gate().to_matrix())
-    _assert_decomposition(pl_op, [])
-
-
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_ops_parametrized(pl_op, braket_gate, angle):

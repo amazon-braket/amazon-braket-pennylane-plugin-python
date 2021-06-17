@@ -44,7 +44,17 @@ two_qubit = [qml.CNOT, qml.CY, qml.CZ, qml.SWAP, qml.ISWAP]
 three_qubit = [qml.CSWAP, qml.Toffoli]
 
 # list of all parametrized two-qubit gates
-two_qubit_param = [qml.ControlledPhaseShift, CPhaseShift00, CPhaseShift01, CPhaseShift10, PSWAP, XY, qml.IsingXX, YY, qml.IsingZZ]
+two_qubit_param = [
+    qml.ControlledPhaseShift,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+    PSWAP,
+    XY,
+    qml.IsingXX,
+    YY,
+    qml.IsingZZ,
+]
 
 # list of all single-qubit single-parameter noise operations
 single_qubit_noise = [
