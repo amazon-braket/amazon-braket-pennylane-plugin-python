@@ -27,14 +27,7 @@ from braket.circuits.result_types import (
 )
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
-from braket.pennylane_plugin.ops import (
-    PSWAP,
-    XY,
-    YY,
-    CPhaseShift00,
-    CPhaseShift01,
-    CPhaseShift10,
-)
+from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 
 def supported_operations() -> FrozenSet[str]:
