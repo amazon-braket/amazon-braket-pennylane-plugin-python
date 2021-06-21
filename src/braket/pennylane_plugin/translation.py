@@ -336,15 +336,17 @@ def _(h: qml.Hermitian):
     return observables.Hermitian(h.matrix)
 
 
+_zero = np.array([[1, 0], [0, 0]])
+_one = np.array([[0, 0], [0, 1]])
+
+
 @_translate_observable.register
 def _(p: qml.Projector):
     bitstring = p.parameters[0]
-    wires = len(bitstring)
-    indx = sum(b * 2 ** (wires - i - 1) for i, b in enumerate(bitstring))
 
-    h = np.zeros((2 ** wires, 2 ** wires))
-    h[indx, indx] = 1
-    return observables.Hermitian(h)
+    products = [_one if b else _zero for b in bitstring]
+    hermitians = [observables.Hermitian(p) for p in products]
+    return observables.TensorProduct(hermitians)
 
 
 @_translate_observable.register
