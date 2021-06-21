@@ -599,16 +599,27 @@ def test_projection():
 
     thetas = [1.5, 1.6]
     p_01 = np.cos(thetas[0] / 2) ** 2 * np.sin(thetas[1] / 2) ** 2
+    p_10 = np.sin(thetas[0] / 2) ** 2 * np.cos(thetas[1] / 2) ** 2
 
     def f(thetas, **kwargs):
         [qml.RY(thetas[i], wires=i) for i in range(wires)]
 
     measure_types = ["expval", "var", "sample"]
-    projector = qml.Projector([0, 1], wires=range(wires))
+    projector_01 = qml.Projector([0, 1], wires=range(wires))
+    projector_10 = qml.Projector([1, 0], wires=range(wires))
 
-    fs = [qml.map(f, [projector], dev, measure=m) for m in measure_types]
+    # 01 case
+    fs = [qml.map(f, [projector_01], dev, measure=m) for m in measure_types]
     assert np.allclose(fs[0](thetas), p_01)
     assert np.allclose(fs[1](thetas), p_01 - p_01 ** 2)
+
+    samples = fs[2](thetas, shots=100)[0].tolist()
+    assert set(samples) == {0, 1}
+
+    # 10 case
+    fs = [qml.map(f, [projector_10], dev, measure=m) for m in measure_types]
+    assert np.allclose(fs[0](thetas), p_10)
+    assert np.allclose(fs[1](thetas), p_10 - p_10 ** 2)
 
     samples = fs[2](thetas, shots=100)[0].tolist()
     assert set(samples) == {0, 1}
