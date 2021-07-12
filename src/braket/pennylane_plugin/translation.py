@@ -11,7 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from functools import singledispatch
+from functools import singledispatch, reduce
 from typing import FrozenSet, List
 
 import numpy as np
@@ -27,18 +27,7 @@ from braket.circuits.result_types import (
 )
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
-from braket.pennylane_plugin.ops import (
-    ISWAP,
-    PSWAP,
-    XX,
-    XY,
-    YY,
-    ZZ,
-    CPhaseShift,
-    CPhaseShift00,
-    CPhaseShift01,
-    CPhaseShift10,
-)
+from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 
 def supported_operations() -> FrozenSet[str]:
@@ -209,7 +198,7 @@ def _(qubit_channel: qml.QubitChannel, parameters):
 
 
 @_translate_operation.register
-def _(c_phase_shift: CPhaseShift, parameters):
+def _(c_phase_shift: qml.ControlledPhaseShift, parameters):
     phi = parameters[0]
     return gates.CPhaseShift(-phi) if c_phase_shift.inverse else gates.CPhaseShift(phi)
 
@@ -233,7 +222,7 @@ def _(c_phase_shift_10: CPhaseShift10, parameters):
 
 
 @_translate_operation.register
-def _(iswap: ISWAP, _parameters):
+def _(iswap: qml.ISWAP, _parameters):
     return gates.PSwap(3 * np.pi / 2) if iswap.inverse else gates.ISwap()
 
 
@@ -250,7 +239,7 @@ def _(xy: XY, parameters):
 
 
 @_translate_operation.register
-def _(xx: XX, parameters):
+def _(xx: qml.IsingXX, parameters):
     phi = parameters[0]
     return gates.XX(-phi) if xx.inverse else gates.XX(phi)
 
@@ -262,7 +251,7 @@ def _(yy: YY, parameters):
 
 
 @_translate_operation.register
-def _(zz: ZZ, parameters):
+def _(zz: qml.IsingZZ, parameters):
     phi = parameters[0]
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
 
@@ -340,6 +329,19 @@ def _(h: qml.Hermitian):
     return observables.Hermitian(h.matrix)
 
 
+_zero = np.array([[1, 0], [0, 0]])
+_one = np.array([[0, 0], [0, 1]])
+
+
+@_translate_observable.register
+def _(p: qml.Projector):
+    bitstring = p.parameters[0]
+
+    products = [_one if b else _zero for b in bitstring]
+    hermitians = [observables.Hermitian(p) for p in products]
+    return observables.TensorProduct(hermitians)
+
+
 @_translate_observable.register
 def _(t: qml.operation.Tensor):
-    return observables.TensorProduct([_translate_observable(factor) for factor in t.obs])
+    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.obs])

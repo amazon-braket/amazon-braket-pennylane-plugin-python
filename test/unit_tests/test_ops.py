@@ -22,31 +22,15 @@ from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
 
-from braket.pennylane_plugin import (
-    ISWAP,
-    PSWAP,
-    XX,
-    XY,
-    YY,
-    ZZ,
-    CPhaseShift,
-    CPhaseShift00,
-    CPhaseShift01,
-    CPhaseShift10,
-)
-
-gates_2q_fixed = [(ISWAP, gates.ISwap)]
+from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 gates_2q_parametrized = [
-    (CPhaseShift, gates.CPhaseShift),
     (CPhaseShift00, gates.CPhaseShift00),
     (CPhaseShift01, gates.CPhaseShift01),
     (CPhaseShift10, gates.CPhaseShift10),
     (PSWAP, gates.PSwap),
     (XY, gates.XY),
-    (XX, gates.XX),
     (YY, gates.YY),
-    (ZZ, gates.ZZ),
 ]
 
 observables_1q = [
@@ -55,13 +39,6 @@ observables_1q = [
 observables_2q = [
     np.kron(obs1, obs2) for obs1, obs2 in itertools.product(observables_1q, observables_1q)
 ]
-
-
-@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_fixed)
-def test_ops_fixed(pl_op, braket_gate):
-    """Tests that the matrices and decompositions of fixed custom operations are correct."""
-    assert np.allclose(pl_op._matrix(), braket_gate().to_matrix())
-    _assert_decomposition(pl_op, [])
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)

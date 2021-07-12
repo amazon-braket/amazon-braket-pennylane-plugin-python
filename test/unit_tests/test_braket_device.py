@@ -30,15 +30,11 @@ from pennylane.tape import QuantumTape
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import (
-    ISWAP,
     PSWAP,
-    XX,
     XY,
     YY,
-    ZZ,
     BraketAwsQubitDevice,
     BraketLocalQubitDevice,
-    CPhaseShift,
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
@@ -134,16 +130,16 @@ testdata = [
     (qml.QubitUnitary, gates.Unitary, [0], [np.array([[0, 1], [1, 0]])]),
     (qml.SX, gates.V, [0], []),
     (qml.CY, gates.CY, [0, 1], []),
-    (CPhaseShift, gates.CPhaseShift, [0, 1], [anp.pi]),
+    (qml.ControlledPhaseShift, gates.CPhaseShift, [0, 1], [anp.pi]),
     (CPhaseShift00, gates.CPhaseShift00, [0, 1], [anp.pi]),
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [anp.pi]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [anp.pi]),
-    (ISWAP, gates.ISwap, [0, 1], []),
+    (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [anp.pi]),
     (XY, gates.XY, [0, 1], [anp.pi]),
-    (XX, gates.XX, [0, 1], [anp.pi]),
+    (qml.IsingXX, gates.XX, [0, 1], [anp.pi]),
     (YY, gates.YY, [0, 1], [anp.pi]),
-    (ZZ, gates.ZZ, [0, 1], [anp.pi]),
+    (qml.IsingZZ, gates.ZZ, [0, 1], [anp.pi]),
     (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
     (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
     (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1]),
@@ -196,16 +192,16 @@ testdata_inverses = [
         ],
         [0, 1],
     ),
-    (CPhaseShift, gates.CPhaseShift, [0.15], [-0.15], [0, 1]),
+    (qml.ControlledPhaseShift, gates.CPhaseShift, [0.15], [-0.15], [0, 1]),
     (CPhaseShift00, gates.CPhaseShift00, [0.15], [-0.15], [0, 1]),
     (CPhaseShift01, gates.CPhaseShift01, [0.15], [-0.15], [0, 1]),
     (CPhaseShift10, gates.CPhaseShift10, [0.15], [-0.15], [0, 1]),
-    (ISWAP, gates.PSwap, [], [3 * anp.pi / 2], [0, 1]),
+    (qml.ISWAP, gates.PSwap, [], [3 * anp.pi / 2], [0, 1]),
     (PSWAP, gates.PSwap, [0.15], [-0.15], [0, 1]),
+    (qml.IsingXX, gates.XX, [0.15], [-0.15], [0, 1]),
     (XY, gates.XY, [0.15], [-0.15], [0, 1]),
-    (XX, gates.XX, [0.15], [-0.15], [0, 1]),
     (YY, gates.YY, [0.15], [-0.15], [0, 1]),
-    (ZZ, gates.ZZ, [0.15], [-0.15], [0, 1]),
+    (qml.IsingZZ, gates.ZZ, [0.15], [-0.15], [0, 1]),
 ]
 
 
@@ -594,6 +590,39 @@ def test_supported_ops_set(monkeypatch):
         m.setattr(braket.pennylane_plugin.braket_device, "supported_operations", lambda: test_ops)
         dev = _aws_device(wires=2)
         assert dev.operations == test_ops
+
+
+def test_projection():
+    """Test that the Projector observable is correctly supported."""
+    wires = 2
+    dev = BraketLocalQubitDevice(wires=wires)
+
+    thetas = [1.5, 1.6]
+    p_01 = np.cos(thetas[0] / 2) ** 2 * np.sin(thetas[1] / 2) ** 2
+    p_10 = np.sin(thetas[0] / 2) ** 2 * np.cos(thetas[1] / 2) ** 2
+
+    def f(thetas, **kwargs):
+        [qml.RY(thetas[i], wires=i) for i in range(wires)]
+
+    measure_types = ["expval", "var", "sample"]
+    projector_01 = qml.Projector([0, 1], wires=range(wires))
+    projector_10 = qml.Projector([1, 0], wires=range(wires))
+
+    # 01 case
+    fs = [qml.map(f, [projector_01], dev, measure=m) for m in measure_types]
+    assert np.allclose(fs[0](thetas), p_01)
+    assert np.allclose(fs[1](thetas), p_01 - p_01 ** 2)
+
+    samples = fs[2](thetas, shots=100)[0].tolist()
+    assert set(samples) == {0, 1}
+
+    # 10 case
+    fs = [qml.map(f, [projector_10], dev, measure=m) for m in measure_types]
+    assert np.allclose(fs[0](thetas), p_10)
+    assert np.allclose(fs[1](thetas), p_10 - p_10 ** 2)
+
+    samples = fs[2](thetas, shots=100)[0].tolist()
+    assert set(samples) == {0, 1}
 
 
 @pytest.mark.xfail(raises=NotImplementedError)
