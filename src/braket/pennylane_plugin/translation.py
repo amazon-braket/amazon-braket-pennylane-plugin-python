@@ -11,7 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from functools import singledispatch
+from functools import singledispatch, reduce
 from typing import FrozenSet, List
 
 import numpy as np
@@ -344,4 +344,4 @@ def _(p: qml.Projector):
 
 @_translate_observable.register
 def _(t: qml.operation.Tensor):
-    return observables.TensorProduct([_translate_observable(factor) for factor in t.obs])
+    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.obs])
