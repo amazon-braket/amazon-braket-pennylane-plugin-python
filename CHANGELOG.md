@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4.0 (2021-07-13)
+
+### Features
+
+ * Support `Projector` observable
+
 ## v1.3.0 (2021-05-24)
 
 ### Features
