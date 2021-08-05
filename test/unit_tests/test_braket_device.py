@@ -12,9 +12,11 @@
 # language governing permissions and limitations under the License.
 
 import json
+from typing import Any, Dict, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
+import braket.ir as ir
 import numpy as anp
 import pennylane as qml
 import pytest
@@ -22,7 +24,10 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskB
 from braket.circuits import Circuit, Instruction, Observable, gates, noises, result_types
 from braket.device_schema import DeviceActionType
 from braket.device_schema.jaqcd_device_action_properties import JaqcdDeviceActionProperties
+from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
+from braket.simulator import BraketSimulator
+from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
@@ -48,12 +53,31 @@ ACTION_PROPERTIES = JaqcdDeviceActionProperties.parse_raw(
         {
             "actionType": "braket.ir.jaqcd.program",
             "version": ["1"],
-            "supportedOperations": ["x", "y"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot"],
             "supportedResultTypes": [
                 {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0}
             ],
         }
     )
+)
+
+GATE_MODEL_RESULT = GateModelTaskResult(
+    **{
+        "measurements": [[0, 0], [0, 0], [0, 0], [1, 1]],
+        "measuredQubits": [0, 1],
+        "taskMetadata": {
+            "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+            "id": "task_arn",
+            "shots": 100,
+            "deviceId": "default",
+        },
+        "additionalMetadata": {
+            "action": {
+                "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
+                "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+            },
+        },
+    }
 )
 
 RESULT = GateModelQuantumTaskResult.from_string(
@@ -587,7 +611,7 @@ def test_supported_ops_set(monkeypatch):
 
     test_ops = ["TestOperation"]
     with monkeypatch.context() as m:
-        m.setattr(braket.pennylane_plugin.braket_device, "supported_operations", lambda: test_ops)
+        m.setattr(braket.pennylane_plugin.braket_device, "supported_operations", lambda x: test_ops)
         dev = _aws_device(wires=2)
         assert dev.operations == test_ops
 
@@ -625,21 +649,98 @@ def test_projection():
     assert set(samples) == {0, 1}
 
 
-@pytest.mark.xfail(raises=NotImplementedError)
-def test_run_task_unimplemented():
-    """Tests that an error is thrown when _run_task is not implemented"""
+@pytest.mark.xfail(raises=AttributeError)
+def test_none_device():
+    """Tests that an error is thrown when device is not given"""
     dev = DummyLocalQubitDevice(wires=2, device=None, shots=1000)
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
         qml.CNOT(wires=[0, 1])
         qml.probs(wires=[0, 1])
+    dev.execute(circuit)
 
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_run_task_unimplemented():
+    """Tests that an error is thrown when _run_task is not implemented"""
+    dummy = DummyCircuitSimulator()
+    dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0, 1])
     dev.execute(circuit)
 
 
 class DummyLocalQubitDevice(BraketQubitDevice):
     short_name = "dummy"
+
+
+class DummyCircuitSimulator(BraketSimulator):
+    def run(
+        self, program: ir.jaqcd.Program, qubits: int, shots: Optional[int], *args, **kwargs
+    ) -> Dict[str, Any]:
+        self._shots = shots
+        self._qubits = qubits
+        return GATE_MODEL_RESULT
+
+    @property
+    def properties(self) -> GateModelSimulatorDeviceCapabilities:
+        name = "braket.device_schema.simulators.gate_model_simulator_paradigm_properties"
+        input_json = {
+            "braketSchemaHeader": {
+                "name": "braket.device_schema.simulators.gate_model_simulator_device_capabilities",
+                "version": "1",
+            },
+            "service": {
+                "braketSchemaHeader": {
+                    "name": "braket.device_schema.device_service_properties",
+                    "version": "1",
+                },
+                "executionWindows": [
+                    {
+                        "executionDay": "Everyday",
+                        "windowStartHour": "09:00",
+                        "windowEndHour": "11:00",
+                    }
+                ],
+                "shotsRange": [1, 10],
+                "deviceCost": {"price": 0.25, "unit": "minute"},
+                "deviceDocumentation": {
+                    "imageUrl": "image_url",
+                    "summary": "Summary on the device",
+                    "externalDocumentationUrl": "external doc link",
+                },
+                "deviceLocation": "us-east-1",
+                "updatedAt": "2020-06-16T19:28:02.869136",
+            },
+            "action": {
+                "braket.ir.jaqcd.program": {
+                    "actionType": "braket.ir.jaqcd.program",
+                    "version": ["1"],
+                    "supportedOperations": ["x", "y", "h", "cnot"],
+                    "supportedResultTypes": [
+                        {
+                            "name": "resultType1",
+                            "observables": ["observable1"],
+                            "minShots": 2,
+                            "maxShots": 4,
+                        }
+                    ],
+                }
+            },
+            "paradigm": {
+                "braketSchemaHeader": {
+                    "name": name,
+                    "version": "1",
+                },
+                "qubitCount": 31,
+            },
+            "deviceParameters": {},
+        }
+        return GateModelSimulatorDeviceCapabilities.parse_obj(input_json)
 
 
 def _noop(*args, **kwargs):
@@ -653,6 +754,7 @@ def _aws_device(
     properties_mock, type_mock, wires, device_type=AwsDeviceType.QPU, shots=SHOTS, **kwargs
 ):
     properties_mock.action = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
+    properties_mock.return_value.action.return_value = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
     type_mock.return_value = device_type
     return BraketAwsQubitDevice(
         wires=wires,

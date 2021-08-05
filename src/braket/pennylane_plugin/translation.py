@@ -11,7 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from functools import singledispatch, reduce
+from functools import reduce, singledispatch
 from typing import FrozenSet, List
 
 import numpy as np
@@ -25,18 +25,69 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.devices import Device
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
+_BRAKET_TO_PENNYLANE_OPERATIONS = {
+    "x": "PauliX",
+    "y": "PauliY",
+    "z": "PauliZ",
+    "h": "Hadamard",
+    "ry": "RY",
+    "rx": "RX",
+    "rz": "RZ",
+    "s": "S",
+    "vi": "SX",
+    "t": "T",
+    "cnot": "CNOT",
+    "cy": "CY",
+    "cz": "CZ",
+    "swap": "SWAP",
+    "cswap": "CSWAP",
+    "ccnot": "Toffoli",
+    "phaseshift": "PhaseShift",
+    "unitary": "QubitUnitary",
+    "amplitude_damping": "AmplitudeDamping",
+    "generalized_amplitude_damping": "GeneralizedAmplitudeDamping",
+    "phase_damping": "PhaseDamping",
+    "depolarizing_channel": "DepolarizingChannel",
+    "bit_flip": "BitFlip",
+    "phase_flip": "PhaseFlip",
+    "qubit_channel": "QubitChannel",
+    "cphaseshift": "ControlledPhaseShift",
+    "cphaseshift00": "CPhaseShift00",
+    "cphaseshift01": "CPhaseShift01",
+    "cphaseshift10": "CPhaseShift10",
+    "iswap": "ISWAP",
+    "pswap": "PSWAP",
+    "xy": "XY",
+    "xx": "IsingXX",
+    "yy": "YY",
+    "zz": "IsingZZ",
+}
 
-def supported_operations() -> FrozenSet[str]:
-    """Returns the operations supported by the plugin.
+
+def supported_operations(device: Device) -> FrozenSet[str]:
+    """Returns the operations supported by the plugin based upon the device.
+
+    Args:
+        device (Device): The device to obtain the supported operations for
 
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
-    return frozenset(op.__name__ for op in _translate_operation.registry) - {"object"}
+    try:
+        properties = device.properties.action["braket.ir.jaqcd.program"]
+    except AttributeError:
+        raise AttributeError("Device needs to have properties defined.")
+    supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
+    return frozenset(
+        _BRAKET_TO_PENNYLANE_OPERATIONS[op]
+        for op in _BRAKET_TO_PENNYLANE_OPERATIONS
+        if op.lower() in supported_ops
+    )
 
 
 def translate_operation(operation: Operation, parameters) -> Gate:

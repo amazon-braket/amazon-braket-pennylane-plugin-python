@@ -33,7 +33,6 @@ Code details
 """
 
 # pylint: disable=invalid-name
-import warnings
 from enum import Enum, auto
 from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
@@ -103,7 +102,7 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
         self._run_kwargs = run_kwargs
-        self._supported_ops = supported_operations()
+        self._supported_ops = supported_operations(self._device)
         self._check_supported_result_types()
 
     def reset(self):
@@ -216,14 +215,9 @@ class BraketQubitDevice(QubitDevice):
         return circuit
 
     def _check_supported_result_types(self):
-        try:
-            supported_result_types = self._device.properties.action[
-                "braket.ir.jaqcd.program"
-            ].supportedResultTypes
-        except AttributeError:
-            warnings.warn("Device does not support any gate-based result types")
-            self._braket_result_types = frozenset()
-            return
+        supported_result_types = self._device.properties.action[
+            "braket.ir.jaqcd.program"
+        ].supportedResultTypes
 
         self._braket_result_types = frozenset(
             result_type.name for result_type in supported_result_types
