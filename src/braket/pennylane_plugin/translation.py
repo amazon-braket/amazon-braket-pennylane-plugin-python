@@ -1,4 +1,4 @@
-# Copyright 2019-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2019-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -39,7 +39,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "rx": "RX",
     "rz": "RZ",
     "s": "S",
-    "vi": "SX",
+    "v": "SX",
     "t": "T",
     "cnot": "CNOT",
     "cy": "CY",
@@ -52,10 +52,10 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "amplitude_damping": "AmplitudeDamping",
     "generalized_amplitude_damping": "GeneralizedAmplitudeDamping",
     "phase_damping": "PhaseDamping",
-    "depolarizing_channel": "DepolarizingChannel",
+    "depolarizing": "DepolarizingChannel",
     "bit_flip": "BitFlip",
     "phase_flip": "PhaseFlip",
-    "qubit_channel": "QubitChannel",
+    "kraus": "QubitChannel",
     "cphaseshift": "ControlledPhaseShift",
     "cphaseshift00": "CPhaseShift00",
     "cphaseshift01": "CPhaseShift01",
@@ -82,11 +82,11 @@ def supported_operations(device: Device) -> FrozenSet[str]:
         properties = device.properties.action["braket.ir.jaqcd.program"]
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
-    supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
+    supported_ops = frozenset(op.lower().replace("_", "") for op in properties.supportedOperations)
     return frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
-        if op.lower() in supported_ops
+        if op.lower().replace("_", "") in supported_ops
     )
 
 
