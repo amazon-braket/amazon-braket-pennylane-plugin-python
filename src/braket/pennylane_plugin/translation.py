@@ -77,7 +77,6 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
-    supported_ops = frozenset()
     try:
         properties = device.properties.action["braket.ir.jaqcd.program"]
     except AttributeError:
