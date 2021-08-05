@@ -77,20 +77,17 @@ def supported_operations(device) -> FrozenSet[str]:
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
-    braket_ops = _BRAKET_TO_PENNYLANE_OPERATIONS
     supported_ops = frozenset()
     try:
-        device_list = device.properties.action["braket.ir.jaqcd.program"].supportedOperations
-        device_list = [x.lower() for x in device_list]
-        supported_ops = frozenset(device_list)
+        properties = device.properties.action["braket.ir.jaqcd.program"]
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
-    translated_supported_ops = {
-        str(braket_ops[op])
-        for op in braket_ops
-        if len(supported_ops) > 0 and str(op).lower() in supported_ops
-    }
-    return frozenset(translated_supported_ops)
+    supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
+    return frozenset(
+        _BRAKET_TO_PENNYLANE_OPERATIONS[op]
+        for op in _BRAKET_TO_PENNYLANE_OPERATIONS
+        if op.lower() in supported_ops
+    )
 
 
 def translate_operation(operation: Operation, parameters) -> Gate:
