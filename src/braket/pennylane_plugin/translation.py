@@ -31,7 +31,7 @@ from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
-BRAKET_TO_PENNYLANE_OPERATIONS = {
+_BRAKET_TO_PENNYLANE_OPERATIONS = {
     "x": "PauliX",
     "y": "PauliY",
     "z": "PauliZ",
@@ -79,7 +79,7 @@ def supported_operations(device) -> FrozenSet[str]:
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
-    braket_ops = BRAKET_TO_PENNYLANE_OPERATIONS
+    braket_ops = _BRAKET_TO_PENNYLANE_OPERATIONS
     supported_ops = frozenset()
     try:
         device_list = device.properties.action["braket.ir.jaqcd.program"].supportedOperations
