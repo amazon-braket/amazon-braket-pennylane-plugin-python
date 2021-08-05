@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 """Tests that variances are correctly computed in the plugin device"""
+
 import numpy as np
 import pennylane as qml
 import pytest
