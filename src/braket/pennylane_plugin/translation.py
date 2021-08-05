@@ -82,25 +82,14 @@ def supported_operations(device) -> FrozenSet[str]:
     braket_ops = BRAKET_TO_PENNYLANE_OPERATIONS
     supported_ops = frozenset()
     try:
-        if isinstance(device.properties, BraketSchemaBase):
-            device_list = json.loads(device.properties.json())["action"]["braket.ir.jaqcd.program"][
-                "supportedOperations"
-            ]
-            for i in range(len(device_list)):
-                device_list[i] = device_list[i].lower()
-            supported_ops = frozenset(device_list)
-        else:
-            device_dict = device.properties.action["braket.ir.jaqcd.program"].json()
-            device_list = json.loads(device_dict)["supportedOperations"]
-            for i in range(len(device_list)):
-                device_list[i] = device_list[i].lower()
-            supported_ops = frozenset(device_list)
+        device_list = device.properties.action["braket.ir.jaqcd.program"].supportedOperations
+        device_list = [x.lower() for x in device_list]
+        supported_ops = frozenset(device_list)
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
-    translated_supported_ops = set()
-    for op in braket_ops:
-        if len(supported_ops) > 0 and str(op).lower() in supported_ops:
-            translated_supported_ops.add(str(braket_ops[op]))
+    translated_supported_ops = {
+        str(braket_ops[op]) for op in braket_ops if len(supported_ops) > 0 and str(op).lower() in supported_ops
+    }
     return frozenset(translated_supported_ops)
 
 
