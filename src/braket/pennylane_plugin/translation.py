@@ -25,6 +25,7 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.devices import Device
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
