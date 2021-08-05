@@ -11,7 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import json
 from functools import reduce, singledispatch
 from typing import FrozenSet, List
 
@@ -26,7 +25,6 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
-from braket.schema_common import BraketSchemaBase
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
@@ -88,7 +86,9 @@ def supported_operations(device) -> FrozenSet[str]:
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
     translated_supported_ops = {
-        str(braket_ops[op]) for op in braket_ops if len(supported_ops) > 0 and str(op).lower() in supported_ops
+        str(braket_ops[op])
+        for op in braket_ops
+        if len(supported_ops) > 0 and str(op).lower() in supported_ops
     }
     return frozenset(translated_supported_ops)
 
