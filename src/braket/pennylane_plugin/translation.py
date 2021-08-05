@@ -68,7 +68,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
 }
 
 
-def supported_operations(device) -> FrozenSet[str]:
+def supported_operations(device: Device) -> FrozenSet[str]:
     """Returns the operations supported by the plugin based upon the device.
 
     Args:
