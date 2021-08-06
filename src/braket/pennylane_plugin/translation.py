@@ -98,7 +98,6 @@ def translate_operation(operation: Operation, *args, **kwargs) -> Gate:
 
     Args:
         operation (Operation): The PennyLane ``Operation`` to translate
-        parameters: deprecated parameter; this is supplied by ``operation``
 
     Returns:
         Gate: The Braket gate corresponding to the given operation
