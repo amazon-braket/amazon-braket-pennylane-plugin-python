@@ -1,4 +1,4 @@
-# Copyright 2019-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -14,7 +14,6 @@
 from functools import reduce, singledispatch
 from typing import FrozenSet, List
 
-import numpy as np
 import pennylane as qml
 from braket.circuits import Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
@@ -26,6 +25,7 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
+from pennylane import numpy as np
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
@@ -39,8 +39,11 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "rx": "RX",
     "rz": "RZ",
     "s": "S",
-    "vi": "SX",
+    "si": "S.inv",
+    "v": "SX",
+    "vi": "SX.inv",
     "t": "T",
+    "ti": "T.inv",
     "cnot": "CNOT",
     "cy": "CY",
     "cz": "CZ",
@@ -52,10 +55,10 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "amplitude_damping": "AmplitudeDamping",
     "generalized_amplitude_damping": "GeneralizedAmplitudeDamping",
     "phase_damping": "PhaseDamping",
-    "depolarizing_channel": "DepolarizingChannel",
+    "depolarizing": "DepolarizingChannel",
     "bit_flip": "BitFlip",
     "phase_flip": "PhaseFlip",
-    "qubit_channel": "QubitChannel",
+    "kraus": "QubitChannel",
     "cphaseshift": "ControlledPhaseShift",
     "cphaseshift00": "CPhaseShift00",
     "cphaseshift01": "CPhaseShift01",
@@ -90,16 +93,16 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     )
 
 
-def translate_operation(operation: Operation, parameters) -> Gate:
+def translate_operation(operation: Operation, *args, **kwargs) -> Gate:
     """Translates a PennyLane ``Operation`` into the corresponding Braket ``Gate``.
 
     Args:
         operation (Operation): The PennyLane ``Operation`` to translate
-        parameters: The parameters of the operation
 
     Returns:
         Gate: The Braket gate corresponding to the given operation
     """
+    parameters = [p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters]
     return _translate_operation(operation, parameters)
 
 
