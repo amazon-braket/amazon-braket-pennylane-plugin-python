@@ -183,10 +183,8 @@ def test_translate_operation_named_inverse(pl_cls, braket_cls, qubit):
 
 
 def test_translate_iswap_inverse():
-    qubits = [0, 1]
-    pl_op = qml.ISWAP(wires=qubits).inv()
-    braket_gate = gates.PSwap(3 * np.pi / 2)
-    assert translate_operation(pl_op) == braket_gate
+    """Tests that the iSwap gate is inverted correctly"""
+    assert translate_operation(qml.ISWAP(wires=[0, 1]).inv()) == gates.PSwap(3 * np.pi / 2)
 
 
 @pytest.mark.parametrize("return_type, braket_result", zip(pl_return_types, braket_results))
