@@ -172,6 +172,7 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubit", testdata_named_inverses)
 def test_translate_operation_named_inverse(pl_cls, braket_cls, qubit):
+    """Tests that operations whose inverses are named Braket gates are inverted correctly"""
     pl_op = pl_cls(wires=[qubit]).inv()
     braket_gate = braket_cls()
     assert translate_operation(pl_op) == braket_gate
