@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -21,7 +21,7 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, Instruction, Observable, gates, noises, result_types
+from braket.circuits import Circuit, Observable, result_types
 from braket.device_schema import DeviceActionType
 from braket.device_schema.jaqcd_device_action_properties import JaqcdDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
@@ -34,16 +34,7 @@ from pennylane import numpy as np
 from pennylane.tape import QuantumTape
 
 import braket.pennylane_plugin.braket_device
-from braket.pennylane_plugin import (
-    PSWAP,
-    XY,
-    YY,
-    BraketAwsQubitDevice,
-    BraketLocalQubitDevice,
-    CPhaseShift00,
-    CPhaseShift01,
-    CPhaseShift10,
-)
+from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 
 SHOTS = 10000
@@ -135,99 +126,6 @@ CIRCUIT = (
 
 DEVICE_ARN = "baz"
 
-testdata = [
-    (qml.Hadamard, gates.H, [0], []),
-    (qml.PauliX, gates.X, [0], []),
-    (qml.PauliY, gates.Y, [0], []),
-    (qml.PauliZ, gates.Z, [0], []),
-    (qml.S, gates.S, [0], []),
-    (qml.T, gates.T, [0], []),
-    (qml.CNOT, gates.CNot, [0, 1], []),
-    (qml.CZ, gates.CZ, [0, 1], []),
-    (qml.PhaseShift, gates.PhaseShift, [0], [anp.pi]),
-    (qml.RX, gates.Rx, [0], [anp.pi]),
-    (qml.RY, gates.Ry, [0], [anp.pi]),
-    (qml.RZ, gates.Rz, [0], [anp.pi]),
-    (qml.SWAP, gates.Swap, [0, 1], []),
-    (qml.CSWAP, gates.CSwap, [0, 1, 2], []),
-    (qml.Toffoli, gates.CCNot, [0, 1, 2], []),
-    (qml.QubitUnitary, gates.Unitary, [0], [np.array([[0, 1], [1, 0]])]),
-    (qml.SX, gates.V, [0], []),
-    (qml.CY, gates.CY, [0, 1], []),
-    (qml.ControlledPhaseShift, gates.CPhaseShift, [0, 1], [anp.pi]),
-    (CPhaseShift00, gates.CPhaseShift00, [0, 1], [anp.pi]),
-    (CPhaseShift01, gates.CPhaseShift01, [0, 1], [anp.pi]),
-    (CPhaseShift10, gates.CPhaseShift10, [0, 1], [anp.pi]),
-    (qml.ISWAP, gates.ISwap, [0, 1], []),
-    (PSWAP, gates.PSwap, [0, 1], [anp.pi]),
-    (XY, gates.XY, [0, 1], [anp.pi]),
-    (qml.IsingXX, gates.XX, [0, 1], [anp.pi]),
-    (YY, gates.YY, [0, 1], [anp.pi]),
-    (qml.IsingZZ, gates.ZZ, [0, 1], [anp.pi]),
-    (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
-    (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
-    (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1]),
-    (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1]),
-    (qml.BitFlip, noises.BitFlip, [0], [0.1]),
-    (qml.PhaseFlip, noises.PhaseFlip, [0], [0.1]),
-    (
-        qml.QubitChannel,
-        noises.Kraus,
-        [0],
-        [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
-    ),
-]
-
-testdata_inverses = [
-    (qml.Hadamard, gates.H, [], [], [0]),
-    (qml.PauliX, gates.X, [], [], [0]),
-    (qml.PauliY, gates.Y, [], [], [0]),
-    (qml.PauliZ, gates.Z, [], [], [0]),
-    (qml.Hadamard, gates.H, [], [], [0]),
-    (qml.S, gates.Si, [], [], [0]),
-    (qml.T, gates.Ti, [], [], [0]),
-    (qml.SX, gates.Vi, [], [], [0]),
-    (qml.CNOT, gates.CNot, [], [], [0, 1]),
-    (qml.CZ, gates.CZ, [], [], [0, 1]),
-    (qml.CY, gates.CY, [], [], [0, 1]),
-    (qml.SWAP, gates.Swap, [], [], [0, 1]),
-    (qml.CSWAP, gates.CSwap, [], [], [0, 1, 2]),
-    (qml.Toffoli, gates.CCNot, [], [], [0, 1, 2]),
-    (qml.RX, gates.Rx, [0.15], [-0.15], [0]),
-    (qml.RY, gates.Ry, [0.15], [-0.15], [0]),
-    (qml.RZ, gates.Rz, [0.15], [-0.15], [0]),
-    (qml.PhaseShift, gates.PhaseShift, [0.15], [-0.15], [0]),
-    (
-        qml.QubitUnitary,
-        gates.Unitary,
-        [
-            1
-            / anp.sqrt(2)
-            * np.array(
-                [[1, 0, 0, 1j], [0, 1j, 1, 0], [0, 1j, -1, 0], [1, 0, 0, -1j]], dtype=complex
-            )
-        ],
-        [
-            1
-            / anp.sqrt(2)
-            * np.array(
-                [[1, 0, 0, 1], [0, -1j, -1j, 0], [0, 1, -1, 0], [-1j, 0, 0, 1j]], dtype=complex
-            )
-        ],
-        [0, 1],
-    ),
-    (qml.ControlledPhaseShift, gates.CPhaseShift, [0.15], [-0.15], [0, 1]),
-    (CPhaseShift00, gates.CPhaseShift00, [0.15], [-0.15], [0, 1]),
-    (CPhaseShift01, gates.CPhaseShift01, [0.15], [-0.15], [0, 1]),
-    (CPhaseShift10, gates.CPhaseShift10, [0.15], [-0.15], [0, 1]),
-    (qml.ISWAP, gates.PSwap, [], [3 * anp.pi / 2], [0, 1]),
-    (PSWAP, gates.PSwap, [0.15], [-0.15], [0, 1]),
-    (qml.IsingXX, gates.XX, [0.15], [-0.15], [0, 1]),
-    (XY, gates.XY, [0.15], [-0.15], [0, 1]),
-    (YY, gates.YY, [0.15], [-0.15], [0, 1]),
-    (qml.IsingZZ, gates.ZZ, [0.15], [-0.15], [0, 1]),
-]
-
 
 def test_reset():
     """Tests that the members of the device are cleared on reset."""
@@ -240,27 +138,15 @@ def test_reset():
     assert dev.task is None
 
 
-@pytest.mark.parametrize("pl_op, braket_gate, qubits, params", testdata)
-def test_apply(pl_op, braket_gate, qubits, params):
+def test_apply():
     """Tests that the correct Braket gate is applied for each PennyLane operation."""
-    dev = _aws_device(wires=len(qubits))
-    circuit = dev.apply([pl_op(*params, wires=qubits)])
-    assert circuit == Circuit().add_instruction(Instruction(braket_gate(*params), qubits))
-
-
-@pytest.mark.parametrize("pl_op, braket_gate, params, inv_params, qubits", testdata_inverses)
-def test_apply_inverse_gates(pl_op, braket_gate, params, inv_params, qubits):
-    """
-    Tests that the correct Braket gate is applied for the inverse of each PennyLane operations
-    where the inverse is defined.
-    """
-    dev = _aws_device(wires=len(qubits))
-    circuit = dev.apply([pl_op(*params, wires=qubits).inv()])
-    assert circuit == Circuit().add_instruction(Instruction(braket_gate(*inv_params), qubits))
+    dev = _aws_device(wires=2)
+    circuit = dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
+    assert circuit == Circuit().h(0).cnot(0, 1)
 
 
 def test_apply_unused_qubits():
-    """Tests that the correct circuit is created when not all qires in the dievce are used."""
+    """Tests that the correct circuit is created when not all wires in the device are used."""
     dev = _aws_device(wires=4)
     operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi / 2, wires=2)]
     rotations = [qml.RY(np.pi, wires=1)]

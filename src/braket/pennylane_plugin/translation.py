@@ -14,7 +14,6 @@
 from functools import reduce, singledispatch
 from typing import FrozenSet, List
 
-import numpy as np
 import pennylane as qml
 from braket.circuits import Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
@@ -26,6 +25,7 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
+from pennylane import numpy as np
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
 from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
@@ -39,8 +39,11 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "rx": "RX",
     "rz": "RZ",
     "s": "S",
+    "si": "S.inv",
     "v": "SX",
+    "vi": "SX.inv",
     "t": "T",
+    "ti": "T.inv",
     "cnot": "CNOT",
     "cy": "CY",
     "cz": "CZ",
@@ -82,24 +85,25 @@ def supported_operations(device: Device) -> FrozenSet[str]:
         properties = device.properties.action["braket.ir.jaqcd.program"]
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
-    supported_ops = frozenset(op.lower().replace("_", "") for op in properties.supportedOperations)
+    supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
     return frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
-        if op.lower().replace("_", "") in supported_ops
+        if op.lower() in supported_ops
     )
 
 
-def translate_operation(operation: Operation, parameters) -> Gate:
+def translate_operation(operation: Operation, parameters=None) -> Gate:
     """Translates a PennyLane ``Operation`` into the corresponding Braket ``Gate``.
 
     Args:
         operation (Operation): The PennyLane ``Operation`` to translate
-        parameters: The parameters of the operation
+        parameters: deprecated parameter; this is supplied by ``operation``
 
     Returns:
         Gate: The Braket gate corresponding to the given operation
     """
+    parameters = [p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters]
     return _translate_operation(operation, parameters)
 
 

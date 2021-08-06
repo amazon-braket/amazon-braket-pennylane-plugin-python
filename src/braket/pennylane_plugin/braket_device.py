@@ -200,8 +200,7 @@ class BraketQubitDevice(QubitDevice):
 
         # Add operations to Braket Circuit object
         for operation in operations + rotations:
-            params = [p.numpy() if isinstance(p, np.tensor) else p for p in operation.parameters]
-            gate = translate_operation(operation, params)
+            gate = translate_operation(operation)
             dev_wires = self.map_wires(operation.wires).tolist()
             ins = Instruction(gate, dev_wires)
             circuit.add_instruction(ins)
