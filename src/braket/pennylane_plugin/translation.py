@@ -93,7 +93,7 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     )
 
 
-def translate_operation(operation: Operation, parameters=None) -> Gate:
+def translate_operation(operation: Operation, *args, **kwargs) -> Gate:
     """Translates a PennyLane ``Operation`` into the corresponding Braket ``Gate``.
 
     Args:
