@@ -85,7 +85,7 @@ class BraketQubitDevice(QubitDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
-    pennylane_requires = ">=0.16.0"
+    pennylane_requires = ">=0.17.0"
     version = __version__
     author = "Amazon Web Services"
 
@@ -189,6 +189,15 @@ class BraketQubitDevice(QubitDevice):
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
+
+        if self.tracker.active:
+            metadata = self.task.metadata()
+            if metadata is not None:
+                self.tracker.update(**metadata)
+            else:
+                self.tracker.update(executions=1)
+            self.tracker.record()
+
         return self._braket_to_pl_result(self._task.result(), circuit)
 
     def apply(
@@ -345,6 +354,15 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         braket_results_batch = task_batch.results(
             fail_unsuccessful=True, max_retries=self._max_retries
         )
+
+        if self.tracker.active:
+            metadata = task_batch.metadata()
+            if metadata is not None:
+                self.tracker.update(**metadata)
+            else:
+                self.tracker.update(batches=1, batch_len=len(circuits))
+            self.tracker.record()
+
         return [
             self._braket_to_pl_result(braket_result, circuit)
             for braket_result, circuit in zip(braket_results_batch, circuits)
