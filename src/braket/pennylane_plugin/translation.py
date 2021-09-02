@@ -28,7 +28,7 @@ from braket.devices import Device
 from pennylane import numpy as np
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
-from braket.pennylane_plugin.ops import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin.ops import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "x": "PauliX",
@@ -67,7 +67,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "pswap": "PSWAP",
     "xy": "XY",
     "xx": "IsingXX",
-    "yy": "YY",
+    "yy": "IsingYY",
     "zz": "IsingZZ",
 }
 
@@ -299,7 +299,7 @@ def _(xx: qml.IsingXX, parameters):
 
 
 @_translate_operation.register
-def _(yy: YY, parameters):
+def _(yy: qml.IsingYY, parameters):
     phi = parameters[0]
     return gates.YY(-phi) if yy.inverse else gates.YY(phi)
 
