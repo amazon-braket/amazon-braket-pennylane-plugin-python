@@ -28,7 +28,6 @@ These operations can be imported via
     from braket.pennylane_plugin import (
         PSWAP,
         XY,
-        YY,
         CPhaseShift00,
         CPhaseShift01,
         CPhaseShift10,
@@ -43,7 +42,6 @@ Operations
     CPhaseShift10
     PSWAP
     XY
-    YY
 
 Code details
 ~~~~~~~~~~~~
@@ -314,61 +312,6 @@ class XY(Operation):
                 [0.0, cos, isin, 0.0],
                 [0.0, isin, cos, 0.0],
                 [0.0, 0.0, 0.0, 1.0],
-            ],
-            dtype=complex,
-        )
-
-
-class YY(Operation):
-    r""" YY(phi, wires)
-
-    Ising YY coupling gate: https://arxiv.org/abs/1707.06356
-
-    .. math:: \mathtt{YY}(\phi) = \begin{bmatrix}
-            \cos(\phi / 2) & 0 & 0 & i \sin(\phi / 2) \\
-            0 & \cos(\phi / 2) & -i \sin(\phi / 2) & 0 \\
-            0 & -i \sin(\phi / 2) & \cos(\phi / 2) & 0 \\
-            i \sin(\phi / 2) & 0 & 0 & \cos(\phi / 2)
-        \end{bmatrix}.
-
-    **Details:**
-
-    * Number of wires: 2
-    * Number of parameters: 1
-    * Gradient recipe:
-
-    .. math::
-        \frac{d}{d \phi} \mathtt{YY}(\phi)
-        = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) - \mathtt{YY}(\phi - \pi / 2) \right]
-
-    Args:
-        phi (float): the phase angle
-        wires (int): the subsystem the gate acts on
-    """
-    num_params = 1
-    num_wires = 2
-    par_domain = "R"
-    grad_method = "A"
-
-    @staticmethod
-    def decomposition(phi, wires):
-        return [
-            qml.CY(wires=wires),
-            qml.RY(phi, wires=[wires[0]]),
-            qml.CY(wires=wires),
-        ]
-
-    @classmethod
-    def _matrix(cls, *params):
-        phi = params[0]
-        cos = np.cos(phi / 2)
-        isin = 1.0j * np.sin(phi / 2)
-        return np.array(
-            [
-                [cos, 0.0, 0.0, isin],
-                [0.0, cos, -isin, 0.0],
-                [0.0, -isin, cos, 0.0],
-                [isin, 0.0, 0.0, cos],
             ],
             dtype=complex,
         )
