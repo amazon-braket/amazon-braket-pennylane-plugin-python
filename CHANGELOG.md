@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.4.2 (2021-09-03)
+
+### Bug Fixes and Other Changes
+
+ * Remove YY gate import from integ tests
+ * Add IsingYY support
+
 ## v1.4.1 (2021-08-06)
 
 ### Bug Fixes and Other Changes
