@@ -22,7 +22,7 @@ from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
 
-from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 gates_2q_parametrized = [
     (CPhaseShift00, gates.CPhaseShift00),
@@ -30,7 +30,6 @@ gates_2q_parametrized = [
     (CPhaseShift10, gates.CPhaseShift10),
     (PSWAP, gates.PSwap),
     (XY, gates.XY),
-    (YY, gates.YY),
 ]
 
 observables_1q = [

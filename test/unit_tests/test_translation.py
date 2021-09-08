@@ -27,7 +27,7 @@ from pennylane.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     translate_operation,
@@ -61,7 +61,7 @@ testdata = [
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
     (XY, gates.XY, [0, 1], [np.pi]),
     (qml.IsingXX, gates.XX, [0, 1], [np.pi]),
-    (YY, gates.YY, [0, 1], [np.pi]),
+    (qml.IsingYY, gates.YY, [0, 1], [np.pi]),
     (qml.IsingZZ, gates.ZZ, [0, 1], [np.pi]),
     (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
     (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
@@ -119,7 +119,7 @@ testdata_inverses = [
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (XY, gates.XY, [0, 1], [0.15], [-0.15]),
-    (YY, gates.YY, [0, 1], [0.15], [-0.15]),
+    (qml.IsingYY, gates.YY, [0, 1], [0.15], [-0.15]),
     (qml.IsingZZ, gates.ZZ, [0, 1], [0.15], [-0.15]),
 ]
 
