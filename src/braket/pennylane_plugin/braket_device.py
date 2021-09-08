@@ -191,11 +191,7 @@ class BraketQubitDevice(QubitDevice):
         self._task = self._run_task(self._circuit)
 
         if self.tracker.active:
-            metadata = self.task.metadata()
-            if metadata is not None:
-                self.tracker.update(**metadata)
-            else:
-                self.tracker.update(executions=1)
+            self.tracker.update(executions=1, shots=self.shots)
             self.tracker.record()
 
         return self._braket_to_pl_result(self._task.result(), circuit)
@@ -340,10 +336,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
         ]
 
+        batch_shots = 0 if self.analytic else self.shots
+
         task_batch = self._device.run_batch(
             braket_circuits,
             s3_destination_folder=self._s3_folder,
-            shots=0 if self.analytic else self.shots,
+            shots=batch_shots,
             max_parallel=self._max_parallel,
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
@@ -356,11 +354,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         )
 
         if self.tracker.active:
-            metadata = task_batch.metadata()
-            if metadata is not None:
-                self.tracker.update(**metadata)
-            else:
-                self.tracker.update(batches=1, batch_len=len(circuits))
+            batch_len = len(circuits)
+            total_shots = batch_len * batch_shots
+            self.tracker.update(batches=1, executions=batch_len, shots=total_shots)
             self.tracker.record()
 
         return [

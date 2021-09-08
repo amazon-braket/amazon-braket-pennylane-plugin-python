@@ -227,6 +227,32 @@ def test_execute(mock_run):
     )
 
 
+@patch.object(AwsDevice, "run")
+def test_execute_tracker(mock_run):
+    """Asserts tracker stores information during execute when active"""
+    mock_run.return_value = TASK
+    dev = _aws_device(wires=4, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.execute(circuit)
+        dev.execute(circuit)
+    dev.execute(circuit)
+
+    latest = {'executions':1, 'shots': SHOTS}
+    history = {'executions': [1,1], 'shots': [SHOTS, SHOTS]}
+    totals = {'executions': 2, 'shots': 2*SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
 def test_pl_to_braket_circuit():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
     dev = _aws_device(wires=2, foo="bar")
@@ -269,6 +295,30 @@ def test_batch_execute_non_parallel(monkeypatch):
         m.setattr(QubitDevice, "batch_execute", lambda self, circuits: 1967)
         res = dev.batch_execute([])
         assert res == 1967
+
+
+@patch.object(AwsDevice, "run")
+def test_batch_execute_non_parallel_tracker(mock_run):
+    mock_run.return_value = TASK
+    dev = _aws_device(wires=2, foo="bar", parallel=False)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.batch_execute([circuit])
+    dev.batch_execute([circuit])
+
+    latest = {'batches': 1, 'batch_len': 1}
+    history = {'executions': [1], 'shots': [SHOTS], 'batches': [1], 'batch_len': [1]}
+    totals = {'executions': 1, 'shots': SHOTS, 'batches': 1, 'batch_len': 1}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
 @patch.object(AwsDevice, "run_batch")
@@ -321,6 +371,34 @@ def test_batch_execute_parallel(mock_run_batch):
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
     )
+
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel execution"""
+
+    mock_run_batch.return_value = TASK_BATCH
+    dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0, ))
+
+    circuits = [circuit, circuit]
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+       dev.batch_execute(circuits)
+    dev.batch_execute(circuits)
+
+    latest = {"batches": 1, "executions": 2, "shots": 2*SHOTS}
+    history = {"batches": [1], "executions": [2], "shots": [2*SHOTS]}
+    totals = {"batches": 1, "executions": 2, "shots": 2*SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
 @patch.object(AwsDevice, "run")
