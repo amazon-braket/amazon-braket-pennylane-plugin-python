@@ -243,9 +243,9 @@ def test_execute_tracker(mock_run):
         dev.execute(circuit)
     dev.execute(circuit)
 
-    latest = {'executions':1, 'shots': SHOTS}
-    history = {'executions': [1,1], 'shots': [SHOTS, SHOTS]}
-    totals = {'executions': 2, 'shots': 2*SHOTS}
+    latest = {"executions": 1, "shots": SHOTS}
+    history = {"executions": [1, 1], "shots": [SHOTS, SHOTS]}
+    totals = {"executions": 2, "shots": 2 * SHOTS}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
@@ -311,9 +311,9 @@ def test_batch_execute_non_parallel_tracker(mock_run):
         dev.batch_execute([circuit])
     dev.batch_execute([circuit])
 
-    latest = {'batches': 1, 'batch_len': 1}
-    history = {'executions': [1], 'shots': [SHOTS], 'batches': [1], 'batch_len': [1]}
-    totals = {'executions': 1, 'shots': SHOTS, 'batches': 1, 'batch_len': 1}
+    latest = {"batches": 1, "batch_len": 1}
+    history = {"executions": [1], "shots": [SHOTS], "batches": [1], "batch_len": [1]}
+    totals = {"executions": 1, "shots": SHOTS, "batches": 1, "batch_len": 1}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
@@ -372,6 +372,7 @@ def test_batch_execute_parallel(mock_run_batch):
         foo="bar",
     )
 
+
 @patch.object(AwsDevice, "run_batch")
 def test_batch_execute_parallel_tracker(mock_run_batch):
     """Asserts tracker updates during parallel execution"""
@@ -379,21 +380,20 @@ def test_batch_execute_parallel_tracker(mock_run_batch):
     mock_run_batch.return_value = TASK_BATCH
     dev = _aws_device(wires=1, foo="bar", parallel=True)
 
-
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
-        qml.probs(wires=(0, ))
+        qml.probs(wires=(0,))
 
     circuits = [circuit, circuit]
 
     callback = Mock()
     with qml.Tracker(dev, callback=callback) as tracker:
-       dev.batch_execute(circuits)
+        dev.batch_execute(circuits)
     dev.batch_execute(circuits)
 
-    latest = {"batches": 1, "executions": 2, "shots": 2*SHOTS}
-    history = {"batches": [1], "executions": [2], "shots": [2*SHOTS]}
-    totals = {"batches": 1, "executions": 2, "shots": 2*SHOTS}
+    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    history = {"batches": [1], "executions": [2], "shots": [2 * SHOTS]}
+    totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
