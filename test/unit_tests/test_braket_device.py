@@ -299,6 +299,7 @@ def test_batch_execute_non_parallel(monkeypatch):
 
 @patch.object(AwsDevice, "run")
 def test_batch_execute_non_parallel_tracker(mock_run):
+    """Tests tracking for a non-parallel batch"""
     mock_run.return_value = TASK
     dev = _aws_device(wires=2, foo="bar", parallel=False)
 
@@ -308,12 +309,12 @@ def test_batch_execute_non_parallel_tracker(mock_run):
 
     callback = Mock()
     with qml.Tracker(dev, callback=callback) as tracker:
-        dev.batch_execute([circuit])
+        dev.batch_execute([circuit, circuit])
     dev.batch_execute([circuit])
 
-    latest = {"batches": 1, "batch_len": 1}
-    history = {"executions": [1], "shots": [SHOTS], "batches": [1], "batch_len": [1]}
-    totals = {"executions": 1, "shots": SHOTS, "batches": 1, "batch_len": 1}
+    latest = {"batches": 1, "batch_len": 2}
+    history = {"executions": [1,1], "shots": [SHOTS, SHOTS], "batches": [1], "batch_len": [2]}
+    totals = {"executions": 2, "shots": 2*SHOTS, "batches": 1, "batch_len": 2}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
