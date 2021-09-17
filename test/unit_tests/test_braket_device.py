@@ -314,7 +314,7 @@ def test_batch_execute_non_parallel_tracker(mock_run):
 
     latest = {"batches": 1, "batch_len": 2}
     history = {"executions": [1, 1], "shots": [SHOTS, SHOTS], "batches": [1], "batch_len": [2]}
-    totals = {"executions": 2, "shots": 2*SHOTS, "batches": 1, "batch_len": 2}
+    totals = {"executions": 2, "shots": 2 * SHOTS, "batches": 1, "batch_len": 2}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
