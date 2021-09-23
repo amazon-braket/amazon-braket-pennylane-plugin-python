@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 from functools import reduce, singledispatch
-from typing import FrozenSet, List
+from typing import Any, FrozenSet, List, Tuple, Union
 
 import pennylane as qml
 from braket.circuits import Gate, ResultType, gates, noises, observables
@@ -25,6 +25,7 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
+from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
@@ -312,7 +313,7 @@ def _(zz: qml.IsingZZ, parameters):
 
 def translate_result_type(
     observable: Observable, targets: List[int], supported_result_types: FrozenSet[str]
-) -> ResultType:
+) -> Union[ResultType, Tuple[ResultType, ...]]:
     """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
 
     Args:
@@ -322,7 +323,9 @@ def translate_result_type(
         supported_result_types (FrozenSet[str]): Braket result types supported by the Braket device
 
     Returns:
-        ResultType: The Braket result type corresponding to the given observable
+        Union[ResultType, Tuple[ResultType]]: The Braket result type corresponding to
+        the given observable; if the observable type has multiple terms, for example a Hamiltonian,
+        then this will return a result type for each term.
     """
     return_type = observable.return_type
 
@@ -336,8 +339,14 @@ def translate_result_type(
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
-    braket_observable = _translate_observable(observable)
+    if isinstance(observable, qml.Hamiltonian):
+        if return_type is ObservableReturnTypes.Expectation:
+            return tuple(
+                Expectation(_translate_observable(term), term.wires) for term in observable.ops
+            )
+        raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
 
+    braket_observable = _translate_observable(observable)
     if return_type is ObservableReturnTypes.Expectation:
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
@@ -399,3 +408,34 @@ def _(p: qml.Projector):
 @_translate_observable.register
 def _(t: qml.operation.Tensor):
     return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.obs])
+
+
+def translate_result(
+    braket_result: GateModelQuantumTaskResult,
+    observable: Observable,
+    targets: List[int],
+    supported_result_types: FrozenSet[str],
+) -> Any:
+    """Translates a Braket result into the corresponding PennyLane return type value.
+
+    Args:
+        braket_result (GateModelQuantumTaskResult): The Braket result to translate.
+        observable (Observable): The PennyLane observable associated with the result.
+        targets (List[int]): The qubits in the result.
+        supported_result_types (FrozenSet[str]): The result types supported by the device.
+
+    Returns:
+        Any: The translated return value.
+
+    Note:
+        Hamiltonian results will be summed over all terms.
+    """
+    translated = translate_result_type(observable, targets, supported_result_types)
+    if isinstance(observable, qml.Hamiltonian):
+        coeffs, _ = observable.terms
+        return sum(
+            coeff * braket_result.get_value_by_result_type(result_type)
+            for coeff, result_type in zip(coeffs, translated)
+        )
+    else:
+        return braket_result.get_value_by_result_type(translated)
