@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.0 (2021-09-24)
+
+### Features
+
+ * Support for Hamiltonians
+
 ## v1.4.2 (2021-09-03)
 
 ### Bug Fixes and Other Changes

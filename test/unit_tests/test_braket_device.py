@@ -276,6 +276,30 @@ def test_pl_to_braket_circuit():
     assert braket_circuit_true == braket_circuit
 
 
+def test_pl_to_braket_circuit_hamiltonian():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1))))
+
+    braket_circuit_true = (
+        Circuit()
+        .rx(0, 0.2)
+        .rx(1, 0.3)
+        .cnot(0, 1)
+        .expectation(Observable.X(), [0])
+        .expectation(Observable.Y(), [1])
+    )
+
+    braket_circuit = dev._pl_to_braket_circuit(tape)
+
+    assert braket_circuit_true == braket_circuit
+
+
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
