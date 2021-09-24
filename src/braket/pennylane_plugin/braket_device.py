@@ -57,6 +57,7 @@ from pennylane.operation import (
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
+    translate_result,
     translate_result_type,
 )
 
@@ -85,7 +86,7 @@ class BraketQubitDevice(QubitDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
-    pennylane_requires = ">=0.16.0"
+    pennylane_requires = ">=0.18.0"
     version = __version__
     author = "Amazon Web Services"
 
@@ -123,6 +124,13 @@ class BraketQubitDevice(QubitDevice):
         return self._supported_ops
 
     @property
+    def observables(self) -> FrozenSet[str]:
+        base_observables = frozenset(super().observables)
+        if not self.shots:
+            return base_observables.union({"Hamiltonian"})
+        return base_observables
+
+    @property
     def circuit(self) -> Circuit:
         """Circuit: The last circuit run on this device."""
         return self._circuit
@@ -141,9 +149,12 @@ class BraketQubitDevice(QubitDevice):
         )
         for observable in circuit.observables:
             dev_wires = self.map_wires(observable.wires).tolist()
-            braket_circuit.add_result_type(
-                translate_result_type(observable, dev_wires, self._braket_result_types)
-            )
+            translated = translate_result_type(observable, dev_wires, self._braket_result_types)
+            if isinstance(translated, tuple):
+                for result_type in translated:
+                    braket_circuit.add_result_type(result_type)
+            else:
+                braket_circuit.add_result_type(translated)
         return braket_circuit
 
     def statistics(
@@ -227,9 +238,7 @@ class BraketQubitDevice(QubitDevice):
 
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
-        return braket_result.get_value_by_result_type(
-            translate_result_type(observable, dev_wires, self._braket_result_types)
-        )
+        return translate_result(braket_result, observable, dev_wires, self._braket_result_types)
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):

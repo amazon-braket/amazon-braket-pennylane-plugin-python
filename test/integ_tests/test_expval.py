@@ -164,6 +164,22 @@ class TestExpval:
         )
         assert np.allclose(circuit(), expected, **tol)
 
+    def test_hamiltonian(self, device, shots, tol):
+        """Test that Hamiltonian expectation value is correct"""
+        dev = device(2)
+
+        theta = 0.432
+        phi = 0.123
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(theta, wires=[0])
+            qml.RX(phi, wires=[1])
+            qml.CNOT(wires=[0, 1])
+            return qml.expval(qml.Hamiltonian((2, 3), (qml.PauliZ(0), qml.PauliY(1))))
+
+        assert np.allclose(circuit(), 2 * np.cos(theta) - 3 * np.cos(theta) * np.sin(phi), **tol)
+
     def test_nondiff_param(self, device):
         """Test that the device can be successfully executed with the Autograd
         interface when some of the arguments are tensors with requires_grad=False"""
