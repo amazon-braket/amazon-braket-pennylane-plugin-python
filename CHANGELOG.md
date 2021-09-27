@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.1 (2021-09-27)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #75 from albi3ro/add-tracker
+ * Merge branch 'main' into add-tracker
+ * fix format errors
+ * Update test/unit_tests/test_braket_device.py
+
 ## v1.5.0 (2021-09-24)
 
 ### Features
