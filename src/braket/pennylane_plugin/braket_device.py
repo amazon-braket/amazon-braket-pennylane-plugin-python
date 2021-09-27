@@ -200,6 +200,11 @@ class BraketQubitDevice(QubitDevice):
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
+
+        if self.tracker.active:
+            self.tracker.update(executions=1, shots=self.shots)
+            self.tracker.record()
+
         return self._braket_to_pl_result(self._task.result(), circuit)
 
     def apply(
@@ -340,10 +345,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
         ]
 
+        batch_shots = 0 if self.analytic else self.shots
+
         task_batch = self._device.run_batch(
             braket_circuits,
             s3_destination_folder=self._s3_folder,
-            shots=0 if self.analytic else self.shots,
+            shots=batch_shots,
             max_parallel=self._max_parallel,
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
@@ -354,6 +361,13 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         braket_results_batch = task_batch.results(
             fail_unsuccessful=True, max_retries=self._max_retries
         )
+
+        if self.tracker.active:
+            batch_len = len(circuits)
+            total_shots = batch_len * batch_shots
+            self.tracker.update(batches=1, executions=batch_len, shots=total_shots)
+            self.tracker.record()
+
         return [
             self._braket_to_pl_result(braket_result, circuit)
             for braket_result, circuit in zip(braket_results_batch, circuits)
