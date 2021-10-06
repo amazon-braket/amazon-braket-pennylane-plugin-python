@@ -64,6 +64,7 @@ from braket.pennylane_plugin.translation import (
 from ._version import __version__
 
 RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
+MIN_SIMULATOR_BILLED_MS = 3000
 
 
 class Shots(Enum):
@@ -209,7 +210,9 @@ class BraketQubitDevice(QubitDevice):
                     self._task.result().additional_metadata.simulatorMetadata.executionDuration
                 )
                 tracking_data["braket_simulator_ms"] = simulation_ms
-                tracking_data["braket_simulator_billed_ms"] = max(simulation_ms, 3000)
+                tracking_data["braket_simulator_billed_ms"] = max(
+                    simulation_ms, MIN_SIMULATOR_BILLED_MS
+                )
             except AttributeError:
                 pass
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
@@ -384,7 +387,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                             task.result().additional_metadata.simulatorMetadata.executionDuration
                         )
                         tracking_data["braket_simulator_ms"] = simulation_ms
-                        tracking_data["braket_simulator_billed_ms"] = max(simulation_ms, 3000)
+                        tracking_data["braket_simulator_billed_ms"] = max(
+                            simulation_ms, MIN_SIMULATOR_BILLED_MS
+                        )
                     except AttributeError:
                         pass
                     self.tracker.update(**tracking_data)
