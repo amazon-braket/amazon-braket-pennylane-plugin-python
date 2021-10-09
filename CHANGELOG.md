@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.2 (2021-09-30)
+
+### Bug Fixes and Other Changes
+
+ * remove minified version of jquery and bootstrap
+
 ## v1.5.1 (2021-09-27)
 
 ### Bug Fixes and Other Changes
