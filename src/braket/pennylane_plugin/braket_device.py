@@ -197,24 +197,26 @@ class BraketQubitDevice(QubitDevice):
 
         return np.asarray(results)
 
+    @staticmethod
+    def _tracking_data(task):
+        tracking_data = {"braket_task_id": task.id}
+        try:
+            simulation_ms = task.result().additional_metadata.simulatorMetadata.executionDuration
+            tracking_data["braket_simulator_ms"] = simulation_ms
+            tracking_data["braket_simulator_billed_ms"] = max(
+                simulation_ms, MIN_SIMULATOR_BILLED_MS
+            )
+        except AttributeError:
+            pass
+        return tracking_data
+
     def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
 
         if self.tracker.active:
-            tracking_data = {}
-            tracking_data["braket_task_id"] = self._task.id
-            try:
-                simulation_ms = (
-                    self._task.result().additional_metadata.simulatorMetadata.executionDuration
-                )
-                tracking_data["braket_simulator_ms"] = simulation_ms
-                tracking_data["braket_simulator_billed_ms"] = max(
-                    simulation_ms, MIN_SIMULATOR_BILLED_MS
-                )
-            except AttributeError:
-                pass
+            tracking_data = self._tracking_data(self._task)
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
 
@@ -380,18 +382,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         finally:
             if self.tracker.active:
                 for task in task_batch.tasks:
-                    tracking_data = {}
-                    tracking_data["braket_task_id"] = task.id
-                    try:
-                        simulation_ms = (
-                            task.result().additional_metadata.simulatorMetadata.executionDuration
-                        )
-                        tracking_data["braket_simulator_ms"] = simulation_ms
-                        tracking_data["braket_simulator_billed_ms"] = max(
-                            simulation_ms, MIN_SIMULATOR_BILLED_MS
-                        )
-                    except AttributeError:
-                        pass
+                    tracking_data = self._tracking_data(task)
                     self.tracker.update(**tracking_data)
                 batch_len = len(circuits)
                 total_shots = batch_len * batch_shots
