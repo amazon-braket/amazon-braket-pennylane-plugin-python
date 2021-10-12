@@ -431,6 +431,7 @@ def test_batch_execute_parallel_tracker(mock_run_batch):
     """Asserts tracker updates during parallel execution"""
 
     mock_run_batch.return_value = TASK_BATCH
+    type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
     dev = _aws_device(wires=1, foo="bar", parallel=True)
 
     with QuantumTape() as circuit:
@@ -469,6 +470,7 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
     FAIL_BATCH = Mock()
     FAIL_BATCH.results.side_effect = RuntimeError("tasks failed to complete")
     type(FAIL_BATCH).tasks = PropertyMock(return_value=[SIM_TASK, FAIL_TASK])
+    type(FAIL_BATCH).unsuccessful = PropertyMock(return_value={"failed_task_arn"})
 
     mock_run_batch.return_value = FAIL_BATCH
     dev = _aws_device(wires=1, foo="bar", parallel=True)
@@ -487,19 +489,19 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
     except RuntimeError:
         pass
 
-    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    latest = {"batches": 1, "executions": 1, "shots": 1 * SHOTS}
     history = {
         "batches": [1],
-        "executions": [2],
-        "shots": [2 * SHOTS],
+        "executions": [1],
+        "shots": [1 * SHOTS],
         "braket_task_id": ["task_arn", "failed_task_arn"],
         "braket_simulator_ms": [1234],
         "braket_simulator_billed_ms": [3000],
     }
     totals = {
         "batches": 1,
-        "executions": 2,
-        "shots": 2 * SHOTS,
+        "executions": 1,
+        "shots": 1 * SHOTS,
         "braket_simulator_ms": 1234,
         "braket_simulator_billed_ms": 3000,
     }

@@ -384,9 +384,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 for task in task_batch.tasks:
                     tracking_data = self._tracking_data(task)
                     self.tracker.update(**tracking_data)
-                batch_len = len(circuits)
-                total_shots = batch_len * batch_shots
-                self.tracker.update(batches=1, executions=batch_len, shots=total_shots)
+                total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+                total_shots = total_executions * batch_shots
+                self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
                 self.tracker.record()
 
         return [
