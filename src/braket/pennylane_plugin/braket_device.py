@@ -199,16 +199,21 @@ class BraketQubitDevice(QubitDevice):
 
     @staticmethod
     def _tracking_data(task):
-        tracking_data = {"braket_task_id": task.id}
-        try:
-            simulation_ms = task.result().additional_metadata.simulatorMetadata.executionDuration
-            tracking_data["braket_simulator_ms"] = simulation_ms
-            tracking_data["braket_simulator_billed_ms"] = max(
-                simulation_ms, MIN_SIMULATOR_BILLED_MS
-            )
-        except AttributeError:
-            pass
-        return tracking_data
+        if task.state == "COMPLETED":
+            tracking_data = {"braket_task_id": task.id}
+            try:
+                simulation_ms = (
+                    task.result().additional_metadata.simulatorMetadata.executionDuration
+                )
+                tracking_data["braket_simulator_ms"] = simulation_ms
+                tracking_data["braket_simulator_billed_ms"] = max(
+                    simulation_ms, MIN_SIMULATOR_BILLED_MS
+                )
+            except AttributeError:
+                pass
+            return tracking_data
+        else:
+            return {}
 
     def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)

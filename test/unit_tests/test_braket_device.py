@@ -110,12 +110,14 @@ RESULT = GateModelQuantumTaskResult.from_string(
 TASK = Mock()
 TASK.result.return_value = RESULT
 type(TASK).id = PropertyMock(return_value="task_arn")
+type(TASK).state = PropertyMock(return_value="COMPLETED")
 TASK_BATCH = Mock()
 TASK_BATCH.results.return_value = [RESULT, RESULT]
 type(TASK_BATCH).tasks = PropertyMock(return_value=[TASK, TASK])
 SIM_TASK = Mock()
 SIM_TASK.result.return_value.additional_metadata.simulatorMetadata.executionDuration = 1234
 type(SIM_TASK).id = PropertyMock(return_value="task_arn")
+type(SIM_TASK).state = PropertyMock(return_value="COMPLETED")
 CIRCUIT = (
     Circuit()
     .h(0)
@@ -467,6 +469,7 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
     FAIL_TASK = Mock()
     FAIL_TASK.result.return_value = None
     type(FAIL_TASK).id = PropertyMock(return_value="failed_task_arn")
+    type(FAIL_TASK).state = PropertyMock(return_value="FAILED")
     FAIL_BATCH = Mock()
     FAIL_BATCH.results.side_effect = RuntimeError("tasks failed to complete")
     type(FAIL_BATCH).tasks = PropertyMock(return_value=[SIM_TASK, FAIL_TASK])
@@ -494,7 +497,7 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
         "batches": [1],
         "executions": [1],
         "shots": [1 * SHOTS],
-        "braket_task_id": ["task_arn", "failed_task_arn"],
+        "braket_task_id": ["task_arn"],
         "braket_simulator_ms": [1234],
         "braket_simulator_billed_ms": [3000],
     }
