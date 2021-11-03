@@ -213,7 +213,7 @@ class BraketQubitDevice(QubitDevice):
                 pass
             return tracking_data
         else:
-            return {}
+            return {"braket_failed_task_id": task.id}
 
     def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)

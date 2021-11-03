@@ -498,6 +498,7 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
         "executions": [1],
         "shots": [1 * SHOTS],
         "braket_task_id": ["task_arn"],
+        "braket_failed_task_id": ["failed_task_arn"],
         "braket_simulator_ms": [1234],
         "braket_simulator_billed_ms": [3000],
     }
