@@ -219,13 +219,14 @@ class BraketQubitDevice(QubitDevice):
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
+        braket_result = self._task.result()
 
         if self.tracker.active:
             tracking_data = self._tracking_data(self._task)
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
 
-        return self._braket_to_pl_result(self._task.result(), circuit)
+        return self._braket_to_pl_result(braket_result, circuit)
 
     def apply(
         self, operations: Sequence[Operation], rotations: Sequence[Operation] = None, **run_kwargs
