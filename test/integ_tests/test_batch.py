@@ -44,11 +44,8 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     qnode_aws = qml.QNode(func, dev_aws)
     qnode_default = qml.QNode(func, dev_default)
 
-    if qml.version() >= "0.20.0":
-        shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
-        weights = np.random.random(shape)
-    else:
-        weights = qml.init.strong_ent_layers_uniform(layers, qubits)
+    shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
+    weights = np.random.random(shape)
 
     dfunc_aws = qml.grad(qnode_aws)
     dfunc_default = qml.grad(qnode_default)
