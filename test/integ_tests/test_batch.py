@@ -44,7 +44,11 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     qnode_aws = qml.QNode(func, dev_aws)
     qnode_default = qml.QNode(func, dev_default)
 
-    weights = qml.init.strong_ent_layers_uniform(layers, qubits)
+    if qml.version() >= "0.20.0":
+        shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
+        weights = np.random.random(shape)
+    else:
+        weights = qml.init.strong_ent_layers_uniform(layers, qubits)
 
     dfunc_aws = qml.grad(qnode_aws)
     dfunc_default = qml.grad(qnode_default)
@@ -56,13 +60,25 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     res_aws = dfunc_aws(weights)
     res_default = dfunc_default(weights)
 
-    assert np.allclose(res_aws, res_default)
-    spy1.assert_called_once()  # For a forward pass
-    spy2.assert_called_once()
-    spy3.assert_called_once()
+    if qml.version() >= "0.20.0":
+        assert np.allclose(res_aws, res_default)
+        spy1.assert_not_called()
+        assert len(spy2.call_args_list) == 2
+        assert len(spy3.call_args_list) == 2
 
-    expected_circuits = qubits * layers * 3 * 2
-    assert len(spy2.call_args_list[0][0][1]) == expected_circuits
+        expected_circuits = qubits * layers * 3 * 2
+        assert len(spy2.call_args_list[0][0][1]) == 1  # First batch_execute called for forward pass
+        assert (
+            len(spy2.call_args_list[1][0][1]) == expected_circuits
+        )  # Then called for backward pass
+    else:
+        assert np.allclose(res_aws, res_default)
+        spy1.assert_called_once()  # For a forward pass
+        spy2.assert_called_once()
+        spy3.assert_called_once()
+
+        expected_circuits = qubits * layers * 3 * 2
+        assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
 
 @pytest.mark.parametrize("shots", [None])
