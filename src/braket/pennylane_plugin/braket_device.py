@@ -199,7 +199,7 @@ class BraketQubitDevice(QubitDevice):
 
     @staticmethod
     def _tracking_data(task):
-        if task.state == "COMPLETED":
+        if task.state() == "COMPLETED":
             tracking_data = {"braket_task_id": task.id}
             try:
                 simulation_ms = (
