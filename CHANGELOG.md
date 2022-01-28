@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.3 (2021-12-16)
+
+### Bug Fixes and Other Changes
+
+ * integ tests for PL-0.20
+
 ## v1.5.2 (2021-09-30)
 
 ### Bug Fixes and Other Changes
