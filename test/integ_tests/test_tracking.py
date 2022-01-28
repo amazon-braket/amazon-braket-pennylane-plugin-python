@@ -27,6 +27,7 @@ class TestDeviceTracking:
     def test_tracking(self, device, shots, tol):
         """Tests that a Device Tracker example correctly records resource usage"""
 
+        # This test is run for both local and AWS managed simulators
         dev = device(1)
 
         @qml.qnode(dev, diff_method="parameter-shift")
