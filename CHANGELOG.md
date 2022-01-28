@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.4 (2022-01-28)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #79 from aws/braket-tracker
+ * Merge branch 'main' into braket-tracker
+ * Add comment on which devices run tracking test
+ * Remove extra print statements
+
 ## v1.5.3 (2021-12-16)
 
 ### Bug Fixes and Other Changes
