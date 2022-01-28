@@ -39,9 +39,6 @@ class TestDeviceTracking:
         with qml.Tracker(circuit.device) as tracker:
             qml.grad(circuit)(x)
 
-        print(tracker.history)
-        print(tracker.totals)
-
         expected_totals = {"executions": 3, "shots": 300, "batches": 2, "batch_len": 3}
         expected_history = {
             "executions": [1, 1, 1],
