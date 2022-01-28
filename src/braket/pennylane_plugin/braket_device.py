@@ -64,6 +64,7 @@ from braket.pennylane_plugin.translation import (
 from ._version import __version__
 
 RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
+MIN_SIMULATOR_BILLED_MS = 3000
 
 
 class Shots(Enum):
@@ -196,16 +197,36 @@ class BraketQubitDevice(QubitDevice):
 
         return np.asarray(results)
 
+    @staticmethod
+    def _tracking_data(task):
+        if task.state() == "COMPLETED":
+            tracking_data = {"braket_task_id": task.id}
+            try:
+                simulation_ms = (
+                    task.result().additional_metadata.simulatorMetadata.executionDuration
+                )
+                tracking_data["braket_simulator_ms"] = simulation_ms
+                tracking_data["braket_simulator_billed_ms"] = max(
+                    simulation_ms, MIN_SIMULATOR_BILLED_MS
+                )
+            except AttributeError:
+                pass
+            return tracking_data
+        else:
+            return {"braket_failed_task_id": task.id}
+
     def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
+        braket_result = self._task.result()
 
         if self.tracker.active:
-            self.tracker.update(executions=1, shots=self.shots)
+            tracking_data = self._tracking_data(self._task)
+            self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
 
-        return self._braket_to_pl_result(self._task.result(), circuit)
+        return self._braket_to_pl_result(braket_result, circuit)
 
     def apply(
         self, operations: Sequence[Operation], rotations: Sequence[Operation] = None, **run_kwargs
@@ -358,15 +379,21 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             **self._run_kwargs,
         )
         # Call results() to retrieve the Braket results in parallel.
-        braket_results_batch = task_batch.results(
-            fail_unsuccessful=True, max_retries=self._max_retries
-        )
+        try:
+            braket_results_batch = task_batch.results(
+                fail_unsuccessful=True, max_retries=self._max_retries
+            )
 
-        if self.tracker.active:
-            batch_len = len(circuits)
-            total_shots = batch_len * batch_shots
-            self.tracker.update(batches=1, executions=batch_len, shots=total_shots)
-            self.tracker.record()
+        # Update the tracker before raising an exception further if some circuits do not complete.
+        finally:
+            if self.tracker.active:
+                for task in task_batch.tasks:
+                    tracking_data = self._tracking_data(task)
+                    self.tracker.update(**tracking_data)
+                total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+                total_shots = total_executions * batch_shots
+                self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+                self.tracker.record()
 
         return [
             self._braket_to_pl_result(braket_result, circuit)

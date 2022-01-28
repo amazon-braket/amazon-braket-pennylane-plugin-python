@@ -109,9 +109,15 @@ RESULT = GateModelQuantumTaskResult.from_string(
 )
 TASK = Mock()
 TASK.result.return_value = RESULT
+type(TASK).id = PropertyMock(return_value="task_arn")
+TASK.state.return_value = "COMPLETED"
 TASK_BATCH = Mock()
 TASK_BATCH.results.return_value = [RESULT, RESULT]
 type(TASK_BATCH).tasks = PropertyMock(return_value=[TASK, TASK])
+SIM_TASK = Mock()
+SIM_TASK.result.return_value.additional_metadata.simulatorMetadata.executionDuration = 1234
+type(SIM_TASK).id = PropertyMock(return_value="task_arn")
+SIM_TASK.state.return_value = "COMPLETED"
 CIRCUIT = (
     Circuit()
     .h(0)
@@ -230,7 +236,7 @@ def test_execute(mock_run):
 @patch.object(AwsDevice, "run")
 def test_execute_tracker(mock_run):
     """Asserts tracker stores information during execute when active"""
-    mock_run.return_value = TASK
+    mock_run.side_effect = [TASK, SIM_TASK, SIM_TASK, TASK]
     dev = _aws_device(wires=4, foo="bar")
 
     with QuantumTape() as circuit:
@@ -241,11 +247,29 @@ def test_execute_tracker(mock_run):
     with qml.Tracker(dev, callback=callback) as tracker:
         dev.execute(circuit)
         dev.execute(circuit)
+        dev.execute(circuit)
     dev.execute(circuit)
 
-    latest = {"executions": 1, "shots": SHOTS}
-    history = {"executions": [1, 1], "shots": [SHOTS, SHOTS]}
-    totals = {"executions": 2, "shots": 2 * SHOTS}
+    latest = {
+        "executions": 1,
+        "shots": SHOTS,
+        "braket_task_id": "task_arn",
+        "braket_simulator_ms": 1234,
+        "braket_simulator_billed_ms": 3000,
+    }
+    history = {
+        "executions": [1, 1, 1],
+        "shots": [SHOTS, SHOTS, SHOTS],
+        "braket_task_id": ["task_arn", "task_arn", "task_arn"],
+        "braket_simulator_ms": [1234, 1234],
+        "braket_simulator_billed_ms": [3000, 3000],
+    }
+    totals = {
+        "executions": 3,
+        "shots": 3 * SHOTS,
+        "braket_simulator_ms": 2468,
+        "braket_simulator_billed_ms": 6000,
+    }
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
@@ -337,7 +361,13 @@ def test_batch_execute_non_parallel_tracker(mock_run):
     dev.batch_execute([circuit])
 
     latest = {"batches": 1, "batch_len": 2}
-    history = {"executions": [1, 1], "shots": [SHOTS, SHOTS], "batches": [1], "batch_len": [2]}
+    history = {
+        "executions": [1, 1],
+        "shots": [SHOTS, SHOTS],
+        "batches": [1],
+        "batch_len": [2],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
     totals = {"executions": 2, "shots": 2 * SHOTS, "batches": 1, "batch_len": 2}
     assert tracker.latest == latest
     assert tracker.history == history
@@ -403,6 +433,7 @@ def test_batch_execute_parallel_tracker(mock_run_batch):
     """Asserts tracker updates during parallel execution"""
 
     mock_run_batch.return_value = TASK_BATCH
+    type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
     dev = _aws_device(wires=1, foo="bar", parallel=True)
 
     with QuantumTape() as circuit:
@@ -417,8 +448,67 @@ def test_batch_execute_parallel_tracker(mock_run_batch):
     dev.batch_execute(circuits)
 
     latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
-    history = {"batches": [1], "executions": [2], "shots": [2 * SHOTS]}
+    history = {
+        "batches": [1],
+        "executions": [2],
+        "shots": [2 * SHOTS],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
     totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during a partial failure of parallel execution"""
+
+    FAIL_TASK = Mock()
+    FAIL_TASK.result.return_value = None
+    type(FAIL_TASK).id = PropertyMock(return_value="failed_task_arn")
+    FAIL_TASK.state.return_value = "FAILED"
+    FAIL_BATCH = Mock()
+    FAIL_BATCH.results.side_effect = RuntimeError("tasks failed to complete")
+    type(FAIL_BATCH).tasks = PropertyMock(return_value=[SIM_TASK, FAIL_TASK])
+    type(FAIL_BATCH).unsuccessful = PropertyMock(return_value={"failed_task_arn"})
+
+    mock_run_batch.return_value = FAIL_BATCH
+    dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    circuits = [circuit, circuit]
+
+    callback = Mock()
+    try:
+        with qml.Tracker(dev, callback=callback) as tracker:
+            dev.batch_execute(circuits)
+        dev.batch_execute(circuits)
+    except RuntimeError:
+        pass
+
+    latest = {"batches": 1, "executions": 1, "shots": 1 * SHOTS}
+    history = {
+        "batches": [1],
+        "executions": [1],
+        "shots": [1 * SHOTS],
+        "braket_task_id": ["task_arn"],
+        "braket_failed_task_id": ["failed_task_arn"],
+        "braket_simulator_ms": [1234],
+        "braket_simulator_billed_ms": [3000],
+    }
+    totals = {
+        "batches": 1,
+        "executions": 1,
+        "shots": 1 * SHOTS,
+        "braket_simulator_ms": 1234,
+        "braket_simulator_billed_ms": 3000,
+    }
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
