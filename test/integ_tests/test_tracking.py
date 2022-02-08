@@ -13,9 +13,9 @@
 
 """Tests that device resource tracking are correctly computed in the plugin device"""
 
-from pennylane import numpy as np
 import pennylane as qml
 import pytest
+from pennylane import numpy as np
 
 from braket.pennylane_plugin.braket_device import MIN_SIMULATOR_BILLED_MS, BraketAwsQubitDevice
 
