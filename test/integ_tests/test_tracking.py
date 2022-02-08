@@ -13,7 +13,7 @@
 
 """Tests that device resource tracking are correctly computed in the plugin device"""
 
-import numpy as np
+from pennylane import numpy as np
 import pennylane as qml
 import pytest
 
@@ -35,7 +35,7 @@ class TestDeviceTracking:
             qml.RX(x, wires=0)
             return qml.expval(qml.PauliZ(0))
 
-        x = np.array(0.1)
+        x = np.array(0.1, requires_grad=True)
 
         with qml.Tracker(circuit.device) as tracker:
             qml.grad(circuit)(x)
