@@ -47,6 +47,14 @@ class TestDeviceTracking:
             "batches": [1, 1],
             "batch_len": [1, 2],
         }
+
+        # Breaking change in PL 0.20 affects how many batches are created from the gradient
+        if qml.version() < "0.20":
+            expected_totals["batches"] = 1
+            expected_totals["batch_len"] = 2
+            expected_history["batches"] = [1]
+            expected_history["batch_len"] = [2]
+
         expected_latest = {"batches": 1, "batch_len": 2}
 
         for key, total in expected_totals.items():
