@@ -73,7 +73,7 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
 
 def _assert_decomposition(pl_op, params):
     num_wires = pl_op.num_wires
-    dimension = 2 ** num_wires
+    dimension = 2**num_wires
     num_indices = 2 * num_wires
     wires = list(range(num_wires))
 
