@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.5 (2022-02-09)
+
+### Bug Fixes and Other Changes
+
+ * Fix device tracker integ test for PennyLane 0.21
+ * Merge branch 'main' into braket-tracker
+ * Merge pull request #85 from aws/update-format
+ * fix formatting
+ * Add check for older PL using batches differently
+ * Merge branch 'main' into braket-tracker
+
 ## v1.5.4 (2022-01-28)
 
 ### Bug Fixes and Other Changes
