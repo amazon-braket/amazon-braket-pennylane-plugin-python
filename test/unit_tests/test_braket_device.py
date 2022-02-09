@@ -714,7 +714,7 @@ def test_projection():
     # 01 case
     fs = [qml.map(f, [projector_01], dev, measure=m) for m in measure_types]
     assert np.allclose(fs[0](thetas), p_01)
-    assert np.allclose(fs[1](thetas), p_01 - p_01 ** 2)
+    assert np.allclose(fs[1](thetas), p_01 - p_01**2)
 
     samples = fs[2](thetas, shots=100)[0].tolist()
     assert set(samples) == {0, 1}
@@ -722,7 +722,7 @@ def test_projection():
     # 10 case
     fs = [qml.map(f, [projector_10], dev, measure=m) for m in measure_types]
     assert np.allclose(fs[0](thetas), p_10)
-    assert np.allclose(fs[1](thetas), p_10 - p_10 ** 2)
+    assert np.allclose(fs[1](thetas), p_10 - p_10**2)
 
     samples = fs[2](thetas, shots=100)[0].tolist()
     assert set(samples) == {0, 1}

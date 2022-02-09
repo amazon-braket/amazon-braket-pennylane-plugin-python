@@ -74,7 +74,7 @@ class TestHardwareApply:
             qml.BasisState.decomposition(state, wires=[0, 1, 2, 3])
             return qml.probs(wires=range(4))
 
-        expected = np.zeros([2 ** 4])
+        expected = np.zeros([2**4])
         expected[np.ravel_multi_index(state, [2] * 4)] = 1
         assert np.allclose(circuit(), expected, **tol)
 

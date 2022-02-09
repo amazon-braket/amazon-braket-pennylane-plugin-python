@@ -130,7 +130,7 @@ class TestTensorSample:
         result = circuit()
 
         # `result` should only contain 1 and -1
-        assert np.allclose(result ** 2, 1, **tol)
+        assert np.allclose(result**2, 1, **tol)
 
         expected = np.sin(theta) * np.sin(phi) * np.sin(varphi)
         assert np.allclose(np.mean(result), expected, **tol)
@@ -167,7 +167,7 @@ class TestTensorSample:
         result = circuit()
 
         # `result` should only contain 1 and -1
-        assert np.allclose(result ** 2, 1, **tol)
+        assert np.allclose(result**2, 1, **tol)
 
         expected = -(np.cos(varphi) * np.sin(phi) + np.sin(varphi) * np.cos(theta)) / np.sqrt(2)
         assert np.allclose(np.mean(result), expected, **tol)
