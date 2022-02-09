@@ -13,9 +13,9 @@
 
 """Tests that device resource tracking are correctly computed in the plugin device"""
 
-import numpy as np
 import pennylane as qml
 import pytest
+from pennylane import numpy as np
 
 from braket.pennylane_plugin.braket_device import MIN_SIMULATOR_BILLED_MS, BraketAwsQubitDevice
 
@@ -35,7 +35,7 @@ class TestDeviceTracking:
             qml.RX(x, wires=0)
             return qml.expval(qml.PauliZ(0))
 
-        x = np.array(0.1)
+        x = np.array(0.1, requires_grad=True)
 
         with qml.Tracker(circuit.device) as tracker:
             qml.grad(circuit)(x)
@@ -47,6 +47,14 @@ class TestDeviceTracking:
             "batches": [1, 1],
             "batch_len": [1, 2],
         }
+
+        # Breaking change in PL 0.20 affects how many batches are created from the gradient
+        if qml.version() < "0.20":
+            expected_totals["batches"] = 1
+            expected_totals["batch_len"] = 2
+            expected_history["batches"] = [1]
+            expected_history["batch_len"] = [2]
+
         expected_latest = {"batches": 1, "batch_len": 2}
 
         for key, total in expected_totals.items():
