@@ -35,7 +35,7 @@ class TestDeviceIntegration:
 
     def test_args_aws(self):
         """Test that BraketAwsDevice requires correct arguments"""
-        with pytest.raises(TypeError, match="missing 3 required positional arguments"):
+        with pytest.raises(TypeError, match="missing 2 required positional arguments"):
             qml.device("braket.aws.qubit")
 
     def test_args_local(self):
