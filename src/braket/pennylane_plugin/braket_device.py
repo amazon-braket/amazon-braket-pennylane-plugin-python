@@ -313,7 +313,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self,
         wires: Union[int, Iterable],
         device_arn: str,
-        s3_destination_folder: AwsSession.S3DestinationFolder,
+        s3_destination_folder: AwsSession.S3DestinationFolder = None,
         *,
         shots: Union[int, None, Shots] = Shots.DEFAULT,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
