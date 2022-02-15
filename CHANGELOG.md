@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.6 (2022-02-15)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #86 from aws/remove-pl-bucket
+ * make s3_bucket optional
+
 ## v1.5.5 (2022-02-09)
 
 ### Bug Fixes and Other Changes
