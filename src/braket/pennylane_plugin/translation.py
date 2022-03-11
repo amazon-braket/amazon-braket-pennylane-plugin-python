@@ -70,6 +70,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "xx": "IsingXX",
     "yy": "IsingYY",
     "zz": "IsingZZ",
+    "ecr": "ECR",
 }
 
 
