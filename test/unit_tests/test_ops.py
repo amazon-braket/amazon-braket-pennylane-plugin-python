@@ -54,7 +54,9 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
 def test_ops_non_parametrized(pl_op, braket_gate):
-    """Tests that the matrices and decompositions of non-parametrized custom operations are correct."""
+    """Tests that the matrices and decompositions of non-parametrized custom operations are
+    correct.
+    """
     assert np.allclose(pl_op._matrix(), braket_gate().to_matrix())
     _assert_decomposition(pl_op)
 

@@ -134,9 +134,11 @@ def _(y: qml.PauliY, _parameters):
 def _(z: qml.PauliZ, _parameters):
     return gates.Z()
 
+
 @_translate_operation.register
 def _(ecr: ECR, _parameters):
     return gates.ECR()
+
 
 @_translate_operation.register
 def _(s: qml.S, _parameters):
