@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.7 (2022-03-14)
+
+### Bug Fixes and Other Changes
+
+ * Pin pennylane version
+
 ## v1.5.6 (2022-02-15)
 
 ### Bug Fixes and Other Changes
