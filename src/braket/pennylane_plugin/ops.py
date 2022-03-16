@@ -50,7 +50,6 @@ Code details
 import numpy as np
 import pennylane as qml
 from pennylane.operation import Operation
-from pennylane.ops.qubit import four_term_grad_recipe
 
 
 class CPhaseShift00(Operation):
@@ -82,7 +81,6 @@ class CPhaseShift00(Operation):
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
 
     @staticmethod
@@ -133,7 +131,6 @@ class CPhaseShift01(Operation):
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
 
     @staticmethod
@@ -182,7 +179,6 @@ class CPhaseShift10(Operation):
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
 
     @staticmethod
@@ -230,7 +226,6 @@ class PSWAP(Operation):
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
 
     @staticmethod
@@ -286,9 +281,8 @@ class XY(Operation):
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
-    grad_recipe = four_term_grad_recipe
+    parameter_frequencies = [(0.5, 1.0)]
 
     @staticmethod
     def decomposition(phi, wires):
