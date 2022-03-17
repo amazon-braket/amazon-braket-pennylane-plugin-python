@@ -30,7 +30,7 @@ from pennylane.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10, ECR
+from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     translate_operation,

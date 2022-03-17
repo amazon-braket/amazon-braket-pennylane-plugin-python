@@ -29,7 +29,7 @@ from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.operation import Observable, ObservableReturnTypes, Operation
 
-from braket.pennylane_plugin.ops import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10, ECR
+from braket.pennylane_plugin.ops import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "x": "PauliX",
