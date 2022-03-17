@@ -54,12 +54,20 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
 @pytest.mark.parametrize("observable", observables_2q)
 def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
+    op = pl_op(angle, wires=[0, 1])
+    if op.grad_recipe[0]:
+        shifts = op.grad_recipe[0]
+    else:
+        cs, ss = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
+        shifts = [[c, 1, s] for c, s in zip(cs, ss)]
+
     summands = []
-    for shift in pl_op(angle, wires=[0, 1]).get_parameter_shift(0):
+    for shift in shifts:
         shifted = pl_op.compute_matrix(angle + shift[2])
         summands.append(
             shift[0] * np.matmul(np.matmul(np.transpose(np.conj(shifted)), observable), shifted)
         )
+
     from_shifts = sum(summands)
 
     def conj_obs_gate(angle):

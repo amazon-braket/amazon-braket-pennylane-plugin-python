@@ -350,12 +350,12 @@ class XY(Operation):
     grad_method = "A"
     parameter_frequencies = [(0.5, 1.0)]
 
-    # def generator(self):
-    #     return 0.25 * (
-    #         qml.PauliX(wires=self.wires[0]) @ qml.PauliX(wires=self.wires[1])
-    #         + qml.PauliY(wires=self.wires[0]) @ qml.PauliY(wires=self.wires[1])
-    #     )
-    #
+    def generator(self):
+        return 0.25 * (
+            qml.PauliX(wires=self.wires[0]) @ qml.PauliX(wires=self.wires[1])
+            + qml.PauliY(wires=self.wires[0]) @ qml.PauliY(wires=self.wires[1])
+        )
+
     def __init__(self, phi, wires, do_queue=True, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
@@ -370,34 +370,19 @@ class XY(Operation):
             qml.Hadamard(wires=[wires[0]]),
         ]
 
-    # @staticmethod
-    # def compute_matrix(phi):
-    #     c = qml.math.cos(phi / 2)
-    #     s = qml.math.sin(phi / 2)
-    #     off_diag = qml.math.convert_like(np.diag([0, 1, 1, 0])[::-1].copy(), phi)
-    #
-    #     if qml.math.get_interface(phi) == "tensorflow":
-    #         c = qml.math.cast_like(c, 1j)
-    #         s = qml.math.cast_like(s, 1j)
-    #         off_diag = qml.math.cast_like(off_diag, 1j)
-    #
-    #     return qml.math.diag([1, c, c, 1]) + 1j * s * off_diag
-
     @staticmethod
     def compute_matrix(phi):
-        cos = np.cos(phi / 2)
-        isin = 1.0j * np.sin(phi / 2)
-        return np.array(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, cos, isin, 0.0],
-                [0.0, isin, cos, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            dtype=complex,
-        )
+        c = qml.math.cos(phi / 2)
+        s = qml.math.sin(phi / 2)
+        off_diag = qml.math.convert_like(np.diag([0, 1, 1, 0])[::-1].copy(), phi)
 
-    #
-    # def adjoint(self):
-    #     (phi,) = self.parameters
-    #     return XY(-phi, wires=self.wires)
+        if qml.math.get_interface(phi) == "tensorflow":
+            c = qml.math.cast_like(c, 1j)
+            s = qml.math.cast_like(s, 1j)
+            off_diag = qml.math.cast_like(off_diag, 1j)
+
+        return qml.math.diag([1, c, c, 1]) + 1j * s * off_diag
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return XY(-phi, wires=self.wires)
