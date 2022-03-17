@@ -44,7 +44,7 @@ observables_2q = [
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_ops_parametrized(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
-    assert np.allclose(pl_op._matrix(angle), braket_gate(angle).to_matrix())
+    assert np.allclose(pl_op.compute_matrix(angle), braket_gate(angle).to_matrix())
     _assert_decomposition(pl_op, [angle])
 
 
@@ -56,14 +56,14 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
     summands = []
     for shift in pl_op(angle, wires=[0, 1]).get_parameter_shift(0):
-        shifted = pl_op._matrix(angle + shift[2])
+        shifted = pl_op.compute_matrix(angle + shift[2])
         summands.append(
             shift[0] * np.matmul(np.matmul(np.transpose(np.conj(shifted)), observable), shifted)
         )
     from_shifts = sum(summands)
 
     def conj_obs_gate(angle):
-        mat = pl_op._matrix(angle)
+        mat = pl_op.compute_matrix(angle)
         return anp.matmul(anp.matmul(anp.transpose(anp.conj(mat)), observable), mat)
 
     direct_calculation = deriv(conj_obs_gate)(angle)
@@ -84,7 +84,7 @@ def _assert_decomposition(pl_op, params):
     index_substitutions = {i: i + num_wires for i in range(num_wires)}
     next_index = num_indices
     # Heterogeneous matrix chain multiplication using tensor contraction
-    for gate in reversed(pl_op.decomposition(*params, wires=wires)):
+    for gate in reversed(pl_op.compute_decomposition(*params, wires=wires)):
         gate_wires = gate.wires.tolist()
 
         # Upper indices, which will be traced out
@@ -106,4 +106,4 @@ def _assert_decomposition(pl_op, params):
     contraction_parameters.append(new_indices)
 
     actual_matrix = np.reshape(np.einsum(*contraction_parameters), [dimension, dimension])
-    assert np.allclose(actual_matrix, pl_op._matrix(*params))
+    assert np.allclose(actual_matrix, pl_op.compute_matrix(*params))
