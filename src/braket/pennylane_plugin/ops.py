@@ -202,6 +202,53 @@ class CPhaseShift10(Operation):
         return np.diag(np.array([1.0, 1.0, np.exp(1.0j * params[0]), 1.0], dtype=complex))
 
 
+class ECR(Operation):
+    r""" ECR(wires)
+
+    An echoed RZX(pi/2) gate.
+
+    .. math:: \mathtt{XY}(\phi) = \begin{bmatrix}
+            0 & 1 & 0 & i \\
+            1 & 0 & -i & 0 \\
+            0 & i & 0 & 1 \\
+            -i & 0 & 1 & 0
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 2
+    * Number of parameters: 0
+
+    Args:
+        wires (int): the subsystem the gate acts on
+    """
+    num_params = 0
+    num_wires = 2
+
+    @staticmethod
+    def decomposition(wires):
+        pi = np.pi
+        return [
+            qml.PauliZ(wires=[wires[1]]),
+            qml.CNOT(wires=[wires[1], wires[0]]),
+            qml.SX(wires=[wires[0]]),
+            qml.RX(pi / 2, wires=[wires[1]]),
+            qml.RY(pi / 2, wires=[wires[1]]),
+            qml.RX(pi / 2, wires=[wires[1]]),
+        ]
+
+    @classmethod
+    def _matrix(cls):
+        return (
+            1
+            / np.sqrt(2)
+            * np.array(
+                [[0, 1, 0, 1.0j], [1, 0, -1.0j, 0], [0, 1.0j, 0, 1], [-1.0j, 0, 1, 0]],
+                dtype=complex,
+            )
+        )
+
+
 class PSWAP(Operation):
     r""" PSWAP(phi, wires)
 
