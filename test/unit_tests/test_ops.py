@@ -97,13 +97,10 @@ def _assert_decomposition(pl_op, params=None):
     index_substitutions = {i: i + num_wires for i in range(num_wires)}
     next_index = num_indices
 
-    # get decomposed gate
-    if params:  # for parametrized gates
-        decomposed_op = pl_op.decomposition(*params, wires=wires)
-        pl_op_matrix = pl_op._matrix(*params)
-    else:  # for non parametrized gates
-        decomposed_op = pl_op.decomposition(wires=wires)
-        pl_op_matrix = pl_op._matrix()
+    # get decomposed gates
+    decomposed_op = (
+        pl_op.decomposition(*params, wires=wires) if params else pl_op.decomposition(wires=wires)
+    )
 
     # Heterogeneous matrix chain multiplication using tensor contraction
     for gate in reversed(decomposed_op):
@@ -128,4 +125,6 @@ def _assert_decomposition(pl_op, params=None):
     contraction_parameters.append(new_indices)
 
     actual_matrix = np.reshape(np.einsum(*contraction_parameters), [dimension, dimension])
+    pl_op_matrix = pl_op._matrix(*params) if params else pl_op._matrix()
+
     assert np.allclose(actual_matrix, pl_op_matrix)
