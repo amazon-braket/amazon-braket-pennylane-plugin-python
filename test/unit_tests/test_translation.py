@@ -30,7 +30,7 @@ from pennylane.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     translate_operation,
@@ -61,6 +61,7 @@ testdata = [
     (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi]),
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi]),
+    (ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
     (XY, gates.XY, [0, 1], [np.pi]),
@@ -91,6 +92,7 @@ testdata_inverses = [
     (qml.CZ, gates.CZ, [0, 1], [], []),
     (qml.CY, gates.CY, [0, 1], [], []),
     (qml.SWAP, gates.Swap, [0, 1], [], []),
+    (ECR, gates.ECR, [0, 1], [], []),
     (qml.CSWAP, gates.CSwap, [0, 1, 2], [], []),
     (qml.Toffoli, gates.CCNot, [0, 1, 2], [], []),
     (qml.RX, gates.Rx, [0], [0.15], [-0.15]),

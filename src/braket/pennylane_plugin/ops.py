@@ -249,6 +249,64 @@ class CPhaseShift10(Operation):
         return CPhaseShift10(-phi, wires=self.wires)
 
 
+class ECR(Operation):
+    r""" ECR(wires)
+
+    An echoed RZX(pi/2) gate.
+
+    .. math:: \mathtt{XY}(\phi) = \begin{bmatrix}
+            0 & 1 & 0 & i \\
+            1 & 0 & -i & 0 \\
+            0 & i & 0 & 1 \\
+            -i & 0 & 1 & 0
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 2
+    * Number of parameters: 0
+
+    Args:
+        phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 0
+    num_wires = 2
+
+    def __init__(self, wires, do_queue=True, id=None):
+        super().__init__(wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_decomposition(wires):
+        pi = np.pi
+        return [
+            qml.PauliZ(wires=[wires[1]]),
+            qml.CNOT(wires=[wires[1], wires[0]]),
+            qml.SX(wires=[wires[0]]),
+            qml.RX(pi / 2, wires=[wires[1]]),
+            qml.RY(pi / 2, wires=[wires[1]]),
+            qml.RX(pi / 2, wires=[wires[1]]),
+        ]
+
+    @staticmethod
+    def compute_matrix():
+        return (
+            1
+            / np.sqrt(2)
+            * np.array(
+                [[0, 1, 0, 1.0j], [1, 0, -1.0j, 0], [0, 1.0j, 0, 1], [-1.0j, 0, 1, 0]],
+                dtype=complex,
+            )
+        )
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return ECR(-phi, wires=self.wires)
+
+
 class PSWAP(Operation):
     r""" PSWAP(phi, wires)
 
