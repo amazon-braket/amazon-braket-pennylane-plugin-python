@@ -37,7 +37,7 @@ gates_2q_non_parametrized = [
 ]
 
 observables_1q = [
-    obs._matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
+    obs.compute_matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
 ]
 observables_2q = [
     np.kron(obs1, obs2) for obs1, obs2 in itertools.product(observables_1q, observables_1q)
