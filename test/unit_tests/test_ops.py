@@ -123,8 +123,8 @@ def _assert_decomposition(pl_op, params=None):
         covariant = list(range(next_index, next_index + len(gate_wires)))
 
         indices = contravariant + covariant
-        # `gate.matrix` as type-(len(contravariant), len(covariant)) tensor
-        gate_tensor = np.reshape(gate.matrix, [2] * len(indices))
+        # `qml.matrix(gate)` as type-(len(contravariant), len(covariant)) tensor
+        gate_tensor = np.reshape(qml.matrix(gate), [2] * len(indices))
 
         contraction_parameters += [gate_tensor, indices]
         next_index += len(gate_wires)
