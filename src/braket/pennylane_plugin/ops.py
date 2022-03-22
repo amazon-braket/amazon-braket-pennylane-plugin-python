@@ -302,10 +302,6 @@ class ECR(Operation):
             )
         )
 
-    def adjoint(self):
-        (phi,) = self.parameters
-        return ECR(-phi, wires=self.wires)
-
 
 class PSWAP(Operation):
     r""" PSWAP(phi, wires)
@@ -408,10 +404,15 @@ class XY(Operation):
     grad_method = "A"
     parameter_frequencies = [(0.5, 1.0)]
 
+    # TODO: Modify generator function for this class, add scalar multiplication for hamiltonians
+    #  back when this issue is fixed: https://github.com/PennyLaneAI/pennylane/issues/2361
     def generator(self):
-        return 0.25 * (
-            qml.PauliX(wires=self.wires[0]) @ qml.PauliX(wires=self.wires[1])
-            + qml.PauliY(wires=self.wires[0]) @ qml.PauliY(wires=self.wires[1])
+        return qml.Hamiltonian(
+            [0.25, 0.25],
+            [
+                qml.PauliX(wires=self.wires[0]) @ qml.PauliX(wires=self.wires[1]),
+                qml.PauliY(wires=self.wires[0]) @ qml.PauliY(wires=self.wires[1]),
+            ],
         )
 
     def __init__(self, phi, wires, do_queue=True, id=None):

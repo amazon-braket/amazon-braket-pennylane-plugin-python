@@ -18,6 +18,7 @@ from unittest.mock import patch
 import numpy as np
 import pennylane as qml
 import pytest
+import scipy
 from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
@@ -138,3 +139,22 @@ def _assert_decomposition(pl_op, params=None):
     pl_op_matrix = pl_op.compute_matrix(*params) if params else pl_op.compute_matrix()
 
     assert np.allclose(actual_matrix, pl_op_matrix)
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_gate_adjoint(pl_op, braket_gate, angle):
+    op = pl_op(angle, wires=[0, 1])
+    assert np.allclose(
+        np.dot(pl_op.compute_matrix(angle), qml.matrix(pl_op.adjoint(op))), np.identity(4)
+    )
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_gate_generator(pl_op, braket_gate, angle):
+    op = pl_op(angle, wires=[0, 1])
+    if op.name != "PSWAP":
+        assert np.allclose(
+            qml.matrix(op), scipy.linalg.expm(1j * angle * qml.matrix(op.generator()))
+        )
