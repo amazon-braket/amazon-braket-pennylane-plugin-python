@@ -57,12 +57,14 @@ from pennylane.operation import (
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
+    translate_result,
     translate_result_type,
 )
 
 from ._version import __version__
 
 RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
+MIN_SIMULATOR_BILLED_MS = 3000
 
 
 class Shots(Enum):
@@ -85,7 +87,7 @@ class BraketQubitDevice(QubitDevice):
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
-    pennylane_requires = ">=0.16.0"
+    pennylane_requires = ">=0.18.0"
     version = __version__
     author = "Amazon Web Services"
 
@@ -123,6 +125,13 @@ class BraketQubitDevice(QubitDevice):
         return self._supported_ops
 
     @property
+    def observables(self) -> FrozenSet[str]:
+        base_observables = frozenset(super().observables)
+        if not self.shots:
+            return base_observables.union({"Hamiltonian"})
+        return base_observables
+
+    @property
     def circuit(self) -> Circuit:
         """Circuit: The last circuit run on this device."""
         return self._circuit
@@ -141,9 +150,12 @@ class BraketQubitDevice(QubitDevice):
         )
         for observable in circuit.observables:
             dev_wires = self.map_wires(observable.wires).tolist()
-            braket_circuit.add_result_type(
-                translate_result_type(observable, dev_wires, self._braket_result_types)
-            )
+            translated = translate_result_type(observable, dev_wires, self._braket_result_types)
+            if isinstance(translated, tuple):
+                for result_type in translated:
+                    braket_circuit.add_result_type(result_type)
+            else:
+                braket_circuit.add_result_type(translated)
         return braket_circuit
 
     def statistics(
@@ -185,11 +197,36 @@ class BraketQubitDevice(QubitDevice):
 
         return np.asarray(results)
 
+    @staticmethod
+    def _tracking_data(task):
+        if task.state() == "COMPLETED":
+            tracking_data = {"braket_task_id": task.id}
+            try:
+                simulation_ms = (
+                    task.result().additional_metadata.simulatorMetadata.executionDuration
+                )
+                tracking_data["braket_simulator_ms"] = simulation_ms
+                tracking_data["braket_simulator_billed_ms"] = max(
+                    simulation_ms, MIN_SIMULATOR_BILLED_MS
+                )
+            except AttributeError:
+                pass
+            return tracking_data
+        else:
+            return {"braket_failed_task_id": task.id}
+
     def execute(self, circuit: CircuitGraph, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(circuit, **run_kwargs)
         self._task = self._run_task(self._circuit)
-        return self._braket_to_pl_result(self._task.result(), circuit)
+        braket_result = self._task.result()
+
+        if self.tracker.active:
+            tracking_data = self._tracking_data(self._task)
+            self.tracker.update(executions=1, shots=self.shots, **tracking_data)
+            self.tracker.record()
+
+        return self._braket_to_pl_result(braket_result, circuit)
 
     def apply(
         self, operations: Sequence[Operation], rotations: Sequence[Operation] = None, **run_kwargs
@@ -227,9 +264,7 @@ class BraketQubitDevice(QubitDevice):
 
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
-        return braket_result.get_value_by_result_type(
-            translate_result_type(observable, dev_wires, self._braket_result_types)
-        )
+        return translate_result(braket_result, observable, dev_wires, self._braket_result_types)
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):
@@ -278,7 +313,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self,
         wires: Union[int, Iterable],
         device_arn: str,
-        s3_destination_folder: AwsSession.S3DestinationFolder,
+        s3_destination_folder: AwsSession.S3DestinationFolder = None,
         *,
         shots: Union[int, None, Shots] = Shots.DEFAULT,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -331,10 +366,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
         ]
 
+        batch_shots = 0 if self.analytic else self.shots
+
         task_batch = self._device.run_batch(
             braket_circuits,
             s3_destination_folder=self._s3_folder,
-            shots=0 if self.analytic else self.shots,
+            shots=batch_shots,
             max_parallel=self._max_parallel,
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
@@ -342,9 +379,22 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             **self._run_kwargs,
         )
         # Call results() to retrieve the Braket results in parallel.
-        braket_results_batch = task_batch.results(
-            fail_unsuccessful=True, max_retries=self._max_retries
-        )
+        try:
+            braket_results_batch = task_batch.results(
+                fail_unsuccessful=True, max_retries=self._max_retries
+            )
+
+        # Update the tracker before raising an exception further if some circuits do not complete.
+        finally:
+            if self.tracker.active:
+                for task in task_batch.tasks:
+                    tracking_data = self._tracking_data(task)
+                    self.tracker.update(**tracking_data)
+                total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+                total_shots = total_executions * batch_shots
+                self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+                self.tracker.record()
+
         return [
             self._braket_to_pl_result(braket_result, circuit)
             for braket_result, circuit in zip(braket_results_batch, circuits)

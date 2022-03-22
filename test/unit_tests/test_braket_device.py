@@ -109,9 +109,15 @@ RESULT = GateModelQuantumTaskResult.from_string(
 )
 TASK = Mock()
 TASK.result.return_value = RESULT
+type(TASK).id = PropertyMock(return_value="task_arn")
+TASK.state.return_value = "COMPLETED"
 TASK_BATCH = Mock()
 TASK_BATCH.results.return_value = [RESULT, RESULT]
 type(TASK_BATCH).tasks = PropertyMock(return_value=[TASK, TASK])
+SIM_TASK = Mock()
+SIM_TASK.result.return_value.additional_metadata.simulatorMetadata.executionDuration = 1234
+type(SIM_TASK).id = PropertyMock(return_value="task_arn")
+SIM_TASK.state.return_value = "COMPLETED"
 CIRCUIT = (
     Circuit()
     .h(0)
@@ -227,6 +233,50 @@ def test_execute(mock_run):
     )
 
 
+@patch.object(AwsDevice, "run")
+def test_execute_tracker(mock_run):
+    """Asserts tracker stores information during execute when active"""
+    mock_run.side_effect = [TASK, SIM_TASK, SIM_TASK, TASK]
+    dev = _aws_device(wires=4, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.execute(circuit)
+        dev.execute(circuit)
+        dev.execute(circuit)
+    dev.execute(circuit)
+
+    latest = {
+        "executions": 1,
+        "shots": SHOTS,
+        "braket_task_id": "task_arn",
+        "braket_simulator_ms": 1234,
+        "braket_simulator_billed_ms": 3000,
+    }
+    history = {
+        "executions": [1, 1, 1],
+        "shots": [SHOTS, SHOTS, SHOTS],
+        "braket_task_id": ["task_arn", "task_arn", "task_arn"],
+        "braket_simulator_ms": [1234, 1234],
+        "braket_simulator_billed_ms": [3000, 3000],
+    }
+    totals = {
+        "executions": 3,
+        "shots": 3 * SHOTS,
+        "braket_simulator_ms": 2468,
+        "braket_simulator_billed_ms": 6000,
+    }
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
 def test_pl_to_braket_circuit():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
     dev = _aws_device(wires=2, foo="bar")
@@ -243,6 +293,30 @@ def test_pl_to_braket_circuit():
         .rx(1, 0.3)
         .cnot(0, 1)
         .add_result_type(result_types.Expectation(observable=Observable.Z(), target=0))
+    )
+
+    braket_circuit = dev._pl_to_braket_circuit(tape)
+
+    assert braket_circuit_true == braket_circuit
+
+
+def test_pl_to_braket_circuit_hamiltonian():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1))))
+
+    braket_circuit_true = (
+        Circuit()
+        .rx(0, 0.2)
+        .rx(1, 0.3)
+        .cnot(0, 1)
+        .expectation(Observable.X(), [0])
+        .expectation(Observable.Y(), [1])
     )
 
     braket_circuit = dev._pl_to_braket_circuit(tape)
@@ -269,6 +343,37 @@ def test_batch_execute_non_parallel(monkeypatch):
         m.setattr(QubitDevice, "batch_execute", lambda self, circuits: 1967)
         res = dev.batch_execute([])
         assert res == 1967
+
+
+@patch.object(AwsDevice, "run")
+def test_batch_execute_non_parallel_tracker(mock_run):
+    """Tests tracking for a non-parallel batch"""
+    mock_run.return_value = TASK
+    dev = _aws_device(wires=2, foo="bar", parallel=False)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.batch_execute([circuit, circuit])
+    dev.batch_execute([circuit])
+
+    latest = {"batches": 1, "batch_len": 2}
+    history = {
+        "executions": [1, 1],
+        "shots": [SHOTS, SHOTS],
+        "batches": [1],
+        "batch_len": [2],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
+    totals = {"executions": 2, "shots": 2 * SHOTS, "batches": 1, "batch_len": 2}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
 @patch.object(AwsDevice, "run_batch")
@@ -321,6 +426,94 @@ def test_batch_execute_parallel(mock_run_batch):
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
     )
+
+
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel execution"""
+
+    mock_run_batch.return_value = TASK_BATCH
+    type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
+    dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    circuits = [circuit, circuit]
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.batch_execute(circuits)
+    dev.batch_execute(circuits)
+
+    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    history = {
+        "batches": [1],
+        "executions": [2],
+        "shots": [2 * SHOTS],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
+    totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during a partial failure of parallel execution"""
+
+    FAIL_TASK = Mock()
+    FAIL_TASK.result.return_value = None
+    type(FAIL_TASK).id = PropertyMock(return_value="failed_task_arn")
+    FAIL_TASK.state.return_value = "FAILED"
+    FAIL_BATCH = Mock()
+    FAIL_BATCH.results.side_effect = RuntimeError("tasks failed to complete")
+    type(FAIL_BATCH).tasks = PropertyMock(return_value=[SIM_TASK, FAIL_TASK])
+    type(FAIL_BATCH).unsuccessful = PropertyMock(return_value={"failed_task_arn"})
+
+    mock_run_batch.return_value = FAIL_BATCH
+    dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    circuits = [circuit, circuit]
+
+    callback = Mock()
+    try:
+        with qml.Tracker(dev, callback=callback) as tracker:
+            dev.batch_execute(circuits)
+        dev.batch_execute(circuits)
+    except RuntimeError:
+        pass
+
+    latest = {"batches": 1, "executions": 1, "shots": 1 * SHOTS}
+    history = {
+        "batches": [1],
+        "executions": [1],
+        "shots": [1 * SHOTS],
+        "braket_task_id": ["task_arn"],
+        "braket_failed_task_id": ["failed_task_arn"],
+        "braket_simulator_ms": [1234],
+        "braket_simulator_billed_ms": [3000],
+    }
+    totals = {
+        "batches": 1,
+        "executions": 1,
+        "shots": 1 * SHOTS,
+        "braket_simulator_ms": 1234,
+        "braket_simulator_billed_ms": 3000,
+    }
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
 @patch.object(AwsDevice, "run")
@@ -521,7 +714,7 @@ def test_projection():
     # 01 case
     fs = [qml.map(f, [projector_01], dev, measure=m) for m in measure_types]
     assert np.allclose(fs[0](thetas), p_01)
-    assert np.allclose(fs[1](thetas), p_01 - p_01 ** 2)
+    assert np.allclose(fs[1](thetas), p_01 - p_01**2)
 
     samples = fs[2](thetas, shots=100)[0].tolist()
     assert set(samples) == {0, 1}
@@ -529,7 +722,7 @@ def test_projection():
     # 10 case
     fs = [qml.map(f, [projector_10], dev, measure=m) for m in measure_types]
     assert np.allclose(fs[0](thetas), p_10)
-    assert np.allclose(fs[1](thetas), p_10 - p_10 ** 2)
+    assert np.allclose(fs[1](thetas), p_10 - p_10**2)
 
     samples = fs[2](thetas, shots=100)[0].tolist()
     assert set(samples) == {0, 1}

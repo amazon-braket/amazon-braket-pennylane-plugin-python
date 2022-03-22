@@ -11,6 +11,8 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import json
+
 import numpy as np
 import pennylane as qml
 import pytest
@@ -23,14 +25,16 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.tasks import GateModelQuantumTaskResult
 from pennylane.measure import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     translate_operation,
+    translate_result,
     translate_result_type,
 )
 
@@ -57,11 +61,12 @@ testdata = [
     (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi]),
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi]),
+    (ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
     (XY, gates.XY, [0, 1], [np.pi]),
     (qml.IsingXX, gates.XX, [0, 1], [np.pi]),
-    (YY, gates.YY, [0, 1], [np.pi]),
+    (qml.IsingYY, gates.YY, [0, 1], [np.pi]),
     (qml.IsingZZ, gates.ZZ, [0, 1], [np.pi]),
     (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
     (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
@@ -87,6 +92,7 @@ testdata_inverses = [
     (qml.CZ, gates.CZ, [0, 1], [], []),
     (qml.CY, gates.CY, [0, 1], [], []),
     (qml.SWAP, gates.Swap, [0, 1], [], []),
+    (ECR, gates.ECR, [0, 1], [], []),
     (qml.CSWAP, gates.CSwap, [0, 1, 2], [], []),
     (qml.Toffoli, gates.CCNot, [0, 1, 2], [], []),
     (qml.RX, gates.Rx, [0], [0.15], [-0.15]),
@@ -119,7 +125,7 @@ testdata_inverses = [
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (XY, gates.XY, [0, 1], [0.15], [-0.15]),
-    (YY, gates.YY, [0, 1], [0.15], [-0.15]),
+    (qml.IsingYY, gates.YY, [0, 1], [0.15], [-0.15]),
     (qml.IsingZZ, gates.ZZ, [0, 1], [0.15], [-0.15]),
 ]
 
@@ -140,7 +146,7 @@ pl_return_types = [
     ObservableReturnTypes.Sample,
 ]
 
-braket_results = [
+braket_result_types = [
     Expectation(observables.H(), [0]),
     Variance(observables.H(), [0]),
     Sample(observables.H(), [0]),
@@ -182,68 +188,91 @@ def test_translate_operation_named_inverse(pl_cls, braket_cls, qubit):
     )
 
 
-def test_translate_iswap_inverse():
+def test_translate_operation_iswap_inverse():
     """Tests that the iSwap gate is inverted correctly"""
     assert translate_operation(qml.ISWAP(wires=[0, 1]).inv()) == gates.PSwap(3 * np.pi / 2)
 
 
-@pytest.mark.parametrize("return_type, braket_result", zip(pl_return_types, braket_results))
-def test_translate_result_type_observable(return_type, braket_result):
+@pytest.mark.parametrize(
+    "return_type, braket_result_type", zip(pl_return_types, braket_result_types)
+)
+def test_translate_result_type_observable(return_type, braket_result_type):
     """Tests if a PennyLane return type that involves an observable is successfully converted into a
     Braket result using translate_result_type"""
     obs = qml.Hadamard(0)
     obs.return_type = return_type
-    braket_result_calculated = translate_result_type(obs, [0], frozenset())
+    braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
 
-    assert braket_result == braket_result_calculated
+    assert braket_result_type == braket_result_type_calculated
+
+
+def test_translate_result_type_hamiltonian_expectation():
+    """Tests that a Hamiltonian is translated correctly"""
+    obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
+    obs.return_type = ObservableReturnTypes.Expectation
+    braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
+    braket_result_type = (Expectation(observables.X(), [0]), Expectation(observables.Y(), [1]))
+    assert braket_result_type == braket_result_type_calculated
+
+
+@pytest.mark.parametrize(
+    "return_type", [ObservableReturnTypes.Variance, ObservableReturnTypes.Sample]
+)
+def test_translate_result_type_hamiltonian_unsupported_return(return_type):
+    """Tests if a NotImplementedError is raised by translate_result_type
+    with Hamiltonian observable and non-Expectation return type"""
+    obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
+    obs.return_type = return_type
+    with pytest.raises(NotImplementedError, match="unsupported for Hamiltonian"):
+        translate_result_type(obs, [0], frozenset())
 
 
 def test_translate_result_type_probs():
     """Tests if a PennyLane probability return type is successfully converted into a Braket
     result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
-    braket_result_calculated = translate_result_type(mp, [0], frozenset())
+    braket_result_type_calculated = translate_result_type(mp, [0], frozenset())
 
-    braket_result = Probability([0])
+    braket_result_type = Probability([0])
 
-    assert braket_result == braket_result_calculated
+    assert braket_result_type == braket_result_type_calculated
 
 
 def test_translate_result_type_state_vector():
     """Tests if a PennyLane state vector return type is successfully converted into a Braket
     result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.State)
-    braket_result_calculated = translate_result_type(
+    braket_result_type_calculated = translate_result_type(
         mp, [], frozenset(["StateVector", "DensityMatrix"])
     )
 
-    braket_result = StateVector()
+    braket_result_type = StateVector()
 
-    assert braket_result == braket_result_calculated
+    assert braket_result_type == braket_result_type_calculated
 
 
 def test_translate_result_type_density_matrix():
     """Tests if a PennyLane density matrix return type is successfully converted into a Braket
     result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.State)
-    braket_result_calculated = translate_result_type(mp, [], frozenset(["DensityMatrix"]))
+    braket_result_type_calculated = translate_result_type(mp, [], frozenset(["DensityMatrix"]))
 
-    braket_result = DensityMatrix()
+    braket_result_type = DensityMatrix()
 
-    assert braket_result == braket_result_calculated
+    assert braket_result_type == braket_result_type_calculated
 
 
 def test_translate_result_type_density_matrix_partial():
     """Tests if a PennyLane partial density matrix return type is successfully converted into a
     Braket result using translate_result_type"""
     mp = MeasurementProcess(ObservableReturnTypes.State, wires=[0])
-    braket_result_calculated = translate_result_type(
+    braket_result_type_calculated = translate_result_type(
         mp, [0], frozenset(["StateVector", "DensityMatrix"])
     )
 
-    braket_result = DensityMatrix([0])
+    braket_result_type = DensityMatrix([0])
 
-    assert braket_result == braket_result_calculated
+    assert braket_result_type == braket_result_type_calculated
 
 
 def test_translate_result_type_state_unimplemented():
@@ -271,3 +300,59 @@ def test_translate_result_type_unsupported_obs():
 
     with pytest.raises(TypeError, match="Unsupported observable"):
         translate_result_type(obs, [0], frozenset())
+
+
+def test_translate_result():
+    result_dict = _result_meta()
+    result_dict["resultTypes"] = [
+        {"type": {"targets": [0], "type": "probability"}, "value": [0.5, 0.5]}
+    ]
+    targets = [0]
+    result_dict["measuredQubits"]: targets
+    result = GateModelQuantumTaskResult.from_string(json.dumps(result_dict))
+    mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
+    translated = translate_result(result, mp, targets, frozenset())
+    assert (translated == result.result_types[0].value).all()
+
+
+def test_translate_result_hamiltonian():
+    result_dict = _result_meta()
+    result_dict["resultTypes"] = [
+        {
+            "type": {"observable": ["x", "y"], "targets": [0, 1], "type": "expectation"},
+            "value": 2.0,
+        },
+        {
+            "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
+            "value": 3.0,
+        },
+    ]
+    targets = [0, 1]
+    result_dict["measuredQubits"]: targets
+    result = GateModelQuantumTaskResult.from_string(json.dumps(result_dict))
+    ham = qml.Hamiltonian((2, 1), (qml.PauliX(0) @ qml.PauliY(1), qml.PauliX(1)))
+    ham.return_type = ObservableReturnTypes.Expectation
+    translated = translate_result(result, ham, targets, frozenset())
+    expected = 2 * result.result_types[0].value + result.result_types[1].value
+    assert translated == expected
+
+
+def _result_meta() -> dict:
+    return {
+        "braketSchemaHeader": {
+            "name": "braket.task_result.gate_model_task_result",
+            "version": "1",
+        },
+        "taskMetadata": {
+            "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+            "id": "task_arn",
+            "shots": 0,
+            "deviceId": "default",
+        },
+        "additionalMetadata": {
+            "action": {
+                "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
+                "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+            },
+        },
+    }

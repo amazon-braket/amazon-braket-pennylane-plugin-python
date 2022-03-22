@@ -16,9 +16,9 @@ from braket.pennylane_plugin.braket_device import (  # noqa: F401
     BraketLocalQubitDevice,
 )
 from braket.pennylane_plugin.ops import (  # noqa: F401
+    ECR,
     PSWAP,
     XY,
-    YY,
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,

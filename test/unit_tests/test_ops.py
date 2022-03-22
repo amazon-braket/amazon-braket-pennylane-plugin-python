@@ -22,7 +22,7 @@ from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
 
-from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 gates_2q_parametrized = [
     (CPhaseShift00, gates.CPhaseShift00),
@@ -30,7 +30,10 @@ gates_2q_parametrized = [
     (CPhaseShift10, gates.CPhaseShift10),
     (PSWAP, gates.PSwap),
     (XY, gates.XY),
-    (YY, gates.YY),
+]
+
+gates_2q_non_parametrized = [
+    (ECR, gates.ECR),
 ]
 
 observables_1q = [
@@ -46,7 +49,16 @@ observables_2q = [
 def test_ops_parametrized(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
     assert np.allclose(pl_op._matrix(angle), braket_gate(angle).to_matrix())
-    _assert_decomposition(pl_op, [angle])
+    _assert_decomposition(pl_op, params=[angle])
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
+def test_ops_non_parametrized(pl_op, braket_gate):
+    """Tests that the matrices and decompositions of non-parametrized custom operations are
+    correct.
+    """
+    assert np.allclose(pl_op._matrix(), braket_gate().to_matrix())
+    _assert_decomposition(pl_op)
 
 
 @patch("braket.pennylane_plugin.ops.np", new=anp)
@@ -72,9 +84,9 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     assert np.allclose(from_shifts, direct_calculation)
 
 
-def _assert_decomposition(pl_op, params):
+def _assert_decomposition(pl_op, params=None):
     num_wires = pl_op.num_wires
-    dimension = 2 ** num_wires
+    dimension = 2**num_wires
     num_indices = 2 * num_wires
     wires = list(range(num_wires))
 
@@ -84,8 +96,14 @@ def _assert_decomposition(pl_op, params):
     ]
     index_substitutions = {i: i + num_wires for i in range(num_wires)}
     next_index = num_indices
+
+    # get decomposed gates
+    decomposed_op = (
+        pl_op.decomposition(*params, wires=wires) if params else pl_op.decomposition(wires=wires)
+    )
+
     # Heterogeneous matrix chain multiplication using tensor contraction
-    for gate in reversed(pl_op.decomposition(*params, wires=wires)):
+    for gate in reversed(decomposed_op):
         gate_wires = gate.wires.tolist()
 
         # Upper indices, which will be traced out
@@ -107,4 +125,6 @@ def _assert_decomposition(pl_op, params):
     contraction_parameters.append(new_indices)
 
     actual_matrix = np.reshape(np.einsum(*contraction_parameters), [dimension, dimension])
-    assert np.allclose(actual_matrix, pl_op._matrix(*params))
+    pl_op_matrix = pl_op._matrix(*params) if params else pl_op._matrix()
+
+    assert np.allclose(actual_matrix, pl_op_matrix)

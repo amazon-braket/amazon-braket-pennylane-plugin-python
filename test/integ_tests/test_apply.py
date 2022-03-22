@@ -18,7 +18,7 @@ import pennylane as qml
 import pytest
 from conftest import K2, U2, K, U
 
-from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 np.random.seed(42)
 
@@ -46,7 +46,7 @@ two_qubit_param = [
     PSWAP,
     XY,
     qml.IsingXX,
-    YY,
+    qml.IsingYY,
     qml.IsingZZ,
 ]
 
@@ -74,7 +74,7 @@ class TestHardwareApply:
             qml.BasisState.decomposition(state, wires=[0, 1, 2, 3])
             return qml.probs(wires=range(4))
 
-        expected = np.zeros([2 ** 4])
+        expected = np.zeros([2**4])
         expected[np.ravel_multi_index(state, [2] * 4)] = 1
         assert np.allclose(circuit(), expected, **tol)
 

@@ -1,5 +1,78 @@
 # Changelog
 
+## v1.6.0 (2022-03-17)
+
+### Features
+
+ * add ECR gate
+
+## v1.5.7 (2022-03-14)
+
+### Bug Fixes and Other Changes
+
+ * Pin pennylane version
+
+## v1.5.6 (2022-02-15)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #86 from aws/remove-pl-bucket
+ * make s3_bucket optional
+
+## v1.5.5 (2022-02-09)
+
+### Bug Fixes and Other Changes
+
+ * Fix device tracker integ test for PennyLane 0.21
+ * Merge branch 'main' into braket-tracker
+ * Merge pull request #85 from aws/update-format
+ * fix formatting
+ * Add check for older PL using batches differently
+ * Merge branch 'main' into braket-tracker
+
+## v1.5.4 (2022-01-28)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #79 from aws/braket-tracker
+ * Merge branch 'main' into braket-tracker
+ * Add comment on which devices run tracking test
+ * Remove extra print statements
+
+## v1.5.3 (2021-12-16)
+
+### Bug Fixes and Other Changes
+
+ * integ tests for PL-0.20
+
+## v1.5.2 (2021-09-30)
+
+### Bug Fixes and Other Changes
+
+ * remove minified version of jquery and bootstrap
+
+## v1.5.1 (2021-09-27)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #75 from albi3ro/add-tracker
+ * Merge branch 'main' into add-tracker
+ * fix format errors
+ * Update test/unit_tests/test_braket_device.py
+
+## v1.5.0 (2021-09-24)
+
+### Features
+
+ * Support for Hamiltonians
+
+## v1.4.2 (2021-09-03)
+
+### Bug Fixes and Other Changes
+
+ * Remove YY gate import from integ tests
+ * Add IsingYY support
+
 ## v1.4.1 (2021-08-06)
 
 ### Bug Fixes and Other Changes
