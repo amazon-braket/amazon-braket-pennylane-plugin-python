@@ -19,6 +19,7 @@ import numpy as np
 import pennylane as qml
 import pytest
 import scipy
+import tensorflow as tf
 from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
@@ -51,6 +52,14 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
     assert np.allclose(pl_op.compute_matrix(angle), braket_gate(angle).to_matrix())
     _assert_decomposition(pl_op, params=[angle])
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+def test_ops_parametrized_tf(pl_op, braket_gate):
+    """Tests that the matrices and decompositions of parametrized custom operations
+    are correct using tensorflow interface.
+    """
+    pl_op.compute_matrix(tf.Variable(0.5))
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)

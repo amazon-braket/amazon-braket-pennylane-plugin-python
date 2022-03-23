@@ -28,6 +28,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk",
+        "tensorflow>=2.6.0",
         "pennylane>=0.22.0",
     ],
     entry_points={
