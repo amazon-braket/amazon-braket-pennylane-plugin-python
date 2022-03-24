@@ -28,7 +28,6 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk",
-        "tensorflow>=2.6.0",
         "pennylane>=0.22.0",
     ],
     entry_points={
@@ -60,6 +59,8 @@ setup(
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
+            "tensorflow>=2.6.0",
+            "torch>=1.11",
         ]
     },
     url="https://github.com/aws/amazon-braket-pennylane-plugin-python",

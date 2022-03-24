@@ -152,10 +152,18 @@ def _assert_decomposition(pl_op, params=None):
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
-def test_gate_adjoint(pl_op, braket_gate, angle):
+def test_gate_adjoint_parametrized(pl_op, braket_gate, angle):
     op = pl_op(angle, wires=[0, 1])
     assert np.allclose(
         np.dot(pl_op.compute_matrix(angle), qml.matrix(pl_op.adjoint(op))), np.identity(4)
+    )
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
+def test_gate_adjoint_non_parametrized(pl_op, braket_gate):
+    op = pl_op(wires=[0, 1])
+    assert np.allclose(
+        np.dot(pl_op.compute_matrix(), qml.matrix(pl_op.adjoint(op))), np.identity(4)
     )
 
 

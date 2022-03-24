@@ -254,7 +254,7 @@ class ECR(Operation):
 
     An echoed RZX(pi/2) gate.
 
-    .. math:: \mathtt{XY}(\phi) = \begin{bmatrix}
+    .. math:: \mathtt{ECR} = {1/\sqrt{2}} \begin{bmatrix}
             0 & 1 & 0 & i \\
             1 & 0 & -i & 0 \\
             0 & i & 0 & 1 \\
@@ -267,12 +267,12 @@ class ECR(Operation):
     * Number of parameters: 0
 
     Args:
-        phi (float): the phase angle
         wires (int): the subsystem the gate acts on
         do_queue (bool): Indicates whether the operator should be
             immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 0
     num_wires = 2
 
@@ -301,6 +301,9 @@ class ECR(Operation):
                 dtype=complex,
             )
         )
+
+    def adjoint(self):
+        return ECR(wires=self.wires)
 
 
 class PSWAP(Operation):
