@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.1 (2022-03-24)
+
+### Bug Fixes and Other Changes
+
+ * integ tests for TF, Torch for PL>0.20
+
 ## v1.6.0 (2022-03-17)
 
 ### Features
