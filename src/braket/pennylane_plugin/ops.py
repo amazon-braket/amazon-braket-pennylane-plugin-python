@@ -26,6 +26,7 @@ These operations can be imported via
 .. code-block:: python
 
     from braket.pennylane_plugin import (
+        ECR,
         PSWAP,
         XY,
         CPhaseShift00,
@@ -40,6 +41,7 @@ Operations
     CPhaseShift00
     CPhaseShift01
     CPhaseShift10
+    ECR
     PSWAP
     XY
 
