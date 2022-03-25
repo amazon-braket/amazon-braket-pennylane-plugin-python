@@ -80,9 +80,10 @@ class CPhaseShift00(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
-        id (str or None): String representing the operation (optional)
+        do_queue (bool, optional): Indicates whether the operator should be
+            immediately pushed into the Operator queue. Default: None
+        id (str, optional): String representing the operation. Default: None
+
     """
     num_params = 1
     num_wires = 2
