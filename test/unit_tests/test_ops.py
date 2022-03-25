@@ -23,6 +23,7 @@ import tensorflow as tf
 from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
+from numpy import float64
 
 from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
@@ -55,11 +56,15 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
-def test_ops_parametrized_tf(pl_op, braket_gate):
+@pytest.mark.parametrize(
+    "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
+)
+def test_ops_parametrized_tf(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations
     are correct using tensorflow interface.
     """
-    pl_op.compute_matrix(tf.Variable(0.5))
+    pl_op.compute_matrix(angle)
+    _assert_decomposition(pl_op, params=[angle])
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
