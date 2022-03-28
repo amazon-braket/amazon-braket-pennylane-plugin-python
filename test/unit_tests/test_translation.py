@@ -26,7 +26,7 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.tasks import GateModelQuantumTaskResult
-from pennylane.measure import MeasurementProcess
+from pennylane.measurements import MeasurementProcess
 from pennylane.operation import ObservableReturnTypes
 from pennylane.wires import Wires
 
