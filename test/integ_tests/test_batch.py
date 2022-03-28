@@ -106,12 +106,10 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     qnode_aws = qml.QNode(func, dev_aws, interface="torch")
     qnode_default = qml.QNode(func, dev_default, interface="torch")
 
-    weights_aws = torch.tensor(
-        qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967), requires_grad=True
-    )
-    weights_default = torch.tensor(
-        qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967), requires_grad=True
-    )
+    shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
+    weights = np.random.random(shape)
+    weights_aws = torch.tensor(weights, requires_grad=True)
+    weights_default = torch.tensor(weights, requires_grad=True)
 
     spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
     spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
@@ -126,13 +124,25 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     res_aws = weights_aws.grad
     res_default = weights_default.grad
 
-    assert np.allclose(res_aws, res_default)
-    spy1.assert_called_once()  # For a forward pass
-    spy2.assert_called_once()
-    spy3.assert_called_once()
+    if qml.version() >= "0.20.0":
+        assert np.allclose(res_aws, res_default)
+        spy1.assert_not_called()
+        assert len(spy2.call_args_list) == 2
+        assert len(spy3.call_args_list) == 2
 
-    expected_circuits = qubits * layers * 3 * 2
-    assert len(spy2.call_args_list[0][0][1]) == expected_circuits
+        expected_circuits = qubits * layers * 3 * 2
+        assert len(spy2.call_args_list[0][0][1]) == 1  # First batch_execute called for forward pass
+        assert (
+            len(spy2.call_args_list[1][0][1]) == expected_circuits
+        )  # Then called for backward pass
+    else:
+        assert np.allclose(res_aws, res_default)
+        spy1.assert_called_once()  # For a forward pass
+        spy2.assert_called_once()
+        spy3.assert_called_once()
+
+        expected_circuits = qubits * layers * 3 * 2
+        assert len(spy2.call_args_list[0][0][1]) == expected_circuits
 
 
 @pytest.mark.parametrize("shots", [None])
@@ -160,8 +170,10 @@ def test_batch_execution_of_gradient_tf(device, shots, mocker):
     qnode_aws = qml.QNode(func, dev_aws, interface="tf")
     qnode_default = qml.QNode(func, dev_default, interface="tf")
 
-    weights_aws = tf.Variable(qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967))
-    weights_default = tf.Variable(qml.init.strong_ent_layers_uniform(layers, qubits, seed=1967))
+    shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
+    weights = np.random.random(shape)
+    weights_aws = tf.Variable(weights)
+    weights_default = tf.Variable(weights)
 
     spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
     spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
@@ -177,10 +189,22 @@ def test_batch_execution_of_gradient_tf(device, shots, mocker):
 
     res_default = tape.gradient(out_default, weights_default)
 
-    assert np.allclose(res_aws, res_default)
-    spy1.assert_called_once()  # For a forward pass
-    spy2.assert_called_once()
-    spy3.assert_called_once()
+    if qml.version() >= "0.20.0":
+        assert np.allclose(res_aws, res_default)
+        spy1.assert_not_called()
+        assert len(spy2.call_args_list) == 2
+        assert len(spy3.call_args_list) == 2
 
-    expected_circuits = qubits * layers * 3 * 2
-    assert len(spy2.call_args_list[0][0][1]) == expected_circuits
+        expected_circuits = qubits * layers * 3 * 2
+        assert len(spy2.call_args_list[0][0][1]) == 1  # First batch_execute called for forward pass
+        assert (
+            len(spy2.call_args_list[1][0][1]) == expected_circuits
+        )  # Then called for backward pass
+    else:
+        assert np.allclose(res_aws, res_default)
+        spy1.assert_called_once()  # For a forward pass
+        spy2.assert_called_once()
+        spy3.assert_called_once()
+
+        expected_circuits = qubits * layers * 3 * 2
+        assert len(spy2.call_args_list[0][0][1]) == expected_circuits
