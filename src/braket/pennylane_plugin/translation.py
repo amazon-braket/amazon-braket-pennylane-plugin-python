@@ -395,7 +395,7 @@ def _(i: qml.Identity):
 
 @_translate_observable.register
 def _(h: qml.Hermitian):
-    return observables.Hermitian(h.matrix)
+    return observables.Hermitian(qml.matrix(h))
 
 
 _zero = np.array([[1, 0], [0, 0]])
@@ -438,7 +438,7 @@ def translate_result(
     """
     translated = translate_result_type(observable, targets, supported_result_types)
     if isinstance(observable, qml.Hamiltonian):
-        coeffs, _ = observable.terms
+        coeffs, _ = observable.terms()
         return sum(
             coeff * braket_result.get_value_by_result_type(result_type)
             for coeff, result_type in zip(coeffs, translated)

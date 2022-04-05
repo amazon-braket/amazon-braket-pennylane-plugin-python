@@ -26,6 +26,7 @@ These operations can be imported via
 .. code-block:: python
 
     from braket.pennylane_plugin import (
+        ECR,
         PSWAP,
         XY,
         CPhaseShift00,
@@ -40,6 +41,7 @@ Operations
     CPhaseShift00
     CPhaseShift01
     CPhaseShift10
+    ECR
     PSWAP
     XY
 
@@ -50,7 +52,6 @@ Code details
 import numpy as np
 import pennylane as qml
 from pennylane.operation import Operation
-from pennylane.ops.qubit import four_term_grad_recipe
 
 
 class CPhaseShift00(Operation):
@@ -79,14 +80,24 @@ class CPhaseShift00(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool, optional): Indicates whether the operator should be
+            immediately pushed into the Operator queue. Default: None
+        id (str, optional): String representing the operation. Default: None
+
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    def generator(self):
+        return qml.Projector(np.array([0, 0]), wires=self.wires)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.PauliX(wires[0]),
             qml.PauliX(wires[1]),
@@ -99,9 +110,16 @@ class CPhaseShift00(Operation):
             qml.PauliX(wires[0]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        return np.diag(np.array([np.exp(1.0j * params[0]), 1.0, 1.0, 1.0], dtype=complex))
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([qml.math.exp(1j * phi), 1, 1, 1])
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return CPhaseShift00(-phi, wires=self.wires)
 
 
 class CPhaseShift01(Operation):
@@ -130,14 +148,23 @@ class CPhaseShift01(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    def generator(self):
+        return qml.Projector(np.array([0, 1]), wires=self.wires)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.PauliX(wires[0]),
             qml.PhaseShift(phi / 2, wires=[wires[0]]),
@@ -148,9 +175,16 @@ class CPhaseShift01(Operation):
             qml.PauliX(wires[0]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        return np.diag(np.array([1.0, np.exp(1.0j * params[0]), 1.0, 1.0], dtype=complex))
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([1, qml.math.exp(1j * phi), 1, 1])
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return CPhaseShift01(-phi, wires=self.wires)
 
 
 class CPhaseShift10(Operation):
@@ -179,14 +213,23 @@ class CPhaseShift10(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    def generator(self):
+        return qml.Projector(np.array([1, 0]), wires=self.wires)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.PauliX(wires[1]),
             qml.PhaseShift(phi / 2, wires=[wires[0]]),
@@ -197,9 +240,16 @@ class CPhaseShift10(Operation):
             qml.PauliX(wires[1]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        return np.diag(np.array([1.0, 1.0, np.exp(1.0j * params[0]), 1.0], dtype=complex))
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([1, 1, qml.math.exp(1j * phi), 1])
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return CPhaseShift10(-phi, wires=self.wires)
 
 
 class ECR(Operation):
@@ -207,7 +257,7 @@ class ECR(Operation):
 
     An echoed RZX(pi/2) gate.
 
-    .. math:: \mathtt{XY}(\phi) = \begin{bmatrix}
+    .. math:: \mathtt{ECR} = {1/\sqrt{2}} \begin{bmatrix}
             0 & 1 & 0 & i \\
             1 & 0 & -i & 0 \\
             0 & i & 0 & 1 \\
@@ -221,12 +271,19 @@ class ECR(Operation):
 
     Args:
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
+
     num_params = 0
     num_wires = 2
 
+    def __init__(self, wires, do_queue=True, id=None):
+        super().__init__(wires=wires, do_queue=do_queue, id=id)
+
     @staticmethod
-    def decomposition(wires):
+    def compute_decomposition(wires):
         pi = np.pi
         return [
             qml.PauliZ(wires=[wires[1]]),
@@ -237,8 +294,8 @@ class ECR(Operation):
             qml.RX(pi / 2, wires=[wires[1]]),
         ]
 
-    @classmethod
-    def _matrix(cls):
+    @staticmethod
+    def compute_matrix():
         return (
             1
             / np.sqrt(2)
@@ -247,6 +304,9 @@ class ECR(Operation):
                 dtype=complex,
             )
         )
+
+    def adjoint(self):
+        return ECR(wires=self.wires)
 
 
 class PSWAP(Operation):
@@ -274,14 +334,20 @@ class PSWAP(Operation):
     Args:
         phi (float): the phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    grad_recipe = ([[0.5, 1, np.pi / 2], [-0.5, 1, -np.pi / 2]],)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.SWAP(wires=wires),
             qml.CNOT(wires=wires),
@@ -289,12 +355,16 @@ class PSWAP(Operation):
             qml.CNOT(wires=wires),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        phi = params[0]
-        return np.diag(np.array([1, np.exp(1j * phi), np.exp(1j * phi), 1], dtype=complex))[
-            [0, 2, 1, 3]
-        ]
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return PSWAP(-phi, wires=self.wires)
 
 
 class XY(Operation):
@@ -330,15 +400,32 @@ class XY(Operation):
     Args:
         phi (float): the phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
     par_domain = "R"
     grad_method = "A"
-    grad_recipe = four_term_grad_recipe
+    parameter_frequencies = [(0.5, 1.0)]
+
+    # TODO: Modify generator function for this class, add scalar multiplication for hamiltonians
+    #  back when this issue is fixed: https://github.com/PennyLaneAI/pennylane/issues/2361
+    def generator(self):
+        return qml.Hamiltonian(
+            [0.25, 0.25],
+            [
+                qml.PauliX(wires=self.wires[0]) @ qml.PauliX(wires=self.wires[1]),
+                qml.PauliY(wires=self.wires[0]) @ qml.PauliY(wires=self.wires[1]),
+            ],
+        )
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.Hadamard(wires=[wires[0]]),
             qml.CY(wires=wires),
@@ -348,17 +435,19 @@ class XY(Operation):
             qml.Hadamard(wires=[wires[0]]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        phi = params[0]
-        cos = np.cos(phi / 2)
-        isin = 1.0j * np.sin(phi / 2)
-        return np.array(
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, cos, isin, 0.0],
-                [0.0, isin, cos, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            dtype=complex,
-        )
+    @staticmethod
+    def compute_matrix(phi):
+        c = qml.math.cos(phi / 2)
+        s = qml.math.sin(phi / 2)
+        off_diag = qml.math.convert_like(np.diag([0, 1, 1, 0])[::-1].copy(), phi)
+
+        if qml.math.get_interface(phi) == "tensorflow":
+            c = qml.math.cast_like(c, 1j)
+            s = qml.math.cast_like(s, 1j)
+            off_diag = qml.math.cast_like(off_diag, 1j)
+
+        return qml.math.diag([1, c, c, 1]) + 1j * s * off_diag
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return XY(-phi, wires=self.wires)

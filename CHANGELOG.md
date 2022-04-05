@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.2 (2022-03-28)
+
+### Bug Fixes and Other Changes
+
+ * pennylane 0.22 breaking changes
+
 ## v1.6.1 (2022-03-24)
 
 ### Bug Fixes and Other Changes

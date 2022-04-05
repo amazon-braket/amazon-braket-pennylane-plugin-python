@@ -71,7 +71,7 @@ class TestHardwareApply:
 
         @qml.qnode(dev)
         def circuit():
-            qml.BasisState.decomposition(state, wires=[0, 1, 2, 3])
+            qml.BasisState.compute_decomposition(state, wires=[0, 1, 2, 3])
             return qml.probs(wires=range(4))
 
         expected = np.zeros([2**4])
@@ -85,7 +85,7 @@ class TestHardwareApply:
 
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.decomposition(state, wires=[0])
+            qml.QubitStateVector.compute_decomposition(state, wires=[0])
             return qml.probs(wires=range(1))
 
         assert np.allclose(circuit(), np.abs(state) ** 2, **tol)
@@ -177,25 +177,27 @@ class TestHardwareApply:
     def assert_op_and_inverse(op, dev, state, wires, tol, op_args):
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.decomposition(state, wires=wires)
+            qml.QubitStateVector.compute_decomposition(state, wires=wires)
             op(*op_args, wires=wires)
             return qml.probs(wires=wires)
 
-        assert np.allclose(circuit(), np.abs(op._matrix(*op_args) @ state) ** 2, **tol)
+        assert np.allclose(circuit(), np.abs(op.compute_matrix(*op_args) @ state) ** 2, **tol)
 
         @qml.qnode(dev)
         def circuit_inv():
-            qml.QubitStateVector.decomposition(state, wires=wires)
+            qml.QubitStateVector.compute_decomposition(state, wires=wires)
             op(*op_args, wires=wires).inv()
             return qml.probs(wires=wires)
 
-        assert np.allclose(circuit_inv(), np.abs(op._matrix(*op_args).conj().T @ state) ** 2, **tol)
+        assert np.allclose(
+            circuit_inv(), np.abs(op.compute_matrix(*op_args).conj().T @ state) ** 2, **tol
+        )
 
     @staticmethod
     def assert_noise_op(op, dev, state, wires, tol, op_args):
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.decomposition(state, wires=wires)
+            qml.QubitStateVector.compute_decomposition(state, wires=wires)
             op(*op_args, wires=wires)
             return qml.probs(wires=wires)
 
@@ -203,7 +205,7 @@ class TestHardwareApply:
             initial_dm = np.outer(state, state.conj())
             final_dm = sum(
                 matrix @ initial_dm @ matrix.conj().T
-                for matrix in op(*op_args, wires=wires).kraus_matrices
+                for matrix in op(*op_args, wires=wires).kraus_matrices()
             )
             return np.diagonal(final_dm)
 
