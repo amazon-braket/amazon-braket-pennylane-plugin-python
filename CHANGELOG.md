@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.3 (2022-04-06)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #92 from antalszava/remove_qhack
+ * Merge branch 'main' into remove_qhack
+ * Merge branch 'main' into remove_qhack
+ * Merge branch 'main' into remove_qhack
+
 ## v1.6.2 (2022-03-28)
 
 ### Bug Fixes and Other Changes
