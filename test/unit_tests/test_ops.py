@@ -36,7 +36,7 @@ gates_2q_parametrized = [
 ]
 
 gates_2q_non_parametrized = [
-    (ECR, gates.ECR),
+    # (ECR, gates.ECR),
 ]
 
 observables_1q = [
