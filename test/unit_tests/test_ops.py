@@ -25,7 +25,7 @@ from autograd import numpy as anp
 from braket.circuits import gates
 from numpy import float64
 
-from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10  # , ECR
 
 gates_2q_parametrized = [
     (CPhaseShift00, gates.CPhaseShift00),
