@@ -258,10 +258,10 @@ class ECR(Operation):
     An echoed RZX(pi/2) gate.
 
     .. math:: \mathtt{ECR} = {1/\sqrt{2}} \begin{bmatrix}
-            0 & 1 & 0 & i \\
-            1 & 0 & -i & 0 \\
-            0 & i & 0 & 1 \\
-            -i & 0 & 1 & 0
+            0 & 0 & 1 & i \\
+            0 & 0 & i & 1 \\
+            1 & -i & 0 & 0 \\
+            -i & 1 & 0 & 0
         \end{bmatrix}.
 
     **Details:**
@@ -286,12 +286,12 @@ class ECR(Operation):
     def compute_decomposition(wires):
         pi = np.pi
         return [
-            qml.PauliZ(wires=[wires[1]]),
-            qml.CNOT(wires=[wires[1], wires[0]]),
-            qml.SX(wires=[wires[0]]),
-            qml.RX(pi / 2, wires=[wires[1]]),
-            qml.RY(pi / 2, wires=[wires[1]]),
-            qml.RX(pi / 2, wires=[wires[1]]),
+            qml.PauliZ(wires=[wires[0]]),
+            qml.CNOT(wires=[wires[0], wires[1]]),
+            qml.SX(wires=[wires[1]]),
+            qml.RX(pi / 2, wires=[wires[0]]),
+            qml.RY(pi / 2, wires=[wires[0]]),
+            qml.RX(pi / 2, wires=[wires[0]]),
         ]
 
     @staticmethod
@@ -300,7 +300,7 @@ class ECR(Operation):
             1
             / np.sqrt(2)
             * np.array(
-                [[0, 1, 0, 1.0j], [1, 0, -1.0j, 0], [0, 1.0j, 0, 1], [-1.0j, 0, 1, 0]],
+                [[0, 0, 1, 1.0j], [0, 0, 1.0j, 1], [1, -1.0j, 0, 0], [-1.0j, 1, 0, 0]],
                 dtype=complex,
             )
         )
