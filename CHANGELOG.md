@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.4 (2022-04-18)
+
+### Bug Fixes and Other Changes
+
+ * update: fix ECR definition
+
 ## v1.6.3 (2022-04-06)
 
 ### Bug Fixes and Other Changes
