@@ -72,16 +72,7 @@ def test_ops_non_parametrized(pl_op, braket_gate):
     """Tests that the matrices and decompositions of non-parametrized custom operations are
     correct.
     """
-    target_matrix = (
-        1
-        / np.sqrt(2)
-        * np.array(
-            [[0, 0, 1, 1.0j], [0, 0, 1.0j, 1], [1, -1.0j, 0, 0], [-1.0j, 1, 0, 0]], dtype=complex
-        )
-    )  # temporary check
-
-    assert np.allclose(pl_op.compute_matrix(), target_matrix)  # temporary check
-    # assert np.allclose(pl_op.compute_matrix(), braket_gate().to_matrix()) # real check
+    assert np.allclose(pl_op.compute_matrix(), braket_gate().to_matrix())
     _assert_decomposition(pl_op)
 
 
