@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.5 (2022-04-20)
+
+### Bug Fixes and Other Changes
+
+ * unit test for ECR gate
+
 ## v1.6.4 (2022-04-18)
 
 ### Bug Fixes and Other Changes
