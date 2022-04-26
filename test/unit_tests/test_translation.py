@@ -26,8 +26,7 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.tasks import GateModelQuantumTaskResult
-from pennylane.measurements import MeasurementProcess
-from pennylane.operation import ObservableReturnTypes
+from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
