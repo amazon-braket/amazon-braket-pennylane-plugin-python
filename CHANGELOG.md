@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.6 (2022-04-26)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #97 from aws/obs_types
+ * pinning doc req to the same version as the build.
+ * removing pinning from doc requirement.
+ * updating pennylane req for docs.
+
 ## v1.6.5 (2022-04-20)
 
 ### Bug Fixes and Other Changes
