@@ -85,6 +85,9 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     op = pl_op(angle, wires=[0, 1])
     if op.grad_recipe[0]:
         shifts = op.grad_recipe[0]
+    elif qml.version() >= "0.24.0":
+        orig_shifts = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
+        shifts = [[c, 1, s] for c, s in orig_shifts]
     else:
         cs, ss = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
         shifts = [[c, 1, s] for c, s in zip(cs, ss)]
