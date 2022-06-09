@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.7 (2022-06-09)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #100 from aws/grad_update
+ * Update deprecated imports for version 0.23
+
 ## v1.6.6 (2022-04-26)
 
 ### Bug Fixes and Other Changes
