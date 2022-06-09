@@ -34,8 +34,7 @@ from pennylane import numpy as np
 from pennylane.tape import QuantumTape
 
 import braket.pennylane_plugin.braket_device
-from braket.pennylane_plugin import __version__
-from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
+from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 
 SHOTS = 10000
@@ -761,7 +760,9 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
     aws_device_mock_instance.type = AwsDeviceType.SIMULATOR
     BraketAwsQubitDevice(wires=2, device_arn="foo", shots=10)
     expected_user_agent = f"BraketPennylanePlugin/{__version__}"
-    aws_device_mock_instance.aws_session.add_braket_user_agent.assert_called_with(expected_user_agent)
+    aws_device_mock_instance.aws_session.add_braket_user_agent.assert_called_with(
+        expected_user_agent
+    )
 
 
 class DummyLocalQubitDevice(BraketQubitDevice):
@@ -842,7 +843,13 @@ def _noop(*args, **kwargs):
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties")
 def _aws_device(
-    properties_mock, type_mock, session_mock, wires, device_type=AwsDeviceType.QPU, shots=SHOTS, **kwargs
+    properties_mock,
+    type_mock,
+    session_mock,
+    wires,
+    device_type=AwsDeviceType.QPU,
+    shots=SHOTS,
+    **kwargs,
 ):
     properties_mock.action = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
     properties_mock.return_value.action.return_value = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
@@ -853,7 +860,7 @@ def _aws_device(
         device_arn="baz",
         aws_session=Mock(),
         shots=shots,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -869,5 +876,5 @@ def _bad_aws_device(properties_mock, session_mock, wires, **kwargs):
         device_arn=DEVICE_ARN,
         aws_session=Mock(),
         shots=SHOTS,
-        **kwargs
+        **kwargs,
     )
