@@ -326,6 +326,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         **run_kwargs,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
+        user_agent = f"BraketPennylanePlugin/{__version__}"
+        device.aws_session.add_braket_user_agent(user_agent)
         if DeviceActionType.JAQCD not in device.properties.action:
             raise ValueError(f"Device {device.name} does not support quantum circuits")
 
