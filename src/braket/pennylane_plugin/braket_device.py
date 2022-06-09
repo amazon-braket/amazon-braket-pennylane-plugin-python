@@ -44,15 +44,14 @@ from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane.operation import (
+from pennylane.measurements import (
     Expectation,
-    Observable,
-    Operation,
     Probability,
     Sample,
     State,
     Variance,
 )
+from pennylane.operation import Observable, Operation
 
 from braket.pennylane_plugin.translation import (
     supported_operations,
