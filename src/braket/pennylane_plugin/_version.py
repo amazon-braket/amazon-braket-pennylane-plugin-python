@@ -15,4 +15,4 @@
    Version number (major.minor.patch[-label])
 """
 
-__version__ = "1.6.8"
+__version__ = "1.6.9.dev0"
