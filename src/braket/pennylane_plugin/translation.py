@@ -30,7 +30,7 @@ from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 
-from braket.pennylane_plugin.ops import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin.ops import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "x": "PauliX",
@@ -67,7 +67,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "cphaseshift10": "CPhaseShift10",
     "iswap": "ISWAP",
     "pswap": "PSWAP",
-    "xy": "XY",
+    "xy": "IsingXY",
     "xx": "IsingXX",
     "yy": "IsingYY",
     "zz": "IsingZZ",
@@ -117,27 +117,27 @@ def _translate_operation(operation: Operation, _parameters) -> Gate:
 
 
 @_translate_operation.register
-def _(h: qml.Hadamard, _parameters):
+def _(_: qml.Hadamard, _parameters):
     return gates.H()
 
 
 @_translate_operation.register
-def _(x: qml.PauliX, _parameters):
+def _(_: qml.PauliX, _parameters):
     return gates.X()
 
 
 @_translate_operation.register
-def _(y: qml.PauliY, _parameters):
+def _(_: qml.PauliY, _parameters):
     return gates.Y()
 
 
 @_translate_operation.register
-def _(z: qml.PauliZ, _parameters):
+def _(_: qml.PauliZ, _parameters):
     return gates.Z()
 
 
 @_translate_operation.register
-def _(ecr: ECR, _parameters):
+def _(_: qml.ECR, _parameters):
     return gates.ECR()
 
 
@@ -157,32 +157,32 @@ def _(t: qml.T, _parameters):
 
 
 @_translate_operation.register
-def _(cnot: qml.CNOT, _parameters):
+def _(_: qml.CNOT, _parameters):
     return gates.CNot()
 
 
 @_translate_operation.register
-def _(cy: qml.CY, _parameters):
+def _(_: qml.CY, _parameters):
     return gates.CY()
 
 
 @_translate_operation.register
-def _(cz: qml.CZ, _parameters):
+def _(_: qml.CZ, _parameters):
     return gates.CZ()
 
 
 @_translate_operation.register
-def _(swap: qml.SWAP, _parameters):
+def _(_: qml.SWAP, _parameters):
     return gates.Swap()
 
 
 @_translate_operation.register
-def _(cswap: qml.CSWAP, _parameters):
+def _(_: qml.CSWAP, _parameters):
     return gates.CSwap()
 
 
 @_translate_operation.register
-def _(toffoli: qml.Toffoli, _parameters):
+def _(_: qml.Toffoli, _parameters):
     return gates.CCNot()
 
 
@@ -217,44 +217,44 @@ def _(qubit_unitary: qml.QubitUnitary, parameters):
 
 
 @_translate_operation.register
-def _(amplitude_damping: qml.AmplitudeDamping, parameters):
+def _(_: qml.AmplitudeDamping, parameters):
     gamma = parameters[0]
     return noises.AmplitudeDamping(gamma)
 
 
 @_translate_operation.register
-def _(generalized_amplitude_damping: qml.GeneralizedAmplitudeDamping, parameters):
+def _(_: qml.GeneralizedAmplitudeDamping, parameters):
     gamma = parameters[0]
     probability = parameters[1]
     return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
 
 
 @_translate_operation.register
-def _(phase_damping: qml.PhaseDamping, parameters):
+def _(_: qml.PhaseDamping, parameters):
     gamma = parameters[0]
     return noises.PhaseDamping(gamma)
 
 
 @_translate_operation.register
-def _(depolarizing_channel: qml.DepolarizingChannel, parameters):
+def _(_: qml.DepolarizingChannel, parameters):
     probability = parameters[0]
     return noises.Depolarizing(probability)
 
 
 @_translate_operation.register
-def _(bit_flip: qml.BitFlip, parameters):
+def _(_: qml.BitFlip, parameters):
     probability = parameters[0]
     return noises.BitFlip(probability)
 
 
 @_translate_operation.register
-def _(phase_flip: qml.PhaseFlip, parameters):
+def _(_: qml.PhaseFlip, parameters):
     probability = parameters[0]
     return noises.PhaseFlip(probability)
 
 
 @_translate_operation.register
-def _(qubit_channel: qml.QubitChannel, parameters):
+def _(_: qml.QubitChannel, parameters):
     K_list = [np.asarray(matrix) for matrix in parameters[0]]
     return noises.Kraus(K_list)
 
@@ -295,7 +295,7 @@ def _(pswap: PSWAP, parameters):
 
 
 @_translate_operation.register
-def _(xy: XY, parameters):
+def _(xy: qml.IsingXY, parameters):
     phi = parameters[0]
     return gates.XY(-phi) if xy.inverse else gates.XY(phi)
 
@@ -370,27 +370,27 @@ def _translate_observable(observable):
 
 
 @_translate_observable.register
-def _(x: qml.PauliX):
+def _(_: qml.PauliX):
     return observables.X()
 
 
 @_translate_observable.register
-def _(y: qml.PauliY):
+def _(_: qml.PauliY):
     return observables.Y()
 
 
 @_translate_observable.register
-def _(z: qml.PauliZ):
+def _(_: qml.PauliZ):
     return observables.Z()
 
 
 @_translate_observable.register
-def _(h: qml.Hadamard):
+def _(_: qml.Hadamard):
     return observables.H()
 
 
 @_translate_observable.register
-def _(i: qml.Identity):
+def _(_: qml.Identity):
     return observables.I()
 
 
