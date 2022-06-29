@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.6.8 (2022-06-22)
+
+### Bug Fixes and Other Changes
+
+ * Update for PennyLane 0.24
+
+### Testing and Release Infrastructure
+
+ * Fix integ test imports
+
+## v1.6.7 (2022-06-09)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #100 from aws/grad_update
+ * Update deprecated imports for version 0.23
+
 ## v1.6.6 (2022-04-26)
 
 ### Bug Fixes and Other Changes

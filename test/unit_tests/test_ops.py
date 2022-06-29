@@ -25,19 +25,16 @@ from autograd import numpy as anp
 from braket.circuits import gates
 from numpy import float64
 
-from braket.pennylane_plugin import ECR, PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 gates_2q_parametrized = [
     (CPhaseShift00, gates.CPhaseShift00),
     (CPhaseShift01, gates.CPhaseShift01),
     (CPhaseShift10, gates.CPhaseShift10),
     (PSWAP, gates.PSwap),
-    (XY, gates.XY),
 ]
 
-gates_2q_non_parametrized = [
-    (ECR, gates.ECR),
-]
+gates_2q_non_parametrized = []  # Empty... For now!
 
 observables_1q = [
     obs.compute_matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
@@ -86,8 +83,8 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     if op.grad_recipe[0]:
         shifts = op.grad_recipe[0]
     else:
-        cs, ss = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
-        shifts = [[c, 1, s] for c, s in zip(cs, ss)]
+        orig_shifts = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
+        shifts = [[c, 1, s] for c, s in orig_shifts]
 
     summands = []
     for shift in shifts:

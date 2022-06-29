@@ -18,7 +18,7 @@ import pennylane as qml
 import pytest
 from conftest import K2, U2, K, U
 
-from braket.pennylane_plugin import PSWAP, XY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 np.random.seed(42)
 
@@ -44,7 +44,7 @@ two_qubit_param = [
     CPhaseShift01,
     CPhaseShift10,
     PSWAP,
-    XY,
+    qml.IsingXY,
     qml.IsingXX,
     qml.IsingYY,
     qml.IsingZZ,
