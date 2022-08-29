@@ -23,7 +23,7 @@ import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
 from braket.circuits import Circuit, Observable, result_types
 from braket.device_schema import DeviceActionType
-from braket.device_schema.jaqcd_device_action_properties import JaqcdDeviceActionProperties
+from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.simulator import BraketSimulator
@@ -39,10 +39,10 @@ from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 
 SHOTS = 10000
 
-ACTION_PROPERTIES = JaqcdDeviceActionProperties.parse_raw(
+ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
     json.dumps(
         {
-            "actionType": "braket.ir.jaqcd.program",
+            "actionType": "braket.ir.openqasm.program",
             "version": ["1"],
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot"],
             "supportedResultTypes": [
@@ -64,8 +64,8 @@ GATE_MODEL_RESULT = GateModelTaskResult(
         },
         "additionalMetadata": {
             "action": {
-                "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
-                "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+                "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
             },
         },
     }
@@ -100,8 +100,8 @@ RESULT = GateModelQuantumTaskResult.from_string(
             },
             "additionalMetadata": {
                 "action": {
-                    "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
-                    "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+                    "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                    "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                 },
             },
         }
@@ -552,8 +552,11 @@ def test_execute_all_samples(mock_run):
                 },
                 "additionalMetadata": {
                     "action": {
-                        "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
-                        "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                     },
                 },
             }
@@ -575,8 +578,8 @@ def test_execute_all_samples(mock_run):
 
 @pytest.mark.xfail(raises=ValueError)
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
-def test_non_jaqcd_device(name_mock):
-    """Tests that BraketDevice cannot be instantiated with a non-JAQCD AwsDevice"""
+def test_non_circuit_device(name_mock):
+    """Tests that BraketDevice cannot be instantiated with a non-circuit AwsDevice"""
     _bad_aws_device(wires=2)
 
 
@@ -756,7 +759,7 @@ def test_run_task_unimplemented():
 @patch("braket.pennylane_plugin.braket_device.AwsDevice")
 def test_add_braket_user_agent_invoked(aws_device_mock):
     aws_device_mock_instance = aws_device_mock.return_value
-    aws_device_mock_instance.properties.action = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
+    aws_device_mock_instance.properties.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
     aws_device_mock_instance.type = AwsDeviceType.SIMULATOR
     BraketAwsQubitDevice(wires=2, device_arn="foo", shots=10)
     expected_user_agent = f"BraketPennylanePlugin/{__version__}"
@@ -771,7 +774,7 @@ class DummyLocalQubitDevice(BraketQubitDevice):
 
 class DummyCircuitSimulator(BraketSimulator):
     def run(
-        self, program: ir.jaqcd.Program, qubits: int, shots: Optional[int], *args, **kwargs
+        self, program: ir.openqasm.Program, qubits: int, shots: Optional[int], *args, **kwargs
     ) -> Dict[str, Any]:
         self._shots = shots
         self._qubits = qubits
@@ -808,8 +811,8 @@ class DummyCircuitSimulator(BraketSimulator):
                 "updatedAt": "2020-06-16T19:28:02.869136",
             },
             "action": {
-                "braket.ir.jaqcd.program": {
-                    "actionType": "braket.ir.jaqcd.program",
+                "braket.ir.openqasm.program": {
+                    "actionType": "braket.ir.openqasm.program",
                     "version": ["1"],
                     "supportedOperations": ["x", "y", "h", "cnot"],
                     "supportedResultTypes": [
@@ -851,8 +854,10 @@ def _aws_device(
     shots=SHOTS,
     **kwargs,
 ):
-    properties_mock.action = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
-    properties_mock.return_value.action.return_value = {DeviceActionType.JAQCD: ACTION_PROPERTIES}
+    properties_mock.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
+    properties_mock.return_value.action.return_value = {
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES
+    }
     type_mock.return_value = device_type
     return BraketAwsQubitDevice(
         wires=wires,

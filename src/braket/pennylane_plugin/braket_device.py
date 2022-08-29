@@ -245,7 +245,7 @@ class BraketQubitDevice(QubitDevice):
 
     def _check_supported_result_types(self):
         supported_result_types = self._device.properties.action[
-            "braket.ir.jaqcd.program"
+            "braket.ir.openqasm.program"
         ].supportedResultTypes
 
         self._braket_result_types = frozenset(
@@ -269,7 +269,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
             run circuits; The corresponding AwsDevice must support quantum
-            circuits via JAQCD. You can get device ARNs using ``AwsDevice.get_devices``,
+            circuits via OpenQASM. You can get device ARNs using ``AwsDevice.get_devices``,
             from the Amazon Braket console or from the Amazon Braket Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
             and folder, specified as a tuple.
@@ -321,7 +321,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
         device.aws_session.add_braket_user_agent(user_agent)
-        if DeviceActionType.JAQCD not in device.properties.action:
+        if DeviceActionType.OPENQASM not in device.properties.action:
             raise ValueError(f"Device {device.name} does not support quantum circuits")
 
         device_type = device.type
