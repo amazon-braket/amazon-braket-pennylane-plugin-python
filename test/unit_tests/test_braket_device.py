@@ -552,7 +552,10 @@ def test_execute_all_samples(mock_run):
                 },
                 "additionalMetadata": {
                     "action": {
-                        "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
                         "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                     },
                 },
@@ -852,7 +855,9 @@ def _aws_device(
     **kwargs,
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
-    properties_mock.return_value.action.return_value = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
+    properties_mock.return_value.action.return_value = {
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES
+    }
     type_mock.return_value = device_type
     return BraketAwsQubitDevice(
         wires=wires,
