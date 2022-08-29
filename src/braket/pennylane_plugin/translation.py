@@ -85,7 +85,7 @@ def supported_operations(device: Device) -> FrozenSet[str]:
         FrozenSet[str]: The names of the supported operations
     """
     try:
-        properties = device.properties.action["braket.ir.jaqcd.program"]
+        properties = device.properties.action["braket.ir.openqasm.program"]
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
