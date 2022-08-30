@@ -160,12 +160,13 @@ def _compare_param_shift(pl_op, angle, observable):
         basis_state = np.zeros(dim)
         basis_state[i] = 1
 
-        def ag_expectation(angle):
+        def expectation_autograd(angle):
             return anp.matmul(basis_state, anp.matmul(conj_obs_gate(angle), basis_state))
 
-        direct_calculation = deriv(ag_expectation)(angle)
-        exp_from_shifts = anp.matmul(basis_state, anp.matmul(from_shifts, basis_state))
-        assert np.allclose(exp_from_shifts, direct_calculation)
+        assert np.allclose(
+            np.matmul(basis_state, anp.matmul(from_shifts, basis_state)),
+            deriv(expectation_autograd)(angle)
+        )
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
