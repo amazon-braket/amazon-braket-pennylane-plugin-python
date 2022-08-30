@@ -165,7 +165,7 @@ def _compare_param_shift(pl_op, angle, observable):
 
         assert np.allclose(
             np.matmul(basis_state, anp.matmul(from_shifts, basis_state)),
-            deriv(expectation_autograd)(angle)
+            deriv(expectation_autograd)(angle),
         )
 
 
