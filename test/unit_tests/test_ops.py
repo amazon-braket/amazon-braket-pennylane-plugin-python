@@ -73,37 +73,6 @@ def test_ops_non_parametrized(pl_op, braket_gate):
     _assert_decomposition(pl_op)
 
 
-@patch("braket.pennylane_plugin.ops.np", new=anp)
-@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
-@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
-@pytest.mark.parametrize("observable", observables_2q)
-def test_param_shift_2q(pl_op, braket_gate, angle, observable):
-    """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
-    op = pl_op(angle, wires=[0, 1])
-    if op.grad_recipe[0]:
-        shifts = op.grad_recipe[0]
-    else:
-        orig_shifts = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
-        shifts = [[c, 1, s] for c, s in orig_shifts]
-
-    summands = []
-    for shift in shifts:
-        shifted = pl_op.compute_matrix(angle + shift[2])
-        summands.append(
-            shift[0] * np.matmul(np.matmul(np.transpose(np.conj(shifted)), observable), shifted)
-        )
-
-    from_shifts = sum(summands)
-
-    def conj_obs_gate(angle):
-        mat = pl_op.compute_matrix(angle)
-        return anp.matmul(anp.matmul(anp.transpose(anp.conj(mat)), observable), mat)
-
-    direct_calculation = deriv(conj_obs_gate)(angle)
-
-    assert np.allclose(from_shifts, direct_calculation)
-
-
 def _assert_decomposition(pl_op, params=None):
     num_wires = pl_op.num_wires
     dimension = 2**num_wires
@@ -150,6 +119,53 @@ def _assert_decomposition(pl_op, params=None):
     pl_op_matrix = pl_op.compute_matrix(*params) if params else pl_op.compute_matrix()
 
     assert np.allclose(actual_matrix, pl_op_matrix)
+
+
+@patch("braket.pennylane_plugin.ops.np", new=anp)
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+@pytest.mark.parametrize("observable", observables_2q)
+def test_param_shift_2q(pl_op, braket_gate, angle, observable):
+    """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
+    _compare_param_shift(pl_op, angle, observable)
+
+
+def _compare_param_shift(pl_op, angle, observable):
+    wires = range(pl_op.num_wires)
+    op = pl_op(angle, wires=wires)
+    if op.grad_recipe[0]:
+        # Use explicit parameter-shift rules
+        shifts = op.grad_recipe[0]
+    else:
+        # Generate parameter-shift rules from frequences
+        orig_shifts = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
+        shifts = [[c, 1, s] for c, s in orig_shifts]
+
+    summands = []
+    for shift in shifts:
+        shifted = pl_op.compute_matrix(angle + shift[2])
+        summands.append(
+            shift[0] * np.matmul(np.matmul(np.transpose(np.conj(shifted)), observable), shifted)
+        )
+
+    from_shifts = sum(summands)
+
+    def conj_obs_gate(angle):
+        mat = pl_op.compute_matrix(angle)
+        return anp.matmul(anp.matmul(anp.transpose(anp.conj(mat)), observable), mat)
+
+    dim = 2**op.num_wires
+    for i in range(dim):
+        # Test each basis state
+        basis_state = np.zeros(dim)
+        basis_state[i] = 1
+
+        def ag_expectation(angle):
+            return anp.matmul(basis_state, anp.matmul(conj_obs_gate(angle), basis_state))
+
+        direct_calculation = deriv(ag_expectation)(angle)
+        exp_from_shifts = anp.matmul(basis_state, anp.matmul(from_shifts, basis_state))
+        assert np.allclose(exp_from_shifts, direct_calculation)
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
