@@ -324,7 +324,7 @@ def _(zz: qml.IsingZZ, parameters):
 @_translate_operation.register
 def _(gpi: GPi, parameters):
     phi = parameters[0]
-    return gates.GPi(phi) if gpi.inverse else gates.GPi(phi)
+    return gates.GPi(phi)
 
 
 def translate_result_type(
