@@ -73,8 +73,8 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "zz": "IsingZZ",
     "ecr": "ECR",
     "gpi": "GPi",
-    "gpi2": "GPi2",
-    "ms": "MS",
+    # "gpi2": "GPi2",
+    # "ms": "MS",
 }
 
 
