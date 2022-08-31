@@ -26,10 +26,11 @@ from braket.circuits import gates
 from numpy import float64
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
-from braket.pennylane_plugin.ops import GPi
+from braket.pennylane_plugin.ops import GPi, GPi2
 
 gates_1q_parametrized = [
     (GPi, gates.GPi),
+    (GPi2, gates.GPi2),
 ]
 
 gates_2q_parametrized = [

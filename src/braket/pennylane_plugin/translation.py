@@ -30,7 +30,14 @@ from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 
-from braket.pennylane_plugin.ops import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10, GPi
+from braket.pennylane_plugin.ops import (
+    PSWAP,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+    GPi,
+    GPi2,
+)
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "x": "PauliX",
@@ -73,8 +80,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "zz": "IsingZZ",
     "ecr": "ECR",
     "gpi": "GPi",
-    # "gpi2": "GPi2",
-    # "ms": "MS",
+    "gpi2": "GPi2",
 }
 
 
@@ -322,9 +328,15 @@ def _(zz: qml.IsingZZ, parameters):
 
 
 @_translate_operation.register
-def _(gpi: GPi, parameters):
+def _(_gpi: GPi, parameters):
     phi = parameters[0]
     return gates.GPi(phi)
+
+
+@_translate_operation.register
+def _(gpi2: GPi2, parameters):
+    phi = parameters[0]
+    return gates.GPi2(phi + np.pi) if gpi2.inverse else gates.GPi2(phi)
 
 
 def translate_result_type(

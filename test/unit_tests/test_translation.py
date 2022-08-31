@@ -32,7 +32,7 @@ from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
-from braket.pennylane_plugin.ops import GPi
+from braket.pennylane_plugin.ops import GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     translate_operation,
@@ -64,6 +64,7 @@ testdata = [
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi]),
     (GPi, gates.GPi, [0], [2]),
+    (GPi2, gates.GPi2, [0], [2]),
     (qml.ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
@@ -126,6 +127,7 @@ testdata_inverses = [
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [0.15], [-0.15]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [0.15], [-0.15]),
     (GPi, gates.GPi, [0], [2], [2]),
+    (GPi2, gates.GPi2, [0], [2], [2 + np.pi]),
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (qml.IsingXY, gates.XY, [0, 1], [0.15], [-0.15]),
@@ -163,10 +165,10 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi,)):
+    if isinstance(pl_op, (GPi, GPi2)):
         assert (
             _braket_to_pl[
-                re.match("^[a-z01]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
             ]
             == pl_op.name
         )
@@ -183,9 +185,9 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
     pl_op = pl_cls(*params, wires=qubits).inv()
     braket_gate = braket_cls(*inv_params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi,)):
+    if isinstance(pl_op, (GPi, GPi2)):
         assert _braket_to_pl[
-            re.match("^[a-z01]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
         ] == pl_op.name.replace(".inv", "")
     else:
         assert _braket_to_pl[
