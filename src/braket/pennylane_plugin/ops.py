@@ -315,6 +315,8 @@ class PSWAP(Operation):
 class GPi(Operation):
     r""" GPi(phi, wires)
 
+    IonQ native GPi gate.
+
     .. math:: \mathtt{GPi}(\phi) = \begin{bmatrix}
             0 & e^{-i \phi} \\
             e^{i \phi} & 0
@@ -359,6 +361,8 @@ class GPi(Operation):
 class GPi2(Operation):
     r""" GPi2(phi, wires)
 
+    IonQ native GPi2 gate.
+
     .. math:: \mathtt{GPi2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
             1 & -ie^{-i \phi} \\
             -ie^{i \phi} & 1
@@ -402,6 +406,8 @@ class GPi2(Operation):
 
 class MS(Operation):
     r""" MS(phi_0, phi_1, wires)
+
+    IonQ native MS gate.
 
     .. math:: \mathtt{MS}(\phi_0, \phi_1) = \begin{bmatrix}
             1 & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)} \\
