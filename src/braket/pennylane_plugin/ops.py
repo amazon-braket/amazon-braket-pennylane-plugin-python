@@ -31,6 +31,7 @@ These operations can be imported via
         CPhaseShift00,
         CPhaseShift01,
         CPhaseShift10,
+        GPi,
     )
 
 Operations
@@ -42,6 +43,7 @@ Operations
     CPhaseShift10
     ECR
     PSWAP
+    GPi
 
 Code details
 ~~~~~~~~~~~~

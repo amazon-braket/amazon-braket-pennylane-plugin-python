@@ -125,7 +125,7 @@ testdata_inverses = [
     (CPhaseShift00, gates.CPhaseShift00, [0, 1], [0.15], [-0.15]),
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [0.15], [-0.15]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [0.15], [-0.15]),
-    (GPi, gates.GPi, [0], [2], [2 + np.pi]),
+    (GPi, gates.GPi, [0], [2], [2]),
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (qml.IsingXY, gates.XY, [0, 1], [0.15], [-0.15]),
