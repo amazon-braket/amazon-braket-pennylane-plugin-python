@@ -360,8 +360,8 @@ class GPi2(Operation):
     r""" GPI2(phi, wires)
 
     .. math:: \mathtt{GPI2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
-            1 & -e^{-i \phi} \\
-            -e^{i \phi} & 1 \\
+            1 & -ie^{-i \phi} \\
+            -ie^{i \phi} & 1 \\
         \end{bmatrix}.
 
     **Details:**
