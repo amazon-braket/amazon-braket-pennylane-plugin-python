@@ -313,9 +313,9 @@ class PSWAP(Operation):
 
 
 class GPi(Operation):
-    r""" GPI(phi, wires)
+    r""" GPi(phi, wires)
 
-    .. math:: \mathtt{GPI}(\phi) = \begin{bmatrix}
+    .. math:: \mathtt{GPi}(\phi) = \begin{bmatrix}
             0 & e^{-i \phi} \\
             e^{i \phi} & 0 \\
         \end{bmatrix}.
@@ -357,9 +357,9 @@ class GPi(Operation):
 
 
 class GPi2(Operation):
-    r""" GPI2(phi, wires)
+    r""" GPi2(phi, wires)
 
-    .. math:: \mathtt{GPI2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
+    .. math:: \mathtt{GPi2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
             1 & -ie^{-i \phi} \\
             -ie^{i \phi} & 1 \\
         \end{bmatrix}.
