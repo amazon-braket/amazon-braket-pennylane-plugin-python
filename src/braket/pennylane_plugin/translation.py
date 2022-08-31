@@ -31,6 +31,7 @@ from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 
 from braket.pennylane_plugin.ops import (
+    MS,
     PSWAP,
     CPhaseShift00,
     CPhaseShift01,
@@ -81,6 +82,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "ecr": "ECR",
     "gpi": "GPi",
     "gpi2": "GPi2",
+    "ms": "MS",
 }
 
 
@@ -337,6 +339,12 @@ def _(_gpi: GPi, parameters):
 def _(gpi2: GPi2, parameters):
     phi = parameters[0]
     return gates.GPi2(phi + np.pi) if gpi2.inverse else gates.GPi2(phi)
+
+
+@_translate_operation.register
+def _(ms: MS, parameters):
+    phi_0, phi_1 = parameters[:2]
+    return gates.MS(phi_0 + np.pi, phi_1) if ms.inverse else gates.MS(phi_0, phi_1)
 
 
 def translate_result_type(
