@@ -32,6 +32,7 @@ These operations can be imported via
         CPhaseShift01,
         CPhaseShift10,
         GPi,
+        GPi2,
     )
 
 Operations
@@ -44,6 +45,7 @@ Operations
     ECR
     PSWAP
     GPi
+    GPi2
 
 Code details
 ~~~~~~~~~~~~
@@ -352,3 +354,47 @@ class GPi(Operation):
     def adjoint(self):
         (phi,) = self.parameters
         return GPi(phi, wires=self.wires)
+
+
+class GPi2(Operation):
+    r""" GPI2(phi, wires)
+
+    .. math:: \mathtt{GPI2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
+            1 & -e^{-i \phi} \\
+            -e^{i \phi} & 1 \\
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 1
+    * Number of parameters: 1
+
+    Args:
+        phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 1
+    num_wires = 1
+    grad_method = "F"
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return np.array(
+            [
+                [1, -1j * np.exp(-1j * phi)],
+                [-1j * np.exp(1j * phi), 1],
+            ]
+        ) / np.sqrt(2)
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return GPi2(phi + np.pi, wires=self.wires)

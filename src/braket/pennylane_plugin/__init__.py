@@ -20,6 +20,8 @@ from braket.pennylane_plugin.ops import (  # noqa: F401
     CPhaseShift00,
     CPhaseShift01,
     CPhaseShift10,
+    GPi,
+    GPi2,
 )
 
 from ._version import __version__  # noqa: F401
