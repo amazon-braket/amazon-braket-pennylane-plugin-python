@@ -407,7 +407,8 @@ class GPi2(Operation):
 class MS(Operation):
     r""" MS(phi_0, phi_1, wires)
 
-    IonQ native MS gate.
+    IonQ native Mølmer-Sørenson gate.
+
 
     .. math:: \mathtt{MS}(\phi_0, \phi_1) = \begin{bmatrix}
             1 & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)} \\
