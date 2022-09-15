@@ -38,6 +38,7 @@ from braket.pennylane_plugin.translation import (
 )
 
 testdata = [
+    (qml.Identity, gates.I, [0], []),
     (qml.Hadamard, gates.H, [0], []),
     (qml.PauliX, gates.X, [0], []),
     (qml.PauliY, gates.Y, [0], []),
@@ -82,6 +83,7 @@ testdata = [
 ]
 
 testdata_inverses = [
+    (qml.Identity, gates.I, [0], [], []),
     (qml.Hadamard, gates.H, [0], [], []),
     (qml.PauliX, gates.X, [0], [], []),
     (qml.PauliY, gates.Y, [0], [], []),

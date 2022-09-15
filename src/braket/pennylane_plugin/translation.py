@@ -33,6 +33,7 @@ from pennylane.operation import Observable, Operation
 from braket.pennylane_plugin.ops import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
+    "i": "Identity",
     "x": "PauliX",
     "y": "PauliY",
     "z": "PauliZ",
@@ -114,6 +115,11 @@ def _translate_operation(operation: Operation, _parameters) -> Gate:
     raise NotImplementedError(
         f"Braket PennyLane plugin does not support operation {operation.name}."
     )
+
+
+@_translate_operation.register
+def _(_: qml.Identity, _parameters):
+    return gates.I()
 
 
 @_translate_operation.register
