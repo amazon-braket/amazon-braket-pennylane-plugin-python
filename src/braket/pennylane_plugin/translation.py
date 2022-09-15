@@ -100,10 +100,11 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
+    supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
     return frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
-        if op.lower() in supported_ops
+        if op.lower() in supported_ops or f"braket_noise_{op.lower()}" in supported_pragmas
     )
 
 

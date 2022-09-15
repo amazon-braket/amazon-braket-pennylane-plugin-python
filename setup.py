@@ -28,7 +28,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk>=1.29.2",
-        "pennylane>=0.23.0",
+        "pennylane>=0.25.1",
     ],
     entry_points={
         "pennylane.plugins": [
