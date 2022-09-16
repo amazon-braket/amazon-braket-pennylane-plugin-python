@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 import json
+import re
 
 import numpy as np
 import pennylane as qml
@@ -25,11 +26,13 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.circuits.serialization import IRType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin.ops import MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     translate_operation,
@@ -60,6 +63,9 @@ testdata = [
     (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi]),
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi]),
+    (GPi, gates.GPi, [0], [2]),
+    (GPi2, gates.GPi2, [0], [2]),
+    (MS, gates.MS, [0, 1], [2, 3]),
     (qml.ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
@@ -121,6 +127,9 @@ testdata_inverses = [
     (CPhaseShift00, gates.CPhaseShift00, [0, 1], [0.15], [-0.15]),
     (CPhaseShift01, gates.CPhaseShift01, [0, 1], [0.15], [-0.15]),
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [0.15], [-0.15]),
+    (GPi, gates.GPi, [0], [2], [2]),
+    (GPi2, gates.GPi2, [0], [2], [2 + np.pi]),
+    (MS, gates.MS, [0, 1], [2, 3], [2 + np.pi, 3]),
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (qml.IsingXY, gates.XY, [0, 1], [0.15], [-0.15]),
@@ -158,10 +167,18 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    assert (
-        _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
-        == pl_op.name
-    )
+    if isinstance(pl_op, (GPi, GPi2, MS)):
+        assert (
+            _braket_to_pl[
+                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+            ]
+            == pl_op.name
+        )
+    else:
+        assert (
+            _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
+            == pl_op.name
+        )
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params, inv_params", testdata_inverses)
@@ -170,9 +187,14 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
     pl_op = pl_cls(*params, wires=qubits).inv()
     braket_gate = braket_cls(*inv_params)
     assert translate_operation(pl_op) == braket_gate
-    assert _braket_to_pl[
-        braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")
-    ] == pl_op.name.replace(".inv", "")
+    if isinstance(pl_op, (GPi, GPi2, MS)):
+        assert _braket_to_pl[
+            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+        ] == pl_op.name.replace(".inv", "")
+    else:
+        assert _braket_to_pl[
+            braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")
+        ] == pl_op.name.replace(".inv", "")
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubit", testdata_named_inverses)
