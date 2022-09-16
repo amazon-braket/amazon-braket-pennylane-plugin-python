@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.7.0 (2022-08-30)
+
+### Features
+
+ * use OpenQASM for device property validation
+
 ## v1.6.9 (2022-07-01)
 
 ### Bug Fixes and Other Changes
