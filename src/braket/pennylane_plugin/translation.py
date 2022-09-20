@@ -30,7 +30,15 @@ from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 
-from braket.pennylane_plugin.ops import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin.ops import (
+    MS,
+    PSWAP,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+    GPi,
+    GPi2,
+)
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "i": "Identity",
@@ -73,6 +81,9 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "yy": "IsingYY",
     "zz": "IsingZZ",
     "ecr": "ECR",
+    "gpi": "GPi",
+    "gpi2": "GPi2",
+    "ms": "MS",
 }
 
 
@@ -90,10 +101,11 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
+    supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
     return frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
-        if op.lower() in supported_ops
+        if op.lower() in supported_ops or f"braket_noise_{op.lower()}" in supported_pragmas
     )
 
 
@@ -322,6 +334,24 @@ def _(yy: qml.IsingYY, parameters):
 def _(zz: qml.IsingZZ, parameters):
     phi = parameters[0]
     return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
+
+
+@_translate_operation.register
+def _(_gpi: GPi, parameters):
+    phi = parameters[0]
+    return gates.GPi(phi)
+
+
+@_translate_operation.register
+def _(gpi2: GPi2, parameters):
+    phi = parameters[0]
+    return gates.GPi2(phi + np.pi) if gpi2.inverse else gates.GPi2(phi)
+
+
+@_translate_operation.register
+def _(ms: MS, parameters):
+    phi_0, phi_1 = parameters[:2]
+    return gates.MS(phi_0 + np.pi, phi_1) if ms.inverse else gates.MS(phi_0, phi_1)
 
 
 def translate_result_type(

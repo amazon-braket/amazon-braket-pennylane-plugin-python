@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.8.0 (2022-09-16)
+
+### Features
+
+ * IonQ native gates
+
 ## v1.7.0 (2022-08-30)
 
 ### Features

@@ -28,10 +28,11 @@ These operations can be imported via
     from braket.pennylane_plugin import (
         ECR,
         PSWAP,
-        XY,
         CPhaseShift00,
         CPhaseShift01,
         CPhaseShift10,
+        GPi,
+        GPi2,
     )
 
 Operations
@@ -43,7 +44,8 @@ Operations
     CPhaseShift10
     ECR
     PSWAP
-    XY
+    GPi
+    GPi2
 
 Code details
 ~~~~~~~~~~~~
@@ -308,3 +310,149 @@ class PSWAP(Operation):
     def adjoint(self):
         (phi,) = self.parameters
         return PSWAP(-phi, wires=self.wires)
+
+
+class GPi(Operation):
+    r""" GPi(phi, wires)
+
+    IonQ native GPi gate.
+
+    .. math:: \mathtt{GPi}(\phi) = \begin{bmatrix}
+            0 & e^{-i \phi} \\
+            e^{i \phi} & 0
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 1
+    * Number of parameters: 1
+
+    Args:
+        phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 1
+    num_wires = 1
+    grad_method = "F"
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return np.array(
+            [
+                [0, np.exp(-1j * phi)],
+                [np.exp(1j * phi), 0],
+            ]
+        )
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return GPi(phi, wires=self.wires)
+
+
+class GPi2(Operation):
+    r""" GPi2(phi, wires)
+
+    IonQ native GPi2 gate.
+
+    .. math:: \mathtt{GPi2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
+            1 & -ie^{-i \phi} \\
+            -ie^{i \phi} & 1
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 1
+    * Number of parameters: 1
+
+    Args:
+        phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 1
+    num_wires = 1
+    grad_method = "F"
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return np.array(
+            [
+                [1, -1j * np.exp(-1j * phi)],
+                [-1j * np.exp(1j * phi), 1],
+            ]
+        ) / np.sqrt(2)
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return GPi2(phi + np.pi, wires=self.wires)
+
+
+class MS(Operation):
+    r""" MS(phi_0, phi_1, wires)
+
+    IonQ native Mølmer-Sørenson gate.
+
+
+    .. math:: \mathtt{MS}(\phi_0, \phi_1) = \begin{bmatrix}
+            1 & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)} \\
+            0 & 1 & -ie^{-i (\phi_0 - \phi_1)} & 0 \\
+            0 & -ie^{i (\phi_0 - \phi_1)} & 1 & 0 \\
+            -ie^{i (\phi_0 + \phi_1)} & 0 & 0 & 1
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 2
+    * Number of parameters: 2
+
+    Args:
+        phi_0 (float): the first phase angle
+        phi_1 (float): the second phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 2
+    num_wires = 2
+    grad_method = "F"
+
+    def __init__(self, phi_0, phi_1, wires, do_queue=True, id=None):
+        super().__init__(phi_0, phi_1, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi_0, phi_1):
+        if qml.math.get_interface(phi_0) == "tensorflow":
+            phi_0 = qml.math.cast_like(phi_0, 1j)
+        if qml.math.get_interface(phi_1) == "tensorflow":
+            phi_1 = qml.math.cast_like(phi_1, 1j)
+
+        return np.array(
+            [
+                [1, 0, 0, -1j * np.exp(-1j * (phi_0 + phi_1))],
+                [0, 1, -1j * np.exp(-1j * (phi_0 - phi_1)), 0],
+                [0, -1j * np.exp(1j * (phi_0 - phi_1)), 1, 0],
+                [-1j * np.exp(1j * (phi_0 + phi_1)), 0, 0, 1],
+            ]
+        ) / np.sqrt(2)
+
+    def adjoint(self):
+        (phi_0, phi_1) = self.parameters
+        return MS(phi_0 + np.pi, phi_1, wires=self.wires)
