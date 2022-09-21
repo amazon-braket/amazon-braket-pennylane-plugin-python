@@ -25,11 +25,6 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
-from braket.tasks import GateModelQuantumTaskResult
-from pennylane import numpy as np
-from pennylane.measurements import ObservableReturnTypes
-from pennylane.operation import Observable, Operation
-
 from braket.pennylane_plugin.ops import (
     MS,
     PSWAP,
@@ -39,6 +34,10 @@ from braket.pennylane_plugin.ops import (
     GPi,
     GPi2,
 )
+from braket.tasks import GateModelQuantumTaskResult
+from pennylane import numpy as np
+from pennylane.measurements import ObservableReturnTypes
+from pennylane.operation import Observable, Operation
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "x": "PauliX",
@@ -97,18 +96,23 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     """
     try:
         properties = device.properties.action["braket.ir.openqasm.program"]
-    except AttributeError:
-        raise AttributeError("Device needs to have properties defined.")
+    except AttributeError as exc:
+        raise AttributeError("Device needs to have properties defined.") from exc
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
     supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
     return frozenset(
-        _BRAKET_TO_PENNYLANE_OPERATIONS[op]
-        for op in _BRAKET_TO_PENNYLANE_OPERATIONS
-        if op.lower() in supported_ops or f"braket_noise_{op.lower()}" in supported_pragmas
+        [
+            op
+            for key, op in _BRAKET_TO_PENNYLANE_OPERATIONS.items()
+            if key.lower() in supported_ops or f"braket_noise_{key.lower()}" in supported_pragmas
+        ]
+        + ["Adjoint(S)", "Adjoint(T)", "Adjoint(SX)"]
+        # TODO: Move this gates into the _BRAKET_TO_PENNYLANE_OPERATIONS when removing inplace
+        # inversion
     )
 
 
-def translate_operation(operation: Operation, *args, **kwargs) -> Gate:
+def translate_operation(operation: Operation) -> Gate:
     """Translates a PennyLane ``Operation`` into the corresponding Braket ``Gate``.
 
     Args:
@@ -166,6 +170,17 @@ def _(sx: qml.SX, _parameters):
 @_translate_operation.register
 def _(t: qml.T, _parameters):
     return gates.Ti() if t.inverse else gates.T()
+
+
+@_translate_operation.register
+def _(adj_op: qml.ops.Adjoint, _parameters):  # pylint: disable=no-member
+    if isinstance(adj_op.base, qml.T):
+        return gates.Ti()
+    elif isinstance(adj_op.base, qml.S):
+        return gates.Si()
+    elif isinstance(adj_op.base, qml.SX):
+        return gates.Vi()
+    raise NotImplementedError(f"Braket PennyLane plugin does not support operation {adj_op.name}.")
 
 
 @_translate_operation.register
