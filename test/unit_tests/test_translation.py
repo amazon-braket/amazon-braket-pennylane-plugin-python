@@ -145,6 +145,12 @@ testdata_named_inverses = [
     (qml.SX, gates.Vi, 0),
 ]
 
+testdata_adjoints = [
+    (qml.adjoint(qml.S), gates.Si, 0),
+    (qml.adjoint(qml.T), gates.Ti, 0),
+    (qml.adjoint(qml.SX), gates.Vi, 0),
+]
+
 _braket_to_pl = {
     op.lower().replace("_", ""): _BRAKET_TO_PENNYLANE_OPERATIONS[op]
     for op in _BRAKET_TO_PENNYLANE_OPERATIONS
@@ -209,6 +215,14 @@ def test_translate_operation_named_inverse(pl_cls, braket_cls, qubit):
         _braket_to_pl[braket_gate.to_ir([qubit]).__class__.__name__.lower().replace("_", "")]
         == pl_op.name
     )
+
+
+@pytest.mark.parametrize("pl_cls, braket_cls, qubit", testdata_adjoints)
+def test_translate_operation_adjoints(pl_cls, braket_cls, qubit):
+    """Tests that PL adjoint operations are translated correctly"""
+    pl_op = pl_cls(wires=[qubit])
+    braket_gate = braket_cls()
+    assert translate_operation(pl_op) == braket_gate
 
 
 def test_translate_operation_iswap_inverse():
