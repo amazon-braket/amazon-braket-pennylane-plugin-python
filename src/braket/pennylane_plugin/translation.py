@@ -38,6 +38,7 @@ from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
+from pennylane.ops import Adjoint
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "i": "Identity",
@@ -179,14 +180,13 @@ def _(t: qml.T, _parameters):
 
 
 @_translate_operation.register
-def _(adj_op: qml.ops.Adjoint, _parameters):  # pylint: disable=no-member
+def _(adj_op: Adjoint, _parameters):
     if isinstance(adj_op.base, qml.T):
         return gates.Ti()
     elif isinstance(adj_op.base, qml.S):
         return gates.Si()
     elif isinstance(adj_op.base, qml.SX):
         return gates.Vi()
-    raise NotImplementedError(f"Braket PennyLane plugin does not support operation {adj_op.name}.")
 
 
 @_translate_operation.register
