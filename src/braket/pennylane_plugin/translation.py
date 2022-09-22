@@ -38,7 +38,7 @@ from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
-from pennylane.ops import Adjoint
+from pennylane.ops import Adjoint, Controlled
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "i": "Identity",
@@ -58,6 +58,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "cnot": "CNOT",
     "cy": "CY",
     "cz": "CZ",
+    "cv": "C(SX)",
     "swap": "SWAP",
     "cswap": "CSWAP",
     "ccnot": "Toffoli",
@@ -202,6 +203,12 @@ def _(_: qml.CY, _parameters):
 @_translate_operation.register
 def _(_: qml.CZ, _parameters):
     return gates.CZ()
+
+
+@_translate_operation.register
+def _(ctrl_op: Controlled, _parameters):
+    if isinstance(ctrl_op.base, qml.SX):
+        return gates.CV()
 
 
 @_translate_operation.register
