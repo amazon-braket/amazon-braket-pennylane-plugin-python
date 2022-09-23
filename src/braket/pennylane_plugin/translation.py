@@ -186,8 +186,7 @@ def _(adj_op: Adjoint, _parameters):
         return gates.Ti()
     elif isinstance(adj_op.base, qml.S):
         return gates.Si()
-    elif isinstance(adj_op.base, qml.SX):
-        return gates.Vi()
+    return gates.Vi()
 
 
 @_translate_operation.register
@@ -207,8 +206,7 @@ def _(_: qml.CZ, _parameters):
 
 @_translate_operation.register
 def _(ctrl_op: Controlled, _parameters):
-    if isinstance(ctrl_op.base, qml.SX):
-        return gates.CV()
+    return gates.CV()
 
 
 @_translate_operation.register
