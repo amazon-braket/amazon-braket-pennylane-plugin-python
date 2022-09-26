@@ -53,6 +53,7 @@ numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 from pennylane_sphinx_theme import templates_dir
+
 templates_path = [templates_dir()]
 
 # The suffix(es) of source filenames.
@@ -232,7 +233,7 @@ html_theme_path = ["."]
 html_theme_options = {
     "navbar_name": "PennyLane-Braket",
     "toc_overview": True,
-    "navbar_active_link": 3
+    "navbar_active_link": 3,
 }
 
 edit_on_github_project = "aws/amazon-braket-pennylane-plugin-python"
