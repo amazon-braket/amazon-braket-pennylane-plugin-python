@@ -17,6 +17,8 @@ import os
 import re
 import sys
 
+from pennylane_sphinx_theme import templates_dir
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -52,7 +54,6 @@ automodsumm_inherited_members = True
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
-from pennylane_sphinx_theme import templates_dir
 
 templates_path = [templates_dir()]
 
