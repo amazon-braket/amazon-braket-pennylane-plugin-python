@@ -24,8 +24,6 @@ sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("_ext"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 
-from directives import CustomDeviceGalleryItemDirective  # noqa: E402
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -54,7 +52,8 @@ automodsumm_inherited_members = True
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates", "xanadu_theme"]
+from pennylane_sphinx_theme import templates_dir
+templates_path = [templates_dir()]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -138,7 +137,7 @@ todo_include_todos = True
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "_static/favicon.ico"
+# html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -172,14 +171,6 @@ html_static_path = ["_static"]
 #        'donate.html',
 #    ]
 # }
-html_sidebars = {
-    "**": [
-        "logo-text.html",
-        "searchbox.html",
-        "globaltoc.html",
-        # 'sourcelink.html'
-    ]
-}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -231,7 +222,7 @@ html_sidebars = {
 htmlhelp_basename = "AmazonBraketPennyLanePlugindoc"
 
 # # -- Xanadu theme ---------------------------------------------------------
-html_theme = "xanadu_theme"
+html_theme = "pennylane"
 html_theme_path = ["."]
 
 # Register the theme as an extension to generate a sitemap.xml
@@ -239,35 +230,9 @@ html_theme_path = ["."]
 
 # xanadu theme options (see theme.conf for more information)
 html_theme_options = {
-    # Set the path to a special layout to include for the homepage
-    # "index_template": "special_index.html",
-    # Set the name of the project to appear in the left sidebar.
-    "project_nav_name": "PennyLane-Braket",
-    # Set your Disqus short name to enable comments
-    # "disqus_comments_shortname": "pennylane-1",
-    # Set you GA account ID to enable tracking
-    "google_analytics_account": "UA-130507810-2",
-    # Path to a touch icon
-    "touch_icon": "logo_new.png",
-    # Specify a base_url used to generate sitemap.xml links. If not
-    # specified, then no sitemap will be built.
-    # "base_url": ""
-    # Allow a separate homepage from the master_doc
-    # "homepage": "index",
-    # Allow the project link to be overriden to a custom URL.
-    # "projectlink": "http://myproject.url",
-    "large_toc": True,
-    # colors
-    "navigation_button": "#19b37b",
-    "navigation_button_hover": "#0e714d",
-    "toc_caption": "#19b37b",
-    "toc_hover": "#19b37b",
-    "table_header_bg": "#edf7f4",
-    "table_header_border": "#19b37b",
-    "download_button": "#19b37b",
-    # gallery options
-    # "github_repo": "XanaduAI/PennyLane",
-    # "gallery_dirs": "tutorials",
+    "navbar_name": "PennyLane-Braket",
+    "toc_overview": True,
+    "navbar_active_link": 3
 }
 
 edit_on_github_project = "aws/amazon-braket-pennylane-plugin-python"
@@ -348,7 +313,3 @@ inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
 
 # autodoc_default_flags = ['members']
 autosummary_generate = True
-
-
-def setup(app):
-    app.add_directive("devicegalleryitem", CustomDeviceGalleryItemDirective)
