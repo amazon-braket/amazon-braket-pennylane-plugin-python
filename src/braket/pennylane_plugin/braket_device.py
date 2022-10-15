@@ -394,7 +394,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 total_shots = total_executions * batch_shots
                 self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
                 self.tracker.record()
-            
 
         return [
             self._braket_to_pl_result(braket_result, circuit)
