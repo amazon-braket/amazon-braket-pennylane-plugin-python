@@ -384,7 +384,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         # Update the tracker before raising an exception further if some circuits do not complete.
         finally:
-            #super()._num_executions += 
             self._num_executions += len(task_batch.tasks)
             if self.tracker.active:
                 for task in task_batch.tasks:

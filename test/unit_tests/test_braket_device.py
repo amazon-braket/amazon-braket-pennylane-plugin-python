@@ -232,6 +232,7 @@ def test_execute(mock_run):
         foo="bar",
     )
 
+
 @patch.object(AwsDevice, "run")
 def test_number_executions(mock_run):
     """Asserts tracker stores information during execute when active"""
@@ -243,8 +244,9 @@ def test_number_executions(mock_run):
         qml.probs(wires=(0,))
         dev.execute(circuit)
         dev.execute(circuit)
-    
+
     assert dev.num_executions == 2
+
 
 @patch.object(AwsDevice, "run")
 def test_execute_tracker(mock_run):
