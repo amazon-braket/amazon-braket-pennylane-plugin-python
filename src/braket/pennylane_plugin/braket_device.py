@@ -40,12 +40,6 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskB
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
-from braket.pennylane_plugin.translation import (
-    supported_operations,
-    translate_operation,
-    translate_result,
-    translate_result_type,
-)
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
