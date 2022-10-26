@@ -47,6 +47,13 @@ from pennylane import numpy as np
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
 from pennylane.operation import Observable, Operation
 
+from braket.pennylane_plugin.translation import (
+    supported_operations,
+    translate_operation,
+    translate_result,
+    translate_result_type,
+)
+
 from ._version import __version__
 
 RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
