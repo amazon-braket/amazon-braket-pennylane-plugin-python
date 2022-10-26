@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.9.0 (2022-09-21)
+
+### Features
+
+ * add identity operation
+
 ## v1.8.0 (2022-09-16)
 
 ### Features
