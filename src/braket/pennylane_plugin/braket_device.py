@@ -40,19 +40,18 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskB
 from braket.circuits import Circuit, Instruction
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
-from braket.simulator import BraketSimulator
-from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
-from pennylane import numpy as np
-from pennylane.measurements import Expectation, Probability, Sample, State, Variance
-from pennylane.operation import Observable, Operation
-
 from braket.pennylane_plugin.translation import (
     supported_operations,
     translate_operation,
     translate_result,
     translate_result_type,
 )
+from braket.simulator import BraketSimulator
+from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
+from pennylane import numpy as np
+from pennylane.measurements import Expectation, Probability, Sample, State, Variance
+from pennylane.operation import Observable, Operation
 
 from ._version import __version__
 
@@ -361,7 +360,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
         ]
 
-        batch_shots = 0 if self.analytic else self.shots
+        batch_shots = self.shots or 0
 
         task_batch = self._device.run_batch(
             braket_circuits,
@@ -399,7 +398,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return self._device.run(
             circuit,
             s3_destination_folder=self._s3_folder,
-            shots=0 if self.analytic else self.shots,
+            shots=self.shots or 0,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
             **self._run_kwargs,
@@ -437,6 +436,4 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=shots, **run_kwargs)
 
     def _run_task(self, circuit):
-        return self._device.run(
-            circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
-        )
+        return self._device.run(circuit, shots=self.shots or 0, **self._run_kwargs)
