@@ -522,7 +522,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             if not circuit.trainable_params:
                 new_res = self.execute(circuit, compute_gradient=False)
                 # don't bother computing a gradient when there aren't any trainable parameters.
-                new_jac = []
+                new_jac = np.tensor([])
             else:
                 results = self.execute(circuit, compute_gradient=True)
                 new_res, new_jac = results[0]

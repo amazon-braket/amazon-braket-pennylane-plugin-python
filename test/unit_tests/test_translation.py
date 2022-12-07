@@ -29,6 +29,7 @@ from braket.circuits.result_types import (
 )
 from braket.circuits.serialization import IRType
 from braket.tasks import GateModelQuantumTaskResult
+from pennylane import numpy as pnp
 from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.wires import Wires
 
@@ -218,6 +219,14 @@ testdata_with_params = [
         [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
         [],
         [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
+    ),
+    (
+        qml.QubitChannel,
+        noises.Kraus,
+        [0],
+        [pnp.tensor([np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])])],
+        [],
+        [pnp.tensor([np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])])],
     ),
 ]
 

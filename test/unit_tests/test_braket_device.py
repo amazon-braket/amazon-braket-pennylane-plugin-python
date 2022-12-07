@@ -44,7 +44,7 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
         {
             "actionType": "braket.ir.openqasm.program",
             "version": ["1"],
-            "supportedOperations": ["rx", "ry", "h", "cy", "cnot"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
                 {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
                 {
@@ -233,6 +233,8 @@ def test_execute(mock_run):
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
+        qml.RX(0.432, wires=0)
         qml.CNOT(wires=[0, 1])
         qml.probs(wires=[0])
         qml.expval(qml.PauliX(1))
@@ -259,15 +261,27 @@ def test_execute(mock_run):
         RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
     )
     assert dev.task == TASK
-
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
     mock_run.assert_called_with(
-        CIRCUIT,
+        EXPECTED_CIRC,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
-        inputs={},
+        inputs={"p_0": 0.432},
     )
 
 
@@ -294,6 +308,14 @@ with QuantumTape() as CIRCUIT_3:
     qml.RY(0.543, wires=0)
     qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1))
 CIRCUIT_3.trainable_params = [0, 1]
+
+with QuantumTape() as CIRCUIT_4:
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.RX(0.432, wires=0)
+    qml.RY(0.543, wires=0)
+    qml.expval(qml.PauliX(1))
+CIRCUIT_4.trainable_params = []
 
 
 @patch.object(AwsDevice, "run")
@@ -1150,6 +1172,27 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             ],
             [np.tensor([0]), np.tensor([-0.194399, 0.9316158])],
         ),
+        (
+            CIRCUIT_4,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, 0.432)
+            .ry(0, 0.543)
+            .expectation(
+                observable=Observable.X(),
+                target=1,
+            ),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
+                    "value": 0.0,
+                }
+            ],
+            [np.tensor([0]), np.tensor([])],
+        ),
     ],
 )
 def test_execute_and_gradients(
@@ -1176,7 +1219,6 @@ def test_execute_and_gradients(
 
     results, jacs = dev.execute_and_gradients([pl_circ])
     assert dev.task == task
-
     mock_run.assert_called_with(
         (expected_braket_circ),
         s3_destination_folder=("foo", "bar"),
