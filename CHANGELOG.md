@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.10.0 (2022-12-07)
+
+### Features
+
+ * adjoint gradient
+
+### Bug Fixes and Other Changes
+
+ * remove env variable from integ tests
+
 ## v1.9.0 (2022-09-21)
 
 ### Features
