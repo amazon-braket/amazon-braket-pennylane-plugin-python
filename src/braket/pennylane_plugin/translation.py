@@ -398,6 +398,8 @@ def get_adjoint_gradient_result_type(
     if "AdjointGradient" not in supported_result_types:
         raise NotImplementedError("Unsupported return type: AdjointGradient")
     braket_observable = _translate_observable(observable)
+
+    braket_observable  = braket_observable.item() if hasattr(braket_observable, 'item') else braket_observable
     return AdjointGradient(observable=braket_observable, target=targets, parameters=parameters)
 
 
