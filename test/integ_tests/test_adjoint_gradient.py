@@ -15,13 +15,11 @@
 """Tests that gradients are correctly computed in the plugin device via braket"""
 
 import math
-import os
 import random
 
 import pennylane as qml
 import pytest
 from pennylane import numpy as np
-
 
 ABS_TOLERANCE = 1e-5
 
