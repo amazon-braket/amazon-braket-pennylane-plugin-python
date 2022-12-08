@@ -1246,9 +1246,26 @@ def test_capabilities_class_and_instance_method():
         "supports_inverse_operations": True,
     }
     assert class_caps == expected_caps
-    # the instance should have provides_jacobian because AdjointGradient is in the
-    # supported result types
-    expected_caps["provides_jacobian"] = True
+    # the instance should not have provides_jacobian, even though AdjointGradient is in the
+    # supported result types, because shots != 0
+    assert instance_caps == expected_caps
+
+
+def test_capabilities_adjoint_shots_0():
+    instance_caps = _aws_device(
+        wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0
+    ).capabilities()
+    expected_caps = {
+        "model": "qubit",
+        "supports_broadcasting": False,
+        "supports_finite_shots": True,
+        "supports_tensor_observables": True,
+        "returns_probs": True,
+        "supports_inverse_operations": True,
+        # the instance should have provides_jacobian because AdjointGradient is in the
+        # supported result types and shots == 0
+        "provides_jacobian": True,
+    }
     assert instance_caps == expected_caps
 
 
