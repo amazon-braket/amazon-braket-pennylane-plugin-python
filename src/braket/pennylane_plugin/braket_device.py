@@ -504,7 +504,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         capabilities = BraketQubitDevice.capabilities().copy()
         # if this method is called as a class method, don't add provides_jacobian since
         # we don't know if the device is sv1
-        if self and "AdjointGradient" in self._braket_result_types:
+        if self and "AdjointGradient" in self._braket_result_types and not self.shots:
             capabilities.update(provides_jacobian=True)
         return capabilities
 
