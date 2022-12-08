@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.10.2 (2022-12-08)
+
+### Bug Fixes and Other Changes
+
+ * Only support adjoint gradient if shots=0
+
 ## v1.10.1 (2022-12-07)
 
 ### Bug Fixes and Other Changes
