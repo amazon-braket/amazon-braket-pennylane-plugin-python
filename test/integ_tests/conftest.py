@@ -87,11 +87,6 @@ except ClientError as e:
 
 
 @pytest.fixture
-def qchem_data_dir():
-    return os.path.join(os.path.dirname(__file__), "qchem")
-
-
-@pytest.fixture
 def s3():
     """
     S3 bucket and prefix, supplied as pytest arguments
