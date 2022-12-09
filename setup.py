@@ -61,6 +61,7 @@ setup(
             "tox",
             "tensorflow>=2.6.0",
             "torch>=1.11",
+            "openfermionpyscf",
         ]
     },
     url="https://github.com/aws/amazon-braket-pennylane-plugin-python",

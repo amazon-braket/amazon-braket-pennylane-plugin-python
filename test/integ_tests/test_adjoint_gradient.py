@@ -15,11 +15,14 @@
 """Tests that gradients are correctly computed in the plugin device via braket"""
 
 import math
+import os
 import random
+import warnings
 
 import pennylane as qml
 import pytest
 from pennylane import numpy as np
+from pennylane import qchem
 
 ABS_TOLERANCE = 1e-5
 
@@ -134,3 +137,37 @@ class TestAdjointGradient:
         z = np.array(0.3, requires_grad=True)
 
         qml.grad(circuit)(x, y, z)
+
+    def test_qaoa_grad(self, on_demand_sv_device, qchem_data_dir):
+        """Tests that qchem + qaoa"""
+        n_electrons = 2
+        symbols, coordinates = qchem.read_structure(os.path.join(qchem_data_dir, "co2.xyz"))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            H, qubits = qchem.molecular_hamiltonian(
+                symbols, coordinates, method="pyscf", active_electrons=n_electrons, name="co2"
+            )
+
+        hf_state = qchem.hf_state(n_electrons, qubits)
+        # generate single- and double-excitations
+        _, doubles = qchem.excitations(n_electrons, qubits)
+
+        dev = on_demand_sv_device(qubits)
+
+        @qml.qnode(dev)
+        def circuit_1(params, excitations):
+            qml.BasisState(hf_state, wires=H.wires)
+            for i, excitation in enumerate(excitations):
+                if len(excitation) == 4:
+                    qml.DoubleExcitation(params[i], wires=excitation)
+                else:
+                    qml.SingleExcitation(params[i], wires=excitation)
+            return qml.expval(H)
+
+        circuit_gradient = qml.grad(circuit_1, argnum=0)
+        params = [0.0] * len(doubles)
+        # the goal of this test is that the following lines don't throw an error
+        # if use_grouping is True, the gradient computation will fail because
+        # braket doesn't support gradient computation with multiple observables.
+        assert not dev.use_grouping
+        circuit_gradient(params, excitations=doubles)
