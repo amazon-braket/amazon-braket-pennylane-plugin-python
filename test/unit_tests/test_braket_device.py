@@ -516,6 +516,111 @@ def test_execute_tracker(mock_run):
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
+def _noop(*args, **kwargs):
+    return None
+
+
+@patch.object(AwsDevice, "__init__", _noop)
+@patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "properties")
+@pytest.mark.parametrize(
+    "action_props, shots, expected_use_grouping",
+    [
+        (
+            OpenQASMDeviceActionProperties.parse_raw(
+                json.dumps(
+                    {
+                        "actionType": "braket.ir.openqasm.program",
+                        "version": ["1"],
+                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+                        "supportedResultTypes": [
+                            {
+                                "name": "StateVector",
+                                "observables": None,
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                        ],
+                    }
+                )
+            ),
+            0,
+            True,
+        ),
+        (
+            OpenQASMDeviceActionProperties.parse_raw(
+                json.dumps(
+                    {
+                        "actionType": "braket.ir.openqasm.program",
+                        "version": ["1"],
+                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+                        "supportedResultTypes": [
+                            {
+                                "name": "StateVector",
+                                "observables": None,
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                            {
+                                "name": "AdjointGradient",
+                                "observables": ["x", "y", "z", "h", "i"],
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                        ],
+                    }
+                )
+            ),
+            10,
+            True,
+        ),
+        (
+            OpenQASMDeviceActionProperties.parse_raw(
+                json.dumps(
+                    {
+                        "actionType": "braket.ir.openqasm.program",
+                        "version": ["1"],
+                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+                        "supportedResultTypes": [
+                            {
+                                "name": "StateVector",
+                                "observables": None,
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                            {
+                                "name": "AdjointGradient",
+                                "observables": ["x", "y", "z", "h", "i"],
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                        ],
+                    }
+                )
+            ),
+            0,
+            # Should be disabled only when AdjGrad is present and shots = 0
+            False,
+        ),
+    ],
+)
+def test_use_grouping(
+    properties_mock, type_mock, session_mock, action_props, shots, expected_use_grouping
+):
+    """Tests that grouping is enabled except when AdjointGradient is present"""
+    properties_mock.action = {DeviceActionType.OPENQASM: action_props}
+    properties_mock.return_value.action.return_value = {DeviceActionType.OPENQASM: action_props}
+    type_mock.return_value = AwsDeviceType.SIMULATOR
+    device = BraketAwsQubitDevice(
+        wires=1,
+        device_arn=DEVICE_ARN,
+        aws_session=Mock(),
+        shots=shots,
+    )
+    assert device.use_grouping == expected_use_grouping
+
+
 def test_pl_to_braket_circuit():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
     dev = _aws_device(wires=2, foo="bar")
@@ -1267,10 +1372,6 @@ def test_capabilities_adjoint_shots_0():
         "provides_jacobian": True,
     }
     assert instance_caps == expected_caps
-
-
-def _noop(*args, **kwargs):
-    return None
 
 
 class DummyLocalQubitDevice(BraketQubitDevice):

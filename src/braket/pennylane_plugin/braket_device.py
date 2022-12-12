@@ -125,6 +125,8 @@ class BraketQubitDevice(QubitDevice):
     @property
     def observables(self) -> FrozenSet[str]:
         base_observables = frozenset(super().observables)
+        # This needs to be here bc expectation(ax+by)== a*expectation(x)+b*expectation(y)
+        # is only true when shots=0
         if not self.shots:
             return base_observables.union({"Hamiltonian"})
         return base_observables
@@ -166,12 +168,7 @@ class BraketQubitDevice(QubitDevice):
         if len(circuit.observables) != 1:
             raise ValueError(
                 f"Braket can only compute gradients for circuits with a single expectation"
-                f" observable, not {len(circuit.observables)} observables. If your QNode "
-                f"returns the expval of a single Hamiltonian observable and you're still seeing "
-                f"this error, try recreating H = qml.Hamiltonian(H.coeffs, H.ops) before "
-                f"returning expval(H). PennyLane transforms Hamiltonian observables if a grouping"
-                f" is set, and this clears any grouping. See "
-                f"https://docs.aws.amazon.com/braket/latest/developerguide/hybrid.html for more."
+                f" observable, not {len(circuit.observables)} observables."
             )
         pl_observable = circuit.observables[0]
         if pl_observable.return_type != Expectation:
@@ -437,6 +434,16 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._max_parallel = max_parallel
         self._max_connections = max_connections
         self._max_retries = max_retries
+
+    @property
+    def use_grouping(self) -> bool:
+        # We *need* to do this because AdjointGradient doesn't support multiple
+        # observables and grouping converts single Hamiltonian observables into
+        # multiple tensor product observables, which breaks AG.
+        # We *can* do this without fear because grouping is only beneficial when
+        # shots!=0, and (conveniently) AG is only supported when shots=0
+        caps = self.capabilities()
+        return not ("provides_jacobian" in caps and caps["provides_jacobian"])
 
     @property
     def parallel(self):
