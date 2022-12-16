@@ -43,10 +43,6 @@ from braket.pennylane_plugin.translation import (
     translate_result,
     translate_result_type,
 )
-from braket.tasks import GateModelQuantumTaskResult
-from pennylane import numpy as pnp
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes, ProbabilityMP, StateMP
-from pennylane.wires import Wires
 
 testdata = [
     (qml.Identity, gates.I, [0], []),
