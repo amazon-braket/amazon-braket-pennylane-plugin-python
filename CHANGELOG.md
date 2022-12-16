@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.10.3 (2022-12-13)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #120 from aws/qaoa_bug_fix
+ * fixing linters
+ * removed qaoa integ test since it won't build on windows
+ * integrated with pl's device.use_grouping to fix a bug with qaoa creating multiple observables
+
 ## v1.10.2 (2022-12-08)
 
 ### Bug Fixes and Other Changes
