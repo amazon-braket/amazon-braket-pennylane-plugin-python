@@ -1577,7 +1577,6 @@ def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model
 def test_execute_with_noise_model(name_mock, mock_run, device_name, noise_model):
     mock_run.return_value = TASK
     name_mock.return_value = device_name
-    # dev = _aws_device(wires=4, foo="bar")
     dev = _aws_device(wires=4, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
 
     with QuantumTape() as circuit:

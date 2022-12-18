@@ -83,6 +83,8 @@ class BraketQubitDevice(QubitDevice):
         shots (int or None): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to ``None`` or
             ``0``, the device runs in analytic mode (calculations will be exact).
+        noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
+            execution.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
