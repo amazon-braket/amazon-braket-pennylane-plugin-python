@@ -21,7 +21,9 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, FreeParameter, Observable, result_types
+from braket.circuits import Circuit, FreeParameter, Gate, Observable, result_types
+from braket.circuits.noise_model import GateCriteria, NoiseModel, NoiseModelInstruction
+from braket.circuits.noises import BitFlip
 from braket.device_schema import DeviceActionType
 from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
@@ -1522,3 +1524,94 @@ def get_test_result_object(result_types=[], source="qubit[2] q; cnot q[0], q[1];
         }
     )
     return GateModelQuantumTaskResult.from_string(json_str)
+
+
+@pytest.fixture
+def noise_model():
+    return NoiseModel().add_noise(BitFlip(0.05), GateCriteria(Gate.H))
+
+
+@pytest.mark.parametrize("backend", ["braket_dm"])
+def test_valid_local_device_for_noise_model(backend, noise_model):
+    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    dev = BraketLocalQubitDevice(wires=2, backend=backend, noise_model=noise_model)
+    assert dev._noise_model.instructions == [
+        NoiseModelInstruction(BitFlip(0.05), GateCriteria(Gate.H))
+    ]
+
+
+@pytest.mark.parametrize("backend", ["default", "braket_sv"])
+def test_invalid_local_device_for_noise_model(backend, noise_model):
+    """Tests that simulator devices are analytic if ``shots`` is not supplied"""
+    with pytest.raises(
+        ValueError,
+        match="Noise models only work on DM1 or braket_dm simulators.",
+    ):
+        _ = BraketLocalQubitDevice(wires=2, backend=backend, noise_model=noise_model)
+
+
+@pytest.mark.parametrize("device_name", ["dm1"])
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_valide_aws_device_for_noise_model(name_mock, device_name, noise_model):
+    name_mock.return_value = device_name
+    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+    assert dev._noise_model.instructions == [
+        NoiseModelInstruction(BitFlip(0.05), GateCriteria(Gate.H))
+    ]
+
+
+@pytest.mark.parametrize("device_name", ["sv1", "tn1", "foo", "bar"])
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model):
+    name_mock.return_value = device_name
+    with pytest.raises(
+        ValueError,
+        match="Noise models only work on DM1 or braket_dm simulators.",
+    ):
+        _ = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+
+
+@pytest.mark.parametrize("device_name", ["dm1"])
+@patch.object(AwsDevice, "run")
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_execute_with_noise_model(name_mock, mock_run, device_name, noise_model):
+    mock_run.return_value = TASK
+    name_mock.return_value = device_name
+    # dev = _aws_device(wires=4, foo="bar")
+    dev = _aws_device(wires=4, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
+        qml.RX(0.432, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    _ = dev.execute(circuit)
+
+    assert dev.task == TASK
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .bit_flip(0, 0.05)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
+    mock_run.assert_called_with(
+        EXPECTED_CIRC,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        inputs={"p_0": 0.432},
+    )

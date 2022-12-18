@@ -41,6 +41,7 @@ from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
+from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
@@ -95,15 +96,20 @@ class BraketQubitDevice(QubitDevice):
         device: Device,
         *,
         shots: Union[int, None],
+        noise_model: Union[NoiseModel, None] = None,
         **run_kwargs,
     ):
         super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
         self._task = None
+        self._noise_model = noise_model
         self._run_kwargs = run_kwargs
         self._supported_ops = supported_operations(self._device)
         self._check_supported_result_types()
+
+        if noise_model and self._device.name not in ["DensityMatrixSimulator", "dm1"]:
+            raise ValueError("Noise models only work on DM1 or braket_dm simulators.")
 
     def reset(self):
         super().reset()
@@ -286,6 +292,8 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = self._pl_to_braket_circuit(
             circuit, compute_gradient=compute_gradient, **run_kwargs
         )
+        if self._noise_model:
+            self._circuit = self._noise_model.apply(self._circuit)
         param_index = 0
         param_dict = {}
         for operation in circuit.operations:
