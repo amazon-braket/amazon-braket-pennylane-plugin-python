@@ -98,7 +98,7 @@ class BraketQubitDevice(QubitDevice):
         device: Device,
         *,
         shots: Union[int, None],
-        noise_model: Union[NoiseModel, None] = None,
+        noise_model: Optional[NoiseModel] = None,
         **run_kwargs,
     ):
         super().__init__(wires, shots=shots or None)
