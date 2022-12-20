@@ -30,7 +30,7 @@ from braket.circuits.result_types import (
 from braket.circuits.serialization import IRType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as pnp
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
+from pennylane.measurements import StateMP, ProbabilityMP, ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
