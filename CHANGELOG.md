@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.10.4 (2023-01-03)
+
+### Bug Fixes and Other Changes
+
+ * Cap pennylane version at v0.27
+
+### Testing and Release Infrastructure
+
+ * Use the new Pennylane Sphinx Theme
+
 ## v1.10.3 (2022-12-13)
 
 ### Bug Fixes and Other Changes
