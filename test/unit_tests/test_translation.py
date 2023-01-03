@@ -17,8 +17,9 @@ import re
 import numpy as np
 import pennylane as qml
 import pytest
-from braket.circuits import gates, noises, observables
+from braket.circuits import FreeParameter, gates, noises, observables
 from braket.circuits.result_types import (
+    AdjointGradient,
     DensityMatrix,
     Expectation,
     Probability,
@@ -28,6 +29,7 @@ from braket.circuits.result_types import (
 )
 from braket.circuits.serialization import IRType
 from braket.tasks import GateModelQuantumTaskResult
+from pennylane import numpy as pnp
 from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.wires import Wires
 
@@ -35,6 +37,8 @@ from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseS
 from braket.pennylane_plugin.ops import MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
+    _translate_observable,
+    get_adjoint_gradient_result_type,
     translate_operation,
     translate_result,
     translate_result_type,
@@ -145,6 +149,87 @@ testdata_named_inverses = [
     (qml.SX, gates.Vi, 0),
 ]
 
+testdata_with_params = [
+    (qml.Identity, gates.I, [0], [], [], []),
+    (qml.Hadamard, gates.H, [0], [], [], []),
+    (qml.PauliX, gates.X, [0], [], [], []),
+    (qml.PauliY, gates.Y, [0], [], [], []),
+    (qml.PauliZ, gates.Z, [0], [], [], []),
+    (qml.Hadamard, gates.H, [0], [], [], []),
+    (qml.CNOT, gates.CNot, [0, 1], [], [], []),
+    (qml.CZ, gates.CZ, [0, 1], [], [], []),
+    (qml.CY, gates.CY, [0, 1], [], [], []),
+    (qml.SWAP, gates.Swap, [0, 1], [], [], []),
+    (qml.ECR, gates.ECR, [0, 1], [], [], []),
+    (qml.CSWAP, gates.CSwap, [0, 1, 2], [], [], []),
+    (qml.Toffoli, gates.CCNot, [0, 1, 2], [], [], []),
+    (qml.PhaseShift, gates.PhaseShift, [0], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.RX, gates.Rx, [0], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.RY, gates.Ry, [0], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.RZ, gates.Rz, [0], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.SWAP, gates.Swap, [0, 1], [], [], []),
+    (qml.CSWAP, gates.CSwap, [0, 1, 2], [], [], []),
+    (qml.Toffoli, gates.CCNot, [0, 1, 2], [], [], []),
+    (qml.ControlledPhaseShift, gates.CPhaseShift, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (GPi, gates.GPi, [0], [2], ["a"], [FreeParameter("a")]),
+    (GPi2, gates.GPi2, [0], [2], ["a"], [FreeParameter("a")]),
+    (MS, gates.MS, [0, 1], [2, 3], ["a", "b"], [FreeParameter("a"), FreeParameter("b")]),
+    (PSWAP, gates.PSwap, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.ECR, gates.ECR, [0, 1], [], [], []),
+    (qml.ISWAP, gates.ISwap, [0, 1], [], [], []),
+    (qml.IsingXY, gates.XY, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.IsingXX, gates.XX, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.IsingYY, gates.YY, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (qml.IsingZZ, gates.ZZ, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (
+        qml.AmplitudeDamping,
+        noises.AmplitudeDamping,
+        [0],
+        [0.1],
+        ["alpha"],
+        [FreeParameter("alpha")],
+    ),
+    (
+        qml.GeneralizedAmplitudeDamping,
+        noises.GeneralizedAmplitudeDamping,
+        [0],
+        [0.1, 0.15],
+        ["p_000", "p_001"],
+        [FreeParameter("p_000"), FreeParameter("p_001")],
+    ),
+    (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1], ["a"], [FreeParameter("a")]),
+    (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1], ["a"], [FreeParameter("a")]),
+    (qml.BitFlip, noises.BitFlip, [0], [0.1], ["a"], [FreeParameter("a")]),
+    (qml.PhaseFlip, noises.PhaseFlip, [0], [0.1], ["a"], [FreeParameter("a")]),
+    (
+        qml.QubitUnitary,
+        gates.Unitary,
+        [0],
+        [np.array([[0, 1], [1, 0]])],
+        [],
+        [np.array([[0, 1], [1, 0]])],
+    ),
+    (
+        qml.QubitChannel,
+        noises.Kraus,
+        [0],
+        [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
+        [],
+        [[np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])]],
+    ),
+    (
+        qml.QubitChannel,
+        noises.Kraus,
+        [0],
+        [pnp.tensor([np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])])],
+        [],
+        [pnp.tensor([np.array([[0, 0.8], [0.8, 0]]), np.array([[0.6, 0], [0, 0.6]])])],
+    ),
+]
+
 _braket_to_pl = {
     op.lower().replace("_", ""): _BRAKET_TO_PENNYLANE_OPERATIONS[op]
     for op in _BRAKET_TO_PENNYLANE_OPERATIONS
@@ -169,6 +254,34 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
+    if isinstance(pl_op, (GPi, GPi2, MS)):
+        assert (
+            _braket_to_pl[
+                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+            ]
+            == pl_op.name
+        )
+    else:
+        assert (
+            _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
+            == pl_op.name
+        )
+
+
+@pytest.mark.parametrize(
+    "pl_gate_fn, braket_gate_fn, qubits, pl_params, pl_param_names, expected_params",
+    testdata_with_params,
+)
+def test_translate_operation_with_unique_params(
+    pl_gate_fn, braket_gate_fn, qubits, pl_params, pl_param_names, expected_params
+):
+    """Tests that Braket operations are translated correctly"""
+    pl_op = pl_gate_fn(*pl_params, wires=qubits)
+    braket_gate = braket_gate_fn(*expected_params)
+    assert (
+        translate_operation(pl_op, use_unique_params=True, param_names=pl_param_names)
+        == braket_gate
+    )
     if isinstance(pl_op, (GPi, GPi2, MS)):
         assert (
             _braket_to_pl[
@@ -227,6 +340,43 @@ def test_translate_result_type_observable(return_type, braket_result_type):
     braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
 
     assert braket_result_type == braket_result_type_calculated
+
+
+@pytest.mark.parametrize(
+    "pl_obs, braket_obs, targets, param_names",
+    [
+        (qml.Hadamard(0), observables.H(), [0], []),
+        (qml.PauliX(0), observables.X(), [0], ["p_000"]),
+        (
+            qml.PauliX(0) @ qml.PauliY(1),
+            observables.X() @ observables.Y(),
+            [0, 1],
+            ["p_000", "p_001", "p_003"],
+        ),
+    ],
+)
+def test_get_adjoint_gradient_result_type(pl_obs, braket_obs, targets, param_names):
+    """Tests that an AdjointGradient result type is returned correctly"""
+    braket_result_type_calculated = get_adjoint_gradient_result_type(
+        pl_obs,
+        targets,
+        frozenset(["AdjointGradient"]),
+        param_names,
+    )
+    braket_result_type = AdjointGradient(
+        observable=braket_obs, target=targets, parameters=param_names
+    )
+    assert braket_result_type == braket_result_type_calculated
+
+
+def test_get_adjoint_gradient_result_type_unsupported():
+    """Tests if a NotImplementedError is raised by translate_result_type when a PennyLane state
+    return type is converted while not supported by the device"""
+    pl_obs = qml.Hadamard(0)
+    targets = [0]
+    param_names = ["p_000", "p_001"]
+    with pytest.raises(NotImplementedError, match="Unsupported return type"):
+        get_adjoint_gradient_result_type(pl_obs, targets, frozenset(), param_names)
 
 
 def test_translate_result_type_hamiltonian_expectation():
@@ -379,3 +529,31 @@ def _result_meta() -> dict:
             },
         },
     }
+
+
+@pytest.mark.parametrize(
+    "expected_braket_H, pl_H",
+    [
+        (
+            2 * observables.X() @ observables.Y() @ observables.Z(),
+            2 * qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2),
+        ),
+        (
+            2 * (observables.X() @ observables.Y() @ observables.Z()),
+            2 * (qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2)),
+        ),
+        (
+            2 * observables.X() @ observables.Y() @ observables.Z() + 0.75 * observables.X(),
+            2 * qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2)
+            + 0.75 * qml.PauliX(0),
+        ),
+        (1.25 * observables.H(), 1.25 * qml.Hadamard(wires=0)),
+    ],
+)
+def test_translate_hamiltonian_observable(expected_braket_H, pl_H):
+    translated_braket_H = _translate_observable(pl_H)
+    assert expected_braket_H == translated_braket_H
+
+
+def test_translate_result_type_adjoint_gradient():
+    print("not implemented yet")
