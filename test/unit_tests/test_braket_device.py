@@ -347,16 +347,12 @@ CIRCUIT_4.trainable_params = []
                     },
                 },
             ],
-            np.tensor(
-                [
-                    [
-                        np.tensor([0.0], requires_grad=True),
-                        np.tensor([-0.194399, 0.9316158], requires_grad=True),
-                    ]
-                ],
-                dtype=object,
-                requires_grad=True,
-            ),
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.194399, 0.9316158], requires_grad=True),
+                )
+            ],
         ),
         (
             CIRCUIT_2,
@@ -386,16 +382,12 @@ CIRCUIT_4.trainable_params = []
                     },
                 },
             ],
-            np.tensor(
-                [
-                    [
-                        np.tensor([0.0], requires_grad=True),
-                        np.tensor([-0.01894799, 0.9316158], requires_grad=True),
-                    ]
-                ],
-                dtype=object,
-                requires_grad=True,
-            ),
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.01894799, 0.9316158], requires_grad=True),
+                )
+            ],
         ),
         (
             CIRCUIT_3,
@@ -427,16 +419,12 @@ CIRCUIT_4.trainable_params = []
                     },
                 },
             ],
-            np.tensor(
-                [
-                    [
-                        np.tensor([0.0], requires_grad=True),
-                        np.tensor([-0.01894799, 0.9316158], requires_grad=True),
-                    ]
-                ],
-                dtype=object,
-                requires_grad=True,
-            ),
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.01894799, 0.9316158], requires_grad=True),
+                )
+            ],
         ),
     ],
 )
