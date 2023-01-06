@@ -59,6 +59,37 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
     )
 )
 
+ACTION_PROPERTIES_DM_DEVICE = OpenQASMDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.openqasm.program",
+            "version": ["1"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+            ],
+            "supportedPragmas": [
+                "braket_noise_bit_flip",
+                "braket_noise_depolarizing",
+                "braket_noise_kraus",
+                "braket_noise_pauli_channel",
+                "braket_noise_generalized_amplitude_damping",
+                "braket_noise_amplitude_damping",
+                "braket_noise_phase_flip",
+                "braket_noise_phase_damping",
+                "braket_noise_two_qubit_dephasing",
+                "braket_noise_two_qubit_depolarizing",
+                "braket_unitary_matrix",
+                "braket_result_type_sample",
+                "braket_result_type_expectation",
+                "braket_result_type_variance",
+                "braket_result_type_probability",
+                "braket_result_type_density_matrix",
+            ],
+        }
+    )
+)
+
 GATE_MODEL_RESULT = GateModelTaskResult(
     **{
         "measurements": [[0, 0], [0, 0], [0, 0], [1, 1]],
@@ -1444,11 +1475,12 @@ def _aws_device(
     device_type=AwsDeviceType.QPU,
     shots=SHOTS,
     device_arn="baz",
+    action_properties=ACTION_PROPERTIES,
     **kwargs,
 ):
-    properties_mock.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
+    properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     properties_mock.return_value.action.return_value = {
-        DeviceActionType.OPENQASM: ACTION_PROPERTIES
+        DeviceActionType.OPENQASM: action_properties
     }
     type_mock.return_value = device_type
     dev = BraketAwsQubitDevice(
@@ -1531,33 +1563,50 @@ def test_valid_local_device_for_noise_model(backend, noise_model):
     ]
 
 
-@pytest.mark.xfail(
-    raises=ValueError, reason="Noise models only work on DM1 or braket_dm simulators."
+@pytest.mark.parametrize(
+    "backend, device_name",
+    [("default", "StateVectorSimulator"), ("braket_sv", "StateVectorSimulator")],
 )
-@pytest.mark.parametrize("backend", ["default", "braket_sv"])
-def test_invalid_local_device_for_noise_model(backend, noise_model):
-    BraketLocalQubitDevice(wires=2, backend=backend, noise_model=noise_model)
+def test_invalid_local_device_for_noise_model(backend, device_name, noise_model):
+    with pytest.raises(
+        ValueError,
+        match=(
+            f"{device_name} does not support noise or the noise model "
+            + f"includes noise that is not supported by {device_name}."
+        ),
+    ):
+        BraketLocalQubitDevice(wires=2, backend=backend, noise_model=noise_model)
 
 
 @pytest.mark.parametrize("device_name", ["dm1"])
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 def test_valide_aws_device_for_noise_model(name_mock, device_name, noise_model):
     name_mock.return_value = device_name
-    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+    dev = _aws_device(
+        wires=2,
+        device_type=AwsDeviceType.SIMULATOR,
+        noise_model=noise_model,
+        action_properties=ACTION_PROPERTIES_DM_DEVICE,
+    )
+
     assert dev._noise_model.instructions == [
         NoiseModelInstruction(Noise.BitFlip(0.05), GateCriteria(Gate.H)),
         NoiseModelInstruction(Noise.TwoQubitDepolarizing(0.10), GateCriteria(Gate.CNot)),
     ]
 
 
-@pytest.mark.xfail(
-    raises=ValueError, reason="Noise models only work on DM1 or braket_dm simulators."
-)
 @pytest.mark.parametrize("device_name", ["sv1", "tn1", "foo", "bar"])
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model):
     name_mock.return_value = device_name
-    _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+    with pytest.raises(
+        ValueError,
+        match=(
+            f"{device_name} does not support noise or the noise model "
+            + f"includes noise that is not supported by {device_name}."
+        ),
+    ):
+        _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
 
 
 @patch.object(AwsDevice, "run")
@@ -1565,7 +1614,12 @@ def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model
 def test_execute_with_noise_model(mock_name, mock_run, noise_model):
     mock_run.return_value = TASK
     mock_name.return_value = "dm1"
-    dev = _aws_device(wires=4, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+    dev = _aws_device(
+        wires=4,
+        device_type=AwsDeviceType.SIMULATOR,
+        noise_model=noise_model,
+        action_properties=ACTION_PROPERTIES_DM_DEVICE,
+    )
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)

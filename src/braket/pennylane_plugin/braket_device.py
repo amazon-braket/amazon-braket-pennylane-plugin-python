@@ -110,8 +110,8 @@ class BraketQubitDevice(QubitDevice):
         self._supported_ops = supported_operations(self._device)
         self._check_supported_result_types()
 
-        if noise_model and self._device.name not in ["DensityMatrixSimulator", "dm1"]:
-            raise ValueError("Noise models only work on DM1 or braket_dm simulators.")
+        if noise_model:
+            self._validate_noise_model_support()
 
     def reset(self):
         super().reset()
@@ -351,6 +351,42 @@ class BraketQubitDevice(QubitDevice):
         self._braket_result_types = frozenset(
             result_type.name for result_type in supported_result_types
         )
+
+    def _validate_noise_model_support_local_device(self):
+        supported_operations = [
+            ops.lower().replace("_", "")
+            for ops in self._device.properties.action[DeviceActionType.OPENQASM].supportedOperations
+        ]
+        noise_instructions = [
+            noise_instr.noise.name.lower().replace("_", "")
+            for noise_instr in self._noise_model._instructions
+        ]
+        if not all([noise in supported_operations for noise in noise_instructions]):
+            raise ValueError(
+                f"{self._device.name} does not support noise or the noise model includes noise "
+                + f"that is not supported by {self._device.name}."
+            )
+
+    def _validate_noise_model_support_aws_device(self):
+        supported_pragmas = [
+            ops.lower().replace("_", "")
+            for ops in self._device.properties.action[DeviceActionType.OPENQASM].supportedPragmas
+        ]
+        noise_pragmas = [
+            ("braket_noise_" + noise_instr.noise.name).lower().replace("_", "")
+            for noise_instr in self._noise_model._instructions
+        ]
+        if not all([noise in supported_pragmas for noise in noise_pragmas]):
+            raise ValueError(
+                f"{self._device.name} does not support noise or the noise model includes noise "
+                + f"that is not supported by {self._device.name}."
+            )
+
+    def _validate_noise_model_support(self):
+        if isinstance(self._device, AwsDevice):
+            self._validate_noise_model_support_aws_device()
+        else:
+            self._validate_noise_model_support_local_device()
 
     def _run_task(self, circuit, inputs=None):
         raise NotImplementedError("Need to implement task runner")
