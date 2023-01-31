@@ -352,25 +352,13 @@ class BraketQubitDevice(QubitDevice):
             result_type.name for result_type in supported_result_types
         )
 
-    def _validate_noise_model_support_local_device(self):
-        supported_operations = [
-            ops.lower().replace("_", "")
-            for ops in self._device.properties.action[DeviceActionType.OPENQASM].supportedOperations
-        ]
-        noise_instructions = [
-            noise_instr.noise.name.lower().replace("_", "")
-            for noise_instr in self._noise_model._instructions
-        ]
-        if not all([noise in supported_operations for noise in noise_instructions]):
-            raise ValueError(
-                f"{self._device.name} does not support noise or the noise model includes noise "
-                + f"that is not supported by {self._device.name}."
-            )
-
-    def _validate_noise_model_support_aws_device(self):
+    def _validate_noise_model_support(self):
         supported_pragmas = [
             ops.lower().replace("_", "")
-            for ops in self._device.properties.action[DeviceActionType.OPENQASM].supportedPragmas
+            for ops in (self.
+                        _device.properties.
+                        action[DeviceActionType.OPENQASM].
+                        supportedPragmas)
         ]
         noise_pragmas = [
             ("braket_noise_" + noise_instr.noise.name).lower().replace("_", "")
@@ -381,12 +369,6 @@ class BraketQubitDevice(QubitDevice):
                 f"{self._device.name} does not support noise or the noise model includes noise "
                 + f"that is not supported by {self._device.name}."
             )
-
-    def _validate_noise_model_support(self):
-        if isinstance(self._device, AwsDevice):
-            self._validate_noise_model_support_aws_device()
-        else:
-            self._validate_noise_model_support_local_device()
 
     def _run_task(self, circuit, inputs=None):
         raise NotImplementedError("Need to implement task runner")
