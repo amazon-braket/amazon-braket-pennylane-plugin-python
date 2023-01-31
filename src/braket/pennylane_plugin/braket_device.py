@@ -355,10 +355,7 @@ class BraketQubitDevice(QubitDevice):
     def _validate_noise_model_support(self):
         supported_pragmas = [
             ops.lower().replace("_", "")
-            for ops in (self.
-                        _device.properties.
-                        action[DeviceActionType.OPENQASM].
-                        supportedPragmas)
+            for ops in (self._device.properties.action[DeviceActionType.OPENQASM].supportedPragmas)
         ]
         noise_pragmas = [
             ("braket_noise_" + noise_instr.noise.name).lower().replace("_", "")
