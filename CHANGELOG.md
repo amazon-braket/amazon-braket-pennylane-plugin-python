@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.11.0 (2023-02-01)
+
+### Features
+
+ * Braket noise model for density matrix simulators
+
 ## v1.10.4 (2023-01-03)
 
 ### Bug Fixes and Other Changes
