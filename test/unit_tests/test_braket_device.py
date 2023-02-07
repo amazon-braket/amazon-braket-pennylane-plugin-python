@@ -21,7 +21,8 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, Observable, result_types
+from braket.circuits import Circuit, FreeParameter, Gate, Noise, Observable, result_types
+from braket.circuits.noise_model import GateCriteria, NoiseModel, NoiseModelInstruction
 from braket.device_schema import DeviceActionType
 from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
@@ -44,9 +45,46 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
         {
             "actionType": "braket.ir.openqasm.program",
             "version": ["1"],
-            "supportedOperations": ["rx", "ry", "h", "cy", "cnot"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0}
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "AdjointGradient",
+                    "observables": ["x", "y", "z", "h", "i"],
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
+            ],
+        }
+    )
+)
+
+ACTION_PROPERTIES_DM_DEVICE = OpenQASMDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.openqasm.program",
+            "version": ["1"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+            ],
+            "supportedPragmas": [
+                "braket_noise_bit_flip",
+                "braket_noise_depolarizing",
+                "braket_noise_kraus",
+                "braket_noise_pauli_channel",
+                "braket_noise_generalized_amplitude_damping",
+                "braket_noise_amplitude_damping",
+                "braket_noise_phase_flip",
+                "braket_noise_phase_damping",
+                "braket_noise_two_qubit_dephasing",
+                "braket_noise_two_qubit_depolarizing",
+                "braket_unitary_matrix",
+                "braket_result_type_sample",
+                "braket_result_type_expectation",
+                "braket_result_type_variance",
+                "braket_result_type_probability",
+                "braket_result_type_density_matrix",
             ],
         }
     )
@@ -116,6 +154,7 @@ TASK_BATCH.results.return_value = [RESULT, RESULT]
 type(TASK_BATCH).tasks = PropertyMock(return_value=[TASK, TASK])
 SIM_TASK = Mock()
 SIM_TASK.result.return_value.additional_metadata.simulatorMetadata.executionDuration = 1234
+SIM_TASK.result.return_value.result_types = []
 type(SIM_TASK).id = PropertyMock(return_value="task_arn")
 SIM_TASK.state.return_value = "COMPLETED"
 CIRCUIT = (
@@ -149,6 +188,36 @@ def test_apply():
     dev = _aws_device(wires=2)
     circuit = dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
     assert circuit == Circuit().h(0).cnot(0, 1)
+
+
+def test_apply_unique_parameters():
+    """Tests that apply with unique_params=True applies the correct parametrized gates."""
+    dev = _aws_device(wires=2)
+    circuit = dev.apply(
+        [
+            qml.Hadamard(wires=0),
+            qml.CNOT(wires=[0, 1]),
+            qml.RX(np.pi, wires=0),
+            qml.RY(np.pi, wires=0),
+            # note the gamma/p ordering doesn't affect the naming of the parameters below.
+            qml.GeneralizedAmplitudeDamping(gamma=0.1, p=0.9, wires=0),
+            qml.GeneralizedAmplitudeDamping(p=0.9, gamma=0.1, wires=0),
+        ],
+        use_unique_params=True,
+    )
+    expected = Circuit().h(0).cnot(0, 1).rx(0, FreeParameter("p_0"))
+    expected = expected.ry(0, FreeParameter("p_1"))
+    expected = expected.generalized_amplitude_damping(
+        0,
+        gamma=FreeParameter("p_2"),
+        probability=FreeParameter("p_3"),
+    )
+    expected = expected.generalized_amplitude_damping(
+        0,
+        gamma=FreeParameter("p_4"),
+        probability=FreeParameter("p_5"),
+    )
+    assert circuit == expected
 
 
 def test_apply_unused_qubits():
@@ -196,6 +265,8 @@ def test_execute(mock_run):
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
+        qml.RX(0.432, wires=0)
         qml.CNOT(wires=[0, 1])
         qml.probs(wires=[0])
         qml.expval(qml.PauliX(1))
@@ -222,15 +293,203 @@ def test_execute(mock_run):
         RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
     )
     assert dev.task == TASK
-
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
     mock_run.assert_called_with(
-        CIRCUIT,
+        EXPECTED_CIRC,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
+        inputs={"p_0": 0.432},
     )
+
+
+with QuantumTape() as CIRCUIT_1:
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.RX(0.432, wires=0)
+    qml.RY(0.543, wires=0)
+    qml.expval(qml.PauliX(1))
+CIRCUIT_1.trainable_params = [0]
+
+with QuantumTape() as CIRCUIT_2:
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.RX(0.432, wires=0)
+    qml.RY(0.543, wires=0)
+    qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1))
+CIRCUIT_2.trainable_params = [0, 1]
+
+with QuantumTape() as CIRCUIT_3:
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.RX(0.432, wires=0)
+    qml.RY(0.543, wires=0)
+    qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1))
+CIRCUIT_3.trainable_params = [0, 1]
+
+with QuantumTape() as CIRCUIT_4:
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.RX(0.432, wires=0)
+    qml.RY(0.543, wires=0)
+    qml.expval(qml.PauliX(1))
+CIRCUIT_4.trainable_params = []
+
+
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
+    [
+        (
+            CIRCUIT_1,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, FreeParameter("p_0"))
+            .ry(0, 0.543)
+            .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {
+                        "observable": "x()",
+                        "targets": [[0]],
+                        "parameters": ["p_0", "p_1"],
+                        "type": "adjoint_gradient",
+                    },
+                    "value": {
+                        "gradient": {"p_0": -0.194399, "p_1": 0.9316158},
+                        "expectation": 0.0,
+                    },
+                },
+            ],
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.194399, 0.9316158], requires_grad=True),
+                )
+            ],
+        ),
+        (
+            CIRCUIT_2,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, FreeParameter("p_0"))
+            .ry(0, FreeParameter("p_1"))
+            .adjoint_gradient(
+                observable=(2 * Observable.X() @ Observable.Y()),
+                target=[0, 1],
+                parameters=["p_0", "p_1"],
+            ),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {
+                        "observable": "2.0 * x() @ y()",
+                        "targets": [[0, 1]],
+                        "parameters": ["p_0", "p_1"],
+                        "type": "adjoint_gradient",
+                    },
+                    "value": {
+                        "gradient": {"p_0": -0.01894799, "p_1": 0.9316158},
+                        "expectation": 0.0,
+                    },
+                },
+            ],
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.01894799, 0.9316158], requires_grad=True),
+                )
+            ],
+        ),
+        (
+            CIRCUIT_3,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, FreeParameter("p_0"))
+            .ry(0, FreeParameter("p_1"))
+            .adjoint_gradient(
+                observable=(
+                    2 * Observable.X() @ Observable.Y() + 0.75 * Observable.Y() @ Observable.Z()
+                ),
+                target=[[0, 1], [0, 1]],
+                parameters=["p_0", "p_1"],
+            ),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {
+                        "observable": "2.0 * x() @ y() + .75 * y() @ z()",
+                        "targets": [[0, 1], [0, 1]],
+                        "parameters": ["p_0", "p_1"],
+                        "type": "adjoint_gradient",
+                    },
+                    "value": {
+                        "gradient": {"p_0": -0.01894799, "p_1": 0.9316158},
+                        "expectation": 0.0,
+                    },
+                },
+            ],
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.01894799, 0.9316158], requires_grad=True),
+                )
+            ],
+        ),
+    ],
+)
+def test_execute_with_gradient(
+    mock_run,
+    pl_circ,
+    expected_braket_circ,
+    wires,
+    expected_inputs,
+    result_types,
+    expected_pl_result,
+):
+    task = Mock()
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    task.result.return_value = get_test_result_object(result_types=result_types)
+    mock_run.return_value = task
+    dev = _aws_device(wires=wires, foo="bar", shots=0, device_type=AwsDeviceType.SIMULATOR)
+
+    results = dev.execute(pl_circ, compute_gradient=True)
+
+    assert dev.task == task
+
+    mock_run.assert_called_with(
+        (expected_braket_circ),
+        s3_destination_folder=("foo", "bar"),
+        shots=0,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs=expected_inputs,
+    )
+    assert (results[0][0] == expected_pl_result[0][0]).all()
+    assert (results[0][1] == expected_pl_result[0][1]).all()
 
 
 @patch.object(AwsDevice, "run")
@@ -277,6 +536,111 @@ def test_execute_tracker(mock_run):
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
+def _noop(*args, **kwargs):
+    return None
+
+
+@patch.object(AwsDevice, "__init__", _noop)
+@patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "properties")
+@pytest.mark.parametrize(
+    "action_props, shots, expected_use_grouping",
+    [
+        (
+            OpenQASMDeviceActionProperties.parse_raw(
+                json.dumps(
+                    {
+                        "actionType": "braket.ir.openqasm.program",
+                        "version": ["1"],
+                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+                        "supportedResultTypes": [
+                            {
+                                "name": "StateVector",
+                                "observables": None,
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                        ],
+                    }
+                )
+            ),
+            0,
+            True,
+        ),
+        (
+            OpenQASMDeviceActionProperties.parse_raw(
+                json.dumps(
+                    {
+                        "actionType": "braket.ir.openqasm.program",
+                        "version": ["1"],
+                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+                        "supportedResultTypes": [
+                            {
+                                "name": "StateVector",
+                                "observables": None,
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                            {
+                                "name": "AdjointGradient",
+                                "observables": ["x", "y", "z", "h", "i"],
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                        ],
+                    }
+                )
+            ),
+            10,
+            True,
+        ),
+        (
+            OpenQASMDeviceActionProperties.parse_raw(
+                json.dumps(
+                    {
+                        "actionType": "braket.ir.openqasm.program",
+                        "version": ["1"],
+                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+                        "supportedResultTypes": [
+                            {
+                                "name": "StateVector",
+                                "observables": None,
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                            {
+                                "name": "AdjointGradient",
+                                "observables": ["x", "y", "z", "h", "i"],
+                                "minShots": 0,
+                                "maxShots": 0,
+                            },
+                        ],
+                    }
+                )
+            ),
+            0,
+            # Should be disabled only when AdjGrad is present and shots = 0
+            False,
+        ),
+    ],
+)
+def test_use_grouping(
+    properties_mock, type_mock, session_mock, action_props, shots, expected_use_grouping
+):
+    """Tests that grouping is enabled except when AdjointGradient is present"""
+    properties_mock.action = {DeviceActionType.OPENQASM: action_props}
+    properties_mock.return_value.action.return_value = {DeviceActionType.OPENQASM: action_props}
+    type_mock.return_value = AwsDeviceType.SIMULATOR
+    device = BraketAwsQubitDevice(
+        wires=1,
+        device_arn=DEVICE_ARN,
+        aws_session=Mock(),
+        shots=shots,
+    )
+    assert device.use_grouping == expected_use_grouping
+
+
 def test_pl_to_braket_circuit():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
     dev = _aws_device(wires=2, foo="bar")
@@ -300,6 +664,108 @@ def test_pl_to_braket_circuit():
     assert braket_circuit_true == braket_circuit
 
 
+def test_pl_to_braket_circuit_compute_gradient():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit
+    with a gradient and unique parameters when compute_gradient is True"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.PauliZ(0))
+
+    expected_braket_circuit = (
+        Circuit()
+        .rx(0, FreeParameter("p_0"))
+        .rx(1, FreeParameter("p_1"))
+        .cnot(0, 1)
+        .add_result_type(
+            result_types.AdjointGradient(
+                observable=Observable.Z(), target=0, parameters=["p_0", "p_1"]
+            )
+        )
+    )
+
+    actual_braket_circuit = dev._pl_to_braket_circuit(tape, compute_gradient=True)
+
+    assert expected_braket_circuit == actual_braket_circuit
+
+
+def test_pl_to_braket_circuit_compute_gradient_hamiltonian_tensor_product_terms():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
+    """when the Hamiltonian has multiple tensor product ops and we compute the gradient"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(
+            qml.Hamiltonian(
+                (2, 3),
+                (
+                    qml.PauliX(wires=0) @ qml.PauliX(wires=1),
+                    qml.PauliY(wires=0) @ qml.PauliY(wires=1),
+                ),
+            )
+        )
+
+    braket_obs = 2 * Observable.X() @ Observable.X() + 3 * Observable.Y() @ Observable.Y()
+    braket_circuit_true = (
+        Circuit()
+        .rx(0, FreeParameter("p_0"))
+        .rx(1, FreeParameter("p_1"))
+        .cnot(0, 1)
+        .add_result_type(
+            result_types.AdjointGradient(
+                observable=braket_obs, target=[[0, 1], [0, 1]], parameters=["p_0", "p_1"]
+            )
+        )
+    )
+
+    braket_circuit = dev._pl_to_braket_circuit(tape, compute_gradient=True)
+
+    assert braket_circuit_true == braket_circuit
+
+
+def test_pl_to_braket_circuit_gradient_fails_with_multiple_observables():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit
+    with a gradient and unique parameters when compute_gradient is True"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.PauliZ(0))
+        qml.expval(qml.PauliZ(0))
+    with pytest.raises(
+        ValueError,
+        match="Braket can only compute gradients for circuits with a single expectation"
+        " observable, not ",
+    ):
+        dev._pl_to_braket_circuit(tape, compute_gradient=True)
+
+
+def test_pl_to_braket_circuit_gradient_fails_with_invalid_observable():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit
+    with a gradient and unique parameters when compute_gradient is True"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.var(qml.PauliZ(0))
+    with pytest.raises(
+        ValueError,
+        match="Braket can only compute gradients for circuits with a single expectation"
+        " observable, not a",
+    ):
+        dev._pl_to_braket_circuit(tape, compute_gradient=True)
+
+
 def test_pl_to_braket_circuit_hamiltonian():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
     dev = _aws_device(wires=2, foo="bar")
@@ -317,6 +783,39 @@ def test_pl_to_braket_circuit_hamiltonian():
         .cnot(0, 1)
         .expectation(Observable.X(), [0])
         .expectation(Observable.Y(), [1])
+    )
+
+    braket_circuit = dev._pl_to_braket_circuit(tape)
+
+    assert braket_circuit_true == braket_circuit
+
+
+def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
+    """when the Hamiltonian has multiple tensor product ops"""
+    dev = _aws_device(wires=2, foo="bar")
+
+    with QuantumTape() as tape:
+        qml.RX(0.2, wires=0)
+        qml.RX(0.3, wires=1)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(
+            qml.Hamiltonian(
+                (2, 3),
+                (
+                    qml.PauliX(wires=0) @ qml.PauliX(wires=1),
+                    qml.PauliY(wires=0) @ qml.PauliY(wires=1),
+                ),
+            )
+        )
+
+    braket_circuit_true = (
+        Circuit()
+        .rx(0, 0.2)
+        .rx(1, 0.3)
+        .cnot(0, 1)
+        .expectation(Observable.X() @ Observable.X(), [0, 1])
+        .expectation(Observable.Y() @ Observable.Y(), [0, 1])
     )
 
     braket_circuit = dev._pl_to_braket_circuit(tape)
@@ -768,6 +1267,133 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
     )
 
 
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
+    [
+        (
+            CIRCUIT_1,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, FreeParameter("p_0"))
+            .ry(0, 0.543)
+            .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {
+                        "observable": "x()",
+                        "targets": [[0]],
+                        "parameters": ["p_0", "p_1"],
+                        "type": "adjoint_gradient",
+                    },
+                    "value": {
+                        "gradient": {"p_0": -0.194399, "p_1": 0.9316158},
+                        "expectation": 0.0,
+                    },
+                },
+            ],
+            [np.tensor([0]), np.tensor([-0.194399, 0.9316158])],
+        ),
+        (
+            CIRCUIT_4,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, 0.432)
+            .ry(0, 0.543)
+            .expectation(
+                observable=Observable.X(),
+                target=1,
+            ),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
+                    "value": 0.0,
+                }
+            ],
+            [np.tensor([0]), np.tensor([])],
+        ),
+    ],
+)
+def test_execute_and_gradients(
+    mock_run,
+    pl_circ,
+    expected_braket_circ,
+    wires,
+    expected_inputs,
+    result_types,
+    expected_pl_result,
+):
+    task = Mock()
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    task.result.return_value = get_test_result_object(result_types=result_types)
+    mock_run.return_value = task
+    dev = _aws_device(
+        wires=wires,
+        foo="bar",
+        shots=0,
+        device_type=AwsDeviceType.SIMULATOR,
+        device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
+    )
+
+    results, jacs = dev.execute_and_gradients([pl_circ])
+    assert dev.task == task
+    mock_run.assert_called_with(
+        (expected_braket_circ),
+        s3_destination_folder=("foo", "bar"),
+        shots=0,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs=expected_inputs,
+    )
+
+    # assert results & jacs are right
+    assert (results == expected_pl_result[0]).all()
+    assert (jacs == expected_pl_result[1]).all()
+
+
+def test_capabilities_class_and_instance_method():
+    class_caps = BraketAwsQubitDevice.capabilities()
+    instance_caps = _aws_device(wires=2).capabilities()
+    expected_caps = {
+        "model": "qubit",
+        "supports_broadcasting": False,
+        "supports_finite_shots": True,
+        "supports_tensor_observables": True,
+        "returns_probs": True,
+        "supports_inverse_operations": True,
+    }
+    assert class_caps == expected_caps
+    # the instance should not have provides_jacobian, even though AdjointGradient is in the
+    # supported result types, because shots != 0
+    assert instance_caps == expected_caps
+
+
+def test_capabilities_adjoint_shots_0():
+    instance_caps = _aws_device(
+        wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0
+    ).capabilities()
+    expected_caps = {
+        "model": "qubit",
+        "supports_broadcasting": False,
+        "supports_finite_shots": True,
+        "supports_tensor_observables": True,
+        "returns_probs": True,
+        "supports_inverse_operations": True,
+        # the instance should have provides_jacobian because AdjointGradient is in the
+        # supported result types and shots == 0
+        "provides_jacobian": True,
+    }
+    assert instance_caps == expected_caps
+
+
 class DummyLocalQubitDevice(BraketQubitDevice):
     short_name = "dummy"
 
@@ -837,10 +1463,6 @@ class DummyCircuitSimulator(BraketSimulator):
         return GateModelSimulatorDeviceCapabilities.parse_obj(input_json)
 
 
-def _noop(*args, **kwargs):
-    return None
-
-
 @patch.object(AwsDevice, "__init__", _noop)
 @patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
@@ -852,21 +1474,26 @@ def _aws_device(
     wires,
     device_type=AwsDeviceType.QPU,
     shots=SHOTS,
+    device_arn="baz",
+    action_properties=ACTION_PROPERTIES,
     **kwargs,
 ):
-    properties_mock.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
+    properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     properties_mock.return_value.action.return_value = {
-        DeviceActionType.OPENQASM: ACTION_PROPERTIES
+        DeviceActionType.OPENQASM: action_properties
     }
     type_mock.return_value = device_type
-    return BraketAwsQubitDevice(
+    dev = BraketAwsQubitDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
-        device_arn="baz",
+        device_arn=device_arn,
         aws_session=Mock(),
         shots=shots,
         **kwargs,
     )
+    # needed by the BraketAwsQubitDevice.capabilities function
+    dev._device._arn = device_arn
+    return dev
 
 
 @patch.object(AwsDevice, "__init__", _noop)
@@ -882,4 +1509,152 @@ def _bad_aws_device(properties_mock, session_mock, wires, **kwargs):
         aws_session=Mock(),
         shots=SHOTS,
         **kwargs,
+    )
+
+
+def get_test_result_object(result_types=[], source="qubit[2] q; cnot q[0], q[1]; measure q;"):
+    json_str = json.dumps(
+        {
+            "braketSchemaHeader": {
+                "name": "braket.task_result.gate_model_task_result",
+                "version": "1",
+            },
+            "measurements": [[0, 0, 0, 0], [1, 1, 1, 1], [1, 1, 0, 0], [0, 0, 1, 1]],
+            "resultTypes": result_types,
+            "measuredQubits": [0, 1, 2, 3],
+            "taskMetadata": {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.task_metadata",
+                    "version": "1",
+                },
+                "id": "task_arn",
+                "shots": 0,
+                "deviceId": "default",
+            },
+            "additionalMetadata": {
+                "action": {
+                    "braketSchemaHeader": {
+                        "name": "braket.ir.openqasm.program",
+                        "version": "1",
+                    },
+                    "source": source,
+                },
+            },
+        }
+    )
+    return GateModelQuantumTaskResult.from_string(json_str)
+
+
+@pytest.fixture
+def noise_model():
+    return (
+        NoiseModel()
+        .add_noise(Noise.BitFlip(0.05), GateCriteria(Gate.H))
+        .add_noise(Noise.TwoQubitDepolarizing(0.10), GateCriteria(Gate.CNot))
+    )
+
+
+@pytest.mark.parametrize("backend", ["braket_dm"])
+def test_valid_local_device_for_noise_model(backend, noise_model):
+    dev = BraketLocalQubitDevice(wires=2, backend=backend, noise_model=noise_model)
+    assert dev._noise_model.instructions == [
+        NoiseModelInstruction(Noise.BitFlip(0.05), GateCriteria(Gate.H)),
+        NoiseModelInstruction(Noise.TwoQubitDepolarizing(0.10), GateCriteria(Gate.CNot)),
+    ]
+
+
+@pytest.mark.parametrize(
+    "backend, device_name",
+    [("default", "StateVectorSimulator"), ("braket_sv", "StateVectorSimulator")],
+)
+def test_invalid_local_device_for_noise_model(backend, device_name, noise_model):
+    with pytest.raises(
+        ValueError,
+        match=(
+            f"{device_name} does not support noise or the noise model "
+            + f"includes noise that is not supported by {device_name}."
+        ),
+    ):
+        BraketLocalQubitDevice(wires=2, backend=backend, noise_model=noise_model)
+
+
+@pytest.mark.parametrize("device_name", ["dm1"])
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_valide_aws_device_for_noise_model(name_mock, device_name, noise_model):
+    name_mock.return_value = device_name
+    dev = _aws_device(
+        wires=2,
+        device_type=AwsDeviceType.SIMULATOR,
+        noise_model=noise_model,
+        action_properties=ACTION_PROPERTIES_DM_DEVICE,
+    )
+
+    assert dev._noise_model.instructions == [
+        NoiseModelInstruction(Noise.BitFlip(0.05), GateCriteria(Gate.H)),
+        NoiseModelInstruction(Noise.TwoQubitDepolarizing(0.10), GateCriteria(Gate.CNot)),
+    ]
+
+
+@pytest.mark.parametrize("device_name", ["sv1", "tn1", "foo", "bar"])
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model):
+    name_mock.return_value = device_name
+    with pytest.raises(
+        ValueError,
+        match=(
+            f"{device_name} does not support noise or the noise model "
+            + f"includes noise that is not supported by {device_name}."
+        ),
+    ):
+        _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
+
+
+@patch.object(AwsDevice, "run")
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_execute_with_noise_model(mock_name, mock_run, noise_model):
+    mock_run.return_value = TASK
+    mock_name.return_value = "dm1"
+    dev = _aws_device(
+        wires=4,
+        device_type=AwsDeviceType.SIMULATOR,
+        noise_model=noise_model,
+        action_properties=ACTION_PROPERTIES_DM_DEVICE,
+    )
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
+        qml.RX(0.432, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    _ = dev.execute(circuit)
+
+    assert dev.task == TASK
+
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .bit_flip(0, 0.05)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .two_qubit_depolarizing(0, 1, 0.10)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
+    mock_run.assert_called_with(
+        EXPECTED_CIRC,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        inputs={"p_0": 0.432},
     )

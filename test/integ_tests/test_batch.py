@@ -41,8 +41,8 @@ def test_batch_execution_of_gradient(device, shots, mocker):
         qml.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
         return qml.expval(qml.PauliZ(0))
 
-    qnode_aws = qml.QNode(func, dev_aws)
-    qnode_default = qml.QNode(func, dev_default)
+    qnode_aws = qml.QNode(func, dev_aws, diff_method="parameter-shift")
+    qnode_default = qml.QNode(func, dev_default, diff_method="parameter-shift")
 
     shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
     weights = np.random.random(shape)
@@ -103,8 +103,8 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
         qml.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
         return qml.expval(qml.PauliZ(0))
 
-    qnode_aws = qml.QNode(func, dev_aws, interface="torch")
-    qnode_default = qml.QNode(func, dev_default, interface="torch")
+    qnode_aws = qml.QNode(func, dev_aws, interface="torch", diff_method="parameter-shift")
+    qnode_default = qml.QNode(func, dev_default, interface="torch", diff_method="parameter-shift")
 
     shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
     weights = np.random.random(shape)
@@ -167,8 +167,8 @@ def test_batch_execution_of_gradient_tf(device, shots, mocker):
         qml.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
         return qml.expval(qml.PauliZ(0))
 
-    qnode_aws = qml.QNode(func, dev_aws, interface="tf")
-    qnode_default = qml.QNode(func, dev_default, interface="tf")
+    qnode_aws = qml.QNode(func, dev_aws, interface="tf", diff_method="parameter-shift")
+    qnode_default = qml.QNode(func, dev_default, interface="tf", diff_method="parameter-shift")
 
     shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
     weights = np.random.random(shape)

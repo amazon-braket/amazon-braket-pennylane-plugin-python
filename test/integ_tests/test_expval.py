@@ -146,7 +146,7 @@ class TestExpval:
             ]
         )
 
-        @qml.qnode(dev)
+        @qml.qnode(dev, diff_method="parameter-shift")
         def circuit():
             qml.RY(theta, wires=[0])
             qml.RY(phi, wires=[1])
@@ -269,7 +269,7 @@ class TestTensorExpval:
             ]
         )
 
-        @qml.qnode(dev)
+        @qml.qnode(dev, diff_method="parameter-shift")
         def circuit():
             qml.RX(theta, wires=[0])
             qml.RX(phi, wires=[1])

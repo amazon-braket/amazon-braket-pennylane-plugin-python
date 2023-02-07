@@ -11,12 +11,14 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import numbers
 from functools import reduce, singledispatch
-from typing import Any, FrozenSet, List, Tuple, Union
+from typing import Any, FrozenSet, List, Optional, Tuple, Union
 
 import pennylane as qml
-from braket.circuits import Gate, ResultType, gates, noises, observables
+from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
+    AdjointGradient,
     DensityMatrix,
     Expectation,
     Probability,
@@ -109,16 +111,49 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     )
 
 
-def translate_operation(operation: Operation, *args, **kwargs) -> Gate:
+def translate_operation(
+    operation: Operation,
+    use_unique_params: bool = False,
+    param_names: Optional[List[str]] = None,
+    *args,
+    **kwargs,
+) -> Gate:
     """Translates a PennyLane ``Operation`` into the corresponding Braket ``Gate``.
 
     Args:
         operation (Operation): The PennyLane ``Operation`` to translate
+        use_unique_params (bool): If true, numeric parameters in the resulting operation will be
+        replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
+        parameters will be skipped.
+        param_names (Optional[List[str]]): A list of parameter names
+            to be supplied to the new operation.
 
     Returns:
         Gate: The Braket gate corresponding to the given operation
     """
-    parameters = [p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters]
+    if use_unique_params:
+        param_names = param_names or []
+        parameters = []
+        name_index = 0
+        for param in operation.parameters:
+            # PennyLane passes any non-keyword argument in the operation.parameters list.
+            # In some cases, like the unitary gate or qml.QubitChannel (Kraus noise), these
+            # parameter can be matrices. Braket only supports parameterization of numeric parameters
+            # (so far, these are all angle parameters), so non-numeric parameters are handled
+            # separately.
+            if isinstance(param, numbers.Number):
+                new_param = FreeParameter(param_names[name_index])
+                name_index += 1
+            elif isinstance(param, qml.numpy.tensor):
+                new_param = param.numpy()
+            else:
+                new_param = param
+            parameters.append(new_param)
+    else:
+        parameters = [
+            p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
+        ]
+
     return _translate_operation(operation, parameters)
 
 
@@ -354,6 +389,22 @@ def _(ms: MS, parameters):
     return gates.MS(phi_0 + np.pi, phi_1) if ms.inverse else gates.MS(phi_0, phi_1)
 
 
+def get_adjoint_gradient_result_type(
+    observable: Observable,
+    targets: Union[List[int], List[List[int]]],
+    supported_result_types: FrozenSet[str],
+    parameters: List[str],
+):
+    if "AdjointGradient" not in supported_result_types:
+        raise NotImplementedError("Unsupported return type: AdjointGradient")
+    braket_observable = _translate_observable(observable)
+
+    braket_observable = (
+        braket_observable.item() if hasattr(braket_observable, "item") else braket_observable
+    )
+    return AdjointGradient(observable=braket_observable, target=targets, parameters=parameters)
+
+
 def translate_result_type(
     observable: Observable, targets: List[int], supported_result_types: FrozenSet[str]
 ) -> Union[ResultType, Tuple[ResultType, ...]]:
@@ -402,7 +453,21 @@ def translate_result_type(
 
 @singledispatch
 def _translate_observable(observable):
-    raise TypeError(f"Unsupported observable: {observable}")
+    raise TypeError(f"Unsupported observable: {type(observable)}")
+
+
+@_translate_observable.register
+def _(H: qml.Hamiltonian):
+    # terms is structured like [C, O] where C is a tuple of all the coefficients, and O is
+    # a tuple of all the corresponding observable terms (X, Y, Z, H, etc or a tensor product
+    # of them)
+    coefficents, pl_observables = H.terms()
+    braket_observables = list(map(lambda obs: _translate_observable(obs), pl_observables))
+    braket_hamiltonian = sum(
+        (coef * obs for coef, obs in zip(coefficents[1:], braket_observables[1:])),
+        coefficents[0] * braket_observables[0],
+    )
+    return braket_hamiltonian
 
 
 @_translate_observable.register
@@ -473,6 +538,20 @@ def translate_result(
     Note:
         Hamiltonian results will be summed over all terms.
     """
+
+    # if braket result contains adjoint gradient, just return it since it should be the only
+    # result type if it's there at all.
+    ag_results = [
+        result for result in braket_result.result_types if result.type.type == "adjoint_gradient"
+    ]
+    if ag_results:
+        ag_result = ag_results[0]
+        key_indices = [int(param_name.split("p_")[1]) for param_name in ag_result.value["gradient"]]
+        return [ag_result.value["expectation"]], [
+            # we need to sort the keys by index since braket can return them in the wrong order
+            ag_result.value["gradient"][f"p_{i}"]
+            for i in sorted(key_indices)
+        ]
     translated = translate_result_type(observable, targets, supported_result_types)
     if isinstance(observable, qml.Hamiltonian):
         coeffs, _ = observable.terms()
