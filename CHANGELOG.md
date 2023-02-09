@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.11.1 (2023-02-09)
+
+### Bug Fixes and Other Changes
+
+ * update: adding build for python 3.10
+ * Merge branch 'main' into test310
+ * testing python 3.10
+
 ## v1.11.0 (2023-02-01)
 
 ### Features
