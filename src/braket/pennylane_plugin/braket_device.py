@@ -48,6 +48,7 @@ from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
+from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
@@ -544,17 +545,26 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """Execute a list of circuits and calculate their gradients.
         Returns a list of circuit results and a list of gradients/jacobians, one of each
         for each circuit in circuits.
-        of floats, 1 float for every instance of a trainable parameter in a gate in the circuit.
-        Functions like qml.grad or qml.jacobian then use that format to generate a per-parameter
-        format.
+
+        The gradient is returned as a list of floats, 1 float for every instance
+        of a trainable parameter in a gate in the circuit. Functions like qml.grad or qml.jacobian
+        then use that format to generate a per-parameter format.
         """
         res = []
         jacs = []
         for circuit in circuits:
+            observables: List[Observable] = circuit.observables
             if not circuit.trainable_params:
                 new_res = self.execute(circuit, compute_gradient=False)
                 # don't bother computing a gradient when there aren't any trainable parameters.
                 new_jac = np.tensor([])
+            elif len(observables) != 1 or observables[0].return_type != Expectation:
+                gradient_circuits, post_processing_fn = param_shift(circuit)
+                grad_circuit_results = [
+                    self.execute(c, compute_gradient=False) for c in gradient_circuits
+                ]
+                new_jac = post_processing_fn(grad_circuit_results)
+                new_res = self.execute(circuit, compute_grad=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
                 new_res, new_jac = results[0]
