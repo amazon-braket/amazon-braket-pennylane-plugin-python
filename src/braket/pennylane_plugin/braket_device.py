@@ -46,12 +46,13 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
+from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
@@ -150,7 +151,7 @@ class BraketQubitDevice(QubitDevice):
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
-    def _pl_to_braket_circuit(self, circuit: CircuitGraph, compute_gradient=False, **run_kwargs):
+    def _pl_to_braket_circuit(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs):
         """Converts a PennyLane circuit to a Braket circuit"""
         braket_circuit = self.apply(
             circuit.operations,
@@ -290,7 +291,7 @@ class BraketQubitDevice(QubitDevice):
         else:
             return {"braket_failed_task_id": task.id}
 
-    def execute(self, circuit: CircuitGraph, compute_gradient=False, **run_kwargs) -> np.ndarray:
+    def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(
             circuit, compute_gradient=compute_gradient, **run_kwargs
