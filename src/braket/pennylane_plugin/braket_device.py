@@ -554,7 +554,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         res = []
         jacs = []
         for circuit in circuits:
-            observables: List[Observable] = circuit.observables
+            observables = circuit.observables
             if not circuit.trainable_params:
                 new_res = self.execute(circuit, compute_gradient=False)
                 # don't bother computing a gradient when there aren't any trainable parameters.
@@ -565,7 +565,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                     self.execute(c, compute_gradient=False) for c in gradient_circuits
                 ]
                 new_jac = post_processing_fn(grad_circuit_results)
-                new_res = self.execute(circuit, compute_grad=False)
+                new_res = self.execute(circuit, compute_gradient=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
                 new_res, new_jac = results[0]
