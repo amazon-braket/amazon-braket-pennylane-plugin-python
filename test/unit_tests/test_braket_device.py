@@ -349,6 +349,15 @@ with QuantumTape() as CIRCUIT_4:
     qml.expval(qml.PauliX(1))
 CIRCUIT_4.trainable_params = []
 
+PARAMS_5 = np.array([0.432, 0.543], requires_grad=True)
+with QuantumTape() as CIRCUIT_5:
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.RX(PARAMS_5[0], wires=0)
+    qml.RY(PARAMS_5[1], wires=0)
+    qml.var(qml.PauliX(0) @ qml.PauliY(1))
+CIRCUIT_5.trainable_params = [0, 1]
+
 
 @patch.object(AwsDevice, "run")
 @pytest.mark.parametrize(
@@ -471,7 +480,7 @@ def test_execute_with_gradient(
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
-    task.result.return_value = get_test_result_object(result_types=result_types)
+    task.result.return_value = get_test_result_object(rts=result_types)
     mock_run.return_value = task
     dev = _aws_device(wires=wires, foo="bar", shots=0, device_type=AwsDeviceType.SIMULATOR)
 
@@ -1332,7 +1341,7 @@ def test_execute_and_gradients(
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
-    task.result.return_value = get_test_result_object(result_types=result_types)
+    task.result.return_value = get_test_result_object(rts=result_types)
     mock_run.return_value = task
     dev = _aws_device(
         wires=wires,
@@ -1357,6 +1366,73 @@ def test_execute_and_gradients(
     # assert results & jacs are right
     assert (results == expected_pl_result[0]).all()
     assert (jacs == expected_pl_result[1]).all()
+
+
+@patch("braket.pennylane_plugin.braket_device.param_shift")
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "pl_circ, expected_braket_circ, wires, result_types, expected_pl_result",
+    [
+        (
+            CIRCUIT_5,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, 0.432)
+            .ry(0, 0.543)
+            .variance(observable=Observable.X() @ Observable.Y(), target=[0, 1]),
+            2,
+            [
+                {
+                    "type": {"observable": ["x", "y"], "targets": [0, 1], "type": "variance"},
+                    "value": 0.0,
+                }
+            ],
+            [np.tensor([0]), np.tensor([0])],
+        ),
+    ],
+)
+def test_execute_and_gradients_non_adjoint(
+    mock_run,
+    mock_param_shift,
+    pl_circ,
+    expected_braket_circ,
+    wires,
+    result_types,
+    expected_pl_result,
+):
+    task = Mock()
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    task.result.return_value = get_test_result_object(rts=result_types)
+    mock_run.return_value = task
+
+    grad = [1, 2]
+    mock_param_shift.return_value = [pl_circ, pl_circ], lambda x: grad
+
+    dev = _aws_device(
+        wires=wires,
+        foo="bar",
+        shots=0,
+        device_type=AwsDeviceType.SIMULATOR,
+        device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
+    )
+
+    results, jacs = dev.execute_and_gradients([pl_circ])
+    assert dev.task == task
+    mock_run.assert_called_with(
+        expected_braket_circ,
+        s3_destination_folder=("foo", "bar"),
+        shots=0,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs={},
+    )
+
+    # assert results & jacs are right
+    assert (results == expected_pl_result[0]).all()
+    assert jacs == [grad]
 
 
 def test_capabilities_class_and_instance_method():
@@ -1512,7 +1588,7 @@ def _bad_aws_device(properties_mock, session_mock, wires, **kwargs):
     )
 
 
-def get_test_result_object(result_types=[], source="qubit[2] q; cnot q[0], q[1]; measure q;"):
+def get_test_result_object(rts=[], source="qubit[2] q; cnot q[0], q[1]; measure q;"):
     json_str = json.dumps(
         {
             "braketSchemaHeader": {
@@ -1520,7 +1596,7 @@ def get_test_result_object(result_types=[], source="qubit[2] q; cnot q[0], q[1];
                 "version": "1",
             },
             "measurements": [[0, 0, 0, 0], [1, 1, 1, 1], [1, 1, 0, 0], [0, 0, 1, 1]],
-            "resultTypes": result_types,
+            "resultTypes": rts,
             "measuredQubits": [0, 1, 2, 3],
             "taskMetadata": {
                 "braketSchemaHeader": {
