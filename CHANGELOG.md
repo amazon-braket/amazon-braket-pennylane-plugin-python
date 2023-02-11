@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.11.2 (2023-02-11)
+
+### Bug Fixes and Other Changes
+
+ * `shots=0` measurements with trainable params
+
 ## v1.11.1 (2023-02-09)
 
 ### Bug Fixes and Other Changes
