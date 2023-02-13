@@ -329,6 +329,14 @@ def test_translate_operation_iswap_inverse():
     assert translate_operation(qml.ISWAP(wires=[0, 1]).inv()) == gates.PSwap(3 * np.pi / 2)
 
 
+def test_translate_operation_param_names_wrong_length():
+    """Tests that translation fails if provided param_names list is the wrong length"""
+    with pytest.raises(
+        ValueError, match="Parameter names list must be equal to number of operation parameters"
+    ):
+        translate_operation(qml.RX(0.432, wires=0), param_names=["a", "b"])
+
+
 @pytest.mark.parametrize(
     "return_type, braket_result_type", zip(pl_return_types, braket_result_types)
 )

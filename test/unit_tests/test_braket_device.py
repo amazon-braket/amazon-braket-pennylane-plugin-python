@@ -265,13 +265,17 @@ def test_execute(mock_run):
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
-        qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
         qml.RX(0.432, wires=0)
         qml.CNOT(wires=[0, 1])
         qml.probs(wires=[0])
         qml.expval(qml.PauliX(1))
         qml.var(qml.PauliY(2))
         qml.sample(qml.PauliZ(3))
+
+    # If the tape is constructed with a QNode, only the parameters marked requires_grad=True
+    # will appear
+    circuit._trainable_params = [0]
 
     results = dev.execute(circuit)
 
@@ -313,7 +317,7 @@ def test_execute(mock_run):
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
-        inputs={"p_0": 0.432},
+        inputs={},
     )
 
 
@@ -349,14 +353,14 @@ with QuantumTape() as CIRCUIT_4:
     qml.expval(qml.PauliX(1))
 CIRCUIT_4.trainable_params = []
 
-PARAMS_5 = np.array([0.432, 0.543], requires_grad=True)
+PARAM_5 = np.tensor(0.543, requires_grad=True)
 with QuantumTape() as CIRCUIT_5:
     qml.Hadamard(wires=0)
     qml.CNOT(wires=[0, 1])
-    qml.RX(PARAMS_5[0], wires=0)
-    qml.RY(PARAMS_5[1], wires=0)
+    qml.RX(0.432, wires=0)
+    qml.RY(PARAM_5, wires=0)
     qml.var(qml.PauliX(0) @ qml.PauliY(1))
-CIRCUIT_5.trainable_params = [0, 1]
+CIRCUIT_5.trainable_params = [1]
 
 
 @patch.object(AwsDevice, "run")
@@ -372,7 +376,7 @@ CIRCUIT_5.trainable_params = [0, 1]
             .ry(0, 0.543)
             .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
             2,
-            {"p_0": 0.432, "p_1": 0.543},
+            {"p_0": 0.432},
             [
                 {
                     "type": {
@@ -696,7 +700,11 @@ def test_pl_to_braket_circuit_compute_gradient():
         )
     )
 
-    actual_braket_circuit = dev._pl_to_braket_circuit(tape, compute_gradient=True)
+    actual_braket_circuit = dev._pl_to_braket_circuit(
+        tape,
+        compute_gradient=True,
+        trainable_indices=frozenset(dev._get_trainable_parameters(tape).keys()),
+    )
 
     assert expected_braket_circuit == actual_braket_circuit
 
@@ -733,7 +741,11 @@ def test_pl_to_braket_circuit_compute_gradient_hamiltonian_tensor_product_terms(
         )
     )
 
-    braket_circuit = dev._pl_to_braket_circuit(tape, compute_gradient=True)
+    braket_circuit = dev._pl_to_braket_circuit(
+        tape,
+        compute_gradient=True,
+        trainable_indices=frozenset(dev._get_trainable_parameters(tape).keys()),
+    )
 
     assert braket_circuit_true == braket_circuit
 
@@ -1153,11 +1165,7 @@ def test_local_qubit_execute(mock_run, shots, backend):
         qml.sample(qml.PauliZ(3))
 
     dev.execute(circuit)
-    mock_run.assert_called_with(
-        CIRCUIT,
-        shots=shots,
-        foo="bar",
-    )
+    mock_run.assert_called_with(CIRCUIT, shots=shots, foo="bar", inputs={})
 
 
 def test_qpu_default_shots():
@@ -1289,7 +1297,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             .ry(0, 0.543)
             .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
             2,
-            {"p_0": 0.432, "p_1": 0.543},
+            {"p_0": 0.432},
             [
                 {
                     "type": {
@@ -1318,7 +1326,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
                 target=1,
             ),
             2,
-            {"p_0": 0.432, "p_1": 0.543},
+            {},
             [
                 {
                     "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
@@ -1371,7 +1379,7 @@ def test_execute_and_gradients(
 @patch("braket.pennylane_plugin.braket_device.param_shift")
 @patch.object(AwsDevice, "run")
 @pytest.mark.parametrize(
-    "pl_circ, expected_braket_circ, wires, result_types, expected_pl_result",
+    "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
     [
         (
             CIRCUIT_5,
@@ -1379,9 +1387,10 @@ def test_execute_and_gradients(
             .h(0)
             .cnot(0, 1)
             .rx(0, 0.432)
-            .ry(0, 0.543)
+            .ry(0, FreeParameter("p_1"))
             .variance(observable=Observable.X() @ Observable.Y(), target=[0, 1]),
             2,
+            {"p_1": 0.543},
             [
                 {
                     "type": {"observable": ["x", "y"], "targets": [0, 1], "type": "variance"},
@@ -1398,6 +1407,7 @@ def test_execute_and_gradients_non_adjoint(
     pl_circ,
     expected_braket_circ,
     wires,
+    expected_inputs,
     result_types,
     expected_pl_result,
 ):
@@ -1427,7 +1437,7 @@ def test_execute_and_gradients_non_adjoint(
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
-        inputs={},
+        inputs=expected_inputs,
     )
 
     # assert results & jacs are right
@@ -1706,6 +1716,7 @@ def test_execute_with_noise_model(mock_name, mock_run, noise_model):
         qml.expval(qml.PauliX(1))
         qml.var(qml.PauliY(2))
         qml.sample(qml.PauliZ(3))
+    circuit.trainable_params = []
 
     _ = dev.execute(circuit)
 
@@ -1732,5 +1743,5 @@ def test_execute_with_noise_model(mock_name, mock_run, noise_model):
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        inputs={"p_0": 0.432},
+        inputs={},
     )
