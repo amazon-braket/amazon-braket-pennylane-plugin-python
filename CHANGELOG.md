@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.11.2.post0 (2023-02-14)
+
+### Testing and Release Infrastructure
+
+ * update github workflows for node12 retirement
+
 ## v1.11.2 (2023-02-11)
 
 ### Bug Fixes and Other Changes
