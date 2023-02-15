@@ -41,15 +41,18 @@ from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
+from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import CircuitGraph, QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
+from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
+from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
@@ -82,6 +85,8 @@ class BraketQubitDevice(QubitDevice):
         shots (int or None): Number of circuit evaluations or random samples included,
             to estimate expectation values of observables. If this value is set to ``None`` or
             ``0``, the device runs in analytic mode (calculations will be exact).
+        noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
+            execution.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
@@ -95,15 +100,20 @@ class BraketQubitDevice(QubitDevice):
         device: Device,
         *,
         shots: Union[int, None],
+        noise_model: Optional[NoiseModel] = None,
         **run_kwargs,
     ):
         super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
         self._task = None
+        self._noise_model = noise_model
         self._run_kwargs = run_kwargs
         self._supported_ops = supported_operations(self._device)
         self._check_supported_result_types()
+
+        if noise_model:
+            self._validate_noise_model_support()
 
     def reset(self):
         super().reset()
@@ -141,7 +151,7 @@ class BraketQubitDevice(QubitDevice):
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
-    def _pl_to_braket_circuit(self, circuit: CircuitGraph, compute_gradient=False, **run_kwargs):
+    def _pl_to_braket_circuit(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs):
         """Converts a PennyLane circuit to a Braket circuit"""
         braket_circuit = self.apply(
             circuit.operations,
@@ -281,11 +291,13 @@ class BraketQubitDevice(QubitDevice):
         else:
             return {"braket_failed_task_id": task.id}
 
-    def execute(self, circuit: CircuitGraph, compute_gradient=False, **run_kwargs) -> np.ndarray:
+    def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         self._circuit = self._pl_to_braket_circuit(
             circuit, compute_gradient=compute_gradient, **run_kwargs
         )
+        if self._noise_model:
+            self._circuit = self._noise_model.apply(self._circuit)
         param_index = 0
         param_dict = {}
         for operation in circuit.operations:
@@ -341,6 +353,21 @@ class BraketQubitDevice(QubitDevice):
         self._braket_result_types = frozenset(
             result_type.name for result_type in supported_result_types
         )
+
+    def _validate_noise_model_support(self):
+        supported_pragmas = [
+            ops.lower().replace("_", "")
+            for ops in (self._device.properties.action[DeviceActionType.OPENQASM].supportedPragmas)
+        ]
+        noise_pragmas = [
+            ("braket_noise_" + noise_instr.noise.name).lower().replace("_", "")
+            for noise_instr in self._noise_model._instructions
+        ]
+        if not all([noise in supported_pragmas for noise in noise_pragmas]):
+            raise ValueError(
+                f"{self._device.name} does not support noise or the noise model includes noise "
+                + f"that is not supported by {self._device.name}."
+            )
 
     def _run_task(self, circuit, inputs=None):
         raise NotImplementedError("Need to implement task runner")
@@ -519,17 +546,26 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """Execute a list of circuits and calculate their gradients.
         Returns a list of circuit results and a list of gradients/jacobians, one of each
         for each circuit in circuits.
-        of floats, 1 float for every instance of a trainable parameter in a gate in the circuit.
-        Functions like qml.grad or qml.jacobian then use that format to generate a per-parameter
-        format.
+
+        The gradient is returned as a list of floats, 1 float for every instance
+        of a trainable parameter in a gate in the circuit. Functions like qml.grad or qml.jacobian
+        then use that format to generate a per-parameter format.
         """
         res = []
         jacs = []
         for circuit in circuits:
+            observables = circuit.observables
             if not circuit.trainable_params:
                 new_res = self.execute(circuit, compute_gradient=False)
                 # don't bother computing a gradient when there aren't any trainable parameters.
                 new_jac = np.tensor([])
+            elif len(observables) != 1 or observables[0].return_type != Expectation:
+                gradient_circuits, post_processing_fn = param_shift(circuit)
+                grad_circuit_results = [
+                    self.execute(c, compute_gradient=False) for c in gradient_circuits
+                ]
+                new_jac = post_processing_fn(grad_circuit_results)
+                new_res = self.execute(circuit, compute_gradient=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
                 new_res, new_jac = results[0]

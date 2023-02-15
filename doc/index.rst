@@ -22,12 +22,12 @@ Devices
 
 This plugin provides two Braket devices for use with PennyLane:
 
-.. devicegalleryitem::
+.. title-card::
     :name: 'braket.aws.qubit'
     :description: Runs circuits on the remote Amazon Braket service.
     :link: devices/braket_remote.html
 
-.. devicegalleryitem::
+.. title-card::
     :name: 'braket.local.qubit'
     :description: Runs circuits on the Braket SDK's local simulator.
     :link: devices/braket_local.html
