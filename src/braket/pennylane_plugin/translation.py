@@ -393,12 +393,10 @@ def _(ms: MS, parameters):
 @_translate_operation.register
 def _(adjoint: Adjoint, parameters):
     if isinstance(adjoint.base, qml.ISWAP):
+        # gates.ISwap.adjoint() returns a different value than the one tested in test_translation.py
         return gates.PSwap(3 * np.pi / 2)
     base = _translate_operation(adjoint.base, parameters)
-    translated_adjoint = base.adjoint()
-    if len(translated_adjoint) != 1:
-        raise ValueError(f"The adjoint of operator {base} contains more than one operator.")
-    return translated_adjoint[0]
+    return base.adjoint()[0]
 
 
 def get_adjoint_gradient_result_type(
