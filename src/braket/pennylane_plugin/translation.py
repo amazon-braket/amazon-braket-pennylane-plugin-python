@@ -11,7 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import numbers
 from functools import reduce, singledispatch
 from typing import Any, FrozenSet, List, Optional, Tuple, Union
 
@@ -125,25 +124,27 @@ def translate_operation(
         use_unique_params (bool): If true, numeric parameters in the resulting operation will be
         replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
         parameters will be skipped.
-        param_names (Optional[List[str]]): A list of parameter names
-            to be supplied to the new operation.
+        param_names (Optional[List[str]]): A list of parameter names to be supplied
+            to the new operation. The length of the list must match the number of
+            the operator's parameters; if no named parameter is needed for the corresponding
+            operation parameter, then the list entry should be `None`.
 
     Returns:
         Gate: The Braket gate corresponding to the given operation
     """
     if use_unique_params:
-        param_names = param_names or []
         parameters = []
-        name_index = 0
-        for param in operation.parameters:
+        param_names = param_names or [None] * len(operation.parameters)
+        if len(param_names) != len(operation.parameters):
+            raise ValueError("Parameter names list must be equal to number of operation parameters")
+        for param_name, param in zip(param_names, operation.parameters):
             # PennyLane passes any non-keyword argument in the operation.parameters list.
             # In some cases, like the unitary gate or qml.QubitChannel (Kraus noise), these
             # parameter can be matrices. Braket only supports parameterization of numeric parameters
             # (so far, these are all angle parameters), so non-numeric parameters are handled
             # separately.
-            if isinstance(param, numbers.Number):
-                new_param = FreeParameter(param_names[name_index])
-                name_index += 1
+            if param_name is not None:
+                new_param = FreeParameter(param_name)
             elif isinstance(param, qml.numpy.tensor):
                 new_param = param.numpy()
             else:
