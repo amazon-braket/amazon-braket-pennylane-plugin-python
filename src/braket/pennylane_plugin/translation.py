@@ -393,7 +393,7 @@ def _(ms: MS, parameters):
 @_translate_operation.register
 def _(adjoint: Adjoint, parameters):
     if isinstance(adjoint.base, qml.ISWAP):
-        # gates.ISwap.adjoint() returns a different value than the one tested in test_translation.py
+        # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
     base = _translate_operation(adjoint.base, parameters)
     return base.adjoint()[0]
