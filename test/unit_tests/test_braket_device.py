@@ -17,6 +17,7 @@ from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
 import braket.ir as ir
+import braket.pennylane_plugin.braket_device
 import numpy as anp
 import pennylane as qml
 import pytest
@@ -27,16 +28,14 @@ from braket.device_schema import DeviceActionType
 from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
+from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
+from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 from braket.simulator import BraketSimulator
 from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.tape import QuantumTape
-
-import braket.pennylane_plugin.braket_device
-from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
-from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 
 SHOTS = 10000
 
@@ -1444,7 +1443,6 @@ def test_capabilities_class_and_instance_method():
         "supports_finite_shots": True,
         "supports_tensor_observables": True,
         "returns_probs": True,
-        "supports_inverse_operations": True,
     }
     assert class_caps == expected_caps
     # the instance should not have provides_jacobian, even though AdjointGradient is in the
@@ -1462,7 +1460,6 @@ def test_capabilities_adjoint_shots_0():
         "supports_finite_shots": True,
         "supports_tensor_observables": True,
         "returns_probs": True,
-        "supports_inverse_operations": True,
         # the instance should have provides_jacobian because AdjointGradient is in the
         # supported result types and shots == 0
         "provides_jacobian": True,

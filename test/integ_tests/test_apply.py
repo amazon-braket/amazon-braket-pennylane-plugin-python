@@ -16,9 +16,8 @@
 import numpy as np
 import pennylane as qml
 import pytest
-from conftest import K2, U2, K, U
-
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from conftest import K2, U2, K, U
 
 np.random.seed(42)
 
@@ -186,7 +185,7 @@ class TestHardwareApply:
         @qml.qnode(dev)
         def circuit_inv():
             qml.QubitStateVector.compute_decomposition(state, wires=wires)
-            op(*op_args, wires=wires).inv()
+            qml.adjoint(op(*op_args, wires=wires))
             return qml.probs(wires=wires)
 
         assert np.allclose(
