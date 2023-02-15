@@ -27,6 +27,12 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
+from braket.tasks import GateModelQuantumTaskResult
+from pennylane import numpy as np
+from pennylane.measurements import ObservableReturnTypes
+from pennylane.operation import Observable, Operation
+from pennylane.ops import Adjoint
+
 from braket.pennylane_plugin.ops import (
     MS,
     PSWAP,
@@ -36,11 +42,6 @@ from braket.pennylane_plugin.ops import (
     GPi,
     GPi2,
 )
-from braket.tasks import GateModelQuantumTaskResult
-from pennylane import numpy as np
-from pennylane.measurements import ObservableReturnTypes
-from pennylane.operation import Observable, Operation
-from pennylane.ops import Adjoint
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "i": "Identity",

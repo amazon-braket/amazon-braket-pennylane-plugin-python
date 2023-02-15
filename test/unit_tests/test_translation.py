@@ -28,6 +28,11 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.circuits.serialization import IRType
+from braket.tasks import GateModelQuantumTaskResult
+from pennylane import numpy as pnp
+from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
+from pennylane.wires import Wires
+
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
 from braket.pennylane_plugin.ops import MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
@@ -38,10 +43,6 @@ from braket.pennylane_plugin.translation import (
     translate_result,
     translate_result_type,
 )
-from braket.tasks import GateModelQuantumTaskResult
-from pennylane import numpy as pnp
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
-from pennylane.wires import Wires
 
 testdata = [
     (qml.Identity, gates.I, [0], []),
@@ -305,7 +306,8 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
         op_name = _braket_to_pl[
             re.match(
                 "^[a-z0-2]+",
-                braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+                braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM),
+            )[0]
         ]
     else:
         op_name = _braket_to_pl[

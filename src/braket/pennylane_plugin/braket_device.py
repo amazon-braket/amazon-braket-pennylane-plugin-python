@@ -44,13 +44,6 @@ from braket.circuits import Circuit, Instruction
 from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
-from braket.pennylane_plugin.translation import (
-    get_adjoint_gradient_result_type,
-    supported_operations,
-    translate_operation,
-    translate_result,
-    translate_result_type,
-)
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import QuantumFunctionError, QubitDevice
@@ -60,6 +53,14 @@ from pennylane.measurements import Expectation, Probability, Sample, State, Vari
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
 from pennylane.tape import QuantumTape
+
+from braket.pennylane_plugin.translation import (
+    get_adjoint_gradient_result_type,
+    supported_operations,
+    translate_operation,
+    translate_result,
+    translate_result_type,
+)
 
 from ._version import __version__
 
