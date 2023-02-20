@@ -16,9 +16,6 @@ Amazon Braket PennyLane Plugin
 .. image:: https://img.shields.io/readthedocs/amazon-braket-pennylane-plugin-python.svg?logo=read-the-docs
     :alt: Documentation Status
     :target: https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/?badge=latest
-.. image:: https://img.shields.io/badge/code_style-black-000000.svg
-    :alt: Code Style: Black
-    :target: https://github.com/psf/black
 
 The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
 
