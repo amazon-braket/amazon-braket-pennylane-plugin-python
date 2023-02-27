@@ -396,6 +396,10 @@ def _(adjoint: Adjoint, parameters):
         # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
     base = _translate_operation(adjoint.base, parameters)
+    if len(base.adjoint()) > 1:
+        raise NotImplementedError(
+            f"Braket PennyLane plugin does not support operation {adjoint.name}."
+        )
     return base.adjoint()[0]
 
 

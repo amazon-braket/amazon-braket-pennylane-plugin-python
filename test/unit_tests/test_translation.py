@@ -13,6 +13,7 @@
 
 import json
 import re
+from unittest.mock import patch
 
 import numpy as np
 import pennylane as qml
@@ -315,6 +316,20 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
         ]
 
     assert f"Adjoint({op_name})" == pl_op.name
+
+
+@patch("braket.circuits.gates.X.adjoint")
+def test_translate_operation_multiple_inverses_unsupported(adjoint):
+    """Test that an error is raised when translating a Braket operation which adjoint contains
+    multiple operations."""
+    # Mock ``gates.X.adjoint()`` to return two gates
+    adjoint.return_value = [gates.X(), gates.I()]
+    pl_op = qml.adjoint(qml.PauliX(0))
+    with pytest.raises(
+        NotImplementedError,
+        match="Braket PennyLane plugin does not support operation",
+    ):
+        translate_operation(pl_op)
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubit", testdata_named_inverses)
