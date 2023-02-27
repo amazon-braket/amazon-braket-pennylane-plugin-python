@@ -327,7 +327,7 @@ def test_translate_operation_multiple_inverses_unsupported(adjoint):
     pl_op = qml.adjoint(qml.PauliX(0))
     with pytest.raises(
         NotImplementedError,
-        match="Braket PennyLane plugin does not support operation",
+        match="The adjoint of the Braket operation X",
     ):
         translate_operation(pl_op)
 

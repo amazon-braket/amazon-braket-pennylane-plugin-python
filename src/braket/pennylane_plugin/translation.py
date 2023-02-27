@@ -398,7 +398,7 @@ def _(adjoint: Adjoint, parameters):
     base = _translate_operation(adjoint.base, parameters)
     if len(base.adjoint()) > 1:
         raise NotImplementedError(
-            f"Braket PennyLane plugin does not support operation {adjoint.name}."
+            f"The adjoint of the Braket operation {base} contains more than one operation."
         )
     return base.adjoint()[0]
 
