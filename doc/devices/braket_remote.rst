@@ -79,29 +79,25 @@ ARN points to a QPU, analytic mode is not available and an error will be raised.
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
 
-The device supports all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_.
+The operations supported by this device vary based on the operations supported by the underlying Braket device. To check
+the device's supported operations, run
 
-The PennyLane-Braket plugin provides the following framework-specific operations for PennyLane, which can be imported
+.. code-block:: python
+
+    dev.operations
+
+In addition to those `provided by PennyLane <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_,
+the PennyLane-Braket plugin provides the following framework-specific operations, which can be imported
 from :mod:`braket.pennylane_plugin.ops <.ops>`:
 
 .. autosummary::
-    braket.pennylane_plugin.CPhaseShift
     braket.pennylane_plugin.CPhaseShift00
     braket.pennylane_plugin.CPhaseShift01
     braket.pennylane_plugin.CPhaseShift10
-    braket.pennylane_plugin.ISWAP
     braket.pennylane_plugin.PSWAP
-    braket.pennylane_plugin.XY
-    braket.pennylane_plugin.XX
-    braket.pennylane_plugin.YY
-    braket.pennylane_plugin.ZZ
-    braket.pennylane_plugin.AmplitudeDamping
-    braket.pennylane_plugin.GeneralizedAmplitudeDamping
-    braket.pennylane_plugin.PhaseDamping
-    braket.pennylane_plugin.DepolarizingChannel
-    braket.pennylane_plugin.BitFlip
-    braket.pennylane_plugin.PhaseFlip
-    braket.pennylane_plugin.QubitChannel
+    braket.pennylane_plugin.GPi
+    braket.pennylane_plugin.GPi2
+    braket.pennylane_plugin.MS
 
 
 Gradient computation on Braket with a QAOA Hamiltonian
