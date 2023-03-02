@@ -186,7 +186,7 @@ class TestHardwareApply:
         @qml.qnode(dev)
         def circuit_inv():
             qml.QubitStateVector.compute_decomposition(state, wires=wires)
-            op(*op_args, wires=wires).inv()
+            qml.adjoint(op(*op_args, wires=wires))
             return qml.probs(wires=wires)
 
         assert np.allclose(
