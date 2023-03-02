@@ -31,7 +31,7 @@ from braket.circuits.result_types import (
 from braket.circuits.serialization import IRType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as pnp
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
+from pennylane.measurements import ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
@@ -423,7 +423,7 @@ def test_translate_result_type_hamiltonian_unsupported_return(return_type):
 def test_translate_result_type_probs():
     """Tests if a PennyLane probability return type is successfully converted into a Braket
     result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
+    mp = qml.probs(wires=Wires([0]))
     braket_result_type_calculated = translate_result_type(mp, [0], frozenset())
 
     braket_result_type = Probability([0])
@@ -434,7 +434,7 @@ def test_translate_result_type_probs():
 def test_translate_result_type_state_vector():
     """Tests if a PennyLane state vector return type is successfully converted into a Braket
     result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.State)
+    mp = qml.state()
     braket_result_type_calculated = translate_result_type(
         mp, [], frozenset(["StateVector", "DensityMatrix"])
     )
@@ -447,7 +447,7 @@ def test_translate_result_type_state_vector():
 def test_translate_result_type_density_matrix():
     """Tests if a PennyLane density matrix return type is successfully converted into a Braket
     result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.State)
+    mp = qml.state()
     braket_result_type_calculated = translate_result_type(mp, [], frozenset(["DensityMatrix"]))
 
     braket_result_type = DensityMatrix()
@@ -458,7 +458,7 @@ def test_translate_result_type_density_matrix():
 def test_translate_result_type_density_matrix_partial():
     """Tests if a PennyLane partial density matrix return type is successfully converted into a
     Braket result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.State, wires=[0])
+    mp = qml.density_matrix(wires=[0])
     braket_result_type_calculated = translate_result_type(
         mp, [0], frozenset(["StateVector", "DensityMatrix"])
     )
@@ -471,7 +471,7 @@ def test_translate_result_type_density_matrix_partial():
 def test_translate_result_type_state_unimplemented():
     """Tests if a NotImplementedError is raised by translate_result_type when a PennyLane state
     return type is converted while not supported by the device"""
-    mp = MeasurementProcess(ObservableReturnTypes.State)
+    mp = qml.state()
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
         translate_result_type(mp, [0], frozenset())
 
@@ -503,7 +503,7 @@ def test_translate_result():
     targets = [0]
     result_dict["measuredQubits"]: targets
     result = GateModelQuantumTaskResult.from_string(json.dumps(result_dict))
-    mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
+    mp = qml.probs(wires=Wires([0]))
     translated = translate_result(result, mp, targets, frozenset())
     assert (translated == result.result_types[0].value).all()
 
