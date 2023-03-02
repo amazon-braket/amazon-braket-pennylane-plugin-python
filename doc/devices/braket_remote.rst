@@ -102,3 +102,13 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.BitFlip
     braket.pennylane_plugin.PhaseFlip
     braket.pennylane_plugin.QubitChannel
+
+
+Gradient computation on Braket with a QAOA Hamiltonian
+~~~~~~~~~~~~~~~~~~~~
+Currently, PennyLane will compute grouping indices for QAOA Hamiltonians and use them to split the Hamiltonian into multiple expectation values. If you wish to use `SV1’s adjoint differentiation capability<https://docs.aws.amazon.com/braket/latest/developerguide/hybrid.html>` when running QAOA from PennyLane, you will need reconstruct the cost Hamiltonian to remove the grouping indices from the cost Hamiltonian, like so:
+
+.. code-block:: python
+
+    cost_h, mixer_h = qml.qaoa.max_clique(g, constrained=False)
+    cost_h = qml.Hamiltonian(cost_h.coeffs, cost_h.ops)
