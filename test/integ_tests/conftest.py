@@ -50,6 +50,7 @@ K2 = [np.kron(mat1, mat2) for mat1 in K for mat2 in K]
 # PennyLane devices
 
 # List of all devices.
+on_demand_sv_devices = [(BraketAwsQubitDevice, DEVICE_ARN)]
 sv_devices = [(BraketAwsQubitDevice, DEVICE_ARN), (BraketLocalQubitDevice, "braket_sv")]
 dm_devices = [(BraketLocalQubitDevice, "braket_dm")]
 devices = sv_devices + dm_devices
@@ -134,6 +135,17 @@ def device(request, shots, extra_kwargs):
 
 @pytest.fixture(params=sv_devices)
 def sv_device(request, shots, extra_kwargs):
+    """Fixture to initialize and return a PennyLane device"""
+    device, backend = request.param
+
+    def _device(n):
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
+
+    return _device
+
+
+@pytest.fixture(params=on_demand_sv_devices)
+def on_demand_sv_device(request, shots, extra_kwargs):
     """Fixture to initialize and return a PennyLane device"""
     device, backend = request.param
 

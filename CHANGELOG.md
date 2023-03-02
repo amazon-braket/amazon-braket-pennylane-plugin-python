@@ -1,5 +1,72 @@
 # Changelog
 
+## v1.11.2.post0 (2023-02-14)
+
+### Testing and Release Infrastructure
+
+ * update github workflows for node12 retirement
+
+## v1.11.2 (2023-02-11)
+
+### Bug Fixes and Other Changes
+
+ * `shots=0` measurements with trainable params
+
+## v1.11.1 (2023-02-09)
+
+### Bug Fixes and Other Changes
+
+ * update: adding build for python 3.10
+ * Merge branch 'main' into test310
+ * testing python 3.10
+
+## v1.11.0 (2023-02-01)
+
+### Features
+
+ * Braket noise model for density matrix simulators
+
+## v1.10.4 (2023-01-03)
+
+### Bug Fixes and Other Changes
+
+ * Cap pennylane version at v0.27
+
+### Testing and Release Infrastructure
+
+ * Use the new Pennylane Sphinx Theme
+
+## v1.10.3 (2022-12-13)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #120 from aws/qaoa_bug_fix
+ * fixing linters
+ * removed qaoa integ test since it won't build on windows
+ * integrated with pl's device.use_grouping to fix a bug with qaoa creating multiple observables
+
+## v1.10.2 (2022-12-08)
+
+### Bug Fixes and Other Changes
+
+ * Only support adjoint gradient if shots=0
+
+## v1.10.1 (2022-12-07)
+
+### Bug Fixes and Other Changes
+
+ * Workaround for np.tensor around observable
+
+## v1.10.0 (2022-12-07)
+
+### Features
+
+ * adjoint gradient
+
+### Bug Fixes and Other Changes
+
+ * remove env variable from integ tests
+
 ## v1.9.0 (2022-09-21)
 
 ### Features
