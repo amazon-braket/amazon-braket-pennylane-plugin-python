@@ -217,8 +217,6 @@ def test_apply_unique_parameters():
         gamma=FreeParameter("p_4"),
         probability=FreeParameter("p_5"),
     )
-    print(circuit)
-    print(expected)
     assert circuit == expected
 
 
