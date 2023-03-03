@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.12.0 (2023-03-03)
+
+### Deprecations and Removals
+
+ * deprecate python 3.7
+
+### Bug Fixes and Other Changes
+
+ * Add support for new custom measurements
+ * Remove use of in-place inversion. Replace it with `qml.adjoint`.
+
 ## v1.11.2.post0 (2023-02-14)
 
 ### Testing and Release Infrastructure

@@ -1487,7 +1487,6 @@ def test_capabilities_class_and_instance_method():
         "supports_finite_shots": True,
         "supports_tensor_observables": True,
         "returns_probs": True,
-        "supports_inverse_operations": True,
     }
     assert class_caps == expected_caps
     # the instance should not have provides_jacobian, even though AdjointGradient is in the
@@ -1505,7 +1504,6 @@ def test_capabilities_adjoint_shots_0():
         "supports_finite_shots": True,
         "supports_tensor_observables": True,
         "returns_probs": True,
-        "supports_inverse_operations": True,
         # the instance should have provides_jacobian because AdjointGradient is in the
         # supported result types and shots == 0
         "provides_jacobian": True,

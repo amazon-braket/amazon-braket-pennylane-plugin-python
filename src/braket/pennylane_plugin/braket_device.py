@@ -120,13 +120,6 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
 
-    @classmethod
-    def capabilities(cls):
-        """Add support for inverse"""
-        capabilities = super().capabilities().copy()
-        capabilities.update(supports_inverse_operations=True)
-        return capabilities
-
     @property
     def operations(self) -> FrozenSet[str]:
         """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
