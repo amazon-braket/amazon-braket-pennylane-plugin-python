@@ -11,7 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import numbers
 from functools import reduce, singledispatch
 from typing import Any, FrozenSet, List, Optional, Tuple, Union
 
@@ -31,6 +30,7 @@ from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
+from pennylane.ops import Adjoint
 
 from braket.pennylane_plugin.ops import (
     MS,
@@ -52,11 +52,11 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "rx": "RX",
     "rz": "RZ",
     "s": "S",
-    "si": "S.inv",
+    "si": "Adjoint(S)",
     "v": "SX",
-    "vi": "SX.inv",
+    "vi": "Adjoint(SX)",
     "t": "T",
-    "ti": "T.inv",
+    "ti": "Adjoint(T)",
     "cnot": "CNOT",
     "cy": "CY",
     "cz": "CZ",
@@ -125,25 +125,27 @@ def translate_operation(
         use_unique_params (bool): If true, numeric parameters in the resulting operation will be
         replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
         parameters will be skipped.
-        param_names (Optional[List[str]]): A list of parameter names
-            to be supplied to the new operation.
+        param_names (Optional[List[str]]): A list of parameter names to be supplied
+            to the new operation. The length of the list must match the number of
+            the operator's parameters; if no named parameter is needed for the corresponding
+            operation parameter, then the list entry should be `None`.
 
     Returns:
         Gate: The Braket gate corresponding to the given operation
     """
     if use_unique_params:
-        param_names = param_names or []
         parameters = []
-        name_index = 0
-        for param in operation.parameters:
+        param_names = param_names or [None] * len(operation.parameters)
+        if len(param_names) != len(operation.parameters):
+            raise ValueError("Parameter names list must be equal to number of operation parameters")
+        for param_name, param in zip(param_names, operation.parameters):
             # PennyLane passes any non-keyword argument in the operation.parameters list.
             # In some cases, like the unitary gate or qml.QubitChannel (Kraus noise), these
             # parameter can be matrices. Braket only supports parameterization of numeric parameters
             # (so far, these are all angle parameters), so non-numeric parameters are handled
             # separately.
-            if isinstance(param, numbers.Number):
-                new_param = FreeParameter(param_names[name_index])
-                name_index += 1
+            if param_name is not None:
+                new_param = FreeParameter(param_name)
             elif isinstance(param, qml.numpy.tensor):
                 new_param = param.numpy()
             else:
@@ -196,17 +198,17 @@ def _(_: qml.ECR, _parameters):
 
 @_translate_operation.register
 def _(s: qml.S, _parameters):
-    return gates.Si() if s.inverse else gates.S()
+    return gates.S()
 
 
 @_translate_operation.register
 def _(sx: qml.SX, _parameters):
-    return gates.Vi() if sx.inverse else gates.V()
+    return gates.V()
 
 
 @_translate_operation.register
 def _(t: qml.T, _parameters):
-    return gates.Ti() if t.inverse else gates.T()
+    return gates.T()
 
 
 @_translate_operation.register
@@ -242,31 +244,31 @@ def _(_: qml.Toffoli, _parameters):
 @_translate_operation.register
 def _(rx: qml.RX, parameters):
     phi = parameters[0]
-    return gates.Rx(-phi) if rx.inverse else gates.Rx(phi)
+    return gates.Rx(phi)
 
 
 @_translate_operation.register
 def _(ry: qml.RY, parameters):
     phi = parameters[0]
-    return gates.Ry(-phi) if ry.inverse else gates.Ry(phi)
+    return gates.Ry(phi)
 
 
 @_translate_operation.register
 def _(rz: qml.RZ, parameters):
     phi = parameters[0]
-    return gates.Rz(-phi) if rz.inverse else gates.Rz(phi)
+    return gates.Rz(phi)
 
 
 @_translate_operation.register
 def _(phase_shift: qml.PhaseShift, parameters):
     phi = parameters[0]
-    return gates.PhaseShift(-phi) if phase_shift.inverse else gates.PhaseShift(phi)
+    return gates.PhaseShift(phi)
 
 
 @_translate_operation.register
 def _(qubit_unitary: qml.QubitUnitary, parameters):
     U = np.asarray(parameters[0])
-    return gates.Unitary(U.conj().T) if qubit_unitary.inverse else gates.Unitary(U)
+    return gates.Unitary(U)
 
 
 @_translate_operation.register
@@ -315,60 +317,60 @@ def _(_: qml.QubitChannel, parameters):
 @_translate_operation.register
 def _(c_phase_shift: qml.ControlledPhaseShift, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift(-phi) if c_phase_shift.inverse else gates.CPhaseShift(phi)
+    return gates.CPhaseShift(phi)
 
 
 @_translate_operation.register
 def _(c_phase_shift_00: CPhaseShift00, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift00(-phi) if c_phase_shift_00.inverse else gates.CPhaseShift00(phi)
+    return gates.CPhaseShift00(phi)
 
 
 @_translate_operation.register
 def _(c_phase_shift_01: CPhaseShift01, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift01(-phi) if c_phase_shift_01.inverse else gates.CPhaseShift01(phi)
+    return gates.CPhaseShift01(phi)
 
 
 @_translate_operation.register
 def _(c_phase_shift_10: CPhaseShift10, parameters):
     phi = parameters[0]
-    return gates.CPhaseShift10(-phi) if c_phase_shift_10.inverse else gates.CPhaseShift10(phi)
+    return gates.CPhaseShift10(phi)
 
 
 @_translate_operation.register
 def _(iswap: qml.ISWAP, _parameters):
-    return gates.PSwap(3 * np.pi / 2) if iswap.inverse else gates.ISwap()
+    return gates.ISwap()
 
 
 @_translate_operation.register
 def _(pswap: PSWAP, parameters):
     phi = parameters[0]
-    return gates.PSwap(-phi) if pswap.inverse else gates.PSwap(phi)
+    return gates.PSwap(phi)
 
 
 @_translate_operation.register
 def _(xy: qml.IsingXY, parameters):
     phi = parameters[0]
-    return gates.XY(-phi) if xy.inverse else gates.XY(phi)
+    return gates.XY(phi)
 
 
 @_translate_operation.register
 def _(xx: qml.IsingXX, parameters):
     phi = parameters[0]
-    return gates.XX(-phi) if xx.inverse else gates.XX(phi)
+    return gates.XX(phi)
 
 
 @_translate_operation.register
 def _(yy: qml.IsingYY, parameters):
     phi = parameters[0]
-    return gates.YY(-phi) if yy.inverse else gates.YY(phi)
+    return gates.YY(phi)
 
 
 @_translate_operation.register
 def _(zz: qml.IsingZZ, parameters):
     phi = parameters[0]
-    return gates.ZZ(-phi) if zz.inverse else gates.ZZ(phi)
+    return gates.ZZ(phi)
 
 
 @_translate_operation.register
@@ -380,13 +382,26 @@ def _(_gpi: GPi, parameters):
 @_translate_operation.register
 def _(gpi2: GPi2, parameters):
     phi = parameters[0]
-    return gates.GPi2(phi + np.pi) if gpi2.inverse else gates.GPi2(phi)
+    return gates.GPi2(phi)
 
 
 @_translate_operation.register
 def _(ms: MS, parameters):
     phi_0, phi_1 = parameters[:2]
-    return gates.MS(phi_0 + np.pi, phi_1) if ms.inverse else gates.MS(phi_0, phi_1)
+    return gates.MS(phi_0, phi_1)
+
+
+@_translate_operation.register
+def _(adjoint: Adjoint, parameters):
+    if isinstance(adjoint.base, qml.ISWAP):
+        # gates.ISwap.adjoint() returns a different value
+        return gates.PSwap(3 * np.pi / 2)
+    base = _translate_operation(adjoint.base, parameters)
+    if len(base.adjoint()) > 1:
+        raise NotImplementedError(
+            f"The adjoint of the Braket operation {base} contains more than one operation."
+        )
+    return base.adjoint()[0]
 
 
 def get_adjoint_gradient_result_type(
