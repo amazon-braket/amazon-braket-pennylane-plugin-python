@@ -29,6 +29,8 @@ setup(
     install_requires=[
         "amazon-braket-sdk>=1.35.0",
         "pennylane==0.28.0",
+        # https://github.com/PennyLaneAI/pennylane/issues/3867
+        "autoray==0.6.0",
     ],
     entry_points={
         "pennylane.plugins": [
