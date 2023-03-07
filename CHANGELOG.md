@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.12.2 (2023-03-07)
+
+### Bug Fixes and Other Changes
+
+ * Only include trainable parameters in input
+
+### Documentation Changes
+
+ * Correct supported operations
+
 ## v1.12.1 (2023-03-06)
 
 ### Bug Fixes and Other Changes
