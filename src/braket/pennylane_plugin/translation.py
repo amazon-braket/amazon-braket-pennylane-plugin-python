@@ -310,7 +310,6 @@ def _(_: qml.PhaseFlip, parameters):
 @_translate_operation.register
 def _(_: qml.QubitChannel, parameters):
     K_list = [np.asarray(matrix) for matrix in parameters]
-    print(K_list)
     return noises.Kraus(K_list)
 
 
