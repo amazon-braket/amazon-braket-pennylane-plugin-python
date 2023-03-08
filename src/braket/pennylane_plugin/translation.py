@@ -152,9 +152,7 @@ def translate_operation(
                 new_param = param
             parameters.append(new_param)
     else:
-        parameters = [
-            p for p in operation.parameters
-        ]
+        parameters = [p for p in operation.parameters]
     return _translate_operation(operation, parameters)
 
 
