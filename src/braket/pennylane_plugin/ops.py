@@ -26,13 +26,13 @@ These operations can be imported via
 .. code-block:: python
 
     from braket.pennylane_plugin import (
-        ECR,
-        PSWAP,
         CPhaseShift00,
         CPhaseShift01,
         CPhaseShift10,
+        PSWAP,
         GPi,
         GPi2,
+        MS,
     )
 
 Operations
@@ -42,10 +42,10 @@ Operations
     CPhaseShift00
     CPhaseShift01
     CPhaseShift10
-    ECR
     PSWAP
     GPi
     GPi2
+    MS
 
 Code details
 ~~~~~~~~~~~~
