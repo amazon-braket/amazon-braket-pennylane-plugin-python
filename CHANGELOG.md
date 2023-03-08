@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.13.0 (2023-03-08)
+
+### Features
+
+ * Add support for Pennylane 0.29.1
+
 ## v1.12.2 (2023-03-07)
 
 ### Bug Fixes and Other Changes
