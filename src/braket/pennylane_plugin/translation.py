@@ -152,7 +152,9 @@ def translate_operation(
                 new_param = param
             parameters.append(new_param)
     else:
-        parameters = [p for p in operation.parameters]
+        parameters = [
+            p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
+        ]    
     return _translate_operation(operation, parameters)
 
 
@@ -307,7 +309,8 @@ def _(_: qml.PhaseFlip, parameters):
 
 @_translate_operation.register
 def _(_: qml.QubitChannel, parameters):
-    K_list = [np.asarray(matrix) for matrix in parameters[0]]
+    K_list = [np.asarray(matrix) for matrix in parameters]
+    print(K_list)
     return noises.Kraus(K_list)
 
 
