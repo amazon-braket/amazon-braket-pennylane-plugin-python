@@ -357,14 +357,6 @@ def test_translate_operation_param_names_wrong_length():
         translate_operation(qml.RX(0.432, wires=0), use_unique_params=True, param_names=["a", "b"])
 
 
-def test_translate_operation_param_names_wrong_length():
-    """Tests that translation fails if provided param_names list is the wrong length"""
-    with pytest.raises(
-        ValueError, match="Parameter names list must be equal to number of operation parameters"
-    ):
-        translate_operation(qml.RX(0.432, wires=0), param_names=["a", "b"])
-
-
 @pytest.mark.parametrize(
     "return_type, braket_result_type", zip(pl_return_types, braket_result_types)
 )
