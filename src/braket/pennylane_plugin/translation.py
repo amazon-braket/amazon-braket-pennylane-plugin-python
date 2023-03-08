@@ -154,7 +154,7 @@ def translate_operation(
     else:
         parameters = [
             p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
-        ]    
+        ]
     return _translate_operation(operation, parameters)
 
 
