@@ -120,13 +120,6 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
 
-    @classmethod
-    def capabilities(cls):
-        """Add support for inverse"""
-        capabilities = super().capabilities().copy()
-        capabilities.update(supports_inverse_operations=True)
-        return capabilities
-
     @property
     def operations(self) -> FrozenSet[str]:
         """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
@@ -334,7 +327,9 @@ class BraketQubitDevice(QubitDevice):
                     param_names.append(None)
                 param_index += 1
             gate = translate_operation(
-                operation, use_unique_params=use_unique_params, param_names=param_names
+                operation,
+                use_unique_params=bool(trainable_indices) or use_unique_params,
+                param_names=param_names,
             )
             dev_wires = self.map_wires(operation.wires).tolist()
             ins = Instruction(gate, dev_wires)

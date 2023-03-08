@@ -362,6 +362,15 @@ with QuantumTape() as CIRCUIT_5:
     qml.var(qml.PauliX(0) @ qml.PauliY(1))
 CIRCUIT_5.trainable_params = [1]
 
+PARAM_6 = np.tensor(0.432, requires_grad=True)
+with QuantumTape() as CIRCUIT_6:
+    qml.Hadamard(wires=0)
+    qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+    qml.RX(PARAM_6, wires=0)
+    qml.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.expval(qml.PauliX(1))
+
 
 @patch.object(AwsDevice, "run")
 @pytest.mark.parametrize(
@@ -493,7 +502,7 @@ def test_execute_with_gradient(
     assert dev.task == task
 
     mock_run.assert_called_with(
-        (expected_braket_circ),
+        expected_braket_circ,
         s3_destination_folder=("foo", "bar"),
         shots=0,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -1321,10 +1330,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             .cnot(0, 1)
             .rx(0, 0.432)
             .ry(0, 0.543)
-            .expectation(
-                observable=Observable.X(),
-                target=1,
-            ),
+            .expectation(observable=Observable.X(), target=1),
             2,
             {},
             [
@@ -1334,6 +1340,33 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
                 }
             ],
             [np.tensor([0]), np.tensor([])],
+        ),
+        (
+            CIRCUIT_6,
+            Circuit()
+            .h(0)
+            .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+            .rx(0, FreeParameter("p_1"))
+            .unitary([0], 1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]))
+            .cnot(0, 1)
+            .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
+            2,
+            {"p_1": 0.432},
+            [
+                {
+                    "type": {
+                        "observable": "x()",
+                        "targets": [[0]],
+                        "parameters": ["p_0", "p_1"],
+                        "type": "adjoint_gradient",
+                    },
+                    "value": {
+                        "gradient": {"p_0": -0.194399, "p_1": 0.9316158},
+                        "expectation": 0.0,
+                    },
+                },
+            ],
+            [np.tensor([0]), np.tensor([-0.194399, 0.9316158])],
         ),
     ],
 )
@@ -1362,7 +1395,7 @@ def test_execute_and_gradients(
     results, jacs = dev.execute_and_gradients([pl_circ])
     assert dev.task == task
     mock_run.assert_called_with(
-        (expected_braket_circ),
+        expected_braket_circ,
         s3_destination_folder=("foo", "bar"),
         shots=0,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -1454,7 +1487,6 @@ def test_capabilities_class_and_instance_method():
         "supports_finite_shots": True,
         "supports_tensor_observables": True,
         "returns_probs": True,
-        "supports_inverse_operations": True,
     }
     assert class_caps == expected_caps
     # the instance should not have provides_jacobian, even though AdjointGradient is in the
@@ -1472,7 +1504,6 @@ def test_capabilities_adjoint_shots_0():
         "supports_finite_shots": True,
         "supports_tensor_observables": True,
         "returns_probs": True,
-        "supports_inverse_operations": True,
         # the instance should have provides_jacobian because AdjointGradient is in the
         # supported result types and shots == 0
         "provides_jacobian": True,

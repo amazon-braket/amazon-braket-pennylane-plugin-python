@@ -13,6 +13,7 @@
 
 import json
 import re
+from unittest.mock import patch
 
 import numpy as np
 import pennylane as qml
@@ -30,7 +31,7 @@ from braket.circuits.result_types import (
 from braket.circuits.serialization import IRType
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as pnp
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
+from pennylane.measurements import ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
@@ -299,23 +300,42 @@ def test_translate_operation_with_unique_params(
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params, inv_params", testdata_inverses)
 def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_params):
     """Tests that inverse gates are translated correctly"""
-    pl_op = pl_cls(*params, wires=qubits).inv()
+    pl_op = qml.adjoint(pl_cls(*params, wires=qubits))
     braket_gate = braket_cls(*inv_params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi, GPi2, MS)):
-        assert _braket_to_pl[
-            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
-        ] == pl_op.name.replace(".inv", "")
+    if isinstance(pl_op.base, (GPi, GPi2, MS)):
+        op_name = _braket_to_pl[
+            re.match(
+                "^[a-z0-2]+",
+                braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM),
+            )[0]
+        ]
     else:
-        assert _braket_to_pl[
+        op_name = _braket_to_pl[
             braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")
-        ] == pl_op.name.replace(".inv", "")
+        ]
+
+    assert f"Adjoint({op_name})" == pl_op.name
+
+
+@patch("braket.circuits.gates.X.adjoint")
+def test_translate_operation_multiple_inverses_unsupported(adjoint):
+    """Test that an error is raised when translating a Braket operation which adjoint contains
+    multiple operations."""
+    # Mock ``gates.X.adjoint()`` to return two gates
+    adjoint.return_value = [gates.X(), gates.I()]
+    pl_op = qml.adjoint(qml.PauliX(0))
+    with pytest.raises(
+        NotImplementedError,
+        match="The adjoint of the Braket operation X",
+    ):
+        translate_operation(pl_op)
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubit", testdata_named_inverses)
 def test_translate_operation_named_inverse(pl_cls, braket_cls, qubit):
     """Tests that operations whose inverses are named Braket gates are inverted correctly"""
-    pl_op = pl_cls(wires=[qubit]).inv()
+    pl_op = qml.adjoint(pl_cls(wires=[qubit]))
     braket_gate = braket_cls()
     assert translate_operation(pl_op) == braket_gate
     assert (
@@ -326,7 +346,15 @@ def test_translate_operation_named_inverse(pl_cls, braket_cls, qubit):
 
 def test_translate_operation_iswap_inverse():
     """Tests that the iSwap gate is inverted correctly"""
-    assert translate_operation(qml.ISWAP(wires=[0, 1]).inv()) == gates.PSwap(3 * np.pi / 2)
+    assert translate_operation(qml.adjoint(qml.ISWAP(wires=[0, 1]))) == gates.PSwap(3 * np.pi / 2)
+
+
+def test_translate_operation_param_names_wrong_length():
+    """Tests that translation fails if provided param_names list is the wrong length"""
+    with pytest.raises(
+        ValueError, match="Parameter names list must be equal to number of operation parameters"
+    ):
+        translate_operation(qml.RX(0.432, wires=0), use_unique_params=True, param_names=["a", "b"])
 
 
 def test_translate_operation_param_names_wrong_length():
@@ -411,7 +439,7 @@ def test_translate_result_type_hamiltonian_unsupported_return(return_type):
 def test_translate_result_type_probs():
     """Tests if a PennyLane probability return type is successfully converted into a Braket
     result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
+    mp = qml.probs(wires=Wires([0]))
     braket_result_type_calculated = translate_result_type(mp, [0], frozenset())
 
     braket_result_type = Probability([0])
@@ -422,7 +450,7 @@ def test_translate_result_type_probs():
 def test_translate_result_type_state_vector():
     """Tests if a PennyLane state vector return type is successfully converted into a Braket
     result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.State)
+    mp = qml.state()
     braket_result_type_calculated = translate_result_type(
         mp, [], frozenset(["StateVector", "DensityMatrix"])
     )
@@ -435,7 +463,7 @@ def test_translate_result_type_state_vector():
 def test_translate_result_type_density_matrix():
     """Tests if a PennyLane density matrix return type is successfully converted into a Braket
     result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.State)
+    mp = qml.state()
     braket_result_type_calculated = translate_result_type(mp, [], frozenset(["DensityMatrix"]))
 
     braket_result_type = DensityMatrix()
@@ -446,7 +474,7 @@ def test_translate_result_type_density_matrix():
 def test_translate_result_type_density_matrix_partial():
     """Tests if a PennyLane partial density matrix return type is successfully converted into a
     Braket result using translate_result_type"""
-    mp = MeasurementProcess(ObservableReturnTypes.State, wires=[0])
+    mp = qml.density_matrix(wires=[0])
     braket_result_type_calculated = translate_result_type(
         mp, [0], frozenset(["StateVector", "DensityMatrix"])
     )
@@ -459,7 +487,7 @@ def test_translate_result_type_density_matrix_partial():
 def test_translate_result_type_state_unimplemented():
     """Tests if a NotImplementedError is raised by translate_result_type when a PennyLane state
     return type is converted while not supported by the device"""
-    mp = MeasurementProcess(ObservableReturnTypes.State)
+    mp = qml.state()
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
         translate_result_type(mp, [0], frozenset())
 
@@ -491,7 +519,7 @@ def test_translate_result():
     targets = [0]
     result_dict["measuredQubits"]: targets
     result = GateModelQuantumTaskResult.from_string(json.dumps(result_dict))
-    mp = MeasurementProcess(ObservableReturnTypes.Probability, wires=Wires([0]))
+    mp = qml.probs(wires=Wires([0]))
     translated = translate_result(result, mp, targets, frozenset())
     assert (translated == result.result_types[0].value).all()
 

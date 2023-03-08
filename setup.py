@@ -23,12 +23,12 @@ setup(
     name="amazon-braket-pennylane-plugin",
     version=version,
     license="Apache License 2.0",
-    python_requires=">= 3.7.2",
+    python_requires=">= 3.8.2",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk>=1.35.0",
-        "pennylane>=0.25.1,<=0.27.0",
+        "pennylane==0.29.1",
     ],
     entry_points={
         "pennylane.plugins": [
@@ -78,8 +78,8 @@ setup(
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
 )
