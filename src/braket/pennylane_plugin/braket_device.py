@@ -37,7 +37,7 @@ import numbers
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
-from typing import FrozenSet, Iterable, List, Optional, Sequence, Union
+from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
@@ -120,13 +120,6 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
 
-    @classmethod
-    def capabilities(cls):
-        """Add support for inverse"""
-        capabilities = super().capabilities().copy()
-        capabilities.update(supports_inverse_operations=True)
-        return capabilities
-
     @property
     def operations(self) -> FrozenSet[str]:
         """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
@@ -151,12 +144,19 @@ class BraketQubitDevice(QubitDevice):
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
 
-    def _pl_to_braket_circuit(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs):
+    def _pl_to_braket_circuit(
+        self,
+        circuit: QuantumTape,
+        compute_gradient: bool = False,
+        trainable_indices: FrozenSet[int] = None,
+        **run_kwargs,
+    ):
         """Converts a PennyLane circuit to a Braket circuit"""
         braket_circuit = self.apply(
             circuit.operations,
             rotations=None,  # Diagonalizing gates are applied in Braket SDK
-            use_unique_params=compute_gradient,
+            use_unique_params=False,
+            trainable_indices=trainable_indices,
             **run_kwargs,
         )
         if compute_gradient:
@@ -190,17 +190,6 @@ class BraketQubitDevice(QubitDevice):
             targets = [self.map_wires(op.wires) for op in pl_observable.ops]
         else:
             targets = self.map_wires(pl_observable.wires).tolist()
-        param_index = 0
-        params_not_to_diff = {}
-        for operation in circuit.operations:
-            for p in operation.parameters:
-                if param_index not in circuit.trainable_params:
-                    params_not_to_diff[f"p_{param_index}"] = p
-                param_index += 1
-
-        # bind all the non-trainable parameters since they don't need to be parameters in the
-        # Amazon Braket service.
-        braket_circuit = braket_circuit(**params_not_to_diff)
 
         braket_circuit.add_result_type(
             get_adjoint_gradient_result_type(
@@ -293,20 +282,18 @@ class BraketQubitDevice(QubitDevice):
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
+        trainable = BraketQubitDevice._get_trainable_parameters(circuit) if compute_gradient else {}
         self._circuit = self._pl_to_braket_circuit(
-            circuit, compute_gradient=compute_gradient, **run_kwargs
+            circuit,
+            compute_gradient=compute_gradient,
+            trainable_indices=frozenset(trainable.keys()),
+            **run_kwargs,
         )
         if self._noise_model:
             self._circuit = self._noise_model.apply(self._circuit)
-        param_index = 0
-        param_dict = {}
-        for operation in circuit.operations:
-            for p in operation.parameters:
-                if isinstance(p, numbers.Number):
-                    param_name = f"p_{param_index}"
-                    param_dict[param_name] = p
-                    param_index += 1
-        self._task = self._run_task(self._circuit, inputs=param_dict)
+        self._task = self._run_task(
+            self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
+        )
         braket_result = self._task.result()
 
         if self.tracker.active:
@@ -319,20 +306,30 @@ class BraketQubitDevice(QubitDevice):
         self,
         operations: Sequence[Operation],
         rotations: Sequence[Operation] = None,
-        use_unique_params=False,
+        use_unique_params: bool = False,
+        *,
+        trainable_indices: Optional[FrozenSet[int]] = None,
         **run_kwargs,
     ) -> Circuit:
         """Instantiate Braket Circuit object."""
         rotations = rotations or []
         circuit = Circuit()
+        trainable_indices = trainable_indices or frozenset()
 
         # Add operations to Braket Circuit object
         param_index = 0
         for operation in operations + rotations:
-            param_names = [f"p_{param_index+i}" for i, p in enumerate(operation.parameters)]
-            param_index += len(operation.parameters)
+            param_names = []
+            for _ in operation.parameters:
+                if param_index in trainable_indices or use_unique_params:
+                    param_names.append(f"p_{param_index}")
+                else:
+                    param_names.append(None)
+                param_index += 1
             gate = translate_operation(
-                operation, use_unique_params=use_unique_params, param_names=param_names
+                operation,
+                use_unique_params=bool(trainable_indices) or use_unique_params,
+                param_names=param_names,
             )
             dev_wires = self.map_wires(operation.wires).tolist()
             ins = Instruction(gate, dev_wires)
@@ -375,6 +372,21 @@ class BraketQubitDevice(QubitDevice):
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
         return translate_result(braket_result, observable, dev_wires, self._braket_result_types)
+
+    @staticmethod
+    def _get_trainable_parameters(tape: QuantumTape) -> Dict[int, numbers.Number]:
+        trainable_indices = sorted(tape.trainable_params)
+        params = tape.get_parameters()
+        trainable = {}
+        for i in range(len(trainable_indices)):
+            param = params[i]
+            if isinstance(param, numbers.Number):
+                trainable[trainable_indices[i]] = param
+            elif isinstance(param, np.tensor):
+                param_np = param.numpy()
+                if isinstance(param_np, numbers.Number):
+                    trainable[trainable_indices[i]] = param_np
+        return trainable
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):
@@ -607,5 +619,8 @@ class BraketLocalQubitDevice(BraketQubitDevice):
 
     def _run_task(self, circuit, inputs=None):
         return self._device.run(
-            circuit, shots=0 if self.analytic else self.shots, **self._run_kwargs
+            circuit,
+            shots=0 if self.analytic else self.shots,
+            inputs=inputs or {},
+            **self._run_kwargs,
         )

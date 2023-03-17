@@ -1,5 +1,49 @@
 # Changelog
 
+## v1.13.1 (2023-03-16)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #144 from aws/readme-updates
+ * documenation: Update README support info
+
+### Testing and Release Infrastructure
+
+ * add dependabot updates for GH actions
+
+## v1.13.0 (2023-03-08)
+
+### Features
+
+ * Add support for Pennylane 0.29.1
+
+## v1.12.2 (2023-03-07)
+
+### Bug Fixes and Other Changes
+
+ * Only include trainable parameters in input
+
+### Documentation Changes
+
+ * Correct supported operations
+
+## v1.12.1 (2023-03-06)
+
+### Bug Fixes and Other Changes
+
+ * pin autoray
+
+## v1.12.0 (2023-03-03)
+
+### Deprecations and Removals
+
+ * deprecate python 3.7
+
+### Bug Fixes and Other Changes
+
+ * Add support for new custom measurements
+ * Remove use of in-place inversion. Replace it with `qml.adjoint`.
+
 ## v1.11.2.post0 (2023-02-14)
 
 ### Testing and Release Infrastructure
