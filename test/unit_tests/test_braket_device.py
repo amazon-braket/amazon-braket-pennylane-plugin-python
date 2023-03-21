@@ -321,6 +321,48 @@ def test_execute(mock_run):
     )
 
 
+@patch.object(AwsDevice, "run")
+def test_execute_parametrize_differentiable(mock_run):
+    mock_run.return_value = TASK
+    dev = _aws_device(wires=4, parametrize_differentiable=True, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qml.RX(0.432, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    dev.execute(circuit)
+
+    assert dev.task == TASK
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, FreeParameter("p_1"))
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
+    mock_run.assert_called_with(
+        EXPECTED_CIRC,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs={"p_1": 0.432},
+    )
+
+
 with QuantumTape() as CIRCUIT_1:
     qml.Hadamard(wires=0)
     qml.CNOT(wires=[0, 1])
@@ -1420,7 +1462,7 @@ def test_execute_and_gradients(
             .h(0)
             .cnot(0, 1)
             .rx(0, 0.432)
-            .ry(0, FreeParameter("p_1"))
+            .ry(0, 0.543)
             .variance(observable=Observable.X() @ Observable.Y(), target=[0, 1]),
             2,
             {"p_1": 0.543},
@@ -1470,7 +1512,7 @@ def test_execute_and_gradients_non_adjoint(
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
-        inputs=expected_inputs,
+        inputs={},
     )
 
     # assert results & jacs are right
@@ -1593,6 +1635,7 @@ def _aws_device(
     shots=SHOTS,
     device_arn="baz",
     action_properties=ACTION_PROPERTIES,
+    parametrize_differentiable=False,
     **kwargs,
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
@@ -1606,6 +1649,7 @@ def _aws_device(
         device_arn=device_arn,
         aws_session=Mock(),
         shots=shots,
+        parametrize_differentiable=parametrize_differentiable,
         **kwargs,
     )
     # needed by the BraketAwsQubitDevice.capabilities function

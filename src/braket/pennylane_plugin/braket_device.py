@@ -87,6 +87,9 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
+        parametrize_differentiable (bool): Whether to bing differentiable parameters (parameters
+            marked with ``required_grad=True``) on the Braket device rather than in PennyLane.
+            Default: False.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
     """
     name = "Braket PennyLane plugin"
@@ -101,6 +104,7 @@ class BraketQubitDevice(QubitDevice):
         *,
         shots: Union[int, None],
         noise_model: Optional[NoiseModel] = None,
+        parametrize_differentiable: bool = False,
         **run_kwargs,
     ):
         super().__init__(wires, shots=shots or None)
@@ -108,6 +112,7 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
         self._noise_model = noise_model
+        self._parametrize_differentiable = parametrize_differentiable
         self._run_kwargs = run_kwargs
         self._supported_ops = supported_operations(self._device)
         self._check_supported_result_types()
@@ -282,7 +287,11 @@ class BraketQubitDevice(QubitDevice):
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
-        trainable = BraketQubitDevice._get_trainable_parameters(circuit)
+        trainable = (
+            BraketQubitDevice._get_trainable_parameters(circuit)
+            if compute_gradient or self._parametrize_differentiable
+            else {}
+        )
         self._circuit = self._pl_to_braket_circuit(
             circuit,
             compute_gradient=compute_gradient,
