@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.13.1 (2023-03-16)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #144 from aws/readme-updates
+ * documenation: Update README support info
+
+### Testing and Release Infrastructure
+
+ * add dependabot updates for GH actions
+
 ## v1.13.0 (2023-03-08)
 
 ### Features
