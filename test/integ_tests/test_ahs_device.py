@@ -54,16 +54,16 @@ H_i = rydberg_interaction(coordinates)
 HAMILTONIANS_AND_PARAMS = [(H_i + drive(1, 2, 3, wires=[0, 1, 2]), []),
                            (H_i + drive(amp, 1, 2, wires=[0, 1, 2]), [params_amp]),
                            (H_i + drive(2, f1, 2, wires=[0, 1, 2]), [params1]),
+                           (H_i + drive(2, 2, f2, wires=[0, 1, 2]), [params2]),
                            (H_i + drive(amp, 1, f2, wires=[0, 1, 2]), [params_amp, params2]),
                            (H_i + drive(4, f2, f1, wires=[0, 1, 2]), [params2, params1]),
                            (H_i + drive(amp, f2, 4, wires=[0, 1, 2]), [params_amp, params2]),
                            (H_i + drive(amp, f2, f1, wires=[0, 1, 2]), [params_amp, params2, params1])
-                ]
+                           ]
 
 
 class TestBraketAquilaDevice:
-    """Test functionality specific to the hardware device that can be tested
-    without running a task on the hardware"""
+    """Test functionality specific to the hardware device"""
 
     def test_hardware_capabilities(self):
         """Test hardware capabilities can be retrieved"""
@@ -149,15 +149,15 @@ class TestDeviceAttributes:
         assert len(res) == shots
 
 
-dev = qml.device('braket.local.aquila', wires=3)
-
-
 class TestQnodeIntegration:
+    """Test integration with the qnode"""
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
     def test_circuit_can_be_called(self, H, params):
         """Test that the circuit consisting of a ParametrizedEvolution with a single, global pulse
         runs successfully for all combinations of amplitude, phase and detuning being constants or callables"""
+
+        dev = qml.device('braket.local.aquila', wires=3)
 
         t = 1.13
 

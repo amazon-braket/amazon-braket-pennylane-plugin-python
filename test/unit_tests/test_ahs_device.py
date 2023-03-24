@@ -76,6 +76,7 @@ params_amp = [2.5, 0.9, 0.3]
 HAMILTONIANS_AND_PARAMS = [(H_i + drive(amplitude=4, phase=1, detuning=3, wires=[0, 1, 2]), []),
                 (H_i + drive(amplitude=amp, phase=1, detuning=2, wires=[0, 1, 2]), [params_amp]),
                 (H_i + drive(amplitude=2, phase=f1, detuning=2, wires=[0, 1, 2]), [params1]),
+                (H_i + drive(amplitude=2, phase=2, detuning=f2, wires=[0, 1, 2]), [params2]),
                 (H_i + drive(amplitude=amp, phase=1, detuning=f2, wires=[0, 1, 2]), [params_amp, params2]),
                 (H_i + drive(amplitude=4, phase=f2, detuning=f1, wires=[0, 1, 2]), [params2, params1]),
                 (H_i + drive(amplitude=amp, phase=f2, detuning=4, wires=[0, 1, 2]), [params_amp, params2]),
@@ -257,9 +258,9 @@ class TestBraketAhsDevice:
         """Test that generate_samples creates a list of arrays with the expected shape for the task run"""
         ahs_program = dummy_ahs_program()
 
-        # ToDo: actually is this true? If not, do fix!
-        # correspondance between number of device wires and coordinates is checked when creating the register
-        # since these are created manually for the unit test, we confirm the values used for the test are valid here
+        # checked in _validate_operations in the full pipeline
+        # since these are created manually for the unit test elsewhere in the file,
+        # we confirm the values used for the test are valid here
         assert len(ahs_program.register.coordinate_list(0)) == len(dev_sim.wires)
 
         task = dev_sim._run_task(ahs_program)
@@ -337,7 +338,8 @@ class TestBraketAhsDevice:
         assert dev.register is None
 
         dev._create_register(coordinates)
-        coordinates_from_register = [[x*1e6, y*1e6] for x, y in zip(dev.register.coordinate_list(0), dev.register.coordinate_list(1))]
+        coordinates_from_register = [[x*1e6, y*1e6] for x, y in zip(dev.register.coordinate_list(0),
+                                                                    dev.register.coordinate_list(1))]
 
         assert isinstance(dev.register, AtomArrangement)
         assert coordinates_from_register == coordinates
