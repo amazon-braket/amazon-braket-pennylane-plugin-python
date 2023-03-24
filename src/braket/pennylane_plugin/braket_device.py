@@ -87,7 +87,7 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
-        parametrize_differentiable (bool): Whether to bing differentiable parameters (parameters
+        parametrize_differentiable (bool): Whether to bind differentiable parameters (parameters
             marked with ``required_grad=True``) on the Braket device rather than in PennyLane.
             Default: False.
         **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
