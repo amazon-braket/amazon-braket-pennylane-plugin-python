@@ -59,7 +59,7 @@ setup(
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
-            "tensorflow>=2.11.0",
+            "tensorflow>=2.12.0",
             "torch>=1.11",
         ]
     },
