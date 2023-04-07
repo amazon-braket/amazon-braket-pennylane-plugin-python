@@ -343,6 +343,8 @@ def test_execute_parametrize_differentiable(mock_run):
         Circuit()
         .h(0)
         .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        # When using QuantumTape directly (as opposed to a QNode),
+        # all parameters are automatically considered differentiable
         .rx(0, FreeParameter("p_1"))
         .cnot(0, 1)
         .i(2)
