@@ -23,10 +23,10 @@ from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
 from pennylane.pulse.rydberg import rydberg_interaction
 from pennylane.pulse.hardware_hamiltonian import HardwarePulse, drive
 
-from braket.pennylane_plugin.ahs_device import BraketAquilaDevice, BraketLocalAquilaDevice
+from braket.pennylane_plugin.ahs_device import BraketAwsAhsDevice, BraketLocalAhsDevice
 
-shortname_and_backendname = [("braket.local.aquila", "RydbergAtomSimulator"),
-                             ("braket.aws.aquila", "Aquila")]
+shortname_and_backendname = [("braket.local.ahs", "RydbergAtomSimulator"),
+                             ("braket.aws.ahs", "Aquila")]
 
 # =========================================================
 coordinates = [[0, 0], [0, 5], [5, 0]]  # in micrometers
@@ -62,13 +62,13 @@ HAMILTONIANS_AND_PARAMS = [(H_i + drive(1, 2, 3, wires=[0, 1, 2]), []),
                            ]
 
 
-class TestBraketAquilaDevice:
+class TestBraketAwsAhsDevice:
     """Test functionality specific to the hardware device"""
 
     def test_hardware_capabilities(self):
         """Test hardware capabilities can be retrieved"""
 
-        dev = BraketAquilaDevice(wires=3)
+        dev = BraketAwsAhsDevice(wires=3)
 
         assert isinstance(dev.hardware_capabilities, dict)
         assert 'rydberg' in dev.hardware_capabilities.keys()
@@ -77,7 +77,7 @@ class TestBraketAquilaDevice:
     def test_validate_operations_multiple_drive_terms(self):
         """Test that an error is raised if there are multiple drive terms on
         the Hamiltonian"""
-        dev = BraketAquilaDevice(wires=3)
+        dev = BraketAwsAhsDevice(wires=3)
         pulses = [HardwarePulse(3, 4, 5, [0, 1]), HardwarePulse(4, 6, 7, [1, 2])]
 
         with pytest.raises(NotImplementedError, match="Multiple pulses in a Hamiltonian are not currently supported"):
@@ -90,7 +90,7 @@ class TestBraketAquilaDevice:
     def test_validate_pulse_is_global_drive(self, pulse_wires, dev_wires, res):
         """Test that an error is raised if the pulse does not describe a global drive"""
 
-        dev = BraketAquilaDevice(wires=dev_wires)
+        dev = BraketAwsAhsDevice(wires=dev_wires)
         pulse = HardwarePulse(3, 4, 5, pulse_wires)
 
         if res == 'error':
@@ -112,15 +112,15 @@ class TestDeviceIntegration:
         assert dev.short_name == shortname
         assert dev._device.name == backend_name
 
-    def test_args_aqulia(self):
+    def test_args_hardware(self):
         """Test that BraketAwsDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
-            qml.device("braket.aws.aquila")
+            qml.device("braket.aws.ahs")
 
     def test_args_local(self):
         """Test that BraketLocalDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
-            qml.device("braket.local.aquila")
+            qml.device("braket.local.ahs")
 
     @staticmethod
     def _device(shortname, wires, shots=100):
@@ -133,7 +133,7 @@ class TestDeviceAttributes:
     @pytest.mark.parametrize("shots", [1003, 2])
     def test_setting_shots(self, shots):
         """Test that setting shots changes number of shots from default (100)"""
-        dev = BraketLocalAquilaDevice(wires=3, shots=shots)
+        dev = BraketLocalAhsDevice(wires=3, shots=shots)
         assert dev.shots == shots
 
         global_drive = drive(2, 1, 2, wires=[0, 1, 2])
@@ -157,7 +157,7 @@ class TestQnodeIntegration:
         """Test that the circuit consisting of a ParametrizedEvolution with a single, global pulse
         runs successfully for all combinations of amplitude, phase and detuning being constants or callables"""
 
-        dev = qml.device('braket.local.aquila', wires=3)
+        dev = qml.device('braket.local.ahs', wires=3)
 
         t = 1.13
 
