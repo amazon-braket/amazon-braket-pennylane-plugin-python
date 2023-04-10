@@ -106,7 +106,7 @@ class BraketAhsDevice(QubitDevice):
     def _run_task(self, ahs_program):
         raise NotImplementedError("Running a task not implemented for the base class")
 
-    def create_ahs_program(self, evolution):
+    def _ahs_program_from_evolution(self, evolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
 
         Args:
@@ -126,7 +126,20 @@ class BraketAhsDevice(QubitDevice):
         # no gurarentee that global drive is index 0 once we start allowing more just global drive
         drive = self._convert_pulse_to_driving_field(self.pulses[0], time_interval)
 
-        ahs_program = AnalogHamiltonianSimulation(register=self.register, hamiltonian=drive)
+        return AnalogHamiltonianSimulation(register=self.register, hamiltonian=drive)
+
+    def create_ahs_program(self, evolution):
+        """Create AHS program for upload to hardware from a ParametrizedEvolution
+
+        Args:
+            evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
+                to be converted into an Analogue Hamiltonian Simulation program
+
+        Returns:
+            AnalogHamiltonianSimulation: a program containing the register and drive
+                information for running an AHS task on simulation or hardware"""
+
+        ahs_program = _ahs_program_from_evolution(self, evolution)
 
         self.ahs_program = ahs_program
 
@@ -425,8 +438,25 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         self.c6 = c6
         return {"interaction_coeff": c6}
 
+    def create_ahs_program(self, evolution):
+        """Create AHS program for upload to hardware from a ParametrizedEvolution
+
+        Args:
+            evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
+                to be converted into an Analogue Hamiltonian Simulation program
+
+        Returns:
+            AnalogHamiltonianSimulation: a program containing the register and drive
+                information for running an AHS task on simulation or hardware"""
+
+        ahs_program = _ahs_program_from_evolution(self, evolution)
+        ahs_program_discretized = ahs_program.discretize(self._device)
+
+        self.ahs_program = ahs_program_discretized
+
+        return ahs_program_discretized
+
     def _run_task(self, ahs_program):
-        discretized_ahs_program = ahs_program.discretize(self._device)
         task = self._device.run(
             discretized_ahs_program,
             s3_destination_folder=self._s3_folder,
