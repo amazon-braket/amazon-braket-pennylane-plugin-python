@@ -87,7 +87,6 @@ HAMILTONIANS_AND_PARAMS = [(H_i + drive(amplitude=4, phase=1, detuning=3, wires=
 DEV_ATTRIBUTES = [(BraketAquilaDevice, "Aquila", "braket.aws.aquila"),
                   (BraketLocalAquilaDevice, "RydbergAtomSimulator", "braket.local.aquila")]
 
-dev_hw = BraketAquilaDevice(wires=3)
 dev_sim = BraketLocalAquilaDevice(wires=3, shots=17)
 
 
@@ -169,9 +168,7 @@ class TestBraketAhsDevice:
         assert len(dev.settings.keys()) == 1
         assert dev.settings['interaction_coeff'] == 862690
 
-    @pytest.mark.parametrize("dev_cls, shots", [(BraketAquilaDevice, 1000),
-                                                (BraketAquilaDevice, 2),
-                                                (BraketLocalAquilaDevice, 1000),
+    @pytest.mark.parametrize("dev_cls, shots", [(BraketLocalAquilaDevice, 1000),
                                                 (BraketLocalAquilaDevice, 2)])
     def test_setting_shots(self, dev_cls, shots):
         """Test that setting shots changes number of shots from default (100)"""
@@ -184,8 +181,8 @@ class TestBraketAhsDevice:
         with pytest.raises(RuntimeError, match="This device requires shots"):
             BraketLocalAquilaDevice(wires=3, shots=shots)
 
-    @pytest.mark.parametrize("dev_cls, wires", [(BraketAquilaDevice, 2),
-                                                (BraketAquilaDevice, [0, 2, 4]),
+    @pytest.mark.parametrize("dev_cls, wires", [(BraketLocalAquilaDevice, 2),
+                                                (BraketLocalAquilaDevice, [0, 2, 4]),
                                                 (BraketLocalAquilaDevice, [0, 'a', 7]),
                                                 (BraketLocalAquilaDevice, 7)])
     def test_setting_wires(self, dev_cls, wires):
