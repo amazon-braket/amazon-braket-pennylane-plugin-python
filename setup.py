@@ -40,8 +40,8 @@ setup(
             # `pennylane.device` device loader.
             "braket.aws.qubit = braket.pennylane_plugin:BraketAwsQubitDevice",
             "braket.local.qubit = braket.pennylane_plugin:BraketLocalQubitDevice",
-            "braket.aws.aquila = braket.pennylane_plugin:BraketAquilaDevice",
-            "braket.local.aquila = braket.pennylane_plugin:BraketLocalAquilaDevice",
+            "braket.aws.ahs = braket.pennylane_plugin:BraketAwsAhsDevice",
+            "braket.local.ahs = braket.pennylane_plugin:BraketLocalAhsDevice",
         ]
     },
     extras_require={
