@@ -265,13 +265,11 @@ class BraketAhsDevice(QubitDevice):
         """Takes a time interval and returns an array of times with a minimum of 50ns spacing"""
         # time_interval from PL is in microseconds, we convert to ns
         interval_ns = np.array(time_interval) * 1e3
-        timespan = interval_ns[1] - interval_ns[0]
-
-        # number of points must ensure at least 50ns between sample points
-        num_points = int(timespan // 50)
-
         start = interval_ns[0]
         end = interval_ns[1]
+
+        # number of points must ensure at least 50ns between sample points
+        num_points = int((end - start) // 50)
 
         # we want an integer number of nanoseconds
         times = np.linspace(start, end, num_points, dtype=int)
