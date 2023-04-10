@@ -25,8 +25,8 @@ Classes
 -------
 
 .. autosummary::
-   BraketAquilaDevice
-   BraketLocalAquilaDevice
+   BraketAwsAhsDevice
+   BraketLocalAhsDevice
 
 Code details
 ~~~~~~~~~~~~
@@ -81,24 +81,6 @@ class BraketAhsDevice(QubitDevice):
         self.pulses = None
         self.ahs_program = None
         self.samples = None
-
-    @property
-    def settings(self):
-        """Dictionary of constants set by the hardware.
-
-        Used to enable initializing hardware-consistent Hamiltonians by saving
-        all the values that would need to be passed, i.e. :
-
-            >>> dev_remote = qml.device('braket.aws.aquila', wires=3)
-            >>> dev_pl = qml.device('default.qubit', wires=3)
-            >>> settings = dev_remote.settings
-            >>> H_int = rydberg_interaction(coordinates, **settings)
-
-        If `H_int` is included in a hamiltonian used on the PennyLane `default.qubit` device,
-        it will use the harware-specific constants.
-
-        """
-        return {"interaction_coeff": 862690}  # MHz x um^6
 
     def apply(self, operations, **kwargs):
         """Convert the pulse operation to an AHS program and run on the connected device"""
@@ -366,7 +348,7 @@ class BraketAhsDevice(QubitDevice):
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
-    """Amazon Braket AHS device on QuEra Aquila hardware for PennyLane.
+    """Amazon Braket AHS device for hardware in PennyLane.
 
     Args:
         wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
@@ -408,11 +390,40 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
 
+        self.c6 = None
+
 
     @property
     def hardware_capabilities(self):
-        """Dictionary of hardware capabilities for the Aquila device"""
+        """Dictionary of hardware capabilities for the hardware device"""
         return self._device.properties.paradigm.dict()
+
+    @property
+    def settings(self):
+        """Dictionary of constants set by the hardware.
+
+        Used to enable initializing hardware-consistent Hamiltonians by saving
+        all the values that would need to be passed, i.e. :
+
+            >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
+            >>> dev_pl = qml.device('default.qubit', wires=3)
+            >>> settings = dev_remote.settings
+            >>> H_int = rydberg_interaction(coordinates, **settings)
+
+        If `H_int` is included in a hamiltonian used on the PennyLane `default.qubit` device,
+        it will use the harware-specific constants.
+        """
+        # if already calculated, return
+        if self.c6:
+            return {"interaction_coeff": self.c6}
+
+        # if not already calculated, calculate, save and return
+        c6 = self.hardware_capabilities['rydberg']['c6Coefficient']  # rad/s x m^6
+        c6 = 1e-6 * c6/(2*np.pi)  # rad/s --> MHz
+        c6 = c6 * 1e36  # m^6 --> um^6
+
+        self.c6 = c6
+        return {"interaction_coeff": c6}
 
     def _run_task(self, ahs_program):
         discretized_ahs_program = ahs_program.discretize(self._device)
@@ -447,6 +458,23 @@ class BraketLocalAhsDevice(BraketAhsDevice):
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
+
+    @property
+    def settings(self):
+        """Dictionary of constants set by the hardware.
+
+        Used to enable initializing hardware-consistent Hamiltonians by saving
+        all the values that would need to be passed, i.e. :
+
+            >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
+            >>> dev_pl = qml.device('default.qubit', wires=3)
+            >>> settings = dev_remote.settings
+            >>> H_int = rydberg_interaction(coordinates, **settings)
+
+        If `H_int` is included in a hamiltonian used on the PennyLane `default.qubit` device,
+        it will use the harware-specific constants.
+        """
+        return {"interaction_coeff": 862690}  # C6 for the Rubidium transition used by the simulator, MHz x um^6
 
     def _run_task(self, ahs_program):
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
