@@ -139,7 +139,7 @@ class BraketAhsDevice(QubitDevice):
             AnalogHamiltonianSimulation: a program containing the register and drive
                 information for running an AHS task on simulation or hardware"""
 
-        ahs_program = _ahs_program_from_evolution(self, evolution)
+        ahs_program = self._ahs_program_from_evolution(evolution)
 
         self.ahs_program = ahs_program
 
@@ -403,8 +403,6 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
 
-        self.c6 = None
-
 
     @property
     def hardware_capabilities(self):
@@ -426,17 +424,14 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         If `H_int` is included in a hamiltonian used on the PennyLane `default.qubit` device,
         it will use the harware-specific constants.
         """
-        # if already calculated, return
-        if self.c6:
-            return {"interaction_coeff": self.c6}
+        return {"interaction_coeff": self._get_rydberg_c6()}
 
-        # if not already calculated, calculate, save and return
-        c6 = self.hardware_capabilities['rydberg']['c6Coefficient']  # rad/s x m^6
+    def _get_rydberg_c6(self):
+        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to MHz um^6 (PL simulation units)"""
+        c6 = float(self.hardware_capabilities['rydberg']['c6Coefficient'])  # rad/s x m^6
         c6 = 1e-6 * c6/(2*np.pi)  # rad/s --> MHz
         c6 = c6 * 1e36  # m^6 --> um^6
-
-        self.c6 = c6
-        return {"interaction_coeff": c6}
+        return c6
 
     def create_ahs_program(self, evolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
@@ -449,7 +444,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             AnalogHamiltonianSimulation: a program containing the register and drive
                 information for running an AHS task on simulation or hardware"""
 
-        ahs_program = _ahs_program_from_evolution(self, evolution)
+        ahs_program = self._ahs_program_from_evolution(evolution)
         ahs_program_discretized = ahs_program.discretize(self._device)
 
         self.ahs_program = ahs_program_discretized
@@ -458,7 +453,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     def _run_task(self, ahs_program):
         task = self._device.run(
-            discretized_ahs_program,
+            ahs_program,
             s3_destination_folder=self._s3_folder,
             shots=self.shots,
             poll_timeout_seconds=self._poll_timeout_seconds,
