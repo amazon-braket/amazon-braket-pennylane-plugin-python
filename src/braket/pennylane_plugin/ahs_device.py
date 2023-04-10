@@ -344,11 +344,14 @@ class BraketAhsDevice(QubitDevice):
         Status is success or fail. The pre_sequence is 1 if an atom in the ground state was
         successfully initialized, and 0 otherwise. The post_sequence is 1 if an atom in the
         ground state was measured, and 0 otherwise. Comparison of pre_sequence and post_sequence
-        reveals one of 3 possible outcomes:
+        reveals one of 4 possible outcomes. The first two (initial measurement of 0) indicate a
+        failure to initialize correctly, and will yeild a NaN result. The second two are measurements
+        of the excited and ground state repsectively, and yield 1 and 0.
 
-        0 --> 0: Atom failed to be placed (no atom detected in the ground state either before or after)
-        1 --> 0: Atom initialized, measured in Rydberg state (atom in ground state detected before, but not after)
-        1 --> 1: Atom initialized, measured in ground state (atom in ground state detected both before and after)
+        0 --> 0: NaN - Atom failed to be placed (no atom detected in the ground state either before or after)
+        0 --> 1: NaN - Atom failed to be placed (but was recaptured, or something else weird happened)
+        1 --> 0: 1 (Rydberg state) - atom measured in ground state before, but not after
+        1 --> 1: 0 (ground state) - atom measured in ground state both before and after
         """
 
         # if entire measurement failed, all NaN
