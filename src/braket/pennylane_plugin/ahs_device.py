@@ -364,7 +364,7 @@ class BraketAhsDevice(QubitDevice):
         return np.array(pre_sequence - res.post_sequence)
 
 
-class BraketAquilaDevice(BraketAhsDevice):
+class BraketAwsAhsDevice(BraketAhsDevice):
     """Amazon Braket AHS device on QuEra Aquila hardware for PennyLane.
 
     Args:
@@ -383,14 +383,13 @@ class BraketAquilaDevice(BraketAhsDevice):
 
     """
 
-    name = "Braket QuEra Aquila PennyLane plugin"
-    short_name = "braket.aws.aquila"
-
-    ARN_NR = "arn:aws:braket:us-east-1::device/qpu/quera/Aquila"
+    name = "Braket Device for AHS in PennyLane"
+    short_name = "braket.aws.ahs"
 
     def __init__(
             self,
             wires: Union[int, Iterable],
+            device_arn: str,
             s3_destination_folder: AwsSession.S3DestinationFolder = None,
             *,
             shots: int = 100,
@@ -398,7 +397,7 @@ class BraketAquilaDevice(BraketAhsDevice):
             poll_interval_seconds : float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
             aws_session: Optional[AwsSession] = None,
     ):
-        device = AwsDevice(self.ARN_NR, aws_session=aws_session)
+        device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
         device.aws_session.add_braket_user_agent(user_agent)
         
@@ -426,7 +425,7 @@ class BraketAquilaDevice(BraketAhsDevice):
         return task
 
 
-class BraketLocalAquilaDevice(BraketAhsDevice):
+class BraketLocalAhsDevice(BraketAhsDevice):
     """Amazon Braket LocalSimulator AHS device for PennyLane.
 
     Args:
@@ -436,8 +435,8 @@ class BraketLocalAquilaDevice(BraketAhsDevice):
         shots (int): Number of executions to run to aquire measurements. Defaults to 100.
     """
 
-    name = "Braket QuEra Aquila PennyLane plugin"
-    short_name = "braket.local.aquila"
+    name = "Braket LocalSimulator for AHS in PennyLane"
+    short_name = "braket.local.ahs"
 
     def __init__(
             self,

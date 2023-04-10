@@ -16,8 +16,8 @@ from braket.pennylane_plugin.braket_device import (  # noqa: F401
     BraketLocalQubitDevice,
 )
 from braket.pennylane_plugin.ahs_device import (
-    BraketAquilaDevice,
-    BraketLocalAquilaDevice,
+    BraketAwsAhsDevice,
+    BraketLocalAhsDevice,
 )
 from braket.pennylane_plugin.ops import (  # noqa: F401
     MS,
