@@ -367,15 +367,18 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
+        device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
+            run circuits; The corresponding AwsDevice must support Analogue Hamiltonian Simulation.
+            You can get device ARNs from the Amazon Braket console or from the Amazon Braket Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
             and folder, specified as a tuple.
+        poll_timeout_seconds (float): Total time in seconds to wait for
+            results before timing out.
+        poll_interval_seconds (float): The polling interval for results in seconds.
         shots (int): Number of executions to run to aquire measurements. Defaults to 100.
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
-        poll_timeout_seconds (float): Total time in seconds to wait for
-            results before timing out.
-        poll_interval_seconds (float): The polling interval for results in seconds.
 
     """
 
@@ -388,9 +391,9 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             device_arn: str,
             s3_destination_folder: AwsSession.S3DestinationFolder = None,
             *,
-            shots: int = 100,
             poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
             poll_interval_seconds : float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+            shots: int = 100,
             aws_session: Optional[AwsSession] = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
