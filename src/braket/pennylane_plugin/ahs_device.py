@@ -72,7 +72,7 @@ class BraketAhsDevice(QubitDevice):
             shots: int = 100
     ):
         if not shots:
-            raise RuntimeError(f"This device requires shots. Recieved shots={shots}")
+            raise RuntimeError(f"This device requires shots. Received shots={shots}")
         self._device = device
 
         super().__init__(wires=wires, shots=shots)
@@ -375,7 +375,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         poll_timeout_seconds (float): Total time in seconds to wait for
             results before timing out.
         poll_interval_seconds (float): The polling interval for results in seconds.
-        shots (int): Number of executions to run to aquire measurements. Defaults to 100.
+        shots (int): Number of executions to run to acquire measurements. Defaults to 100.
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -417,7 +417,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         """Dictionary of constants set by the hardware.
 
         Used to enable initializing hardware-consistent Hamiltonians by saving
-        all the values that would need to be passed, i.e. :
+        all the values that would need to be passed, i.e.:
 
             >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
             >>> dev_pl = qml.device('default.qubit', wires=3)
@@ -492,7 +492,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         """Dictionary of constants set by the hardware.
 
         Used to enable initializing hardware-consistent Hamiltonians by saving
-        all the values that would need to be passed, i.e. :
+        all the values that would need to be passed, i.e.:
 
             >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
             >>> dev_pl = qml.device('default.qubit', wires=3)
