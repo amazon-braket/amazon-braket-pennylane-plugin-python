@@ -407,7 +407,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
     @property
     def hardware_capabilities(self):
         """Dictionary of hardware capabilities for the hardware device"""
-        return self._device.properties.paradigm.dict()
+        return dict(self._device.properties.paradigm)
 
     @property
     def settings(self):
@@ -428,7 +428,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     def _get_rydberg_c6(self):
         """Get rydberg C6 and convert from rad/s m^6 (AWS units) to MHz um^6 (PL simulation units)"""
-        c6 = float(self.hardware_capabilities['rydberg']['c6Coefficient'])  # rad/s x m^6
+        c6 = float(self._device.properties.paradigm.rydberg.c6Coefficient)  # rad/s x m^6
         c6 = 1e-6 * c6/(2*np.pi)  # rad/s --> MHz
         c6 = c6 * 1e36  # m^6 --> um^6
         return c6
