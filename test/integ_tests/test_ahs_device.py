@@ -17,16 +17,19 @@ import numpy as np
 import pennylane as qml
 import pkg_resources
 import pytest
+import json
+from unittest import mock
+from unittest.mock import Mock, PropertyMock, patch
 from conftest import shortname_and_backends
 
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
-from pennylane.pulse.rydberg import rydberg_interaction
-from pennylane.pulse.hardware_hamiltonian import HardwarePulse, drive
+from pennylane.pulse.rydberg import rydberg_interaction, rydberg_drive
+from pennylane.pulse.hardware_hamiltonian import HardwarePulse
 
 from braket.pennylane_plugin.ahs_device import BraketAwsAhsDevice, BraketLocalAhsDevice
-
-shortname_and_backendname = [("braket.local.ahs", "RydbergAtomSimulator"),
-                             ("braket.aws.ahs", "Aquila")]
+from braket.aws import AwsDevice
+from braket.device_schema import DeviceActionType, DeviceActionProperties
+from braket.device_schema.quera.quera_ahs_paradigm_properties_v1 import QueraAhsParadigmProperties
 
 # =========================================================
 coordinates = [[0, 0], [0, 5], [5, 0]]  # in micrometers
@@ -51,62 +54,47 @@ params_amp = [2.5, 0.9, 0.3]
 # Hamiltonians to be tested
 H_i = rydberg_interaction(coordinates)
 
-HAMILTONIANS_AND_PARAMS = [(H_i + drive(1, 2, 3, wires=[0, 1, 2]), []),
-                           (H_i + drive(amp, 1, 2, wires=[0, 1, 2]), [params_amp]),
-                           (H_i + drive(2, f1, 2, wires=[0, 1, 2]), [params1]),
-                           (H_i + drive(2, 2, f2, wires=[0, 1, 2]), [params2]),
-                           (H_i + drive(amp, 1, f2, wires=[0, 1, 2]), [params_amp, params2]),
-                           (H_i + drive(4, f2, f1, wires=[0, 1, 2]), [params2, params1]),
-                           (H_i + drive(amp, f2, 4, wires=[0, 1, 2]), [params_amp, params2]),
-                           (H_i + drive(amp, f2, f1, wires=[0, 1, 2]), [params_amp, params2, params1])
+HAMILTONIANS_AND_PARAMS = [(H_i + rydberg_drive(1, 2, 3, wires=[0, 1, 2]), []),
+                           (H_i + rydberg_drive(amp, 1, 2, wires=[0, 1, 2]), [params_amp]),
+                           (H_i + rydberg_drive(2, f1, 2, wires=[0, 1, 2]), [params1]),
+                           (H_i + rydberg_drive(2, 2, f2, wires=[0, 1, 2]), [params2]),
+                           (H_i + rydberg_drive(amp, 1, f2, wires=[0, 1, 2]), [params_amp, params2]),
+                           (H_i + rydberg_drive(4, f2, f1, wires=[0, 1, 2]), [params2, params1]),
+                           (H_i + rydberg_drive(amp, f2, 4, wires=[0, 1, 2]), [params_amp, params2]),
+                           (H_i + rydberg_drive(amp, f2, f1, wires=[0, 1, 2]), [params_amp, params2, params1])
                            ]
 
+HARDWARE_ARN_NRS = ["arn:aws:braket:us-east-1::device/qpu/quera/Aquila"]
 
-class TestBraketAwsAhsDevice:
-    """Test functionality specific to the hardware device"""
+ALL_DEVICES = [("braket.local.ahs", None, "RydbergAtomSimulator"),
+               ("braket.aws.ahs", "arn:aws:braket:us-east-1::device/qpu/quera/Aquila", "Aquila")]
 
-    def test_hardware_capabilities(self):
-        """Test hardware capabilities can be retrieved"""
 
-        dev = BraketAwsAhsDevice(wires=3)
+DEVS = [("arn:aws:braket:us-east-1::device/qpu/quera/Aquila", "Aquila")]
 
-        assert isinstance(dev.hardware_capabilities, dict)
-        assert 'rydberg' in dev.hardware_capabilities.keys()
-        assert 'lattice' in dev.hardware_capabilities.keys()
 
-    def test_validate_operations_multiple_drive_terms(self):
-        """Test that an error is raised if there are multiple drive terms on
-        the Hamiltonian"""
-        dev = BraketAwsAhsDevice(wires=3)
-        pulses = [HardwarePulse(3, 4, 5, [0, 1]), HardwarePulse(4, 6, 7, [1, 2])]
+@pytest.mark.parametrize("arn_nr, name", DEVS)
+def test_initialization(arn_nr, name):
+    """Test the device initializes with the expected attributes"""
 
-        with pytest.raises(NotImplementedError, match="Multiple pulses in a Hamiltonian are not currently supported"):
-            dev._validate_pulses(pulses)
+    dev = BraketAwsAhsDevice(wires=3, shots=11, device_arn=arn_nr)
 
-    @pytest.mark.parametrize("pulse_wires, dev_wires, res", [([0, 1, 2], [0, 1, 2, 3], 'error'),
-                                                             ([5, 6, 7, 8, 9], [4, 5, 6, 7, 8], 'error'),
-                                                             ([0, 1, 2, 3, 6], [1, 2, 3], 'error'),
-                                                             ([0, 1, 2], [0, 1, 2], 'success')])
-    def test_validate_pulse_is_global_drive(self, pulse_wires, dev_wires, res):
-        """Test that an error is raised if the pulse does not describe a global drive"""
-
-        dev = BraketAwsAhsDevice(wires=dev_wires)
-        pulse = HardwarePulse(3, 4, 5, pulse_wires)
-
-        if res == 'error':
-            with pytest.raises(NotImplementedError, match="Only global drive is currently supported"):
-                dev._validate_pulses([pulse])
-        else:
-            dev._validate_pulses([pulse])
+    assert dev._device.name == name
+    assert dev.short_name == "braket.aws.ahs"
+    assert dev.shots == 11
+    assert dev.ahs_program is None
+    assert dev.samples is None
+    assert dev.pennylane_requires == ">=0.29.0"
+    assert dev.operations == {"ParametrizedEvolution"}
 
 
 class TestDeviceIntegration:
     """Test the devices work correctly from the PennyLane frontend."""
 
-    @pytest.mark.parametrize("shortname, backend_name", shortname_and_backendname)
-    def test_load_device(self, shortname, backend_name):
+    @pytest.mark.parametrize("shortname, arn_nr, backend_name", ALL_DEVICES)
+    def test_load_device(self, shortname, arn_nr, backend_name):
         """Test that the device loads correctly"""
-        dev = TestDeviceIntegration._device(shortname, wires=2)
+        dev = TestDeviceIntegration._device(shortname, arn_nr, wires=2)
         assert dev.num_wires == 2
         assert dev.shots is 100
         assert dev.short_name == shortname
@@ -114,7 +102,7 @@ class TestDeviceIntegration:
 
     def test_args_hardware(self):
         """Test that BraketAwsDevice requires correct arguments"""
-        with pytest.raises(TypeError, match="missing 1 required positional argument"):
+        with pytest.raises(TypeError, match="missing 2 required positional argument"):
             qml.device("braket.aws.ahs")
 
     def test_args_local(self):
@@ -123,7 +111,9 @@ class TestDeviceIntegration:
             qml.device("braket.local.ahs")
 
     @staticmethod
-    def _device(shortname, wires, shots=100):
+    def _device(shortname, arn_nr, wires, shots=100):
+        if arn_nr:
+            return qml.device(shortname, wires=wires, device_arn=arn_nr, shots=shots)
         return qml.device(shortname, wires=wires, shots=shots)
 
 
@@ -136,7 +126,7 @@ class TestDeviceAttributes:
         dev = BraketLocalAhsDevice(wires=3, shots=shots)
         assert dev.shots == shots
 
-        global_drive = drive(2, 1, 2, wires=[0, 1, 2])
+        global_drive = rydberg_drive(2, 1, 2, wires=[0, 1, 2])
         ts = [0.0, 1.75]
 
         @qml.qnode(dev)
@@ -167,4 +157,3 @@ class TestQnodeIntegration:
             return qml.sample()
 
         circuit()
-

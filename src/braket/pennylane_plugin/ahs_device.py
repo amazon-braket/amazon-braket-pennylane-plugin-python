@@ -119,7 +119,7 @@ class BraketAhsDevice(QubitDevice):
 
         # sets self.pulses to be the evaluated pulses (now only a function of time)
         self._evaluate_pulses(evolution)
-        self._create_register(evolution.H.register)
+        self._create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
 
@@ -178,10 +178,10 @@ class BraketAhsDevice(QubitDevice):
                 f"the evolution."
             )
 
-        if len(ev_op.H.register) != len(self.wires):
+        if len(ev_op.H.settings.register) != len(self.wires):
             raise RuntimeError(
-                f"The defined interaction term has register {ev_op.H.register} of length "
-                f"{len(ev_op.H.register)}, which does not match the number of wires on the device "
+                f"The defined interaction term has register {ev_op.H.settings.register} of length "
+                f"{len(ev_op.H.settings.register)}, which does not match the number of wires on the device "
                 f"({len(self.wires)})"
             )
 
@@ -222,7 +222,7 @@ class BraketAhsDevice(QubitDevice):
 
     def _evaluate_pulses(self, ev_op):
         """Feeds in the parameters in order to partially evaluate the callables (amplitude,
-        phase and/or detuning) describing the pulses, so they are only a function of time.
+        phase and/or frequency detuning) describing the pulses, so they are only a function of time.
         Saves the pulses on the device as `dev.pulses`.
 
         Args:
@@ -247,12 +247,15 @@ class BraketAhsDevice(QubitDevice):
                 phase = partial(pulse.phase, params[idx])
                 idx += 1
 
-            detuning = pulse.detuning
-            if callable(pulse.detuning):
-                detuning = partial(pulse.detuning, params[idx])
+            detuning = pulse.frequency
+            if callable(pulse.frequency):
+                detuning = partial(pulse.frequency, params[idx])
                 idx += 1
 
-            evaluated_pulses.append(HardwarePulse(amplitude=amplitude, phase=phase, detuning=detuning, wires=pulse.wires))
+            evaluated_pulses.append(HardwarePulse(amplitude=amplitude,
+                                                  phase=phase,
+                                                  frequency=detuning,
+                                                  wires=pulse.wires))
 
         self.pulses = evaluated_pulses
 
@@ -277,7 +280,7 @@ class BraketAhsDevice(QubitDevice):
 
         Args:
             pulse_parameter(Union[float, Callable]): a physical parameter (pulse, amplitude
-                or detuning) of the pulse. If this is a callalbe, it has already been partially
+                or frequency detuning) of the pulse. If this is a callalbe, it has already been partially
                 evaluated, such that it is only a function of time.
             time_points(array): the times where parameters will be set in the TimeSeries, specified
                 in seconds scaling_factor(float): A multiplication factor for the pulse_parameter
@@ -305,7 +308,7 @@ class BraketAhsDevice(QubitDevice):
         ``DrivingField`` from Braket AHS
 
         Args:
-            pulse[HardwarePulse]: a dataclass object containing amplitude, phase and detuning 
+            pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency detuning
                 information
             time_interval(array[Number, Number]]): The start and end time for the applied pulse
 
@@ -316,12 +319,12 @@ class BraketAhsDevice(QubitDevice):
 
         time_points = self._get_sample_times(time_interval)
 
-        # scaling factor for amp and detuning converts MHz (PL input) to rad/s (upload units)
+        # scaling factor for amp and frequency detuning converts MHz (PL input) to rad/s (upload units)
         amplitude = self._convert_to_time_series(
             pulse.amplitude, time_points, scaling_factor=2 * np.pi * 1e6
         )
         detuning = self._convert_to_time_series(
-            pulse.detuning, time_points, scaling_factor=2 * np.pi * 1e6
+            pulse.frequency, time_points, scaling_factor=2 * np.pi * 1e6
         )
         phase = self._convert_to_time_series(pulse.phase, time_points)
 
