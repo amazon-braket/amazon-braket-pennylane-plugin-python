@@ -69,7 +69,7 @@ class BraketAhsDevice(QubitDevice):
             self,
             wires: Union[int, Iterable],
             device: Device, *,
-            shots: int = 100
+            shots: int = AwsDevice.DEFAULT_SHOTS_QPU
     ):
         if not shots:
             raise RuntimeError(f"This device requires shots. Received shots={shots}")
@@ -396,7 +396,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             *,
             poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
             poll_interval_seconds : float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-            shots: int = 100,
+            shots: int = AwsDevice.DEFAULT_SHOTS_QPU,
             aws_session: Optional[AwsSession] = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
@@ -485,7 +485,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             self,
             wires: Union[int, Iterable],
             *,
-            shots: int = 100
+            shots: int = AwsDevice.DEFAULT_SHOTS_QPU  # Simulator default of 0 not suitable for AHS simulator
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
