@@ -425,10 +425,11 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
             >>> dev_pl = qml.device('default.qubit', wires=3)
             >>> settings = dev_remote.settings
-            >>> H_int = rydberg_interaction(coordinates, **settings)
+            >>> H_int = qml.pulse.rydberg.rydberg_interaction(coordinates, **settings)
 
-        If `H_int` is included in a hamiltonian used on the PennyLane `default.qubit` device,
-        it will use the harware-specific constants.
+        By passing the ``settings`` from the remote device to ``rydberg_interaction``, an ``H_int`` Hamiltonian
+        term is created using the constants specific to the hardware. This is relevant for simulating the hardware
+        in PennyLane on the ``default.qubit`` device.
         """
         return {"interaction_coeff": self._get_rydberg_c6()}
 
@@ -500,10 +501,11 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
             >>> dev_pl = qml.device('default.qubit', wires=3)
             >>> settings = dev_remote.settings
-            >>> H_int = rydberg_interaction(coordinates, **settings)
+            >>> H_int = qml.pulse.rydberg.rydberg_interaction(coordinates, **settings)
 
-        If `H_int` is included in a hamiltonian used on the PennyLane `default.qubit` device,
-        it will use the harware-specific constants.
+        By passing the ``settings`` from the remote device to ``rydberg_interaction``, an ``H_int`` Hamiltonian
+        term is created using the constants specific to the hardware. This is relevant for simulating the remote
+        device in PennyLane on the ``default.qubit`` device.
         """
         return {"interaction_coeff": 862690}  # C6 for the Rubidium transition used by the simulator, MHz x um^6
 
