@@ -59,7 +59,7 @@ class BraketAhsDevice(QubitDevice):
     """
 
     name = "Braket AHS PennyLane plugin"
-    pennylane_requires = ">=0.29.0"
+    pennylane_requires = ">=0.30.0"
     version = __version__
     author = "Xanadu Inc."
 

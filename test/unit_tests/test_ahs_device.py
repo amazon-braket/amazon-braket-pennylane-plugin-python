@@ -234,7 +234,7 @@ class TestBraketAhsDevice:
         assert dev.shots == 11
         assert dev.ahs_program is None
         assert dev.samples is None
-        assert dev.pennylane_requires == ">=0.29.0"
+        assert dev.pennylane_requires == ">=0.30.0"
         assert dev.operations == {"ParametrizedEvolution"}
 
     def test_settings(self):
@@ -604,7 +604,7 @@ class TestBraketAwsAhsDevice:
         assert dev.shots == 17
         assert dev.ahs_program is None
         assert dev.samples is None
-        assert dev.pennylane_requires == ">=0.29.0"
+        assert dev.pennylane_requires == ">=0.30.0"
         assert dev.operations == {"ParametrizedEvolution"}
         assert dev.short_name == "braket.aws.ahs"
 
