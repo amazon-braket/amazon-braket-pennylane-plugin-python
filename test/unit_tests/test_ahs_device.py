@@ -242,7 +242,7 @@ class TestBraketAhsDevice:
         assert isinstance(dev.settings, dict)
         assert 'interaction_coeff' in dev.settings.keys()
         assert len(dev.settings.keys()) == 1
-        assert dev.settings['interaction_coeff'] == 862690
+        assert dev.settings['interaction_coeff'] == 5420000
 
     @pytest.mark.parametrize("dev_cls, shots", [(BraketLocalAhsDevice, 1000),
                                                 (BraketLocalAhsDevice, 2)])
@@ -619,7 +619,7 @@ class TestBraketAwsAhsDevice:
     def test_settings(self, mock_aws_device):
         dev = mock_aws_device()
         assert list(dev.settings.keys()) == ['interaction_coeff']
-        assert np.isclose(dev.settings['interaction_coeff'], 862619)
+        assert np.isclose(dev.settings['interaction_coeff'], 5420000)
 
     def test_validate_operations_multiple_drive_terms(self, mock_aws_device):
         """Test that an error is raised if there are multiple drive terms on
