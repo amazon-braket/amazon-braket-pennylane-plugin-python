@@ -1,7 +1,7 @@
 The local Braket device
 =======================
 
-The local device of the PennyLane-Braket plugin runs quantum computations on the local Braket SDK. This
+The local qubit device of the PennyLane-Braket plugin runs gate based quantum computations on the local Braket SDK. This
 could be either utilizing the processors of your own PC, or those of a `Braket notebook instance <https://docs.aws.amazon.com/braket/latest/developerguide/braket-get-started-create-notebook.html>`_ hosted on AWS.
 
 This device is useful for small-scale simulations in which the time of sending a job to a remote service would add

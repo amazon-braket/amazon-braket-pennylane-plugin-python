@@ -1,7 +1,7 @@
 The remote Braket device
 ========================
 
-The remote device of the PennyLane-Braket plugin runs quantum computations on Amazon Braket's remote service.
+The remote qubit device of the PennyLane-Braket plugin runs gate based quantum computations on Amazon Braket's remote service.
 The remote service provides access to hardware providers and a high-performance simulator backend.
 
 A list of available quantum devices and their features can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
