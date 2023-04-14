@@ -46,7 +46,7 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice, active_return
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
@@ -230,7 +230,8 @@ class BraketQubitDevice(QubitDevice):
         also determines the output observables."""
         # Compute the required statistics
         results = self.statistics(braket_result, circuit.observables)
-
+        if active_return():
+            return tuple(results)
         ag_results = [
             result
             for result in braket_result.result_types
@@ -301,6 +302,11 @@ class BraketQubitDevice(QubitDevice):
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
         return self._braket_to_pl_result(braket_result, circuit)
+
+    def _execute_legacy(
+        self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
+    ) -> np.ndarray:
+        return self.execute(circuit, compute_gradient=compute_gradient, **run_kwargs)
 
     def apply(
         self,

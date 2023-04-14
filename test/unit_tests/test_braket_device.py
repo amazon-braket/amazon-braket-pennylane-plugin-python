@@ -1235,24 +1235,37 @@ def test_projection():
     def f(thetas, **kwargs):
         [qml.RY(thetas[i], wires=i) for i in range(wires)]
 
-    measure_types = ["expval", "var", "sample"]
     projector_01 = qml.Projector([0, 1], wires=range(wires))
     projector_10 = qml.Projector([1, 0], wires=range(wires))
 
     # 01 case
-    fs = [qml.map(f, [projector_01], dev, measure=m) for m in measure_types]
-    assert np.allclose(fs[0](thetas), p_01)
-    assert np.allclose(fs[1](thetas), p_01 - p_01**2)
+    @qml.qnode(dev)
+    def f_01(thetas, measure_type):
+        f(thetas)
+        return measure_type(projector_01)
 
-    samples = fs[2](thetas, shots=100)[0].tolist()
+    expval_01 = f_01(thetas, qml.expval)
+    assert np.allclose(expval_01, p_01)
+
+    var_01 = f_01(thetas, qml.var)
+    assert np.allclose(var_01, p_01 - p_01**2)
+
+    samples = f_01(thetas, qml.sample, shots=100).tolist()
     assert set(samples) == {0, 1}
 
     # 10 case
-    fs = [qml.map(f, [projector_10], dev, measure=m) for m in measure_types]
-    assert np.allclose(fs[0](thetas), p_10)
-    assert np.allclose(fs[1](thetas), p_10 - p_10**2)
+    @qml.qnode(dev)
+    def f_10(thetas, measure_type):
+        f(thetas)
+        return measure_type(projector_10)
 
-    samples = fs[2](thetas, shots=100)[0].tolist()
+    exp_10 = f_10(thetas, qml.expval)
+    assert np.allclose(exp_10, p_10)
+
+    var_10 = f_10(thetas, qml.var)
+    assert np.allclose(var_10, p_10 - p_10**2)
+
+    samples = f_10(thetas, qml.sample, shots=100).tolist()
     assert set(samples) == {0, 1}
 
 
