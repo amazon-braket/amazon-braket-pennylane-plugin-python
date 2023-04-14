@@ -1,5 +1,5 @@
-Analogue Hamiltonian Simulation on Braket
-=========================================
+The remote AHS device
+=====================
 
 The remote AHS device of the PennyLane-Braket plugin runs Analogue Hamiltonian Simulation (AHS) on
 Amazon Braket's remote service. AHS is a quantum computing paradigm different from gate-based computing.

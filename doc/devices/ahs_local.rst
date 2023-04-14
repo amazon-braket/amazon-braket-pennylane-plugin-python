@@ -1,5 +1,5 @@
 The local AHS device
-=========================================
+====================
 
 The local AHS device of the PennyLane-Braket plugin runs Analogue Hamiltonian Simulation on the local Braket SDK. This
 could be either utilizing the processors of your own PC, or those of a `Braket notebook instance <https://docs.aws.amazon.com/braket/latest/developerguide/braket-get-started-create-notebook.html>`_ hosted on AWS.
