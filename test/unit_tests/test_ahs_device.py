@@ -279,12 +279,16 @@ class TestBraketAhsDevice:
         operations = [ParametrizedEvolution(hamiltonian, params, t)]
         dev = BraketLocalAhsDevice(wires=operations[0].wires)
 
+        assert dev._task is None
+        assert dev.task is None
         assert dev.samples is None
         assert dev.ahs_program is None
 
         dev.apply(operations)
 
         assert dev.samples is not None
+        assert dev.task is not None
+        assert dev.task == dev._task
         assert len(dev.samples.measurements) == dev.shots
         assert len(dev.samples.measurements[0].pre_sequence) == len(dev.wires)
 
