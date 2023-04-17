@@ -80,7 +80,7 @@ class BraketAhsDevice(QubitDevice):
         self.register = None
         self.pulses = None
         self.ahs_program = None
-        self.samples = None
+        self._task = None
 
     def apply(self, operations, **kwargs):
         """Convert the pulse operation to an AHS program and run on the connected device"""
@@ -95,8 +95,17 @@ class BraketAhsDevice(QubitDevice):
 
         self._validate_pulses(ev_op.H.pulses)
         ahs_program = self.create_ahs_program(ev_op)
-        task = self._run_task(ahs_program)
-        self.samples = task.result()
+        self._task = self._run_task(ahs_program)
+
+    @property
+    def task(self):
+        return self._task
+
+    @property
+    def samples(self):
+        if self._task:
+            return self._task.result()
+        return None
 
     def _run_task(self, ahs_program):
         raise NotImplementedError("Running a task not implemented for the base class")
