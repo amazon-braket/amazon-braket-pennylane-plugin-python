@@ -90,17 +90,12 @@ class BraketAhsDevice(QubitDevice):
                 "Device {self.short_name} expected only operations "
                 "{self.operations} but recieved {operations}"
             )
-
         self._validate_operations(operations)
-
         ev_op = operations[0]  # only one!
 
         self._validate_pulses(ev_op.H.pulses)
-
         ahs_program = self.create_ahs_program(ev_op)
-
         task = self._run_task(ahs_program)
-
         self.samples = task.result()
 
     def _run_task(self, ahs_program):
