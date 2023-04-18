@@ -138,16 +138,45 @@ class TestDeviceAttributes:
 
         assert len(res) == shots
 
+    def test_local_device_settings(self):
+        """Test that device settings dictionary stores the correct keys and values."""
+        dev = qml.device("braket.local.ahs", wires=2)
+        assert dev.settings == {"interaction_coeff": 5420000}
+
 
 class TestQnodeIntegration:
     """Test integration with the qnode"""
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
-    def test_circuit_can_be_called(self, H, params):
+    def test_circuit_can_be_called_global_drive(self, H, params):
         """Test that the circuit consisting of a ParametrizedEvolution with a single, global pulse
         runs successfully for all combinations of amplitude, phase and detuning being constants or callables"""
 
         dev = qml.device('braket.local.ahs', wires=3)
+
+        t = 1.13
+
+        @qml.qnode(dev)
+        def circuit():
+            ParametrizedEvolution(H, params, t)
+            return qml.sample()
+
+        circuit()
+
+    @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
+    @pytest.mark.parametrize(
+        "local_detuning, local_params, local_wires", [(amp, [[0.5, 1.1, 2.9]], [0, 1]), (4.5, [], [1, 2])]
+    )
+    def test_circuit_can_be_called_local_detunings(
+        self, H, params, local_detuning, local_params, local_wires
+    ):
+        """Test that the circuit consisting of a ParametrizedEvolution with a one global pulse as well
+        as local detunings runs successfully for combinations of amplitude, phase, local detuning being
+        constants or callables."""
+
+        dev = qml.device("braket.local.ahs", wires=3)
+        H += rydberg_drive(0, 0, local_detuning, local_wires)
+        params += local_params
 
         t = 1.13
 
