@@ -31,24 +31,24 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
-from functools import partial
-from typing import Iterable, Union, Optional, List, Callable
-from numpy.typing import ArrayLike
 from enum import Enum, auto
-import numpy as np
+from functools import partial
+from typing import Callable, Iterable, List, Optional, Union
 
+import numpy as np
+from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
+from braket.ahs.atom_arrangement import AtomArrangement
+from braket.ahs.driving_field import DrivingField
+from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
+from braket.devices import Device, LocalSimulator
+from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
+from braket.timings.time_series import TimeSeries
+from numpy.typing import ArrayLike
 from pennylane import QubitDevice
 from pennylane._version import __version__
-from pennylane.pulse.hardware_hamiltonian import HardwarePulse, HardwareHamiltonian
 from pennylane.pulse import ParametrizedEvolution
+from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
-from braket.aws import AwsDevice, AwsSession, AwsQuantumTask
-from braket.devices import Device, LocalSimulator
-from braket.ahs.atom_arrangement import AtomArrangement
-from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
-from braket.ahs.driving_field import DrivingField
-from braket.timings.time_series import TimeSeries
-from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
 
 class Shots(Enum):
     """Used to specify the default number of shots in BraketAwsQubitDevice"""
@@ -71,15 +71,16 @@ class BraketAhsDevice(QubitDevice):
     pennylane_requires = ">=0.30.0"
     version = __version__
     author = "Xanadu Inc."
-    short_name = 'braket_ahs_device'
+    short_name = "braket_ahs_device"
 
     operations = {"ParametrizedEvolution"}
 
     def __init__(
-            self,
-            wires: Union[int, Iterable],
-            device: Device, *,
-            shots: Union[int, Shots] = Shots.DEFAULT,
+        self,
+        wires: Union[int, Iterable],
+        device: Device,
+        *,
+        shots: Union[int, Shots] = Shots.DEFAULT,
     ):
         if not shots:
             raise RuntimeError(f"This device requires shots. Received shots={shots}")
@@ -87,7 +88,7 @@ class BraketAhsDevice(QubitDevice):
         elif shots == Shots.DEFAULT:
             num_shots = AwsDevice.DEFAULT_SHOTS_QPU
         else:
-            num_shots=shots
+            num_shots = shots
 
         super().__init__(wires=wires, shots=num_shots)
 
@@ -197,7 +198,7 @@ class BraketAhsDevice(QubitDevice):
             raise RuntimeError(
                 f"Expected a HardwareHamiltonian instance for interfacing with the device, but "
                 f"recieved {type(ev_op.H)}."
-                )
+            )
 
         if not set(ev_op.wires) == set(self.wires):
             raise RuntimeError(
@@ -283,10 +284,11 @@ class BraketAhsDevice(QubitDevice):
                 detuning = partial(pulse.frequency, params[idx])
                 idx += 1
 
-            evaluated_pulses.append(HardwarePulse(amplitude=amplitude,
-                                                  phase=phase,
-                                                  frequency=detuning,
-                                                  wires=pulse.wires))
+            evaluated_pulses.append(
+                HardwarePulse(
+                    amplitude=amplitude, phase=phase, frequency=detuning, wires=pulse.wires
+                )
+            )
 
         self.pulses = evaluated_pulses
 
@@ -314,10 +316,12 @@ class BraketAhsDevice(QubitDevice):
         # we return time in seconds
         return times / 1e9
 
-    def _convert_to_time_series(self,
-                                pulse_parameter: Union[float, Callable],
-                                time_points: ArrayLike,
-                                scaling_factor : float = 1):
+    def _convert_to_time_series(
+        self,
+        pulse_parameter: Union[float, Callable],
+        time_points: ArrayLike,
+        scaling_factor: float = 1,
+    ):
         """Converts pulse information into a TimeSeries
 
         Args:
@@ -347,7 +351,7 @@ class BraketAhsDevice(QubitDevice):
         return ts
 
     def _convert_pulse_to_driving_field(self, pulse: HardwarePulse, time_interval: ArrayLike):
-        """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a 
+        """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a
         ``DrivingField`` from Braket AHS
 
         Args:
@@ -363,12 +367,8 @@ class BraketAhsDevice(QubitDevice):
         time_points = self._get_sample_times(time_interval)
 
         # scaling factor for amp and frequency detuning converts Mrad/s (PL input) to rad/s (upload units)
-        amplitude = self._convert_to_time_series(
-            pulse.amplitude, time_points, scaling_factor=1e6
-        )
-        detuning = self._convert_to_time_series(
-            pulse.frequency, time_points, scaling_factor=1e6
-        )
+        amplitude = self._convert_to_time_series(pulse.amplitude, time_points, scaling_factor=1e6)
+        detuning = self._convert_to_time_series(pulse.frequency, time_points, scaling_factor=1e6)
         phase = self._convert_to_time_series(pulse.phase, time_points)
 
         drive = DrivingField(amplitude=amplitude, detuning=detuning, phase=phase)
@@ -434,26 +434,25 @@ class BraketAwsAhsDevice(BraketAhsDevice):
     short_name = "braket.aws.ahs"
 
     def __init__(
-            self,
-            wires: Union[int, Iterable],
-            device_arn: str,
-            s3_destination_folder: AwsSession.S3DestinationFolder = None,
-            *,
-            poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
-            poll_interval_seconds : float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-            shots: Union[int, Shots] = Shots.DEFAULT,
-            aws_session: Optional[AwsSession] = None,
+        self,
+        wires: Union[int, Iterable],
+        device_arn: str,
+        s3_destination_folder: AwsSession.S3DestinationFolder = None,
+        *,
+        poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        shots: Union[int, Shots] = Shots.DEFAULT,
+        aws_session: Optional[AwsSession] = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
         device.aws_session.add_braket_user_agent(user_agent)
-        
+
         super().__init__(wires=wires, device=device, shots=shots)
 
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
-
 
     @property
     def hardware_capabilities(self):
@@ -529,10 +528,10 @@ class BraketLocalAhsDevice(BraketAhsDevice):
     short_name = "braket.local.ahs"
 
     def __init__(
-            self,
-            wires: Union[int, Iterable],
-            *,
-            shots: Union[int, Shots] = Shots.DEFAULT,
+        self,
+        wires: Union[int, Iterable],
+        *,
+        shots: Union[int, Shots] = Shots.DEFAULT,
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
