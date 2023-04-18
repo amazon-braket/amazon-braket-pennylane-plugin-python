@@ -64,7 +64,8 @@ class BraketAhsDevice(QubitDevice):
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device (Device): The Amazon Braket device to use with PennyLane.
-        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements. Default: Shots.DEFAULT
+        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
+            Default: Shots.DEFAULT
     """
 
     name = "Braket AHS PennyLane plugin"
@@ -102,7 +103,8 @@ class BraketAhsDevice(QubitDevice):
         """Convert the pulse operation to an AHS program and run on the connected device
 
         Args:
-            operations(List[ParametrizedEvolution]): a list containing a single ParametrizedEvolution operator
+            operations(List[ParametrizedEvolution]): a list containing a single
+                ParametrizedEvolution operator
         """
 
         if not np.all([op.name in self.operations for op in operations]):
@@ -128,7 +130,8 @@ class BraketAhsDevice(QubitDevice):
         return None
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on the device"""
+        """Run and return a task executing the AnalogueHamiltonianSimulation program on
+            the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
 
     def _ahs_program_from_evolution(self, evolution: ParametrizedEvolution):
@@ -183,7 +186,8 @@ class BraketAhsDevice(QubitDevice):
         from a HardwareHamiltonian with only a single, global pulse
 
         Args:
-            operations(List[ParametrizedEvolution]): a list containing a single ParametrizedEvolution operator
+            operations(List[ParametrizedEvolution]): a list containing a single
+                ParametrizedEvolution operator
         """
 
         if len(operations) > 1:
@@ -210,8 +214,8 @@ class BraketAhsDevice(QubitDevice):
         if len(ev_op.H.settings.register) != len(self.wires):
             raise RuntimeError(
                 f"The defined interaction term has register {ev_op.H.settings.register} of length "
-                f"{len(ev_op.H.settings.register)}, which does not match the number of wires on the device "
-                f"({len(self.wires)})"
+                f"{len(ev_op.H.settings.register)}, which does not match the number of wires on "
+                f"the device ({len(self.wires)})"
             )
 
     def _validate_pulses(self, pulses: List[HardwarePulse]):
@@ -296,11 +300,12 @@ class BraketAhsDevice(QubitDevice):
         """Takes a time interval and returns an array of times with a minimum of 50ns spacing
 
         Args:
-            time_interval(array[float, float]): an array with start and end times for the pulse, in us
+            time_interval(array[float, float]): an array with start and end times for the
+                pulse, in us
 
         Returns:
-            times(array[float]): an array of times sampled at 1ns intervals between the start and end times,
-                in SI units (seconds)
+            times(array[float]): an array of times sampled at 1ns intervals between the start
+                and end times, in SI units (seconds)
         """
         # time_interval from PL is in microseconds, we convert to ns
         interval_ns = np.array(time_interval) * 1e3
@@ -326,8 +331,8 @@ class BraketAhsDevice(QubitDevice):
 
         Args:
             pulse_parameter(Union[float, Callable]): a physical parameter (pulse, amplitude
-                or frequency detuning) of the pulse. If this is a callalbe, it has already been partially
-                evaluated, such that it is only a function of time.
+                or frequency detuning) of the pulse. If this is a callalbe, it has already been
+                partially evaluated, such that it is only a function of time.
             time_points(array): the times where parameters will be set in the TimeSeries, specified
                 in seconds
             scaling_factor(float): A multiplication factor for the pulse_parameter
@@ -343,7 +348,7 @@ class BraketAhsDevice(QubitDevice):
             # convert time to microseconds to evaluate (expected unit for the PL functions)
             vals = [float(pulse_parameter(t * 1e6)) * scaling_factor for t in time_points]
         else:
-            vals = [pulse_parameter for t in time_points]
+            vals = [pulse_parameter * scaling_factor for t in time_points]
 
         for t, v in zip(time_points, vals):
             ts.put(t, v)
@@ -355,8 +360,8 @@ class BraketAhsDevice(QubitDevice):
         ``DrivingField`` from Braket AHS
 
         Args:
-            pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency detuning
-                information
+            pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency
+                detuning information
             time_interval(array[float, float]): The start and end time for the applied pulse
 
         Returns:
@@ -366,7 +371,7 @@ class BraketAhsDevice(QubitDevice):
 
         time_points = self._get_sample_times(time_interval)
 
-        # scaling factor for amp and frequency detuning converts Mrad/s (PL input) to rad/s (upload units)
+        # scaling factor for amp and frequency detuning converts from Mrad/s to rad/s
         amplitude = self._convert_to_time_series(pulse.amplitude, time_points, scaling_factor=1e6)
         detuning = self._convert_to_time_series(pulse.frequency, time_points, scaling_factor=1e6)
         phase = self._convert_to_time_series(pulse.phase, time_points)
@@ -389,11 +394,11 @@ class BraketAhsDevice(QubitDevice):
         successfully initialized, and 0 otherwise. The post_sequence is 1 if an atom in the
         ground state was measured, and 0 otherwise. Comparison of pre_sequence and post_sequence
         reveals one of 4 possible outcomes. The first two (initial measurement of 0) indicate a
-        failure to initialize correctly, and will yeild a NaN result. The second two are measurements
-        of the excited and ground state repsectively, and yield 1 and 0.
+        failure to initialize correctly, and will yeild a NaN result. The second two are
+        measurements of the excited and ground state repsectively, and yield 1 and 0.
 
-        0 --> 0: NaN - Atom failed to be placed (no atom detected in the ground state either before or after)
-        0 --> 1: NaN - Atom failed to be placed (but was recaptured, or something else weird happened)
+        0 --> 0: NaN - Atom failed to be placed (no atom in the ground state either before or after)
+        0 --> 1: NaN - Atom failed to be placed (but was recaptured, or something else odd happened)
         1 --> 0: 1 (Rydberg state) - atom measured in ground state before, but not after
         1 --> 1: 0 (ground state) - atom measured in ground state both before and after
         """
@@ -405,7 +410,9 @@ class BraketAhsDevice(QubitDevice):
         # if a single atom failed to initialize, NaN for that individual measurement
         pre_sequence = [i if i else np.NaN for i in res.pre_sequence]
 
-        # set entry to 0 if ground state is measured, 1 if excited state is measured, NaN if measurement failed
+        # set entry to 0 if ground state measured
+        # 1 if excited state measured
+        # and NaN if measurement failed
         return np.array(pre_sequence - res.post_sequence)
 
 
@@ -418,13 +425,15 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
             run circuits; The corresponding AwsDevice must support Analogue Hamiltonian Simulation.
-            You can get device ARNs from the Amazon Braket console or from the Amazon Braket Developer Guide.
+            You can get device ARNs from the Amazon Braket console or from the Amazon Braket
+            Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
             and folder, specified as a tuple.
         poll_timeout_seconds (float): Total time in seconds to wait for
             results before timing out.
         poll_interval_seconds (float): The polling interval for results in seconds.
-        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements. Default: Shots.DEFAULT
+        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
+            Default: Shots.DEFAULT
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
@@ -471,14 +480,15 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             >>> settings = dev_remote.settings
             >>> H_int = qml.pulse.rydberg.rydberg_interaction(coordinates, **settings)
 
-        By passing the ``settings`` from the remote device to ``rydberg_interaction``, an ``H_int`` Hamiltonian
-        term is created using the constants specific to the hardware. This is relevant for simulating the hardware
-        in PennyLane on the ``default.qubit`` device.
+        By passing the ``settings`` from the remote device to ``rydberg_interaction``, an
+        ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
+        This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
         """
         return {"interaction_coeff": self._get_rydberg_c6()}
 
     def _get_rydberg_c6(self):
-        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to Mrad/s um^6 (PL simulation units)"""
+        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to Mrad/s um^6
+        (PL simulation units)"""
         c6 = float(self._device.properties.paradigm.rydberg.c6Coefficient)  # rad/s x m^6
         c6 = 1e-6 * c6  # rad/s --> M rad/s
         c6 = c6 * 1e36  # m^6 --> um^6
@@ -503,7 +513,8 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         return ahs_program_discretized
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on the device"""
+        """Run and return a task executing the AnalogueHamiltonianSimulation program on
+        the device"""
         task = self._device.run(
             ahs_program,
             s3_destination_folder=self._s3_folder,
@@ -521,7 +532,8 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
-        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements. Default: Shots.DEFAULT
+        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
+            Default: Shots.DEFAULT
     """
 
     name = "Braket LocalSimulator for AHS in PennyLane"
@@ -548,14 +560,16 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             >>> settings = dev_remote.settings
             >>> H_int = qml.pulse.rydberg.rydberg_interaction(coordinates, **settings)
 
-        By passing the ``settings`` from the remote device to ``rydberg_interaction``, an ``H_int`` Hamiltonian
-        term is created using the constants specific to the hardware. This is relevant for simulating the remote
-        device in PennyLane on the ``default.qubit`` device.
+        By passing the ``settings`` from the remote device to ``rydberg_interaction``, an
+        ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
+        This is relevant for simulating the remote device in PennyLane on the ``default.qubit``
+        device.
         """
-        # C6 for the Rubidium transition used by the simulator, converted to units expected in PL (Mrad/s x um^6)
+        # C6 for the Rubidium transition used by the simulator, converted to Mrad/s x um^6
         return {"interaction_coeff": 5420000}
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on the device"""
+        """Run and return a task executing the AnalogueHamiltonianSimulation program on the
+        device"""
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task

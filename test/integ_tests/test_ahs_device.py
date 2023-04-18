@@ -13,19 +13,10 @@
 
 """Tests that gates are correctly applied in the plugin device"""
 
-import json
-from unittest import mock
-from unittest.mock import Mock, PropertyMock, patch
-
 import numpy as np
 import pennylane as qml
-import pkg_resources
 import pytest
-from braket.aws import AwsDevice
-from braket.device_schema import DeviceActionProperties, DeviceActionType
-from braket.device_schema.quera.quera_ahs_paradigm_properties_v1 import QueraAhsParadigmProperties
-from conftest import shortname_and_backends
-from pennylane.pulse.hardware_hamiltonian import HardwarePulse
+
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
 from pennylane.pulse.rydberg import rydberg_drive, rydberg_interaction
 
@@ -99,7 +90,7 @@ class TestDeviceIntegration:
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(shortname, arn_nr, wires=2)
         assert dev.num_wires == 2
-        assert dev.shots is 100
+        assert dev.shots == 100
         assert dev.short_name == shortname
         assert dev._device.name == backend_name
 
@@ -148,7 +139,8 @@ class TestQnodeIntegration:
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
     def test_circuit_can_be_called(self, H, params):
         """Test that the circuit consisting of a ParametrizedEvolution with a single, global pulse
-        runs successfully for all combinations of amplitude, phase and detuning being constants or callables
+        runs successfully for all combinations of amplitude, phase and detuning being constants
+        or callables
         """
 
         dev = qml.device("braket.local.ahs", wires=3)
