@@ -32,12 +32,15 @@ Code details
 ~~~~~~~~~~~~
 """
 from functools import partial
-from typing import Iterable, Union, Optional
+from typing import Iterable, Union, Optional, List, Callable
+from numpy.typing import ArrayLike
+from enum import Enum, auto
 import numpy as np
 
 from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.pulse.hardware_hamiltonian import HardwarePulse, HardwareHamiltonian
+from pennylane.pulse import ParametrizedEvolution
 
 from braket.aws import AwsDevice, AwsSession, AwsQuantumTask
 from braket.devices import Device, LocalSimulator
@@ -45,23 +48,30 @@ from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.ahs.driving_field import DrivingField
 from braket.timings.time_series import TimeSeries
+from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
+
+class Shots(Enum):
+    """Used to specify the default number of shots in BraketAwsQubitDevice"""
+
+    DEFAULT = auto()
 
 
 class BraketAhsDevice(QubitDevice):
     """Abstract Amazon Braket device for analogue hamiltonian simulation with PennyLane.
 
     Args:
-        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+        wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device (Device): The Amazon Braket device to use with PennyLane.
-        shots (int): Number of executions to run to aquire measurements. Defaults to 100.
+        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements. Default: Shots.DEFAULT
     """
 
     name = "Braket AHS PennyLane plugin"
     pennylane_requires = ">=0.30.0"
     version = __version__
     author = "Xanadu Inc."
+    short_name = 'braket_ahs_device'
 
     operations = {"ParametrizedEvolution"}
 
@@ -69,21 +79,30 @@ class BraketAhsDevice(QubitDevice):
             self,
             wires: Union[int, Iterable],
             device: Device, *,
-            shots: int = AwsDevice.DEFAULT_SHOTS_QPU
+            shots: Union[int, Shots] = Shots.DEFAULT,
     ):
         if not shots:
             raise RuntimeError(f"This device requires shots. Received shots={shots}")
+        # Simulator default of 0 not suitable for AHS simulator, use DEFAULT_SHOTS_QPU for both
+        elif shots == Shots.DEFAULT:
+            num_shots = AwsDevice.DEFAULT_SHOTS_QPU
+        else:
+            num_shots=shots
+
+        super().__init__(wires=wires, shots=num_shots)
+
         self._device = device
-
-        super().__init__(wires=wires, shots=shots)
-
         self.register = None
         self.pulses = None
         self.ahs_program = None
         self._task = None
 
-    def apply(self, operations, **kwargs):
-        """Convert the pulse operation to an AHS program and run on the connected device"""
+    def apply(self, operations: List[ParametrizedEvolution], **kwargs):
+        """Convert the pulse operation to an AHS program and run on the connected device
+
+        Args:
+            operations(List[ParametrizedEvolution]): a list containing a single ParametrizedEvolution operator
+        """
 
         if not np.all([op.name in self.operations for op in operations]):
             raise NotImplementedError(
@@ -107,10 +126,11 @@ class BraketAhsDevice(QubitDevice):
             return self._task.result()
         return None
 
-    def _run_task(self, ahs_program):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
+        """Run and return a task executing the AnalogueHamiltonianSimulation program on the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
 
-    def _ahs_program_from_evolution(self, evolution):
+    def _ahs_program_from_evolution(self, evolution: ParametrizedEvolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
 
         Args:
@@ -132,7 +152,7 @@ class BraketAhsDevice(QubitDevice):
 
         return AnalogHamiltonianSimulation(register=self.register, hamiltonian=drive)
 
-    def create_ahs_program(self, evolution):
+    def create_ahs_program(self, evolution: ParametrizedEvolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
 
         Args:
@@ -157,9 +177,13 @@ class BraketAhsDevice(QubitDevice):
         """
         return [self._result_to_sample_output(res) for res in self.samples.measurements]
 
-    def _validate_operations(self, operations):
+    def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
-        from a HardwareHamiltonian with only a single, global pulse"""
+        from a HardwareHamiltonian with only a single, global pulse
+
+        Args:
+            operations(List[ParametrizedEvolution]): a list containing a single ParametrizedEvolution operator
+        """
 
         if len(operations) > 1:
             raise NotImplementedError(
@@ -189,7 +213,7 @@ class BraketAhsDevice(QubitDevice):
                 f"({len(self.wires)})"
             )
 
-    def _validate_pulses(self, pulses):
+    def _validate_pulses(self, pulses: List[HardwarePulse]):
         """Confirms that the list of HardwarePulses describes a single, global pulse
 
         Args:
@@ -213,9 +237,13 @@ class BraketAhsDevice(QubitDevice):
                 f"{[pulses[0].wires]} of all wires [{self.wires}]"
             )
 
-    def _create_register(self, coordinates):
+    def _create_register(self, coordinates: List):
         """Create an AtomArrangement to describe the atom layout from the coordinates in the
-        ParametrizedEvolution, and saves it as self.register"""
+        ParametrizedEvolution, and saves it as self.register
+
+        Args:
+            coordinates(List): a list of pairs [x, y] of coordinates denoting atom locations, in um
+        """
 
         register = AtomArrangement()
         for [x, y] in coordinates:
@@ -224,14 +252,13 @@ class BraketAhsDevice(QubitDevice):
 
         self.register = register
 
-    def _evaluate_pulses(self, ev_op):
+    def _evaluate_pulses(self, ev_op: ParametrizedEvolution):
         """Feeds in the parameters in order to partially evaluate the callables (amplitude,
         phase and/or frequency detuning) describing the pulses, so they are only a function of time.
         Saves the pulses on the device as `dev.pulses`.
 
         Args:
             ev_op(ParametrizedEvolution): the operator containing the pulses to be evaluated
-            params(list): a list of the parameters to be passed to the respective callables
         """
 
         params = ev_op.parameters
@@ -263,8 +290,16 @@ class BraketAhsDevice(QubitDevice):
 
         self.pulses = evaluated_pulses
 
-    def _get_sample_times(self, time_interval):
-        """Takes a time interval and returns an array of times with a minimum of 50ns spacing"""
+    def _get_sample_times(self, time_interval: ArrayLike):
+        """Takes a time interval and returns an array of times with a minimum of 50ns spacing
+
+        Args:
+            time_interval(array[float, float]): an array with start and end times for the pulse, in us
+
+        Returns:
+            times(array[float]): an array of times sampled at 1ns intervals between the start and end times,
+                in SI units (seconds)
+        """
         # time_interval from PL is in microseconds, we convert to ns
         interval_ns = np.array(time_interval) * 1e3
         start = interval_ns[0]
@@ -279,7 +314,10 @@ class BraketAhsDevice(QubitDevice):
         # we return time in seconds
         return times / 1e9
 
-    def _convert_to_time_series(self, pulse_parameter, time_points, scaling_factor=1):
+    def _convert_to_time_series(self,
+                                pulse_parameter: Union[float, Callable],
+                                time_points: ArrayLike,
+                                scaling_factor : float = 1):
         """Converts pulse information into a TimeSeries
 
         Args:
@@ -287,7 +325,8 @@ class BraketAhsDevice(QubitDevice):
                 or frequency detuning) of the pulse. If this is a callalbe, it has already been partially
                 evaluated, such that it is only a function of time.
             time_points(array): the times where parameters will be set in the TimeSeries, specified
-                in seconds scaling_factor(float): A multiplication factor for the pulse_parameter
+                in seconds
+            scaling_factor(float): A multiplication factor for the pulse_parameter
                 where relevant to convert between units. Defaults to 1.
 
         Returns:
@@ -307,17 +346,17 @@ class BraketAhsDevice(QubitDevice):
 
         return ts
 
-    def _convert_pulse_to_driving_field(self, pulse, time_interval):
+    def _convert_pulse_to_driving_field(self, pulse: HardwarePulse, time_interval: ArrayLike):
         """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a 
         ``DrivingField`` from Braket AHS
 
         Args:
             pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency detuning
                 information
-            time_interval(array[Number, Number]]): The start and end time for the applied pulse
+            time_interval(array[float, float]): The start and end time for the applied pulse
 
         Returns:
-            DrivingField: the object representing the global drive for the
+            drive(DrivingField): the object representing the global drive for the
                 AnalogueHamiltonianSimulation object
         """
 
@@ -337,11 +376,14 @@ class BraketAhsDevice(QubitDevice):
         return drive
 
     @staticmethod
-    def _result_to_sample_output(res):
+    def _result_to_sample_output(res: ShotResult):
         """This function converts a single shot of the QuEra measurement results to
         0 (ground), 1 (excited) and NaN (failed to measure) for all atoms in the result.
 
-        The QuEra results are summarized via 3 values: status, pre_sequence, and post_sequence.
+        Args:
+            res(ShotResult): the result of a single measurement shot
+
+        The results are summarized via 3 values: status, pre_sequence, and post_sequence.
 
         Status is success or fail. The pre_sequence is 1 if an atom in the ground state was
         successfully initialized, and 0 otherwise. The post_sequence is 1 if an atom in the
@@ -371,7 +413,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
     """Amazon Braket AHS device for hardware in PennyLane.
 
     Args:
-        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+        wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
@@ -382,11 +424,10 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         poll_timeout_seconds (float): Total time in seconds to wait for
             results before timing out.
         poll_interval_seconds (float): The polling interval for results in seconds.
-        shots (int): Number of executions to run to acquire measurements. Defaults to 100.
+        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements. Default: Shots.DEFAULT
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
-
     """
 
     name = "Braket Device for AHS in PennyLane"
@@ -400,7 +441,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             *,
             poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
             poll_interval_seconds : float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-            shots: int = AwsDevice.DEFAULT_SHOTS_QPU,
+            shots: Union[int, Shots] = Shots.DEFAULT,
             aws_session: Optional[AwsSession] = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
@@ -444,7 +485,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         c6 = c6 * 1e36  # m^6 --> um^6
         return c6
 
-    def create_ahs_program(self, evolution):
+    def create_ahs_program(self, evolution: ParametrizedEvolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
 
         Args:
@@ -462,7 +503,8 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
         return ahs_program_discretized
 
-    def _run_task(self, ahs_program):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
+        """Run and return a task executing the AnalogueHamiltonianSimulation program on the device"""
         task = self._device.run(
             ahs_program,
             s3_destination_folder=self._s3_folder,
@@ -477,10 +519,10 @@ class BraketLocalAhsDevice(BraketAhsDevice):
     """Amazon Braket LocalSimulator AHS device for PennyLane.
 
     Args:
-        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+        wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
-        shots (int): Number of executions to run to aquire measurements. Defaults to 100.
+        shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements. Default: Shots.DEFAULT
     """
 
     name = "Braket LocalSimulator for AHS in PennyLane"
@@ -490,7 +532,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             self,
             wires: Union[int, Iterable],
             *,
-            shots: int = AwsDevice.DEFAULT_SHOTS_QPU  # Simulator default of 0 not suitable for AHS simulator
+            shots: Union[int, Shots] = Shots.DEFAULT,
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
@@ -514,6 +556,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         # C6 for the Rubidium transition used by the simulator, converted to units expected in PL (Mrad/s x um^6)
         return {"interaction_coeff": 5420000}
 
-    def _run_task(self, ahs_program):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
+        """Run and return a task executing the AnalogueHamiltonianSimulation program on the device"""
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
