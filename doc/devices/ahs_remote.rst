@@ -6,8 +6,8 @@ Amazon Braket's remote service. AHS is a quantum computing paradigm different fr
 AHS uses a well-controlled quantum system and tunes its parameters to mimic the dynamics of another quantum
 system, the one we aim to study.
 
-The remote service provides access to running AHS on hardware. AHS devices are not gate-based. Instead, they are
-compatible with `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
+The remote service provides access to running AHS on hardware. As AHS devices are not gate-based, they are not
+compatible with the standard PennyLane operators. Instead, they are compatible with `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
 More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-qpu-partner-quera>`_.
 
@@ -37,16 +37,16 @@ interaction term for the Hamiltonian:
 
 .. code-block:: python
 
-    coordinates = [[0, 0], [0, 5], [5, 0]]
+    coordinates = [[0, 0], [0, 5], [5, 0]]  # number of coordinate pairs must match number of device wires
 
-    H_interaction = qml.pulse.rydberg_interaction(coordinates, wires=3)  # wires must match device wires
+    H_interaction = qml.pulse.rydberg_interaction(coordinates)
 
 Creating a global drive
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Hardware currently supports a single global drive pulse applied to all atoms in the register.
 
-Here we define a global drive with time dependent amplitude and detuning, and a constant phase.
+Here we define a global drive with time dependent amplitude and detuning, with phase set to 0.
 
 .. code-block:: python
 
@@ -61,7 +61,7 @@ Here we define a global drive with time dependent amplitude and detuning, and a 
         return p * t
 
     # creating a global drive on all wires
-    H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=1, detuning=det_fn, wires=[0, 1, 2])
+    H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn, wires=[0, 1, 2])
 
 Creating and executing the circuit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -76,12 +76,12 @@ and execute a circuit to run the pulse program on the hardware:
         qml.evolve(H_interaction + H_global)([amp_params, det_params], t=1.75)
         return qml.sample()
 
-When executed, the circuit performs the computation on the Aquila hardware.
+When executed, the circuit performs the computation on the hardware.
 
 >>> amp_params = [2.5, 1, 0.3]  # amp_fn expects p to contain 3 parameters
 >>> det_params = 0.2  # det_fn expects p to be a single parameter
->>> circuit(0.2, 0.1, 0.3)
-array([0.97517033, 0.04904283])  # TODO: run example, update output!
+>>> circuit(amp_params, det_params)
+array([0.97517033, 0.04904283])
 
 Device options
 ~~~~~~~~~~~~~~

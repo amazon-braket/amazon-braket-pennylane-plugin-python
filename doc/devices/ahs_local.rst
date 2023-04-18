@@ -36,9 +36,9 @@ interaction term for the Hamiltonian:
 
 .. code-block:: python
 
-    coordinates = [[0, 0], [0, 5]]
+    coordinates = [[0, 0], [0, 5]]  # number of coordinate pairs must match number of device wires
 
-    H_interaction = qml.pulse.rydberg_interaction(coordinates, wires=2)  # wires must match device wires
+    H_interaction = qml.pulse.rydberg_interaction(coordinates)
 
 Creating a drive
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -61,11 +61,11 @@ they must all have the same time-dependent envelope, but can have different, pos
         return p * t**2
 
     # creating a global drive on all wires
-    H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn_global, wires=[0, 1, 2])
+    H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn_global, wires=[0, 1])
 
     # creating local drives
     H_local0 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[0])
-    H_local1 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[0])
+    H_local1 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[1])
 
     # full hamiltonian
     H = H_interaction + H_global + H_local0 + H_local1
@@ -76,11 +76,9 @@ Executing an AHS program
 
 .. code-block:: python
 
-    params = [amp_params, global_detuning_params, local_detuning_params]
-
     @qml.qnode(device_local)
     def circuit(params):
-        qml.evolve(H_interaction + H_global + H_local)(params, t)
+        qml.evolve(H)(params, t)
         return qml.sample()
 
     # amp_fn expects p to contain 3 parameters
@@ -94,7 +92,13 @@ Executing an AHS program
 When executed, the circuit will perform the computation on the local machine.
 
 >>> circuit([amp_params, det_global_params, local_params1, local_params2])
-array([0.97517033, 0.04904283])
+array([[0, 0],
+       [0, 0],
+       [0, 0],
+       ...,
+       [1, 0],
+       [1, 0],
+       [1, 0]])
 
 
 
