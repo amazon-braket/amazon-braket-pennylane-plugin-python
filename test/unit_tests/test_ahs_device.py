@@ -13,7 +13,6 @@
 
 
 import json
-import warnings
 from dataclasses import dataclass
 from functools import partial
 from unittest import mock
@@ -35,7 +34,7 @@ from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotR
 from braket.tasks.local_quantum_task import LocalQuantumTask
 from braket.timings.time_series import TimeSeries
 
-from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+from pennylane.pulse.hardware_hamiltonian import HardwarePulse
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
 from pennylane.pulse.rydberg import rydberg_drive, rydberg_interaction
 
@@ -121,36 +120,36 @@ PARADIGM_PROPERTIES = QueraAhsParadigmProperties.parse_raw_schema(
                 "name": "braket.device_schema.quera.quera_ahs_paradigm_properties",
                 "version": "1",
             },
-            "qubitCount": 1,
+            "qubitCount": 256,
             "lattice": {
-                "area": {"width": 3, "height": 3},
+                "area": {"width": 0.000075, "height": 0.000076},
                 "geometry": {
-                    "spacingRadialMin": 3,
-                    "spacingVerticalMin": 3,
-                    "positionResolution": 3,
-                    "numberSitesMax": 3,
+                    "spacingRadialMin": 0.000004,
+                    "spacingVerticalMin": 0.000004,
+                    "positionResolution": 1e-7,
+                    "numberSitesMax": 256,
                 },
             },
             "rydberg": {
                 "c6Coefficient": 5.42e-24,
                 "rydbergGlobal": {
-                    "rabiFrequencyRange": (0, 3),
-                    "rabiFrequencyResolution": 3,
-                    "rabiFrequencySlewRateMax": 3,
-                    "detuningRange": (0, 3),
-                    "detuningResolution": 3,
-                    "detuningSlewRateMax": 3,
-                    "phaseRange": (0, 3),
-                    "phaseResolution": 3,
-                    "timeResolution": 3,
-                    "timeDeltaMin": 3,
-                    "timeMin": 3,
-                    "timeMax": 3,
+                    "rabiFrequencyRange": (0, 15800000.0),
+                    "rabiFrequencyResolution": 400.0,
+                    "rabiFrequencySlewRateMax": 250000000000000.0,
+                    "detuningRange": (-125000000.0, 125000000.0),
+                    "detuningResolution": 0.2,
+                    "detuningSlewRateMax": 2500000000000000.0,
+                    "phaseRange": (-99.0, 99.0),
+                    "phaseResolution": 5e-7,
+                    "timeResolution": 1e-9,
+                    "timeDeltaMin": 5e-8,
+                    "timeMin": 0,
+                    "timeMax": 0.000004,
                 },
             },
             "performance": {
-                "lattice": {"positionErrorAbs": 3},
-                "rydberg": {"rydbergGlobal": {"rabiFrequencyErrorRel": 3}},
+                "lattice": {"positionErrorAbs": 1.47e-7},
+                "rydberg": {"rydbergGlobal": {"rabiFrequencyErrorRel": 0.02}},
             },
         }
     )
@@ -172,7 +171,7 @@ class MockDevProperties:
 
 @pytest.fixture(scope="function")
 def mock_aws_device(monkeypatch, wires=3):
-    """A function to create a mock device that mocks most of the methods except for e.g. probability()"""
+    """A function to create a mock device that mocks most of the methods"""
     with monkeypatch.context() as m:
         m.setattr(AwsDevice, "__init__", lambda self, *args, **kwargs: None)
         m.setattr(AwsDevice, "aws_session", MockAwsSession)
@@ -395,8 +394,36 @@ class TestBraketAhsDevice:
         assert amp_time[0] == evolution.t[0] * 1e-6
         assert amp_time[-1] == evolution.t[1] * 1e-6
 
+        pulse = hamiltonian.pulses[0]
+        params_idx = 0
+
+        if callable(pulse.amplitude):
+            fn = pulse.amplitude
+            p = params[params_idx]
+            params_idx += 1
+            assert np.allclose([fn(p, t * 1e6) * 1e6 for t in amp_time], amp_vals)
+        else:
+            assert np.allclose([pulse.amplitude * 1e6 for t in amp_time], amp_vals)
+
+        if callable(pulse.phase):
+            fn = pulse.phase
+            p = params[params_idx]
+            params_idx += 1
+            assert np.allclose([fn(p, t * 1e6) for t in amp_time], phase_vals)
+        else:
+            assert np.allclose([pulse.phase for t in amp_time], phase_vals)
+
+        if callable(pulse.frequency):
+            fn = pulse.frequency
+            p = params[params_idx]
+            params_idx += 1
+            assert np.allclose([fn(p, t * 1e6) * 1e6 for t in amp_time], det_vals)
+        else:
+            assert np.allclose([pulse.frequency * 1e6 for t in amp_time], det_vals)
+
     def test_generate_samples(self):
-        """Test that generate_samples creates a list of arrays with the expected shape for the task run"""
+        """Test that generate_samples creates a list of arrays with the expected shape for the
+        task run"""
         ahs_program = dummy_ahs_program()
         dev = qml.device("braket.local.ahs", wires=3)
 
@@ -991,9 +1018,11 @@ class TestBraketAwsAhsDevice:
         # AHS program is created and stored on the device
         assert isinstance(dev.ahs_program, AnalogHamiltonianSimulation)
 
-        # all zeros because the ahs.discretize function without an actual hardware connection returns 0s
-        assert ahs_program.register.coordinate_list(0) == [0 for c in evolution.H.settings.register]
-        assert ahs_program.register.coordinate_list(1) == [0 for c in evolution.H.settings.register]
+        # compare evolution and ahs_program registers
+        assert np.allclose([float(c) for c in ahs_program.register.coordinate_list(0)],
+                           [c[0] * 1e-6 for c in evolution.H.settings.register], atol=1e-6)
+        assert np.allclose([float(c) for c in ahs_program.register.coordinate_list(1)],
+                           [float(c[1] * 1e-6) for c in evolution.H.settings.register], atol=1e-6)
 
         # elements of the hamiltonian have the expected shape
         h = ahs_program.hamiltonian
@@ -1002,6 +1031,42 @@ class TestBraketAwsAhsDevice:
         det_time, det_vals = h.detuning.time_series.times(), h.detuning.time_series.values()
 
         assert amp_time == phase_time == det_time
+        assert float(amp_time[0]) == evolution.t[0] * 1e-6
+        assert float(amp_time[-1]) == evolution.t[1] * 1e-6
+
+        pulse = hamiltonian.pulses[0]
+        params_idx = 0
+
+        if callable(pulse.amplitude):
+            fn = pulse.amplitude
+            p = params[params_idx]
+            params_idx += 1
+            # atol 200 because of discretization, i.e. 27772.49134560574 --> 27600.0
+            assert np.allclose([fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
+                               [float(v) for v in amp_vals], atol=200)
+        else:
+            assert np.allclose([pulse.amplitude * 1e6 for t in amp_time],
+                               [float(v) for v in amp_vals], atol=200)
+
+        if callable(pulse.phase):
+            fn = pulse.phase
+            p = params[params_idx]
+            params_idx += 1
+            assert np.allclose([fn(p, float(t) * 1e6) for t in amp_time],
+                               [float(v) for v in phase_vals], atol=1e-7)
+        else:
+            assert np.allclose([pulse.phase for t in amp_time],
+                               [float(v) for v in phase_vals], atol=1e-7)
+
+        if callable(pulse.frequency):
+            fn = pulse.frequency
+            p = params[params_idx]
+            params_idx += 1
+            assert np.allclose([fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
+                               [float(v) for v in det_vals])
+        else:
+            assert np.allclose([pulse.frequency * 1e6 for t in amp_time],
+                               [float(v) for v in det_vals])
 
     def test_run_task(self, mock_aws_device):
         """Tests that a (mock) task can be created"""
