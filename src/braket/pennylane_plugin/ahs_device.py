@@ -131,7 +131,7 @@ class BraketAhsDevice(QubitDevice):
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
         """Run and return a task executing the AnalogueHamiltonianSimulation program on
-            the device"""
+        the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
 
     def _ahs_program_from_evolution(self, evolution: ParametrizedEvolution):

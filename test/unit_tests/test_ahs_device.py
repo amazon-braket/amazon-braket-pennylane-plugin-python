@@ -793,10 +793,16 @@ class TestBraketAwsAhsDevice:
         assert isinstance(dev.ahs_program, AnalogHamiltonianSimulation)
 
         # compare evolution and ahs_program registers
-        assert np.allclose([float(c) for c in ahs_program.register.coordinate_list(0)],
-                           [c[0] * 1e-6 for c in evolution.H.settings.register], atol=1e-6)
-        assert np.allclose([float(c) for c in ahs_program.register.coordinate_list(1)],
-                           [float(c[1] * 1e-6) for c in evolution.H.settings.register], atol=1e-6)
+        assert np.allclose(
+            [float(c) for c in ahs_program.register.coordinate_list(0)],
+            [c[0] * 1e-6 for c in evolution.H.settings.register],
+            atol=1e-6,
+        )
+        assert np.allclose(
+            [float(c) for c in ahs_program.register.coordinate_list(1)],
+            [float(c[1] * 1e-6) for c in evolution.H.settings.register],
+            atol=1e-6,
+        )
 
         # elements of the hamiltonian have the expected shape
         h = ahs_program.hamiltonian
@@ -816,31 +822,39 @@ class TestBraketAwsAhsDevice:
             p = params[params_idx]
             params_idx += 1
             # atol 200 because of discretization, i.e. 27772.49134560574 --> 27600.0
-            assert np.allclose([fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
-                               [float(v) for v in amp_vals], atol=200)
+            assert np.allclose(
+                [fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
+                [float(v) for v in amp_vals],
+                atol=200,
+            )
         else:
-            assert np.allclose([pulse.amplitude * 1e6 for t in amp_time],
-                               [float(v) for v in amp_vals], atol=200)
+            assert np.allclose(
+                [pulse.amplitude * 1e6 for t in amp_time], [float(v) for v in amp_vals], atol=200
+            )
 
         if callable(pulse.phase):
             fn = pulse.phase
             p = params[params_idx]
             params_idx += 1
-            assert np.allclose([fn(p, float(t) * 1e6) for t in amp_time],
-                               [float(v) for v in phase_vals], atol=1e-7)
+            assert np.allclose(
+                [fn(p, float(t) * 1e6) for t in amp_time], [float(v) for v in phase_vals], atol=1e-7
+            )
         else:
-            assert np.allclose([pulse.phase for t in amp_time],
-                               [float(v) for v in phase_vals], atol=1e-7)
+            assert np.allclose(
+                [pulse.phase for t in amp_time], [float(v) for v in phase_vals], atol=1e-7
+            )
 
         if callable(pulse.frequency):
             fn = pulse.frequency
             p = params[params_idx]
             params_idx += 1
-            assert np.allclose([fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
-                               [float(v) for v in det_vals])
+            assert np.allclose(
+                [fn(p, float(t) * 1e6) * 1e6 for t in amp_time], [float(v) for v in det_vals]
+            )
         else:
-            assert np.allclose([pulse.frequency * 1e6 for t in amp_time],
-                               [float(v) for v in det_vals])
+            assert np.allclose(
+                [pulse.frequency * 1e6 for t in amp_time], [float(v) for v in det_vals]
+            )
 
     def test_run_task(self, mock_aws_device):
         """Tests that a (mock) task can be created"""
