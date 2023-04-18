@@ -12,7 +12,7 @@ on a paid-for remote service.
 Usage
 ~~~~~
 
-After the Braket SDK and the plugin are installed you immediately have access to the local Braket AHS device in PennyLane.
+After the Braket SDK and the plugin are installed you immediately have access to the `local Braket AHS device <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_ in PennyLane.
 
 The local AHS device is not gate-based. Instead, it is compatible with the ``ParametrizedEvolution`` operator from `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
