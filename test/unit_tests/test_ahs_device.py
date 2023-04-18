@@ -248,6 +248,14 @@ class TestBraketAhsDevice:
         assert len(dev.settings.keys()) == 1
         assert dev.settings['interaction_coeff'] == 5420000
 
+    def test_run_task_not_implemented(self):
+        """Test that the _run_task method raises a NotImplemented error in the base class"""
+
+        dev = BraketAhsDevice(wires=2, device=None)
+        ahs_program = dummy_ahs_program()
+        with pytest.raises(NotImplementedError, match="not implemented for the base class"):
+            dev._run_task(ahs_program)
+
     @pytest.mark.parametrize("dev_cls, shots", [(BraketLocalAhsDevice, 1000),
                                                 (BraketLocalAhsDevice, 2)])
     def test_setting_shots(self, dev_cls, shots):
