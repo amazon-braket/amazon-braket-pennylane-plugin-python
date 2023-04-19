@@ -62,7 +62,7 @@ class BraketAhsDevice(QubitDevice):
     """
 
     name = "Braket AHS PennyLane plugin"
-    pennylane_requires = ">=0.30.0"
+    pennylane_requires = ">=0.29.0"
     version = __version__
     author = "Xanadu Inc."
 
@@ -158,7 +158,7 @@ class BraketAhsDevice(QubitDevice):
         Returns:
              array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
         """
-        return [self._result_to_sample_output(res) for res in self.samples.measurements]
+        return np.array([self._result_to_sample_output(res) for res in self.samples.measurements])
 
     def _validate_operations(self, operations):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution

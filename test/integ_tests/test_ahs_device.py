@@ -186,3 +186,17 @@ class TestQnodeIntegration:
             return qml.sample()
 
         circuit()
+
+    def test_qnode_expval(self):
+        """Test that a qnode with multiple measurements has the correct shape"""
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        H = H_i + rydberg_drive(3, 2, 1, [0, 1, 2])
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.evolve(H)([], 1.8)
+            return qml.expval(qml.PauliZ(0))
+
+        res = circuit()
+        assert res.shape == ()

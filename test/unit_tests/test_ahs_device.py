@@ -339,20 +339,20 @@ class TestBraketAhsDevice:
     def test_generate_samples(self):
         """Test that generate_samples creates a list of arrays with the expected shape for the task run"""
         ahs_program = dummy_ahs_program()
+        dev = qml.device("braket.local.ahs", wires=3)
 
         # checked in _validate_operations in the full pipeline
         # since these are created manually for the unit test elsewhere in the file,
         # we confirm the values used for the test are valid here
-        assert len(ahs_program.register.coordinate_list(0)) == len(dev_sim.wires)
+        assert len(ahs_program.register.coordinate_list(0)) == len(dev.wires)
 
-        task = dev_sim._run_task(ahs_program)
+        task = dev._run_task(ahs_program)
 
-        dev_sim.samples = task.result()
+        dev._task = task
+        samples = dev.generate_samples()
 
-        samples = dev_sim.generate_samples()
-
-        assert len(samples) == 17
-        assert len(samples[0]) == len(dev_sim.wires)
+        assert len(samples) == 1000
+        assert len(samples[0]) == len(dev.wires)
         assert isinstance(samples[0], np.ndarray)
 
     def test_validate_operations_multiple_operators(self):
