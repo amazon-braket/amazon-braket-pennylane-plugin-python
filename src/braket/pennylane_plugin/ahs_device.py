@@ -366,6 +366,8 @@ class BraketAhsDevice(QubitDevice):
 class BraketAwsAhsDevice(BraketAhsDevice):
     """Amazon Braket AHS device for hardware in PennyLane.
 
+More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
+
     Args:
         wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
