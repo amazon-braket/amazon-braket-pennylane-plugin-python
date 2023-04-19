@@ -159,7 +159,7 @@ class TestQnodeIntegration:
         @qml.qnode(dev)
         def circuit():
             ParametrizedEvolution(H, params, t)
-            return qml.sample()
+            return qml.sample(), qml.expval(qml.PauliZ(0))
 
         circuit()
 
@@ -183,20 +183,25 @@ class TestQnodeIntegration:
         @qml.qnode(dev)
         def circuit():
             ParametrizedEvolution(H, params, t)
-            return qml.sample()
+            return qml.sample(), qml.expval(qml.PauliZ(0))
 
         circuit()
 
-    def test_qnode_expval(self):
+    def test_qnode_shape(self):
         """Test that a qnode with multiple measurements has the correct shape"""
         dev = qml.device("braket.local.ahs", wires=3)
 
         H = H_i + rydberg_drive(3, 2, 1, [0, 1, 2])
+        measurements = (qml.sample(), qml.expval(qml.PauliZ(0)))
+
 
         @qml.qnode(dev)
         def circuit():
             qml.evolve(H)([], 1.8)
-            return qml.expval(qml.PauliZ(0))
+            return measurements
 
         res = circuit()
-        assert res.shape == ()
+        expected_shape = (mp.shape(dev, qml.measurements.Shots(dev.shots)) for mp in measurements)
+
+        assert len(res) == 2
+        assert all(r.shape == es for r, es in zip(res, expected_shape))
