@@ -65,6 +65,7 @@ they must all have the same time-dependent envelope, but can have different, pos
     H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn_global, wires=[0, 1])
 
     # creating local drives
+    # note only local detuning is currently supported, so amplitude and phase are set to 0
     H_local0 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[0])
     H_local1 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[1])
 
@@ -87,6 +88,7 @@ Executing an AHS program
     # global_det_fn expects p to be a single parameter
     det_global_params = 0.2
     # each of the local drives take a single parameter for p
+    # the detunings have the same shape, but vary by scaling factor p
     local_params1 = 0.5
     local_params2 = 1
 
