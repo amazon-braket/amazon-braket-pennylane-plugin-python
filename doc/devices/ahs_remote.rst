@@ -9,6 +9,8 @@ system, the one we aim to study.
 The remote service provides access to running AHS on hardware. As AHS devices are not gate-based, they are not
 compatible with the standard PennyLane operators. Instead, they are compatible with `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
+Note that pulse programming in PennyLane requires the module ``jax``. You can install jax via: pip install jax==0.4.3 jaxlib==0.4.3
+
 More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-qpu-partner-quera>`_.
 
 Usage

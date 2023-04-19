@@ -16,6 +16,8 @@ After the Braket SDK and the plugin are installed you immediately have access to
 
 The local AHS device is not gate-based. Instead, it is compatible with the ``ParametrizedEvolution`` operator from `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
+Note that pulse programming in PennyLane requires the module ``jax``. You can install jax via: pip install jax==0.4.3 jaxlib==0.4.3
+
 To instantiate the local Braket simulator, simply use:
 
 .. code-block:: python
