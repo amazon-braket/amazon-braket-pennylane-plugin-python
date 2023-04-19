@@ -1,7 +1,7 @@
 The local AHS device
 ====================
 
-The local AHS device of the PennyLane-Braket plugin runs Analogue Hamiltonian Simulation on the local Braket SDK. This
+The local analog hamiltonian simulation (AHS) device of the PennyLane-Braket plugin runs Analogue Hamiltonian Simulation on the local Braket SDK. This
 could be either utilizing the processors of your own PC, or those of a `Braket notebook instance <https://docs.aws.amazon.com/braket/latest/developerguide/braket-get-started-create-notebook.html>`_ hosted on AWS.
 
 This device is useful for small-scale simulations in which the time of sending a job to a remote service would add
@@ -12,7 +12,7 @@ on a paid-for remote service.
 Usage
 ~~~~~
 
-After the Braket SDK and the plugin are installed you immediately have access to the `local Braket AHS device <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_ in PennyLane.
+After the Braket SDK and the plugin are installed you immediately have access to the `local Braket AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_ in PennyLane.
 
 The local AHS device is not gate-based. Instead, it is compatible with the ``ParametrizedEvolution`` operator from `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
@@ -36,7 +36,8 @@ interaction term for the Hamiltonian:
 
 .. code-block:: python
 
-    coordinates = [[0, 0], [0, 5]]  # number of coordinate pairs must match number of device wires
+    # number of coordinate pairs must match number of device wires
+    coordinates = [[0, 0], [0, 5]]  
 
     H_interaction = qml.pulse.rydberg_interaction(coordinates)
 
