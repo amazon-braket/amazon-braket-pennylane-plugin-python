@@ -20,7 +20,7 @@ away in PennyLane, without the need to import any additional packages.
 Devices
 ~~~~~~~
 
-This plugin provides four Braket devices for use with PennyLane - two supporting gate-based devices,
+This plugin provides four Braket devices for use with PennyLane - two supporting gate-based computations,
 and two supporting Analogue Hamiltonian Simulation (AHS) on a Rydberg atom system:
 
 .. title-card::

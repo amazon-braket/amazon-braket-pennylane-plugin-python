@@ -22,7 +22,8 @@ Instantiate an AWS device that communicates with the hardware like this:
 
 >>> import pennylane as qml
 >>> s3 = ("my-bucket", "my-prefix")
->>> remote_device = qml.device("braket.aws.ahs", device_arn="arn:aws:braket:us-east-1::device/qpu/quera/Aquila", s3_destination_folder=s3, wires=3)
+>>> device_arn = "arn:aws:braket:us-east-1::device/qpu/quera/Aquila"
+>>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, s3_destination_folder=s3, wires=3)
 
 This device can be used with a QNode within PennyLane. It accepts circuits with a single ``ParametrizedEvolution``
 operator based on a hardware-compatible ``ParametrizedHamiltonian``. More information about creating PennyLane operators for AHS can be
@@ -37,14 +38,15 @@ interaction term for the Hamiltonian:
 
 .. code-block:: python
 
-    coordinates = [[0, 0], [0, 5], [5, 0]]  # number of coordinate pairs must match number of device wires
+    # number of coordinate pairs must match number of device wires
+    coordinates = [[0, 0], [0, 5], [5, 0]]
 
     H_interaction = qml.pulse.rydberg_interaction(coordinates)
 
 Creating a global drive
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Hardware currently supports a single global drive pulse applied to all atoms in the register.
+Hardware currently only supports a single global drive pulse applied to all atoms in the register.
 
 Here we define a global drive with time dependent amplitude and detuning, with phase set to 0.
 
@@ -72,7 +74,7 @@ and execute a circuit to run the pulse program on the hardware:
 .. code-block:: python
 
     @qml.qnode(remote_device)
-    def circuit(amp_params, detuning_params):
+    def circuit(amp_params, det_params):
         qml.evolve(H_interaction + H_global)([amp_params, det_params], t=1.75)
         return qml.sample()
 
