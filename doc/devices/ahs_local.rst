@@ -79,7 +79,7 @@ Executing an AHS program
 
     @qml.qnode(device_local)
     def circuit(params):
-        qml.evolve(H)(params, t)
+        qml.evolve(H)(params, t=1.5)
         return qml.sample()
 
     # amp_fn expects p to contain 3 parameters
