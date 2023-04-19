@@ -472,6 +472,8 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 class BraketLocalAhsDevice(BraketAhsDevice):
     """Amazon Braket LocalSimulator AHS device for PennyLane.
 
+    Emulates :class:`~.BraketAwsAhsDevice` by running <link to https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>
+
     Args:
         wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
