@@ -586,6 +586,10 @@ from typing import Callable
 from pennylane.pulse.hardware_hamiltonian import HardwarePulse
 from braket.timings.time_series import TimeSeries
 from braket.ahs.driving_field import DrivingField
+from braket.ahs.atom_arrangement import AtomArrangement
+from pennylane.pulse import ParametrizedEvolution
+
+from functools import partial
 
 def _convert_to_time_series(
     pulse_parameter: Union[float, Callable],
@@ -620,7 +624,7 @@ def _convert_to_time_series(
 
     return ts
 
-def _convert_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLike):
+def translate_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLike):
     """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a
     ``DrivingField`` from Braket AHS
 
@@ -642,3 +646,58 @@ def _convert_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLike
     drive = DrivingField(amplitude=amplitude, detuning=detuning, phase=phase)
 
     return drive
+
+
+def _evaluate_pulses(ev_op: ParametrizedEvolution):
+    """Feeds in the parameters in order to partially evaluate the callables (amplitude,
+    phase and/or frequency detuning) describing the pulses, so they are only a function of time.
+    Saves the pulses on the device as `dev.pulses`.
+
+    Args:
+        ev_op(ParametrizedEvolution): the operator containing the pulses to be evaluated
+    """
+
+    params = ev_op.parameters
+    pulses = ev_op.H.pulses
+
+    evaluated_pulses = []
+    idx = 0
+
+    for pulse in pulses:
+        amplitude = pulse.amplitude
+        if callable(pulse.amplitude):
+            amplitude = partial(pulse.amplitude, params[idx])
+            idx += 1
+
+        phase = pulse.phase
+        if callable(pulse.phase):
+            phase = partial(pulse.phase, params[idx])
+            idx += 1
+
+        detuning = pulse.frequency
+        if callable(pulse.frequency):
+            detuning = partial(pulse.frequency, params[idx])
+            idx += 1
+
+        evaluated_pulses.append(
+            HardwarePulse(
+                amplitude=amplitude, phase=phase, frequency=detuning, wires=pulse.wires
+            )
+        )
+
+    return evaluated_pulses
+
+def _create_register(coordinates: List):
+    """Create an AtomArrangement to describe the atom layout from the coordinates in the
+    ParametrizedEvolution, and saves it as self._register
+
+    Args:
+        coordinates(List): a list of pairs [x, y] of coordinates denoting atom locations, in um
+    """
+
+    register = AtomArrangement()
+    for [x, y] in coordinates:
+        # PL asks users to specify in um, Braket expects SI units
+        register.add([x * 1e-6, y * 1e-6])
+
+    return register

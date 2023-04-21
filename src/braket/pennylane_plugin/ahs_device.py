@@ -32,16 +32,10 @@ Code details
 ~~~~~~~~~~~~
 """
 from enum import Enum, auto
-from functools import partial
 from typing import Callable, Iterable, List, Optional, Union
 
 import numpy as np
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
-from braket.ahs.atom_arrangement import AtomArrangement
-from braket.ahs.driving_field import DrivingField
-from braket.ahs.shifting_field import ShiftingField
-from braket.ahs.pattern import Pattern
-from braket.ahs.field import Field
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
@@ -52,7 +46,7 @@ from pennylane._version import __version__
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
-from .translation import _get_sample_times, _convert_to_time_series, _convert_pulse_to_driving_field
+from .translation import _convert_to_time_series, translate_pulse_to_driving_field, _evaluate_pulses, _create_register
 
 
 class Shots(Enum):
@@ -159,14 +153,14 @@ class BraketAhsDevice(QubitDevice):
                 information for running an AHS task on simulation or hardware"""
 
         # sets self._pulses to be the evaluated pulses (now only a function of time)
-        self._evaluate_pulses(evolution)
-        self._create_register(evolution.H.settings.register)
+        self._pulses = _evaluate_pulses(evolution)
+        self._register = _create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
         time_points = self._get_sample_times(time_interval)
 
         # no gurarentee that global drive is index 0 once we start allowing more just global drive
-        drive = _convert_pulse_to_driving_field(self._pulses[0], time_points)
+        drive = translate_pulse_to_driving_field(self._pulses[0], time_points)
 
         return AnalogHamiltonianSimulation(register=self._register, hamiltonian=drive)
 
@@ -256,60 +250,6 @@ class BraketAhsDevice(QubitDevice):
                 f"{[pulses[0].wires]} of all wires [{self.wires}]"
             )
 
-    def _create_register(self, coordinates: List):
-        """Create an AtomArrangement to describe the atom layout from the coordinates in the
-        ParametrizedEvolution, and saves it as self._register
-
-        Args:
-            coordinates(List): a list of pairs [x, y] of coordinates denoting atom locations, in um
-        """
-
-        register = AtomArrangement()
-        for [x, y] in coordinates:
-            # PL asks users to specify in um, Braket expects SI units
-            register.add([x * 1e-6, y * 1e-6])
-
-        self._register = register
-
-    def _evaluate_pulses(self, ev_op: ParametrizedEvolution):
-        """Feeds in the parameters in order to partially evaluate the callables (amplitude,
-        phase and/or frequency detuning) describing the pulses, so they are only a function of time.
-        Saves the pulses on the device as `dev.pulses`.
-
-        Args:
-            ev_op(ParametrizedEvolution): the operator containing the pulses to be evaluated
-        """
-
-        params = ev_op.parameters
-        pulses = ev_op.H.pulses
-
-        evaluated_pulses = []
-        idx = 0
-
-        for pulse in pulses:
-            amplitude = pulse.amplitude
-            if callable(pulse.amplitude):
-                amplitude = partial(pulse.amplitude, params[idx])
-                idx += 1
-
-            phase = pulse.phase
-            if callable(pulse.phase):
-                phase = partial(pulse.phase, params[idx])
-                idx += 1
-
-            detuning = pulse.frequency
-            if callable(pulse.frequency):
-                detuning = partial(pulse.frequency, params[idx])
-                idx += 1
-
-            evaluated_pulses.append(
-                HardwarePulse(
-                    amplitude=amplitude, phase=phase, frequency=detuning, wires=pulse.wires
-                )
-            )
-
-        self._pulses = evaluated_pulses
-
     def _get_sample_times(self, time_interval: ArrayLike):
         """Takes a time interval and returns an array of times with a minimum of 50ns spacing
 
@@ -334,7 +274,6 @@ class BraketAhsDevice(QubitDevice):
 
         # we return time in seconds
         return times / 1e9
-
 
     @staticmethod
     def _result_to_sample_output(res: ShotResult):

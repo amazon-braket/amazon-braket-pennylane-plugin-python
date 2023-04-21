@@ -44,7 +44,7 @@ from braket.pennylane_plugin.ahs_device import (
     BraketLocalAhsDevice,
 )
 
-from braket.pennylane_plugin.translation import _convert_to_time_series, _convert_pulse_to_driving_field
+from braket.pennylane_plugin.translation import translate_pulse_to_driving_field, _convert_to_time_series, _evaluate_pulses, _create_register
 
 coordinates1 = [[0, 0], [0, 5], [5, 0], [10, 5], [5, 10], [10, 10]]
 wires1 = [1, 6, 0, 2, 4, 3]
@@ -510,7 +510,8 @@ class TestBraketAhsDevice:
 
         assert dev.register is None
 
-        dev._create_register(coordinates)
+        dev._register = _create_register(coordinates)
+
         coordinates_from_register = [
             [x * 1e6, y * 1e6]
             for x, y in zip(dev.register.coordinate_list(0), dev.register.coordinate_list(1))
@@ -554,7 +555,7 @@ class TestBraketAhsDevice:
             detuning_sample = pulse.frequency
 
         # evaluate pulses
-        dev_sim._evaluate_pulses(ev_op)
+        dev_sim._pulses = _evaluate_pulses(ev_op)
 
         # confirm that if initial pulse parameter was a callable, it is now a partial
         # confirm that post-evaluation value at t=1.7 seconds matches expectation
@@ -643,14 +644,14 @@ class TestBraketAhsDevice:
             HardwarePulse(lin_fn, sin_fn, quad_fn, wires=[0, 1, 2]),
         ],
     )
-    def test_convert_pulse_to_driving_field(self, pulse):
+    def test_translate_pulse_to_driving_field(self, pulse):
         """Test that a time interval in microseconds (as passed to the qnode in PennyLane)
         and a Pulse object containing constant or time-dependent pulse parameters (floats
         and/or callables that have been evaluated to be a function only of time)
         and can be converted into a DrivingField
         """
 
-        drive = _convert_pulse_to_driving_field(pulse, [0, 1.5])
+        drive = translate_pulse_to_driving_field(pulse, [0, 1.5])
 
         assert isinstance(drive, DrivingField)
 
