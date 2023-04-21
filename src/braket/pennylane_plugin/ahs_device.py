@@ -97,9 +97,9 @@ class BraketAhsDevice(QubitDevice):
         super().__init__(wires=wires, shots=num_shots)
 
         self._device = device
-        self.register = None
-        self.pulses = None
-        self.ahs_program = None
+        self._register = None
+        self._pulses = None
+        self._ahs_program = None
         self._task = None
 
     def apply(self, operations: List[ParametrizedEvolution], **kwargs):
@@ -127,6 +127,14 @@ class BraketAhsDevice(QubitDevice):
         return self._task
 
     @property
+    def ahs_program(self):
+        return self._ahs_program
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
     def samples(self):
         if self._task:
             return self._task.result()
@@ -148,16 +156,16 @@ class BraketAhsDevice(QubitDevice):
             AnalogHamiltonianSimulation: a program containing the register and drive
                 information for running an AHS task on simulation or hardware"""
 
-        # sets self.pulses to be the evaluated pulses (now only a function of time)
+        # sets self._pulses to be the evaluated pulses (now only a function of time)
         self._evaluate_pulses(evolution)
         self._create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
 
         # no gurarentee that global drive is index 0 once we start allowing more just global drive
-        drive = self._convert_pulse_to_driving_field(self.pulses[0], time_interval)
+        drive = self._convert_pulse_to_driving_field(self._pulses[0], time_interval)
 
-        return AnalogHamiltonianSimulation(register=self.register, hamiltonian=drive)
+        return AnalogHamiltonianSimulation(register=self._register, hamiltonian=drive)
 
     def create_ahs_program(self, evolution: ParametrizedEvolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
@@ -172,7 +180,7 @@ class BraketAhsDevice(QubitDevice):
 
         ahs_program = self._ahs_program_from_evolution(evolution)
 
-        self.ahs_program = ahs_program
+        self._ahs_program = ahs_program
 
         return ahs_program
 
@@ -247,7 +255,7 @@ class BraketAhsDevice(QubitDevice):
 
     def _create_register(self, coordinates: List):
         """Create an AtomArrangement to describe the atom layout from the coordinates in the
-        ParametrizedEvolution, and saves it as self.register
+        ParametrizedEvolution, and saves it as self._register
 
         Args:
             coordinates(List): a list of pairs [x, y] of coordinates denoting atom locations, in um
@@ -258,7 +266,7 @@ class BraketAhsDevice(QubitDevice):
             # PL asks users to specify in um, Braket expects SI units
             register.add([x * 1e-6, y * 1e-6])
 
-        self.register = register
+        self._register = register
 
     def _evaluate_pulses(self, ev_op: ParametrizedEvolution):
         """Feeds in the parameters in order to partially evaluate the callables (amplitude,
@@ -297,7 +305,7 @@ class BraketAhsDevice(QubitDevice):
                 )
             )
 
-        self.pulses = evaluated_pulses
+        self._pulses = evaluated_pulses
 
     def _get_sample_times(self, time_interval: ArrayLike):
         """Takes a time interval and returns an array of times with a minimum of 50ns spacing
@@ -511,7 +519,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         ahs_program = self._ahs_program_from_evolution(evolution)
         ahs_program_discretized = ahs_program.discretize(self._device)
 
-        self.ahs_program = ahs_program_discretized
+        self._ahs_program = ahs_program_discretized
 
         return ahs_program_discretized
 
