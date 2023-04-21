@@ -548,22 +548,22 @@ class TestBraketAhsDevice:
         # confirm that if initial pulse parameter was a callable, it is now a partial
         # confirm that post-evaluation value at t=1.7 seconds matches expectation
         if callable_amp:
-            assert isinstance(dev_sim.pulses[0].amplitude, partial)
-            assert amp_sample == dev_sim.pulses[0].amplitude(1.7)
+            assert isinstance(dev_sim._pulses[0].amplitude, partial)
+            assert amp_sample == dev_sim._pulses[0].amplitude(1.7)
         else:
-            assert amp_sample == dev_sim.pulses[0].amplitude
+            assert amp_sample == dev_sim._pulses[0].amplitude
 
         if callable_phase:
-            assert isinstance(dev_sim.pulses[0].phase, partial)
-            assert phase_sample == dev_sim.pulses[0].phase(1.7)
+            assert isinstance(dev_sim._pulses[0].phase, partial)
+            assert phase_sample == dev_sim._pulses[0].phase(1.7)
         else:
-            assert phase_sample == dev_sim.pulses[0].phase
+            assert phase_sample == dev_sim._pulses[0].phase
 
         if callable_detuning:
-            assert isinstance(dev_sim.pulses[0].frequency, partial)
-            assert detuning_sample == dev_sim.pulses[0].frequency(1.7)
+            assert isinstance(dev_sim._pulses[0].frequency, partial)
+            assert detuning_sample == dev_sim._pulses[0].frequency(1.7)
         else:
-            assert detuning_sample == dev_sim.pulses[0].frequency
+            assert detuning_sample == dev_sim._pulses[0].frequency
 
     @pytest.mark.parametrize("time_interval", [[1.5, 2.3], [0, 1.2], [0.111, 3.789]])
     def test_get_sample_times(self, time_interval):
