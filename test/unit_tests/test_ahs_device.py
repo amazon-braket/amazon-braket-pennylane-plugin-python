@@ -39,6 +39,14 @@ from braket.pennylane_plugin.ahs_device import (
     BraketAwsAhsDevice,
     BraketLocalAhsDevice,
 )
+from braket.pennylane_plugin.ahs_translation import (
+    _convert_to_time_series,
+    _create_register,
+    _evaluate_pulses,
+    _get_sample_times,
+    translate_ahs_shot_result,
+    translate_pulse_to_driving_field,
+)
 
 coordinates1 = [[0, 0], [0, 5], [5, 0], [10, 5], [5, 10], [10, 10]]
 wires1 = [1, 6, 0, 2, 4, 3]
@@ -499,7 +507,8 @@ class TestBraketAhsDevice:
 
         assert dev.register is None
 
-        dev._create_register(coordinates)
+        dev._register = _create_register(coordinates)
+
         coordinates_from_register = [
             [x * 1e6, y * 1e6]
             for x, y in zip(dev.register.coordinate_list(0), dev.register.coordinate_list(1))
@@ -543,33 +552,33 @@ class TestBraketAhsDevice:
             detuning_sample = pulse.frequency
 
         # evaluate pulses
-        dev_sim._evaluate_pulses(ev_op)
+        dev_sim._pulses = _evaluate_pulses(ev_op)
 
         # confirm that if initial pulse parameter was a callable, it is now a partial
         # confirm that post-evaluation value at t=1.7 seconds matches expectation
         if callable_amp:
-            assert isinstance(dev_sim.pulses[0].amplitude, partial)
-            assert amp_sample == dev_sim.pulses[0].amplitude(1.7)
+            assert isinstance(dev_sim._pulses[0].amplitude, partial)
+            assert amp_sample == dev_sim._pulses[0].amplitude(1.7)
         else:
-            assert amp_sample == dev_sim.pulses[0].amplitude
+            assert amp_sample == dev_sim._pulses[0].amplitude
 
         if callable_phase:
-            assert isinstance(dev_sim.pulses[0].phase, partial)
-            assert phase_sample == dev_sim.pulses[0].phase(1.7)
+            assert isinstance(dev_sim._pulses[0].phase, partial)
+            assert phase_sample == dev_sim._pulses[0].phase(1.7)
         else:
-            assert phase_sample == dev_sim.pulses[0].phase
+            assert phase_sample == dev_sim._pulses[0].phase
 
         if callable_detuning:
-            assert isinstance(dev_sim.pulses[0].frequency, partial)
-            assert detuning_sample == dev_sim.pulses[0].frequency(1.7)
+            assert isinstance(dev_sim._pulses[0].frequency, partial)
+            assert detuning_sample == dev_sim._pulses[0].frequency(1.7)
         else:
-            assert detuning_sample == dev_sim.pulses[0].frequency
+            assert detuning_sample == dev_sim._pulses[0].frequency
 
     @pytest.mark.parametrize("time_interval", [[1.5, 2.3], [0, 1.2], [0.111, 3.789]])
     def test_get_sample_times(self, time_interval):
         """Tests turning an array of [start, end] times into time set-points"""
 
-        times = dev_sim._get_sample_times(time_interval)
+        times = _get_sample_times(time_interval)
 
         num_points = len(times)
         diffs = [times[i] - times[i - 1] for i in range(1, num_points)]
@@ -586,7 +595,7 @@ class TestBraketAhsDevice:
         """Test creating a TimeSeries when the pulse parameter is defined as a constant float"""
 
         times = [0, 1, 2, 3, 4, 5]
-        ts = dev_sim._convert_to_time_series(pulse_parameter=4.3, time_points=times)
+        ts = _convert_to_time_series(pulse_parameter=4.3, time_points=times)
 
         assert ts.times() == times
         assert all(p == 4.3 for p in ts.values())
@@ -600,7 +609,7 @@ class TestBraketAhsDevice:
         times_us = [0, 1, 2, 3, 4, 5]  # microseconds
         times_s = [t * 1e-6 for t in times_us]  # seconds
 
-        ts = dev_sim._convert_to_time_series(pulse_parameter=f, time_points=times_s)
+        ts = _convert_to_time_series(pulse_parameter=f, time_points=times_s)
         expected_vals = [np.sin(t) for t in times_us]
 
         assert ts.times() == times_s
@@ -615,9 +624,7 @@ class TestBraketAhsDevice:
         times_us = [0, 1, 2, 3, 4, 5]  # microseconds
         times_s = [t * 1e-6 for t in times_us]  # seconds
 
-        ts = dev_sim._convert_to_time_series(
-            pulse_parameter=f, time_points=times_s, scaling_factor=1.7
-        )
+        ts = _convert_to_time_series(pulse_parameter=f, time_points=times_s, scaling_factor=1.7)
         expected_vals = [np.sin(t) * 1.7 for t in times_us]
 
         assert ts.times() == times_s
@@ -632,14 +639,14 @@ class TestBraketAhsDevice:
             HardwarePulse(lin_fn, sin_fn, quad_fn, wires=[0, 1, 2]),
         ],
     )
-    def test_convert_pulse_to_driving_field(self, pulse):
+    def test_translate_pulse_to_driving_field(self, pulse):
         """Test that a time interval in microseconds (as passed to the qnode in PennyLane)
         and a Pulse object containing constant or time-dependent pulse parameters (floats
         and/or callables that have been evaluated to be a function only of time)
         and can be converted into a DrivingField
         """
 
-        drive = dev_sim._convert_pulse_to_driving_field(pulse, [0, 1.5])
+        drive = translate_pulse_to_driving_field(pulse, [0, 1.5])
 
         assert isinstance(drive, DrivingField)
 
@@ -648,7 +655,7 @@ class TestBraketAhsDevice:
         """Test function for converting the task results as returned by the
         device into sample measurement results for PennyLane"""
 
-        output = dev_sim._result_to_sample_output(res)
+        output = translate_ahs_shot_result(res)
 
         assert isinstance(output, np.ndarray)
         assert len(output) == len(res.post_sequence)

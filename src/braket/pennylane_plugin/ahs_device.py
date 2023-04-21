@@ -32,22 +32,24 @@ Code details
 ~~~~~~~~~~~~
 """
 from enum import Enum, auto
-from functools import partial
-from typing import Callable, Iterable, List, Optional, Union
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
-from braket.ahs.atom_arrangement import AtomArrangement
-from braket.ahs.driving_field import DrivingField
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
-from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
-from braket.timings.time_series import TimeSeries
-from numpy.typing import ArrayLike
 from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+
+from .ahs_translation import (
+    _create_register,
+    _evaluate_pulses,
+    _get_sample_times,
+    translate_ahs_shot_result,
+    translate_pulse_to_driving_field,
+)
 
 
 class Shots(Enum):
@@ -94,9 +96,9 @@ class BraketAhsDevice(QubitDevice):
         super().__init__(wires=wires, shots=num_shots)
 
         self._device = device
-        self.register = None
-        self.pulses = None
-        self.ahs_program = None
+        self._register = None
+        self._pulses = None
+        self._ahs_program = None
         self._task = None
 
     def apply(self, operations: List[ParametrizedEvolution], **kwargs):
@@ -124,6 +126,14 @@ class BraketAhsDevice(QubitDevice):
         return self._task
 
     @property
+    def ahs_program(self):
+        return self._ahs_program
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
     def samples(self):
         if self._task:
             return self._task.result()
@@ -145,16 +155,17 @@ class BraketAhsDevice(QubitDevice):
             AnalogHamiltonianSimulation: a program containing the register and drive
                 information for running an AHS task on simulation or hardware"""
 
-        # sets self.pulses to be the evaluated pulses (now only a function of time)
-        self._evaluate_pulses(evolution)
-        self._create_register(evolution.H.settings.register)
+        # sets self._pulses to be the evaluated pulses (now only a function of time)
+        self._pulses = _evaluate_pulses(evolution)
+        self._register = _create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
+        time_points = _get_sample_times(time_interval)
 
         # no gurarentee that global drive is index 0 once we start allowing more just global drive
-        drive = self._convert_pulse_to_driving_field(self.pulses[0], time_interval)
+        drive = translate_pulse_to_driving_field(self._pulses[0], time_points)
 
-        return AnalogHamiltonianSimulation(register=self.register, hamiltonian=drive)
+        return AnalogHamiltonianSimulation(register=self._register, hamiltonian=drive)
 
     def create_ahs_program(self, evolution: ParametrizedEvolution):
         """Create AHS program for upload to hardware from a ParametrizedEvolution
@@ -169,7 +180,7 @@ class BraketAhsDevice(QubitDevice):
 
         ahs_program = self._ahs_program_from_evolution(evolution)
 
-        self.ahs_program = ahs_program
+        self._ahs_program = ahs_program
 
         return ahs_program
 
@@ -179,7 +190,7 @@ class BraketAhsDevice(QubitDevice):
         Returns:
              array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
         """
-        return [self._result_to_sample_output(res) for res in self.samples.measurements]
+        return [translate_ahs_shot_result(res) for res in self.samples.measurements]
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
@@ -241,179 +252,6 @@ class BraketAhsDevice(QubitDevice):
                 f"Only global drive is currently supported. Found drive defined for subset "
                 f"{[pulses[0].wires]} of all wires [{self.wires}]"
             )
-
-    def _create_register(self, coordinates: List):
-        """Create an AtomArrangement to describe the atom layout from the coordinates in the
-        ParametrizedEvolution, and saves it as self.register
-
-        Args:
-            coordinates(List): a list of pairs [x, y] of coordinates denoting atom locations, in um
-        """
-
-        register = AtomArrangement()
-        for [x, y] in coordinates:
-            # PL asks users to specify in um, Braket expects SI units
-            register.add([x * 1e-6, y * 1e-6])
-
-        self.register = register
-
-    def _evaluate_pulses(self, ev_op: ParametrizedEvolution):
-        """Feeds in the parameters in order to partially evaluate the callables (amplitude,
-        phase and/or frequency detuning) describing the pulses, so they are only a function of time.
-        Saves the pulses on the device as `dev.pulses`.
-
-        Args:
-            ev_op(ParametrizedEvolution): the operator containing the pulses to be evaluated
-        """
-
-        params = ev_op.parameters
-        pulses = ev_op.H.pulses
-
-        evaluated_pulses = []
-        idx = 0
-
-        for pulse in pulses:
-            amplitude = pulse.amplitude
-            if callable(pulse.amplitude):
-                amplitude = partial(pulse.amplitude, params[idx])
-                idx += 1
-
-            phase = pulse.phase
-            if callable(pulse.phase):
-                phase = partial(pulse.phase, params[idx])
-                idx += 1
-
-            detuning = pulse.frequency
-            if callable(pulse.frequency):
-                detuning = partial(pulse.frequency, params[idx])
-                idx += 1
-
-            evaluated_pulses.append(
-                HardwarePulse(
-                    amplitude=amplitude, phase=phase, frequency=detuning, wires=pulse.wires
-                )
-            )
-
-        self.pulses = evaluated_pulses
-
-    def _get_sample_times(self, time_interval: ArrayLike):
-        """Takes a time interval and returns an array of times with a minimum of 50ns spacing
-
-        Args:
-            time_interval(array[float, float]): an array with start and end times for the
-                pulse, in us
-
-        Returns:
-            times(array[float]): an array of times sampled at 1ns intervals between the start
-                and end times, in SI units (seconds)
-        """
-        # time_interval from PL is in microseconds, we convert to ns
-        interval_ns = np.array(time_interval) * 1e3
-        start = interval_ns[0]
-        end = interval_ns[1]
-
-        # number of points must ensure at least 50ns between sample points
-        num_points = int((end - start) // 50)
-
-        # we want an integer number of nanoseconds
-        times = np.linspace(start, end, num_points, dtype=int)
-
-        # we return time in seconds
-        return times / 1e9
-
-    def _convert_to_time_series(
-        self,
-        pulse_parameter: Union[float, Callable],
-        time_points: ArrayLike,
-        scaling_factor: float = 1,
-    ):
-        """Converts pulse information into a TimeSeries
-
-        Args:
-            pulse_parameter(Union[float, Callable]): a physical parameter (pulse, amplitude
-                or frequency detuning) of the pulse. If this is a callalbe, it has already been
-                partially evaluated, such that it is only a function of time.
-            time_points(array): the times where parameters will be set in the TimeSeries, specified
-                in seconds
-            scaling_factor(float): A multiplication factor for the pulse_parameter
-                where relevant to convert between units. Defaults to 1.
-
-        Returns:
-            TimeSeries: a description of setpoints and corresponding times
-        """
-
-        ts = TimeSeries()
-
-        if callable(pulse_parameter):
-            # convert time to microseconds to evaluate (expected unit for the PL functions)
-            vals = [float(pulse_parameter(t * 1e6)) * scaling_factor for t in time_points]
-        else:
-            vals = [pulse_parameter * scaling_factor for t in time_points]
-
-        for t, v in zip(time_points, vals):
-            ts.put(t, v)
-
-        return ts
-
-    def _convert_pulse_to_driving_field(self, pulse: HardwarePulse, time_interval: ArrayLike):
-        """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a
-        ``DrivingField`` from Braket AHS
-
-        Args:
-            pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency
-                detuning information
-            time_interval(array[float, float]): The start and end time for the applied pulse
-
-        Returns:
-            drive(DrivingField): the object representing the global drive for the
-                AnalogueHamiltonianSimulation object
-        """
-
-        time_points = self._get_sample_times(time_interval)
-
-        # scaling factor for amp and frequency detuning converts from Mrad/s to rad/s
-        amplitude = self._convert_to_time_series(pulse.amplitude, time_points, scaling_factor=1e6)
-        detuning = self._convert_to_time_series(pulse.frequency, time_points, scaling_factor=1e6)
-        phase = self._convert_to_time_series(pulse.phase, time_points)
-
-        drive = DrivingField(amplitude=amplitude, detuning=detuning, phase=phase)
-
-        return drive
-
-    @staticmethod
-    def _result_to_sample_output(res: ShotResult):
-        """This function converts a single shot of the QuEra measurement results to
-        0 (ground), 1 (excited) and NaN (failed to measure) for all atoms in the result.
-
-        Args:
-            res(ShotResult): the result of a single measurement shot
-
-        The results are summarized via 3 values: status, pre_sequence, and post_sequence.
-
-        Status is success or fail. The pre_sequence is 1 if an atom in the ground state was
-        successfully initialized, and 0 otherwise. The post_sequence is 1 if an atom in the
-        ground state was measured, and 0 otherwise. Comparison of pre_sequence and post_sequence
-        reveals one of 4 possible outcomes. The first two (initial measurement of 0) indicate a
-        failure to initialize correctly, and will yeild a NaN result. The second two are
-        measurements of the excited and ground state repsectively, and yield 1 and 0.
-
-        0 --> 0: NaN - Atom failed to be placed (no atom in the ground state either before or after)
-        0 --> 1: NaN - Atom failed to be placed (but was recaptured, or something else odd happened)
-        1 --> 0: 1 (Rydberg state) - atom measured in ground state before, but not after
-        1 --> 1: 0 (ground state) - atom measured in ground state both before and after
-        """
-
-        # if entire measurement failed, all NaN
-        if not res.status.value.lower() == "success":
-            return np.array([np.NaN for i in res.pre_sequence])
-
-        # if a single atom failed to initialize, NaN for that individual measurement
-        pre_sequence = [i if i else np.NaN for i in res.pre_sequence]
-
-        # set entry to 0 if ground state measured
-        # 1 if excited state measured
-        # and NaN if measurement failed
-        return np.array(pre_sequence - res.post_sequence)
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
@@ -508,7 +346,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         ahs_program = self._ahs_program_from_evolution(evolution)
         ahs_program_discretized = ahs_program.discretize(self._device)
 
-        self.ahs_program = ahs_program_discretized
+        self._ahs_program = ahs_program_discretized
 
         return ahs_program_discretized
 
