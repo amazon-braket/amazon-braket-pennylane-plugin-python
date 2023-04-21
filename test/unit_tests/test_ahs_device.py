@@ -43,8 +43,14 @@ from braket.pennylane_plugin.ahs_device import (
     BraketAwsAhsDevice,
     BraketLocalAhsDevice,
 )
-
-from braket.pennylane_plugin.translation import translate_pulse_to_driving_field, _convert_to_time_series, _evaluate_pulses, _create_register
+from braket.pennylane_plugin.ahs_translation import (
+    _convert_to_time_series,
+    _create_register,
+    _evaluate_pulses,
+    _get_sample_times,
+    translate_ahs_shot_result,
+    translate_pulse_to_driving_field,
+)
 
 coordinates1 = [[0, 0], [0, 5], [5, 0], [10, 5], [5, 10], [10, 10]]
 wires1 = [1, 6, 0, 2, 4, 3]
@@ -581,7 +587,7 @@ class TestBraketAhsDevice:
     def test_get_sample_times(self, time_interval):
         """Tests turning an array of [start, end] times into time set-points"""
 
-        times = dev_sim._get_sample_times(time_interval)
+        times = _get_sample_times(time_interval)
 
         num_points = len(times)
         diffs = [times[i] - times[i - 1] for i in range(1, num_points)]
@@ -627,9 +633,7 @@ class TestBraketAhsDevice:
         times_us = [0, 1, 2, 3, 4, 5]  # microseconds
         times_s = [t * 1e-6 for t in times_us]  # seconds
 
-        ts = _convert_to_time_series(
-            pulse_parameter=f, time_points=times_s, scaling_factor=1.7
-        )
+        ts = _convert_to_time_series(pulse_parameter=f, time_points=times_s, scaling_factor=1.7)
         expected_vals = [np.sin(t) * 1.7 for t in times_us]
 
         assert ts.times() == times_s
@@ -660,7 +664,7 @@ class TestBraketAhsDevice:
         """Test function for converting the task results as returned by the
         device into sample measurement results for PennyLane"""
 
-        output = dev_sim._result_to_sample_output(res)
+        output = translate_ahs_shot_result(res)
 
         assert isinstance(output, np.ndarray)
         assert len(output) == len(res.post_sequence)

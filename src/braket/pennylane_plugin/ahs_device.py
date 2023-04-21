@@ -32,21 +32,24 @@ Code details
 ~~~~~~~~~~~~
 """
 from enum import Enum, auto
-from typing import Callable, Iterable, List, Optional, Union
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
-from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
-from braket.timings.time_series import TimeSeries
-from numpy.typing import ArrayLike
 from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
-from .translation import _convert_to_time_series, translate_pulse_to_driving_field, _evaluate_pulses, _create_register
+from .ahs_translation import (
+    _create_register,
+    _evaluate_pulses,
+    _get_sample_times,
+    translate_ahs_shot_result,
+    translate_pulse_to_driving_field,
+)
 
 
 class Shots(Enum):
@@ -157,7 +160,7 @@ class BraketAhsDevice(QubitDevice):
         self._register = _create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
-        time_points = self._get_sample_times(time_interval)
+        time_points = _get_sample_times(time_interval)
 
         # no gurarentee that global drive is index 0 once we start allowing more just global drive
         drive = translate_pulse_to_driving_field(self._pulses[0], time_points)
@@ -187,7 +190,7 @@ class BraketAhsDevice(QubitDevice):
         Returns:
              array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
         """
-        return np.array([self._result_to_sample_output(res) for res in self.samples.measurements])
+        return [translate_ahs_shot_result(res) for res in self.samples.measurements]
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
@@ -249,66 +252,6 @@ class BraketAhsDevice(QubitDevice):
                 f"Only global drive is currently supported. Found drive defined for subset "
                 f"{[pulses[0].wires]} of all wires [{self.wires}]"
             )
-
-    def _get_sample_times(self, time_interval: ArrayLike):
-        """Takes a time interval and returns an array of times with a minimum of 50ns spacing
-
-        Args:
-            time_interval(array[float, float]): an array with start and end times for the
-                pulse, in us
-
-        Returns:
-            times(array[float]): an array of times sampled at 1ns intervals between the start
-                and end times, in SI units (seconds)
-        """
-        # time_interval from PL is in microseconds, we convert to ns
-        interval_ns = np.array(time_interval) * 1e3
-        start = interval_ns[0]
-        end = interval_ns[1]
-
-        # number of points must ensure at least 50ns between sample points
-        num_points = int((end - start) // 50)
-
-        # we want an integer number of nanoseconds
-        times = np.linspace(start, end, num_points, dtype=int)
-
-        # we return time in seconds
-        return times / 1e9
-
-    @staticmethod
-    def _result_to_sample_output(res: ShotResult):
-        """This function converts a single shot of the QuEra measurement results to
-        0 (ground), 1 (excited) and NaN (failed to measure) for all atoms in the result.
-
-        Args:
-            res(ShotResult): the result of a single measurement shot
-
-        The results are summarized via 3 values: status, pre_sequence, and post_sequence.
-
-        Status is success or fail. The pre_sequence is 1 if an atom in the ground state was
-        successfully initialized, and 0 otherwise. The post_sequence is 1 if an atom in the
-        ground state was measured, and 0 otherwise. Comparison of pre_sequence and post_sequence
-        reveals one of 4 possible outcomes. The first two (initial measurement of 0) indicate a
-        failure to initialize correctly, and will yeild a NaN result. The second two are
-        measurements of the excited and ground state repsectively, and yield 1 and 0.
-
-        0 --> 0: NaN - Atom failed to be placed (no atom in the ground state either before or after)
-        0 --> 1: NaN - Atom failed to be placed (but was recaptured, or something else odd happened)
-        1 --> 0: 1 (Rydberg state) - atom measured in ground state before, but not after
-        1 --> 1: 0 (ground state) - atom measured in ground state both before and after
-        """
-
-        # if entire measurement failed, all NaN
-        if not res.status.value.lower() == "success":
-            return np.array([np.NaN for i in res.pre_sequence])
-
-        # if a single atom failed to initialize, NaN for that individual measurement
-        pre_sequence = [i if i else np.NaN for i in res.pre_sequence]
-
-        # set entry to 0 if ground state measured
-        # 1 if excited state measured
-        # and NaN if measurement failed
-        return np.array(pre_sequence - res.post_sequence)
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
