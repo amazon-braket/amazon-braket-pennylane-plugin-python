@@ -40,6 +40,8 @@ from braket.pennylane_plugin.ahs_device import (
     BraketLocalAhsDevice,
 )
 
+from braket.pennylane_plugin.translation import _convert_to_time_series, _convert_pulse_to_driving_field
+
 coordinates1 = [[0, 0], [0, 5], [5, 0], [10, 5], [5, 10], [10, 10]]
 wires1 = [1, 6, 0, 2, 4, 3]
 
@@ -586,7 +588,7 @@ class TestBraketAhsDevice:
         """Test creating a TimeSeries when the pulse parameter is defined as a constant float"""
 
         times = [0, 1, 2, 3, 4, 5]
-        ts = dev_sim._convert_to_time_series(pulse_parameter=4.3, time_points=times)
+        ts = _convert_to_time_series(pulse_parameter=4.3, time_points=times)
 
         assert ts.times() == times
         assert all(p == 4.3 for p in ts.values())
@@ -600,7 +602,7 @@ class TestBraketAhsDevice:
         times_us = [0, 1, 2, 3, 4, 5]  # microseconds
         times_s = [t * 1e-6 for t in times_us]  # seconds
 
-        ts = dev_sim._convert_to_time_series(pulse_parameter=f, time_points=times_s)
+        ts = _convert_to_time_series(pulse_parameter=f, time_points=times_s)
         expected_vals = [np.sin(t) for t in times_us]
 
         assert ts.times() == times_s
@@ -615,7 +617,7 @@ class TestBraketAhsDevice:
         times_us = [0, 1, 2, 3, 4, 5]  # microseconds
         times_s = [t * 1e-6 for t in times_us]  # seconds
 
-        ts = dev_sim._convert_to_time_series(
+        ts = _convert_to_time_series(
             pulse_parameter=f, time_points=times_s, scaling_factor=1.7
         )
         expected_vals = [np.sin(t) * 1.7 for t in times_us]
@@ -639,7 +641,7 @@ class TestBraketAhsDevice:
         and can be converted into a DrivingField
         """
 
-        drive = dev_sim._convert_pulse_to_driving_field(pulse, [0, 1.5])
+        drive = _convert_pulse_to_driving_field(pulse, [0, 1.5])
 
         assert isinstance(drive, DrivingField)
 
