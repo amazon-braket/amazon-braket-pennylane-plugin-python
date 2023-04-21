@@ -575,3 +575,70 @@ def translate_result(
         )
     else:
         return braket_result.get_value_by_result_type(translated)
+
+
+
+
+
+
+from numpy.typing import ArrayLike
+from typing import Callable
+from pennylane.pulse.hardware_hamiltonian import HardwarePulse
+from braket.timings.time_series import TimeSeries
+from braket.ahs.driving_field import DrivingField
+
+def _convert_to_time_series(
+    pulse_parameter: Union[float, Callable],
+    time_points: ArrayLike,
+    scaling_factor: float = 1,
+):
+    """Converts pulse information into a TimeSeries
+
+    Args:
+        pulse_parameter(Union[float, Callable]): a physical parameter (pulse, amplitude
+            or frequency detuning) of the pulse. If this is a callalbe, it has already been
+            partially evaluated, such that it is only a function of time.
+        time_points(array): the times where parameters will be set in the TimeSeries, specified
+            in seconds
+        scaling_factor(float): A multiplication factor for the pulse_parameter
+            where relevant to convert between units. Defaults to 1.
+
+    Returns:
+        TimeSeries: a description of setpoints and corresponding times
+    """
+
+    ts = TimeSeries()
+
+    if callable(pulse_parameter):
+        # convert time to microseconds to evaluate (expected unit for the PL functions)
+        vals = [float(pulse_parameter(t * 1e6)) * scaling_factor for t in time_points]
+    else:
+        vals = [pulse_parameter * scaling_factor for t in time_points]
+
+    for t, v in zip(time_points, vals):
+        ts.put(t, v)
+
+    return ts
+
+def _convert_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLike):
+    """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a
+    ``DrivingField`` from Braket AHS
+
+    Args:
+        pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency
+            detuning information
+        time_interval(array[float, float]): The start and end time for the applied pulse
+
+    Returns:
+        drive(DrivingField): the object representing the global drive for the
+            AnalogueHamiltonianSimulation object
+    """
+
+    # scaling factor for amp and frequency detuning converts from Mrad/s to rad/s
+    amplitude = _convert_to_time_series(pulse.amplitude, time_points, scaling_factor=1e6)
+    detuning = _convert_to_time_series(pulse.frequency, time_points, scaling_factor=1e6)
+    phase = _convert_to_time_series(pulse.phase, time_points)
+
+    drive = DrivingField(amplitude=amplitude, detuning=detuning, phase=phase)
+
+    return drive

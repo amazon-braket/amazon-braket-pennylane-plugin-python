@@ -52,6 +52,8 @@ from pennylane._version import __version__
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
+from .translation import _get_sample_times, _convert_to_time_series, _convert_pulse_to_driving_field
+
 
 class Shots(Enum):
     """Used to specify the default number of shots in BraketAwsQubitDevice"""
@@ -161,9 +163,10 @@ class BraketAhsDevice(QubitDevice):
         self._create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
+        time_points = self._get_sample_times(time_interval)
 
         # no gurarentee that global drive is index 0 once we start allowing more just global drive
-        drive = self._convert_pulse_to_driving_field(self._pulses[0], time_interval)
+        drive = _convert_pulse_to_driving_field(self._pulses[0], time_points)
 
         return AnalogHamiltonianSimulation(register=self._register, hamiltonian=drive)
 
@@ -332,64 +335,6 @@ class BraketAhsDevice(QubitDevice):
         # we return time in seconds
         return times / 1e9
 
-    def _convert_to_time_series(
-        self,
-        pulse_parameter: Union[float, Callable],
-        time_points: ArrayLike,
-        scaling_factor: float = 1,
-    ):
-        """Converts pulse information into a TimeSeries
-
-        Args:
-            pulse_parameter(Union[float, Callable]): a physical parameter (pulse, amplitude
-                or frequency detuning) of the pulse. If this is a callalbe, it has already been
-                partially evaluated, such that it is only a function of time.
-            time_points(array): the times where parameters will be set in the TimeSeries, specified
-                in seconds
-            scaling_factor(float): A multiplication factor for the pulse_parameter
-                where relevant to convert between units. Defaults to 1.
-
-        Returns:
-            TimeSeries: a description of setpoints and corresponding times
-        """
-
-        ts = TimeSeries()
-
-        if callable(pulse_parameter):
-            # convert time to microseconds to evaluate (expected unit for the PL functions)
-            vals = [float(pulse_parameter(t * 1e6)) * scaling_factor for t in time_points]
-        else:
-            vals = [pulse_parameter * scaling_factor for t in time_points]
-
-        for t, v in zip(time_points, vals):
-            ts.put(t, v)
-
-        return ts
-
-    def _convert_pulse_to_driving_field(self, pulse: HardwarePulse, time_interval: ArrayLike):
-        """Converts a ``HardwarePulse`` from PennyLane describing a global drive to a
-        ``DrivingField`` from Braket AHS
-
-        Args:
-            pulse[HardwarePulse]: a dataclass object containing amplitude, phase and frequency
-                detuning information
-            time_interval(array[float, float]): The start and end time for the applied pulse
-
-        Returns:
-            drive(DrivingField): the object representing the global drive for the
-                AnalogueHamiltonianSimulation object
-        """
-
-        time_points = self._get_sample_times(time_interval)
-
-        # scaling factor for amp and frequency detuning converts from Mrad/s to rad/s
-        amplitude = self._convert_to_time_series(pulse.amplitude, time_points, scaling_factor=1e6)
-        detuning = self._convert_to_time_series(pulse.frequency, time_points, scaling_factor=1e6)
-        phase = self._convert_to_time_series(pulse.phase, time_points)
-
-        drive = DrivingField(amplitude=amplitude, detuning=detuning, phase=phase)
-
-        return drive
 
     @staticmethod
     def _result_to_sample_output(res: ShotResult):
