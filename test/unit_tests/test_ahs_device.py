@@ -87,7 +87,6 @@ params1 = 1.2
 params2 = [3.4, 5.6]
 params_amp = [2.5, 0.9, 0.3]
 
-
 HAMILTONIANS_AND_PARAMS = [
     (H_i + rydberg_drive(amplitude=4, phase=1, detuning=3, wires=[0, 1, 2]), []),
     (H_i + rydberg_drive(amplitude=amp, phase=1, detuning=2, wires=[0, 1, 2]), [params_amp]),
@@ -202,7 +201,6 @@ def mock_aws_device(monkeypatch, wires=3):
 
 
 def dummy_ahs_program():
-
     # amplutide 10 for full duration
     amplitude = TimeSeries()
     amplitude.put(0, 10)
@@ -574,7 +572,6 @@ class TestBraketAhsDevice:
             assert detuning_sample == dev_sim._pulses[0].frequency(1.7)
         else:
             assert detuning_sample == dev_sim._pulses[0].frequency
-            
 
     @pytest.mark.parametrize("time_interval", [[1.5, 2.3], [0, 1.2], [0.111, 3.789]])
     def test_get_sample_times(self, time_interval):
@@ -597,7 +594,6 @@ class TestBraketAhsDevice:
         """Test creating a TimeSeries when the pulse parameter is defined as a constant float"""
 
         times = [0, 1, 2, 3, 4, 5]
-        
         ts = _convert_to_time_series(pulse_parameter=4.3, time_points=times)
 
         assert ts.times() == times
@@ -613,7 +609,6 @@ class TestBraketAhsDevice:
         times_s = [t * 1e-6 for t in times_us]  # seconds
 
         ts = _convert_to_time_series(pulse_parameter=f, time_points=times_s)
-
         expected_vals = [np.sin(t) for t in times_us]
 
         assert ts.times() == times_s

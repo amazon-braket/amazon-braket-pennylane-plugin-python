@@ -114,7 +114,6 @@ class BraketAhsDevice(QubitDevice):
                 "Device {self.short_name} expected only operations "
                 "{self.operations} but recieved {operations}"
             )
-
         self._validate_operations(operations)
         ev_op = operations[0]  # only one!
 
@@ -261,7 +260,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
     More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
 
     Args:
-        wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
+        wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
