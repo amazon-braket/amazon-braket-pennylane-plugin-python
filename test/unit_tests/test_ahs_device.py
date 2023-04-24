@@ -75,6 +75,7 @@ def amp(p, t):
 def sin_fn(t):
     return np.sin(t)
 
+
 def sin_squared(t):
     return np.sin(t) ** 2
 
@@ -934,6 +935,7 @@ class TestLocalAhsDevice:
         local_det_time = shift.magnitude.time_series.times()
         assert local_det_time[0] == evolution.t[0] * 1e-6
         assert local_det_time[-1] == evolution.t[1] * 1e-6
+
 
 class TestBraketAwsAhsDevice:
     """Test functionality specific to the hardware device"""
