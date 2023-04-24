@@ -32,6 +32,19 @@ operator based on a hardware-compatible `ParametrizedHamiltonian <https://docs.p
 More information about creating PennyLane operators for AHS can be
 found in the `PennyLane docs <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_.
 
+.. note::
+    It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+    The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
+    to hardware (converted from :math:`2 \pi`MHz to rad/s), while time will be divided by 1e6 (converted from
+    microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
+    to meters).
+
+    See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+    and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+    Pennylane for specification of expected input units, and examples for creating hardware-compatible
+    `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+    operators in PennyLane.
+
 Creating a register
 ^^^^^^^^^^^^^^^^^^^
 
@@ -68,20 +81,6 @@ Here we define a global drive with time dependent amplitude and detuning, with p
     # creating a global drive on all wires
     H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn, wires=[0, 1, 2])
 
-.. note::
-    It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-    The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
-    to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
-    microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
-    to meters).
-
-
-    See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-    and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
-    Pennylane for specification of expected input units, and examples for creating hardware-compatible
-    `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
-    operators in PennyLane.
-
 
 Creating and executing the circuit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,6 +114,6 @@ This device is not compatible with analytic mode, so an error will be raised if 
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
 
-For Analogue Hamiltonian Simulation, the only supported operation is a ``ParametrizedEvolution``
+For Analogue Hamiltonian Simulation, the only supported operation is a `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 describing a hardware-compatible electromagnetic pulse.
 
