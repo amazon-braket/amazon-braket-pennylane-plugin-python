@@ -35,7 +35,7 @@ found in the `PennyLane docs <https://docs.pennylane.ai/en/stable/code/qml_pulse
 .. note::
     It is important to keep track of units when specifying electromagnetic pulses for hardware control.
     The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
-    to hardware (converted from :math:`2 \pi`MHz to rad/s), while time will be divided by 1e6 (converted from
+    to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
     microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
     to meters).
 
