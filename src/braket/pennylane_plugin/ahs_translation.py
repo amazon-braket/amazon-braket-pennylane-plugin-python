@@ -285,8 +285,9 @@ def _extract_pattern_from_detunings(detunings, time_points):
     else:
         max_index = np.argmax(np.abs(detunings))
         max_detuning = np.abs(detunings[max_index])
-        # Using the absolute value ensures that if there are any negative values,
-        # the get captured in the pattern
+
+        if np.isclose(max_detuning, 0):
+            return 0, Pattern([1] * len(detunings))
 
         pattern = [det / max_detuning for det in detunings]
 

@@ -46,10 +46,13 @@ from braket.pennylane_plugin.ahs_device import (
 from braket.pennylane_plugin.ahs_translation import (
     _convert_to_time_series,
     _create_register,
+    _create_valid_local_detunings,
     _evaluate_pulses,
+    _extract_pattern_from_detunings,
     _get_sample_times,
     translate_ahs_shot_result,
     translate_pulse_to_driving_field,
+    translate_pulses_to_shifting_field,
 )
 
 coordinates1 = [[0, 0], [0, 5], [5, 0], [10, 5], [5, 10], [10, 10]]
@@ -749,11 +752,10 @@ class TestLocalAhsDevice:
     @pytest.mark.parametrize(
         "pulses, expected_detunings",
         [
-            ([HardwarePulse(0, 0, 2, [0, 1]), HardwarePulse(4, 3, 2, [0, 1, 2])], [2, 2, 0]),
+            ([HardwarePulse(0, 0, 2, [0, 1])], [2, 2, 0]),
             (
                 [
                     HardwarePulse(0, 0, dummy_cfunc, [0]),
-                    HardwarePulse(4, 3, 2, [0, 1, 2]),
                     HardwarePulse(0, 0, dummy_cfunc, [1, 2]),
                 ],
                 [dummy_cfunc, dummy_cfunc, dummy_cfunc],
@@ -761,13 +763,12 @@ class TestLocalAhsDevice:
             (
                 [
                     HardwarePulse(0, 0, 4, [0]),
-                    HardwarePulse(4, 3, 2, [0, 1, 2]),
                     HardwarePulse(0, 0, 2, [1, 2]),
                 ],
                 [4, 2, 2],
             ),
             (
-                [HardwarePulse(0, 0, dummy_cfunc, [0, 1]), HardwarePulse(4, 3, 2, [0, 1, 2])],
+                [HardwarePulse(0, 0, dummy_cfunc, [0, 1])],
                 [dummy_cfunc, dummy_cfunc, lambda t: 0],
             ),
         ],
@@ -776,30 +777,23 @@ class TestLocalAhsDevice:
         """Test that BraketLocalAhsDevice._create_valid_local_detunings expands and pads the
         detunings so that there is one local detuning per device wire, and that the detunings
         are mapped correctly."""
-        dev = BraketLocalAhsDevice(wires=3)
-        dev._global_pulse_idx = 1
-        # All test cases are written such that the global drive is stored in the pulse at index 1
 
-        dev.pulses = pulses
-        detunings = dev._create_valid_local_detunings()
+        detunings = _create_valid_local_detunings(pulses, dev_sim.wires)
 
-        assert len(detunings) == len(dev.wires)
+        assert len(detunings) == len(dev_sim.wires)
 
         if callable(pulses[0].frequency):
             for det, expected_det in zip(detunings, expected_detunings):
                 for i in range(10):
                     assert det(i) == expected_det(i)
         else:
-            assert all(detunings[i] == expected_detunings[i] for i in range(len(dev.wires)))
+            assert all(detunings[i] == expected_detunings[i] for i in range(len(dev_sim.wires)))
 
     def test_create_valid_local_detunings_no_local_detunings(self):
         """Test that _create_valid_local_detunings returns `None` if there are no local
         detunings."""
-        dev = BraketLocalAhsDevice(3)
-        dev._global_pulse_idx = 0
-        dev.pulses = [HardwarePulse(3, 4, 5, [0, 1, 2])]
 
-        valid_detunings = dev._create_valid_local_detunings()
+        valid_detunings = _create_valid_local_detunings([], dev_sim.wires)
         assert valid_detunings is None
 
     def test_extract_pattern_from_detunings_mismatched_detuning(self):
@@ -807,15 +801,16 @@ class TestLocalAhsDevice:
         don't match."""
         detunings = [lambda t: np.sin(t) ** 2, lambda t: np.cos(t) ** 2]
         time_interval = [0, 20]
+        time_points = _get_sample_times(time_interval)
 
         with pytest.raises(ValueError, match="Local detunings don't match"):
-            _ = dev_sim._extract_pattern_from_detunings(detunings, time_interval)
+            _ = _extract_pattern_from_detunings(detunings, time_points)
 
     @pytest.mark.parametrize("detunings", ([lambda t: np.sin(t), lambda t: 0.5 * np.sin(t)], [-1, 2]))
     def test_extract_pattern_from_detuning_negative_detuning(self, detunings):
         """Test that negative values in local detunings raise the correct error."""
         with pytest.raises(ValueError, match="Found negative value in local detunings"):
-            dev_sim._extract_pattern_from_detunings(detunings, [0, 20])
+            _ = _extract_pattern_from_detunings(detunings, _get_sample_times([0, 20]))
 
 
     @pytest.mark.parametrize(
@@ -828,26 +823,33 @@ class TestLocalAhsDevice:
                 sin_squared,
                 [1, 0.5, 0.333],
             ),
+            ([0, 0, 0], 0, [1, 1, 1]),
+            ([lambda t: 0] * 3, 0, [1, 1, 1]),
         ],
     )
     def test_extract_pattern_from_detunings(self, detunings, expected_max, expected_pattern):
         """Test that BraketLocalAhsDevice._extract_pattern_from_detunings
         finds the pattern from valid local detunings correctly."""
-        max_detuning, pattern = dev_sim._extract_pattern_from_detunings(detunings, [0, 20])
+        max_detuning, pattern = _extract_pattern_from_detunings(detunings, _get_sample_times([0, 20]))
 
         assert max_detuning == expected_max
         assert isinstance(pattern, Pattern)
         assert np.allclose(pattern.series, expected_pattern)
 
-    @pytest.mark.parametrize("detuning, pattern", [(sin_fn, [0.2, 0.2, 1]), (10.5, [0.1, 0.89, 1])])
-    def test_convert_pulses_to_shifting_field(self, detuning, pattern):
+    @pytest.mark.parametrize("detunings, pattern", [
+        (
+            [lambda t: sin_squared(t), lambda t: sin_squared(t), lambda t: 5 * sin_squared(t)],
+            [0.2, 0.2, 1],
+        ),
+        ([1, 8.9, 10], [0.1, 0.89, 1])])
+    def test_convert_pulses_to_shifting_field(self, detunings, pattern):
         """Test that BraketLocalAhsDevice._convert_pulses_to_shifting_field
         creates a valid `ShiftingField`."""
-        shift = dev_sim._convert_pulses_to_shifting_field(detuning, Pattern(pattern), [0, 20])
+        times = _get_sample_times([0, 20])
+        shift = translate_pulses_to_shifting_field(detunings, times)
         assert isinstance(shift, ShiftingField)
-        assert shift.magnitude.pattern.series == pattern
+        assert np.allclose(shift.magnitude.pattern.series, pattern)
 
-        times = dev_sim._get_sample_times([0, 20])
         shift_times = shift.magnitude.time_series.times()
         assert np.allclose(shift_times, times)
 

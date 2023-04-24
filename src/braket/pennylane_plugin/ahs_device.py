@@ -192,7 +192,7 @@ class BraketAhsDevice(QubitDevice):
         Returns:
              array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
         """
-        return [translate_ahs_shot_result(res) for res in self.samples.measurements]
+        return np.array([translate_ahs_shot_result(res) for res in self.samples.measurements])
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
