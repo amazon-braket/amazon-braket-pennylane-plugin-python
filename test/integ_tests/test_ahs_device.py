@@ -15,21 +15,12 @@
 
 import numpy as np
 import pennylane as qml
-import pkg_resources
 import pytest
-import json
-from unittest import mock
-from unittest.mock import Mock, PropertyMock, patch
-from conftest import shortname_and_backends
 
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
-from pennylane.pulse.rydberg import rydberg_interaction, rydberg_drive
-from pennylane.pulse.hardware_hamiltonian import HardwarePulse
+from pennylane.pulse.rydberg import rydberg_drive, rydberg_interaction
 
 from braket.pennylane_plugin.ahs_device import BraketAwsAhsDevice, BraketLocalAhsDevice
-from braket.aws import AwsDevice
-from braket.device_schema import DeviceActionType, DeviceActionProperties
-from braket.device_schema.quera.quera_ahs_paradigm_properties_v1 import QueraAhsParadigmProperties
 
 # =========================================================
 coordinates = [[0, 0], [0, 5], [5, 0]]  # in micrometers
@@ -44,8 +35,7 @@ def f2(p, t):
 
 
 def amp(p, t):
-    return p[0] * np.exp(-(t-p[1])**2/(2*p[2]**2))
-
+    return p[0] * np.exp(-((t - p[1]) ** 2) / (2 * p[2] ** 2))
 
 params1 = 1.2
 params2 = [3.4, 5.6]
@@ -54,20 +44,23 @@ params_amp = [2.5, 0.9, 0.3]
 # Hamiltonians to be tested
 H_i = rydberg_interaction(coordinates)
 
-HAMILTONIANS_AND_PARAMS = [(H_i + rydberg_drive(1, 2, 3, wires=[0, 1, 2]), []),
-                           (H_i + rydberg_drive(amp, 1, 2, wires=[0, 1, 2]), [params_amp]),
-                           (H_i + rydberg_drive(2, f1, 2, wires=[0, 1, 2]), [params1]),
-                           (H_i + rydberg_drive(2, 2, f2, wires=[0, 1, 2]), [params2]),
-                           (H_i + rydberg_drive(amp, 1, f2, wires=[0, 1, 2]), [params_amp, params2]),
-                           (H_i + rydberg_drive(4, f2, f1, wires=[0, 1, 2]), [params2, params1]),
-                           (H_i + rydberg_drive(amp, f2, 4, wires=[0, 1, 2]), [params_amp, params2]),
-                           (H_i + rydberg_drive(amp, f2, f1, wires=[0, 1, 2]), [params_amp, params2, params1])
-                           ]
+HAMILTONIANS_AND_PARAMS = [
+    (H_i + rydberg_drive(1, 2, 3, wires=[0, 1, 2]), []),
+    (H_i + rydberg_drive(amp, 1, 2, wires=[0, 1, 2]), [params_amp]),
+    (H_i + rydberg_drive(2, f1, 2, wires=[0, 1, 2]), [params1]),
+    (H_i + rydberg_drive(2, 2, f2, wires=[0, 1, 2]), [params2]),
+    (H_i + rydberg_drive(amp, 1, f2, wires=[0, 1, 2]), [params_amp, params2]),
+    (H_i + rydberg_drive(4, f2, f1, wires=[0, 1, 2]), [params2, params1]),
+    (H_i + rydberg_drive(amp, f2, 4, wires=[0, 1, 2]), [params_amp, params2]),
+    (H_i + rydberg_drive(amp, f2, f1, wires=[0, 1, 2]), [params_amp, params2, params1]),
+]
 
 HARDWARE_ARN_NRS = ["arn:aws:braket:us-east-1::device/qpu/quera/Aquila"]
 
-ALL_DEVICES = [("braket.local.ahs", None, "RydbergAtomSimulator"),
-               ("braket.aws.ahs", "arn:aws:braket:us-east-1::device/qpu/quera/Aquila", "Aquila")]
+ALL_DEVICES = [
+    ("braket.local.ahs", None, "RydbergAtomSimulator"),
+    ("braket.aws.ahs", "arn:aws:braket:us-east-1::device/qpu/quera/Aquila", "Aquila"),
+]
 
 
 DEVS = [("arn:aws:braket:us-east-1::device/qpu/quera/Aquila", "Aquila")]
@@ -96,7 +89,7 @@ class TestDeviceIntegration:
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(shortname, arn_nr, wires=2)
         assert dev.num_wires == 2
-        assert dev.shots is 100
+        assert dev.shots == 100
         assert dev.short_name == shortname
         assert dev._device.name == backend_name
 
@@ -138,16 +131,17 @@ class TestDeviceAttributes:
 
         assert len(res) == shots
 
-
 class TestQnodeIntegration:
     """Test integration with the qnode"""
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
     def test_circuit_can_be_called(self, H, params):
         """Test that the circuit consisting of a ParametrizedEvolution with a single, global pulse
-        runs successfully for all combinations of amplitude, phase and detuning being constants or callables"""
+        runs successfully for all combinations of amplitude, phase and detuning being constants
+        or callables
+        """
 
-        dev = qml.device('braket.local.ahs', wires=3)
+        dev = qml.device("braket.local.ahs", wires=3)
 
         t = 1.13
 
