@@ -277,6 +277,18 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
+
+    .. note::
+        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
+        to hardware (converted from $2 \pi$ MHz to rad/s), while time will be divided by 1e6 (converted from
+        microseconds to seconds).
+
+        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        operators in PennyLane.
     """
 
     name = "Braket Device for AHS in PennyLane"
@@ -376,6 +388,18 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
             Default: Shots.DEFAULT
+
+    .. note::
+        It is important to keep track of units when specifying electromagnetic pulses for simulated hardware control.
+        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
+        to hardware (converted from $2 \pi$ MHz to rad/s), while time will be divided by 1e6 (converted from
+        microseconds to seconds).
+
+        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        operators in PennyLane.
     """
 
     name = "Braket LocalSimulator for AHS in PennyLane"
