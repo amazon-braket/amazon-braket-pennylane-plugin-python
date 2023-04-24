@@ -37,6 +37,7 @@ def f2(p, t):
 def amp(p, t):
     return p[0] * np.exp(-((t - p[1]) ** 2) / (2 * p[2] ** 2))
 
+
 params1 = 1.2
 params2 = [3.4, 5.6]
 params_amp = [2.5, 0.9, 0.3]
@@ -130,6 +131,7 @@ class TestDeviceAttributes:
         res = circuit()
 
         assert len(res) == shots
+
 
 class TestQnodeIntegration:
     """Test integration with the qnode"""

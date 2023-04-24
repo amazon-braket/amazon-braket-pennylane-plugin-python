@@ -19,10 +19,6 @@ from braket.pennylane_plugin.braket_device import (  # noqa: F401
     BraketAwsQubitDevice,
     BraketLocalQubitDevice,
 )
-from braket.pennylane_plugin.ahs_device import (
-    BraketAwsAhsDevice,
-    BraketLocalAhsDevice,
-)
 from braket.pennylane_plugin.ops import (  # noqa: F401
     MS,
     PSWAP,
