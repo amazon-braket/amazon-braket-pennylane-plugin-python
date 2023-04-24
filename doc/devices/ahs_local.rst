@@ -75,19 +75,19 @@ they must all have the same time-dependent envelope, but can have different, pos
     # full hamiltonian
     H = H_interaction + H_global + H_local0 + H_local1
 
-    .. note::
-        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
-        to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
-        microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
-        to meters).
+.. note::
+    It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+    The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
+    to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
+    microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
+    to meters).
 
 
-        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
-        Pennylane for specification of expected input units, and examples for creating hardware-compatible
-        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
-        operators in PennyLane.
+    See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+    and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+    Pennylane for specification of expected input units, and examples for creating hardware-compatible
+    `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+    operators in PennyLane.
 
 
 Executing an AHS program
