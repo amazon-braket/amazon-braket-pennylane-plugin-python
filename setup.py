@@ -44,7 +44,7 @@ setup(
     extras_require={
         "test": [
             "black",
-            "docutils<0.16,>=0.10",
+            "docutils>=0.19",
             "flake8",
             "isort",
             "pre-commit",
@@ -59,7 +59,7 @@ setup(
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
-            "tensorflow>=2.6.0",
+            "tensorflow>=2.12.0",
             "torch>=1.11",
         ]
     },
@@ -81,5 +81,6 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
