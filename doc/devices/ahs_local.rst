@@ -14,7 +14,7 @@ Usage
 
 After the Braket SDK and the plugin are installed you immediately have access to the `local Braket AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_ in PennyLane.
 
-The local AHS device is not gate-based. Instead, it is compatible with the `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html> `_
+The local AHS device is not gate-based. Instead, it is compatible with the `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator from `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
 Note that pulse programming in PennyLane requires the module ``jax``. You can install jax via: pip install jax==0.4.3 jaxlib==0.4.3
@@ -26,8 +26,8 @@ To instantiate the local Braket simulator, simply use:
     import pennylane as qml
     device_local = qml.device("braket.local.ahs", wires=2)
 
-This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html> `_
-operator based on a `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html> `_ compatible with the simulated hardware.
+This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+operator based on a `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html>`_ compatible with the simulated hardware.
 More information about creating PennyLane operators for AHS can be found in the `PennyLane docs <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_.
 
 Creating a register
@@ -74,6 +74,20 @@ they must all have the same time-dependent envelope, but can have different, pos
 
     # full hamiltonian
     H = H_interaction + H_global + H_local0 + H_local1
+
+    .. note::
+        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
+        to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
+        microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
+        to meters).
+
+
+        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        operators in PennyLane.
 
 
 Executing an AHS program

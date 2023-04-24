@@ -27,8 +27,8 @@ Instantiate an AWS device that communicates with the hardware like this:
 >>> device_arn = "arn:aws:braket:us-east-1::device/qpu/quera/Aquila"
 >>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, s3_destination_folder=s3, wires=3)
 
-This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html> `_
-operator based on a hardware-compatible `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html> `_.
+This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+operator based on a hardware-compatible `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html>`_.
 More information about creating PennyLane operators for AHS can be
 found in the `PennyLane docs <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_.
 
@@ -67,6 +67,21 @@ Here we define a global drive with time dependent amplitude and detuning, with p
 
     # creating a global drive on all wires
     H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn, wires=[0, 1, 2])
+
+    .. note::
+        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
+        to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
+        microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
+        to meters).
+
+
+        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        operators in PennyLane.
+
 
 Creating and executing the circuit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
