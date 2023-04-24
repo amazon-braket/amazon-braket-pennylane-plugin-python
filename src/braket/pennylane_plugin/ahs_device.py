@@ -45,10 +45,12 @@ from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePu
 
 from .ahs_translation import (
     _create_register,
+    _create_valid_local_detunings,
     _evaluate_pulses,
     _get_sample_times,
     translate_ahs_shot_result,
     translate_pulse_to_driving_field,
+    translate_pulses_to_shifting_field,
 )
 
 
@@ -418,18 +420,21 @@ class BraketLocalAhsDevice(BraketAhsDevice):
                 information for running an AHS task on simulation."""
 
         # sets self.pulses to be the evaluated pulses (now only a function of time)
-        self._evaluate_pulses(evolution)
-        self._create_register(evolution.H.settings.register)
+        self._pulses = _evaluate_pulses(evolution)
+        self._register = _create_register(evolution.H.settings.register)
 
         time_interval = evolution.t
+        time_points = _get_sample_times(time_interval)
 
-        H = self._convert_pulse_to_driving_field(self.pulses[self._global_pulse_idx], time_interval)
+        H = translate_pulse_to_driving_field(self._pulses[self._global_pulse_idx], time_points)
 
         # Create local detunings
-        local_detunings = self._create_valid_local_detunings()
+        local_pulses = self._pulses.copy()
+        local_pulses.pop(self._global_pulse_idx)
+
+        local_detunings = _create_valid_local_detunings(local_pulses, self.wires)
         if local_detunings is not None:
-            detuning, pattern = self._extract_pattern_from_detunings(local_detunings, time_interval)
-            shift = self._convert_pulses_to_shifting_field(detuning, pattern, time_interval)
+            shift = translate_pulses_to_shifting_field(local_detunings, time_points)
             H = H + shift
 
         ahs_program = AnalogHamiltonianSimulation(register=self.register, hamiltonian=H)
@@ -441,133 +446,6 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         device"""
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
-
-    def _create_valid_local_detunings(self):
-        """Return ordered list of local detunings for all wires in device.
-
-        This function uses the local detunings of the pulses of the ``ParametrizedEvolution`` being executed
-        to create a list of local detunings with the same length and order as the device wires. For wires that
-        aren't locally detuned, the list is padded with zeros if the detunings are of type ``float``, or functions
-        that return zero if the detunings are ``callable``.
-
-        Returns:
-            List[Union[callable, float]]: List of detunings covering all device wires.
-        """
-        local_pulses = self.pulses.copy()
-        local_pulses.pop(self._global_pulse_idx)
-        if len(local_pulses) == 0:
-            return None
-
-        callable_detunings = callable(local_pulses[0].frequency)
-        device_detunings = (
-            [lambda t: 0] * len(self.wires) if callable_detunings else [0] * len(self.wires)
-        )
-
-        for pulse in local_pulses:
-            for wire in pulse.wires:
-                device_detunings[self.wires.index(wire)] = pulse.frequency
-
-        return device_detunings
-
-    def _extract_pattern_from_detunings(self, detunings, time_interval):
-        """Use the detunings to find the pattern for the ``ShiftingField``.
-
-        This function creates a time series for the local detunings and uses the values
-        of the detunings at each time step to calculate and validate the pattern for the
-        ``ShiftingField`` term of the driving Hamiltonian.
-
-        Args:
-            detunings (List[Union[float, callable]]): detunings to extract pattern from
-            time_interval(array[Number, Number]]): The start and end time for the applied pulses
-
-        Returns:
-            Union[float, callable]: Maximum detuning to be used as the magnitude for ``ShiftingField``
-            Pattern: object containing magnitude of detunings for individual atoms in the device
-
-        Raises:
-            ValueError: if the shape of all local detunings don't match or the detunings have negative values
-        """
-        # If a single item is not callable, no others should be callable. This validation happens in
-        # ``_validate_pulses``.
-        callable_detunings = callable(detunings[0])
-        time_points = self._get_sample_times(time_interval)
-        negative_detunings_error = (
-            "Found negative value in local detunings. Make sure that all local detunings "
-            + "take only positive values within the specified time interval."
-        )
-
-        if callable_detunings:
-            evaluated_detunings = np.array([
-                [float(detuning(t * 1e6)) for t in time_points] for detuning in detunings
-            ])
-            if not np.allclose(evaluated_detunings, np.abs(evaluated_detunings)):
-                raise ValueError(negative_detunings_error)
-
-            pattern = []
-
-            # Find pattern if callable detuning
-            for i in range(len(time_points)):
-                time_slice = evaluated_detunings[:, i]
-
-                if not np.allclose(time_slice, 0.0):
-                    max_index = np.argmax(time_slice)
-                    _max = time_slice[max_index]
-                    max_detuning = detunings[max_index]
-                    pattern = [det / _max for det in time_slice]
-                    break
-
-            # If all time steps are zero, local detuning is assumed to be zero
-            if pattern == []:
-                max_detuning = 0
-                pattern = [1.0] * len(detunings)
-                return max_detuning, Pattern(pattern)
-
-        else:
-            max_index = np.argmax(np.abs(detunings))
-            max_detuning = np.abs(detunings[max_index])
-            # Using the absolute value ensures that if there are any negative values,
-            # the get captured in the pattern
-
-            pattern = [det / max_detuning for det in detunings]
-
-            # Validate that all detunings are positive
-            if not np.allclose(pattern, np.abs(pattern)):
-                raise ValueError(negative_detunings_error)
-
-            return max_detuning, Pattern(pattern)
-
-        # Validate that detunings follow pattern along all time steps for callable detunings
-        for i, t in enumerate(time_points):
-            time_slice = evaluated_detunings[:, i]
-            
-            new_time_slice = [p * float(max_detuning(t * 1e6)) for p in pattern]
-            if not np.allclose(time_slice, new_time_slice):
-                raise ValueError(
-                    "Local detunings don't match. Make sure that all local detunings match "
-                    "in shape and only differ in magnitude."
-                )
-
-        return max_detuning, Pattern(pattern)
-
-    def _convert_pulses_to_shifting_field(self, detuning, pattern, time_interval):
-        """Uses the overall detuning and pattern to create a ``ShiftingField`` object from
-        AWS Braket.
-
-        Args:
-            detuning (float, callable): detuning for the local drives
-            pattern (Pattern): list containing magnitude of detuning for all atoms in the device
-            time_interval(array[Number, Number]]): The start and end time for the applied pulses
-
-        Returns:
-            ShiftingField: the object representing the local drive for the AnalogueHamiltonianSimulation object
-        """
-        time_points = self._get_sample_times(time_interval)
-        ts_detuning = self._convert_to_time_series(
-            detuning, time_points, scaling_factor=1e6
-        )
-        shift = ShiftingField(magnitude=Field(time_series=ts_detuning, pattern=pattern))
-
-        return shift
 
     def _validate_pulses(self, pulses):
         """Validate that all pulses are defined as expected by the device. This validation includes:
@@ -620,7 +498,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         for pulse in local_pulses:
             if pulse.amplitude is not None and (
-                callable(pulse.amplitude) or not math.isclose(pulse.amplitude, 0.0)
+                callable(pulse.amplitude) or not np.isclose(pulse.amplitude, 0.0)
             ):
                 raise ValueError(
                     "Shifting field only allows specification of detuning. Amplitude must be zero."
