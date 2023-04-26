@@ -18,6 +18,10 @@ More information about AHS and the capabilities of the hardware can be found in 
 Usage
 ~~~~~
 
+Connecting to the device will require installing `Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
+
+>>> pip install amazon-braket-sdk
+
 After the Braket SDK and the plugin are installed, and once you
 `sign up for Amazon Braket <https://docs.aws.amazon.com/braket/latest/developerguide/braket-enable-overview.html>`_,
 you have access to the remote AHS device in PennyLane.

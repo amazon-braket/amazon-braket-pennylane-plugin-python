@@ -12,6 +12,10 @@ on a paid-for remote service.
 Usage
 ~~~~~
 
+Connecting to the device will require installing `Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
+
+>>> pip install amazon-braket-sdk
+
 After the Braket SDK and the plugin are installed you immediately have access to the `local Braket AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_ in PennyLane.
 
 The local AHS device is not gate-based. Instead, it is compatible with the `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
