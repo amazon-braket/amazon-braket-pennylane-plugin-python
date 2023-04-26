@@ -19,7 +19,7 @@ Devices
 
 .. currentmodule:: braket.pennylane_braket.ahs_device
 
-Braket Analogue Hamiltonian Simulation (AHS) devices to be used with PennyLane
+Braket Analog Hamiltonian Simulation (AHS) devices to be used with PennyLane
 
 Classes
 -------
@@ -59,7 +59,7 @@ class Shots(Enum):
 
 
 class BraketAhsDevice(QubitDevice):
-    """Abstract Amazon Braket device for analogue hamiltonian simulation with PennyLane.
+    """Abstract Amazon Braket device for analog Hamiltonian simulation with PennyLane.
 
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
@@ -140,7 +140,7 @@ class BraketAhsDevice(QubitDevice):
         return None
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on
+        """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
 
@@ -149,7 +149,7 @@ class BraketAhsDevice(QubitDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an AnalogHamiltonianSimulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
@@ -172,7 +172,7 @@ class BraketAhsDevice(QubitDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an AnalogHamiltonianSimulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
@@ -264,7 +264,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
-            run circuits; The corresponding AwsDevice must support Analogue Hamiltonian Simulation.
+            run circuits; The corresponding AwsDevice must support analog Hamiltonian simulation.
             You can get device ARNs from the Amazon Braket console or from the Amazon Braket
             Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
@@ -355,7 +355,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an AnalogHamiltonianSimulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
@@ -369,7 +369,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         return ahs_program_discretized
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on
+        """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
         task = self._device.run(
             ahs_program,
@@ -443,7 +443,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         return {"interaction_coeff": 862620}
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on the
+        """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
