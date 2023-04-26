@@ -39,7 +39,7 @@ More information about creating PennyLane operators for AHS can be found in the 
 
     When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
     are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
-    functions should follow the conventions specified in the docstrings to ensure correct unit conversion.
+    functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
     See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
     and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
     Pennylane for specification of expected input units, and examples for creating hardware-compatible
