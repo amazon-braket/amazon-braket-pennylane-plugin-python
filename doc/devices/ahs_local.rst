@@ -1,7 +1,7 @@
 The local AHS device
 ====================
 
-The local analog hamiltonian simulation (AHS) device of the PennyLane-Braket plugin runs Analogue Hamiltonian Simulation on the local Braket SDK. This
+The local analog Hamiltonian simulation (AHS) device of the PennyLane-Braket plugin runs simulation on the local Braket SDK. This
 could be either utilizing the processors of your own PC, or those of a `Braket notebook instance <https://docs.aws.amazon.com/braket/latest/developerguide/braket-get-started-create-notebook.html>`_ hosted on AWS.
 
 This device is useful for small-scale simulations in which the time of sending a job to a remote service would add
@@ -17,7 +17,9 @@ After the Braket SDK and the plugin are installed you immediately have access to
 The local AHS device is not gate-based. Instead, it is compatible with the `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator from `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
-Note that pulse programming in PennyLane requires the module ``jax``. You can install jax via: pip install jax==0.4.3 jaxlib==0.4.3
+Note that pulse programming in PennyLane requires the module ``jax``. You can install jax via:
+
+>>> pip install jax==0.4.3 jaxlib==0.4.3
 
 To instantiate the local Braket simulator, simply use:
 
