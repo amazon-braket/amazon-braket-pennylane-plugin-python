@@ -21,7 +21,7 @@ Devices
 ~~~~~~~
 
 This plugin provides four Braket devices for use with PennyLane - two supporting gate-based computations,
-and two supporting Analogue Hamiltonian Simulation (AHS) on a Rydberg atom system:
+and two supporting analog Hamiltonian simulation (AHS):
 
 .. title-card::
     :name: 'braket.aws.qubit'
@@ -40,7 +40,7 @@ and two supporting Analogue Hamiltonian Simulation (AHS) on a Rydberg atom syste
 
 .. title-card::
     :name: 'braket.local.ahs'
-    :description: Runs AHS on the Braket SDK's local Rygberg atom simulator.
+    :description: Runs AHS on the Braket SDK's local simulator.
     :link: devices/ahs_local.html
 
 .. raw:: html
