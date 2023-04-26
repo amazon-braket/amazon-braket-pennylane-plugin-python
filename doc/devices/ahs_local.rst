@@ -32,11 +32,14 @@ More information about creating PennyLane operators for AHS can be found in the 
 
 .. note::
     It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-    The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
-    to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
-    microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
-    to meters).
+    The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
+    time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
+    internally as needed for upload to the hardware, and frequency will be converted to angular frequency
+    (multiplied by :math:`2 \pi`).
 
+    When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
+    are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
+    functions should follow the conventions specified in the docstrings to ensure correct unit conversion.
     See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
     and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
     Pennylane for specification of expected input units, and examples for creating hardware-compatible

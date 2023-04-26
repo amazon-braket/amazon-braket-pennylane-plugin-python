@@ -190,7 +190,7 @@ class BraketAhsDevice(QubitDevice):
         Returns:
              array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
         """
-        return [translate_ahs_shot_result(res) for res in self.samples.measurements]
+        return np.array([translate_ahs_shot_result(res) for res in self.samples.measurements])
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
@@ -280,12 +280,14 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     .. note::
         It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
-        to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
-        microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
-        to meters).
+        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
+        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
+        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
+        (multiplied by :math:`2 \pi`).
 
-
+        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
+        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
+        functions should follow the conventions specified in the docstrings to ensure correct unit conversion.
         See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
         and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
         Pennylane for specification of expected input units, and examples for creating hardware-compatible
@@ -341,10 +343,10 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         return {"interaction_coeff": self._get_rydberg_c6()}
 
     def _get_rydberg_c6(self):
-        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to Mrad/s um^6
+        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to MHz um^6
         (PL simulation units)"""
         c6 = float(self._device.properties.paradigm.rydberg.c6Coefficient)  # rad/s x m^6
-        c6 = 1e-6 * c6  # rad/s --> M rad/s
+        c6 = 1e-6 * c6 / (2 * np.pi)  # rad/s --> MHz
         c6 = c6 * 1e36  # m^6 --> um^6
         return c6
 
@@ -392,12 +394,15 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             Default: Shots.DEFAULT
 
     .. note::
-        It is important to keep track of units when specifying electromagnetic pulses for simulated hardware control.
-        The frequency and amplitude provided in PennyLane will be multiplied to a factor of 1e6 when translating
-        to hardware (converted from :math:`2 \pi` MHz to rad/s), while time will be divided by 1e6 (converted from
-        microseconds to seconds). Specification of atom coordinates will be divided by 1e6 (converted from micrometers
-        to meters).
+        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
+        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
+        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
+        (multiplied by :math:`2 \pi`).
 
+        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
+        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
+        functions should follow the conventions specified in the docstrings to ensure correct unit conversion.
         See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
         and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
         Pennylane for specification of expected input units, and examples for creating hardware-compatible
@@ -434,8 +439,8 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         This is relevant for simulating the remote device in PennyLane on the ``default.qubit``
         device.
         """
-        # C6 for the Rubidium transition used by the simulator, converted to Mrad/s x um^6
-        return {"interaction_coeff": 5420000}
+        # C6 for the Rubidium transition used by the simulator, converted to MHz x um^6
+        return {"interaction_coeff": 862620}
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
         """Run and return a task executing the AnalogueHamiltonianSimulation program on the
