@@ -29,9 +29,8 @@ you have access to the remote AHS device in PennyLane.
 Instantiate an AWS device that communicates with the hardware like this:
 
 >>> import pennylane as qml
->>> s3 = ("my-bucket", "my-prefix")
 >>> device_arn = "arn:aws:braket:us-east-1::device/qpu/quera/Aquila"
->>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, s3_destination_folder=s3, wires=3)
+>>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, wires=3)
 
 This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator based on a hardware-compatible `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html>`_.
