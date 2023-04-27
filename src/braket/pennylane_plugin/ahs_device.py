@@ -19,7 +19,7 @@ Devices
 
 .. currentmodule:: braket.pennylane_braket.ahs_device
 
-Braket Analogue Hamiltonian Simulation (AHS) devices to be used with PennyLane
+Braket analog Hamiltonian simulation (AHS) devices to be used with PennyLane
 
 Classes
 -------
@@ -59,7 +59,7 @@ class Shots(Enum):
 
 
 class BraketAhsDevice(QubitDevice):
-    """Abstract Amazon Braket device for analogue hamiltonian simulation with PennyLane.
+    """Abstract Amazon Braket device for analog Hamiltonian simulation with PennyLane.
 
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
@@ -140,7 +140,7 @@ class BraketAhsDevice(QubitDevice):
         return None
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on
+        """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
 
@@ -149,7 +149,7 @@ class BraketAhsDevice(QubitDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an AnalogHamiltonianSimulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
@@ -172,7 +172,7 @@ class BraketAhsDevice(QubitDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an AnalogHamiltonianSimulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
@@ -190,7 +190,7 @@ class BraketAhsDevice(QubitDevice):
         Returns:
              array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
         """
-        return [translate_ahs_shot_result(res) for res in self.samples.measurements]
+        return np.array([translate_ahs_shot_result(res) for res in self.samples.measurements])
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
@@ -257,12 +257,14 @@ class BraketAhsDevice(QubitDevice):
 class BraketAwsAhsDevice(BraketAhsDevice):
     """Amazon Braket AHS device for hardware in PennyLane.
 
+    More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
+
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         device_arn (str): The ARN identifying the ``AwsDevice`` to be used to
-            run circuits; The corresponding AwsDevice must support Analogue Hamiltonian Simulation.
+            run circuits; The corresponding AwsDevice must support analog Hamiltonian simulation.
             You can get device ARNs from the Amazon Braket console or from the Amazon Braket
             Developer Guide.
         s3_destination_folder (AwsSession.S3DestinationFolder): Name of the S3 bucket
@@ -275,6 +277,22 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         aws_session (Optional[AwsSession]): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
+
+    .. note::
+        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
+        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
+        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
+        (multiplied by :math:`2 \pi`).
+
+        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
+        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
+        functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
+        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        operators in PennyLane.
     """
 
     name = "Braket Device for AHS in PennyLane"
@@ -325,10 +343,10 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         return {"interaction_coeff": self._get_rydberg_c6()}
 
     def _get_rydberg_c6(self):
-        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to Mrad/s um^6
+        """Get rydberg C6 and convert from rad/s m^6 (AWS units) to MHz um^6
         (PL simulation units)"""
         c6 = float(self._device.properties.paradigm.rydberg.c6Coefficient)  # rad/s x m^6
-        c6 = 1e-6 * c6  # rad/s --> M rad/s
+        c6 = 1e-6 * c6 / (2 * np.pi)  # rad/s --> MHz
         c6 = c6 * 1e36  # m^6 --> um^6
         return c6
 
@@ -337,7 +355,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an AnalogHamiltonianSimulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
@@ -351,7 +369,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         return ahs_program_discretized
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on
+        """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
         task = self._device.run(
             ahs_program,
@@ -366,12 +384,31 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 class BraketLocalAhsDevice(BraketAhsDevice):
     """Amazon Braket LocalSimulator AHS device for PennyLane.
 
+    Runs programs on `Braket's local AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_.
+    Can be used to emulate the :class:`~.BraketAwsAhsDevice`.
+
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
         shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
             Default: Shots.DEFAULT
+
+    .. note::
+        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
+        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
+        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
+        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
+        (multiplied by :math:`2 \pi`).
+
+        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
+        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
+        functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
+        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
+        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        operators in PennyLane.
     """
 
     name = "Braket LocalSimulator for AHS in PennyLane"
@@ -403,11 +440,11 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         This is relevant for simulating the remote device in PennyLane on the ``default.qubit``
         device.
         """
-        # C6 for the Rubidium transition used by the simulator, converted to Mrad/s x um^6
-        return {"interaction_coeff": 5420000}
+        # C6 for the Rubidium transition used by the simulator, converted to MHz x um^6
+        return {"interaction_coeff": 862620}
 
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
-        """Run and return a task executing the AnalogueHamiltonianSimulation program on the
+        """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
