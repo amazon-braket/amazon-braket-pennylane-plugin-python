@@ -18,7 +18,7 @@ More information about AHS and the capabilities of the hardware can be found in 
 Usage
 ~~~~~
 
-Connecting to the device will require installing `Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
+Connecting to the device will require installing the `Amazon Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
 
 >>> pip install amazon-braket-sdk
 
