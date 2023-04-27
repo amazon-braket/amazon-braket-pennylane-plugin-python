@@ -78,7 +78,7 @@ Here we define a global drive with time dependent amplitude and detuning, with p
 
     # gaussian amplitude function (qml.pulse.rect enforces 0 at start and end for hardware)
     def amp_fn(p, t):
-        f = p[0] * jnp.exp(-(t-p[1])**2/(2*p[2]**2))
+        f = p[0] * jnp.exp(-(t - p[1])**2 / (2 * p[2]**2))
         return qml.pulse.rect(f, windows=[0.1, 1.7])(p, t)
 
 
