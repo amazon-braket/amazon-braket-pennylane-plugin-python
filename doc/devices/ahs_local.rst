@@ -12,18 +12,13 @@ on a paid-for remote service.
 Usage
 ~~~~~
 
-Connecting to the device will require installing the `Amazon Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
-
->>> pip install amazon-braket-sdk
-
 After the Braket SDK and the plugin are installed you immediately have access to the `local Braket AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_ in PennyLane.
 
 The local AHS device is not gate-based. Instead, it is compatible with the `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator from `pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ in PennyLane.
 
-Note that pulse programming in PennyLane requires the module ``jax``. You can install jax via:
-
->>> pip install jax==0.4.3 jaxlib==0.4.3
+Note that pulse programming in PennyLane requires the module ``jax``, which can be installed
+following the instructions [here](https://github.com/google/jax#installation).
 
 To instantiate the local Braket simulator, simply use:
 
@@ -73,6 +68,8 @@ We can create a drive with a global component and (positive) local detunings. If
 they must all have the same time-dependent envelope, but can have different, positive scaling factors.
 
 .. code-block:: python
+
+    from jax import numpy as jnp
 
     # gaussian amplitude function (qml.pulse.rect enforces 0 at start and end for hardware)
     def amp_fn(p, t):
