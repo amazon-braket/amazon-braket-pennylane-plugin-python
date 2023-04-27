@@ -19,7 +19,7 @@ Devices
 
 .. currentmodule:: braket.pennylane_braket.ahs_device
 
-Braket Analog Hamiltonian Simulation (AHS) devices to be used with PennyLane
+Braket analog Hamiltonian simulation (AHS) devices to be used with PennyLane
 
 Classes
 -------

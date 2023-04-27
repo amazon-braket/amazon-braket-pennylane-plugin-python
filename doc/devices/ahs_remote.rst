@@ -18,7 +18,7 @@ More information about AHS and the capabilities of the hardware can be found in 
 Usage
 ~~~~~
 
-Connecting to the device will require installing `Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
+Connecting to the device will require installing the `Amazon Braket SDK <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`_, which can be done via
 
 >>> pip install amazon-braket-sdk
 
@@ -29,9 +29,8 @@ you have access to the remote AHS device in PennyLane.
 Instantiate an AWS device that communicates with the hardware like this:
 
 >>> import pennylane as qml
->>> s3 = ("my-bucket", "my-prefix")
 >>> device_arn = "arn:aws:braket:us-east-1::device/qpu/quera/Aquila"
->>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, s3_destination_folder=s3, wires=3)
+>>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, wires=3)
 
 This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator based on a hardware-compatible `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html>`_.
@@ -79,7 +78,7 @@ Here we define a global drive with time dependent amplitude and detuning, with p
 
     # gaussian amplitude function (qml.pulse.rect enforces 0 at start and end for hardware)
     def amp_fn(p, t):
-        f = p[0] * jnp.exp(-(t-p[1])**2/(2*p[2]**2))
+        f = p[0] * jnp.exp(-(t - p[1])**2 / (2 * p[2]**2))
         return qml.pulse.rect(f, windows=[0.1, 1.7])(p, t)
 
 
