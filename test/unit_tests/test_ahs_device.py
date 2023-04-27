@@ -719,6 +719,16 @@ class TestLocalAhsDevice:
     def test_invalid_pulses(self, pulses, error):
         """Test that invalid pulses raise the correct errors during validation"""
         with pytest.raises(ValueError, match=error):
+
+    def test_validate_operations_multiple_drive_terms(self):
+        """Test that an error is raised if there are multiple drive terms on
+        the Hamiltonian"""
+        pulses = [HardwarePulse(3, 4, 5, [0, 1]), HardwarePulse(4, 6, 7, [1, 2])]
+
+        with pytest.raises(
+            NotImplementedError,
+            match="Multiple pulses in a Hamiltonian are not currently supported",
+        ):
             dev_sim._validate_pulses(pulses)
 
     @pytest.mark.parametrize(
@@ -732,6 +742,20 @@ class TestLocalAhsDevice:
     def test_validate_pulses_valid_pulses(self, pulses):
         """Test that `_validate_pulses` does not raise any errors when the pulses are valid."""
         dev_sim._validate_pulses(pulses)
+
+    def test_validate_pulse_is_global_drive(self, pulse_wires, dev_wires, res):
+        """Test that an error is raised if the pulse does not describe a global drive"""
+
+        dev = BraketLocalAhsDevice(wires=dev_wires)
+        pulse = HardwarePulse(3, 4, 5, pulse_wires)
+
+        if res == "error":
+            with pytest.raises(
+                NotImplementedError, match="Only global drive is currently supported"
+            ):
+                dev._validate_pulses([pulse])
+        else:
+            dev._validate_pulses([pulse])
 
     def test_run_task(self):
         """Test that `run_task` returns the correct objects with the number of measurements
