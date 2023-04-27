@@ -40,7 +40,6 @@ from enum import Enum, auto
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 import numpy as onp
-
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.circuits.noise_model import NoiseModel
@@ -249,7 +248,7 @@ class BraketQubitDevice(QubitDevice):
             # adjoint gradient results are a "ragged nested sequences (which is a list-or-tuple of
             # lists-or-tuples-or ndarrays with different lengths or shapes)", so we have to set
             # dtype="object", otherwise numpy will throw a warning
- 
+
             # whenever the adjoint gradient result type is present, it should be the only result
             # type, which is why this changing of dtype works. If we ever change this plugin
             # to submit another result type alongside adjoint gradient, this logic will need to
