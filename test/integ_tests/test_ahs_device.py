@@ -214,3 +214,21 @@ class TestQnodeIntegration:
 
         assert len(res) == len(measurements)
         assert all(r.shape == es for r, es in zip(res, expected_shape))
+
+    def test_observable_not_in_z_basis_raises_error(self):
+
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        H = H_i + rydberg_drive(3, 2, 1, [0, 1, 2])
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.evolve(H)([], 1.8)
+            return qml.expval(qml.PauliX(0))
+
+        with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
+            circuit()
+
+    def test_pennylane_and_local_simulator_correspond(self):
+        assert 1 == 0
+
