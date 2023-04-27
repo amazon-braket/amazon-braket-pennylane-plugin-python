@@ -69,7 +69,7 @@ def translate_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLik
 
     Returns:
         drive(DrivingField): the object representing the global drive for the
-            AnalogueHamiltonianSimulation object
+            AnalogHamiltonianSimulation object
     """
 
     # scaling factor for amp and frequency detuning converts from MHz to rad/s
