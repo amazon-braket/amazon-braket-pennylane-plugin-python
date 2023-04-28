@@ -73,7 +73,9 @@ def translate_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLik
     """
 
     # scaling factor for amp and frequency detuning converts from MHz to rad/s
-    amplitude = _convert_to_time_series(pulse.amplitude, time_points, scaling_factor=2 * np.pi * 1e6)
+    amplitude = _convert_to_time_series(
+        pulse.amplitude, time_points, scaling_factor=2 * np.pi * 1e6
+    )
     detuning = _convert_to_time_series(pulse.frequency, time_points, scaling_factor=2 * np.pi * 1e6)
     phase = _convert_to_time_series(pulse.phase, time_points)
 

@@ -446,12 +446,14 @@ class TestBraketAhsDevice:
 
         dev = qml.device("braket.local.ahs", wires=4, shots=4)
 
-        dev._samples = np.array([
-            [0, 1, 1, np.NaN],
-            [1, 1, 0, 0],
-            [1, 0, 0, 1],
-            [0, 1, 1, 1],
-        ])
+        dev._samples = np.array(
+            [
+                [0, 1, 1, np.NaN],
+                [1, 1, 0, 0],
+                [1, 0, 0, 1],
+                [0, 1, 1, 1],
+            ]
+        )
 
         res = dev.expval(qml.PauliZ(3))
 
@@ -853,7 +855,9 @@ class TestBraketAwsAhsDevice:
             )
         else:
             assert np.allclose(
-                [pulse.amplitude * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in amp_vals], atol=200
+                [pulse.amplitude * 2 * np.pi * 1e6 for t in amp_time],
+                [float(v) for v in amp_vals],
+                atol=200,
             )
 
         if callable(pulse.phase):
@@ -873,7 +877,8 @@ class TestBraketAwsAhsDevice:
             p = params[params_idx]
             params_idx += 1
             assert np.allclose(
-                [fn(p, float(t) * 1e6) * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in det_vals]
+                [fn(p, float(t) * 1e6) * 2 * np.pi * 1e6 for t in amp_time],
+                [float(v) for v in det_vals],
             )
         else:
             assert np.allclose(

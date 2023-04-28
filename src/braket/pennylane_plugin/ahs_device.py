@@ -122,19 +122,21 @@ class BraketAhsDevice(QubitDevice):
         self._task = self._run_task(ahs_program)
 
     def expval(self, observable, shot_range=None, bin_size=None):
-         if not observable.basis == 'Z':
-             raise RuntimeError(f"{self.short_name} can only measure in the Z basis, "
-                                f"but recieved observable {observable}")
+        if not observable.basis == "Z":
+            raise RuntimeError(
+                f"{self.short_name} can only measure in the Z basis, "
+                f"but recieved observable {observable}"
+            )
 
-         # estimate the ev
-         samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
+        # estimate the ev
+        samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
 
-         # With broadcasting, we want to take the mean over axis 1, which is the -1st/-2nd with/
-         # without bin_size. Without broadcasting, axis 0 is the -1st/-2nd with/without bin_size
-         axis = -1 if bin_size is None else -2
+        # With broadcasting, we want to take the mean over axis 1, which is the -1st/-2nd with/
+        # without bin_size. Without broadcasting, axis 0 is the -1st/-2nd with/without bin_size
+        axis = -1 if bin_size is None else -2
 
-         # use nanmean to ignore failed measurements in taking the average
-         return np.nanmean(samples, axis=axis)
+        # use nanmean to ignore failed measurements in taking the average
+        return np.nanmean(samples, axis=axis)
 
     @property
     def task(self):
@@ -272,7 +274,8 @@ class BraketAhsDevice(QubitDevice):
 class BraketAwsAhsDevice(BraketAhsDevice):
     """Amazon Braket AHS device for hardware in PennyLane.
 
-    More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
+    More information about AHS and the capabilities of the hardware can be found in the
+    `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
 
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
@@ -295,17 +298,18 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     .. note::
         It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
-        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
-        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
-        (multiplied by :math:`2 \pi`).
+        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in
+        units of MHz, time in microseconds, phase in radians, and distance in micrometers. All of these
+        will be converted to SI units internally as needed for upload to the hardware, and frequency will be
+        converted to angular frequency (multiplied by :math:`2 \pi`).
 
-        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
-        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
-        functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
-        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
-        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        When reading hardware specifications from the Braket backend, bear in mind that all units are SI
+        and frequencies are in rad/s. This conversion is done when creating a pulse program for upload, and
+        units in the PennyLane functions should follow the conventions specified in the PennyLane docs to ensure
+        correct unit conversion. See
+        `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
+        in Pennylane for specification of expected input units, and examples for creating hardware-compatible
         `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
         operators in PennyLane.
     """
@@ -411,17 +415,18 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
     .. note::
         It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
-        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
-        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
-        (multiplied by :math:`2 \pi`).
+        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in
+        units of MHz, time in microseconds, phase in radians, and distance in micrometers. All of these
+        will be converted to SI units internally as needed for upload to the hardware, and frequency will be
+        converted to angular frequency (multiplied by :math:`2 \pi`).
 
-        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
-        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
-        functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
-        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
-        Pennylane for specification of expected input units, and examples for creating hardware-compatible
+        When reading hardware specifications from the Braket backend, bear in mind that all units are SI
+        and frequencies are in rad/s. This conversion is done when creating a pulse program for upload, and
+        units in the PennyLane functions should follow the conventions specified in the PennyLane docs to ensure
+        correct unit conversion. See
+        `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
+        in Pennylane for specification of expected input units, and examples for creating hardware-compatible
         `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
         operators in PennyLane.
     """
