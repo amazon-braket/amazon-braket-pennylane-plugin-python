@@ -1251,7 +1251,7 @@ def test_projection():
     assert np.allclose(var_01, p_01 - p_01**2)
 
     samples = f_01(thetas, qml.sample, shots=100).tolist()
-    assert set(samples[0]) == {0, 1}
+    assert set(samples) == {0, 1}
 
     # 10 case
     @qml.qnode(dev)
@@ -1266,7 +1266,7 @@ def test_projection():
     assert np.allclose(var_10, p_10 - p_10**2)
 
     samples = f_10(thetas, qml.sample, shots=100).tolist()
-    assert set(samples[0]) == {0, 1}
+    assert set(samples) == {0, 1}
 
 
 @pytest.mark.xfail(raises=AttributeError)

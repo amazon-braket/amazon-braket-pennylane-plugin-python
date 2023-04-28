@@ -72,12 +72,12 @@ def translate_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLik
 
     Returns:
         drive(DrivingField): the object representing the global drive for the
-            AnalogueHamiltonianSimulation object
+            AnalogHamiltonianSimulation object
     """
 
-    # scaling factor for amp and frequency detuning converts from Mrad/s to rad/s
-    amplitude = _convert_to_time_series(pulse.amplitude, time_points, scaling_factor=1e6)
-    detuning = _convert_to_time_series(pulse.frequency, time_points, scaling_factor=1e6)
+    # scaling factor for amp and frequency detuning converts from MHz to rad/s
+    amplitude = _convert_to_time_series(pulse.amplitude, time_points, scaling_factor=2 * np.pi * 1e6)
+    detuning = _convert_to_time_series(pulse.frequency, time_points, scaling_factor=2 * np.pi * 1e6)
     phase = _convert_to_time_series(pulse.phase, time_points)
 
     drive = DrivingField(amplitude=amplitude, detuning=detuning, phase=phase)
@@ -191,7 +191,7 @@ def _get_sample_times(time_interval: ArrayLike):
     end = interval_ns[1]
 
     # number of points must ensure at least 50ns between sample points
-    num_points = int((end - start) // 50)
+    num_points = int((end - start) // 50) + 1
 
     # we want an integer number of nanoseconds
     times = np.linspace(start, end, num_points, dtype=int)
