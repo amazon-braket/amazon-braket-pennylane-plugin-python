@@ -328,7 +328,7 @@ CIRCUIT_1 = QuantumScript(
         qml.RX(0.432, wires=0),
         qml.RY(0.543, wires=0),
     ],
-    measurements=[qml.expval(qml.PauliX(1))]
+    measurements=[qml.expval(qml.PauliX(1))],
 )
 CIRCUIT_1.trainable_params = [0]
 
@@ -339,7 +339,7 @@ CIRCUIT_2 = QuantumScript(
         qml.RX(0.432, wires=0),
         qml.RY(0.543, wires=0),
     ],
-    measurements=[qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1))]
+    measurements=[qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1))],
 )
 CIRCUIT_2.trainable_params = [0, 1]
 
@@ -352,7 +352,7 @@ CIRCUIT_3 = QuantumScript(
     ],
     measurements=[
         qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)),
-    ]
+    ],
 )
 CIRCUIT_3.trainable_params = [0, 1]
 
@@ -363,7 +363,7 @@ CIRCUIT_4 = QuantumScript(
         qml.RX(0.432, wires=0),
         qml.RY(0.543, wires=0),
     ],
-    measurements=[qml.expval(qml.PauliX(1))]
+    measurements=[qml.expval(qml.PauliX(1))],
 )
 CIRCUIT_4.trainable_params = []
 
@@ -375,7 +375,7 @@ CIRCUIT_5 = QuantumScript(
         qml.RX(PARAMS_5[0], wires=0),
         qml.RY(PARAMS_5[1], wires=0),
     ],
-    measurements=[qml.var(qml.PauliX(0) @ qml.PauliY(1))]
+    measurements=[qml.var(qml.PauliX(0) @ qml.PauliY(1))],
 )
 CIRCUIT_5.trainable_params = [0, 1]
 
@@ -383,14 +383,14 @@ PARAM_6 = np.tensor(0.432, requires_grad=True)
 CIRCUIT_6 = QuantumScript(
     ops=[
         qml.Hadamard(wires=0),
-        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]],
-                         requires_grad=True),
-                         wires=0),
+        qml.QubitUnitary(
+            1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0
+        ),
         qml.RX(PARAM_6, wires=0),
         qml.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0),
         qml.CNOT(wires=[0, 1]),
     ],
-    measurements=[qml.expval(qml.PauliX(1))]
+    measurements=[qml.expval(qml.PauliX(1))],
 )
 
 
