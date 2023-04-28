@@ -326,7 +326,7 @@ def translate_pulses_to_shifting_field(
 
     Returns:
         ShiftingField: the object representing the local drive for the
-        ``AnalogueHamiltonianSimulation`` object
+        ``AnalogHamiltonianSimulation`` object
     """
     detuning, pattern = _extract_pattern_from_detunings(detunings, time_points)
     ts_detuning = _convert_to_time_series(detuning, time_points, scaling_factor=1e6)
