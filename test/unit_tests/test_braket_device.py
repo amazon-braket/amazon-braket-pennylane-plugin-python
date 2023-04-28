@@ -510,8 +510,8 @@ def test_execute_with_gradient(
         foo="bar",
         inputs=expected_inputs,
     )
-    assert (results[0][0] == expected_pl_result[0][0]).all()
-    assert (results[0][1] == expected_pl_result[0][1]).all()
+    assert (results[0] == expected_pl_result[0][0]).all()
+    assert (results[1] == expected_pl_result[0][1]).all()
 
 
 @patch.object(AwsDevice, "run")
@@ -1102,7 +1102,10 @@ def test_execute_all_samples(mock_run):
         qml.sample(qml.Hadamard(0) @ qml.Identity(1))
         qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
 
-    assert dev.execute(circuit).shape == (2, 4)
+    results = dev.execute(circuit)
+    assert len(results) == 2
+    assert results[0].shape == (4,)
+    assert results[1].shape == (4,)
 
 
 @pytest.mark.xfail(raises=ValueError)

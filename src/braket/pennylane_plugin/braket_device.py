@@ -592,7 +592,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 new_res = self.execute(circuit, compute_gradient=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
-                new_res, new_jac = results[0]
+                new_res, new_jac = results
             res.append(new_res)
             jacs.append(new_jac)
 
