@@ -45,10 +45,12 @@ from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePu
 
 from .ahs_translation import (
     _create_register,
+    _create_valid_local_detunings,
     _evaluate_pulses,
     _get_sample_times,
     translate_ahs_shot_result,
     translate_pulse_to_driving_field,
+    translate_pulses_to_shifting_field,
 )
 
 
@@ -272,10 +274,11 @@ class BraketAhsDevice(QubitDevice):
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
-    """Amazon Braket AHS device for hardware in PennyLane.
+    r"""Amazon Braket AHS device for hardware in PennyLane.
 
     More information about AHS and the capabilities of the hardware can be found in the
-    `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
+    `Amazon Braket Developer Guide
+    <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
 
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
@@ -297,20 +300,24 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             is desired. Default: None
 
     .. note::
-        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in
-        units of MHz, time in microseconds, phase in radians, and distance in micrometers. All of these
-        will be converted to SI units internally as needed for upload to the hardware, and frequency will be
-        converted to angular frequency (multiplied by :math:`2 \pi`).
+        It is important to keep track of units when specifying electromagnetic pulses for hardware
+        control. The frequency and amplitude provided in PennyLane for Rydberg atom systems are
+        expected to be in units of MHz, time in microseconds, phase in radians, and distance in
+        micrometers. All of these will be converted to SI units internally as needed for upload to
+        the hardware, and frequency will be converted to angular frequency (multiplied by
+        :math:`2 \pi`).
 
-        When reading hardware specifications from the Braket backend, bear in mind that all units are SI
-        and frequencies are in rad/s. This conversion is done when creating a pulse program for upload, and
-        units in the PennyLane functions should follow the conventions specified in the PennyLane docs to ensure
-        correct unit conversion. See
-        `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
-        in Pennylane for specification of expected input units, and examples for creating hardware-compatible
-        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        When reading hardware specifications from the Braket backend, bear in mind that all units
+        are SI and frequencies are in rad/s. This conversion is done when creating a pulse program
+        for upload, and units in the PennyLane functions should follow the conventions specified
+        in the PennyLane docs to ensure correct unit conversion. See
+        `rydberg_interaction
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
+        in Pennylane for specification of expected input units, and examples for creating hardware
+        compatible `ParametrizedEvolution
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
         operators in PennyLane.
     """
 
@@ -401,9 +408,10 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
 
 class BraketLocalAhsDevice(BraketAhsDevice):
-    """Amazon Braket LocalSimulator AHS device for PennyLane.
+    r"""Amazon Braket LocalSimulator AHS device for PennyLane.
 
-    Runs programs on `Braket's local AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_.
+    Runs programs on `Braket's local AHS simulator
+    <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_.
     Can be used to emulate the :class:`~.BraketAwsAhsDevice`.
 
     Args:
@@ -414,20 +422,23 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             Default: Shots.DEFAULT
 
     .. note::
-        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in
-        units of MHz, time in microseconds, phase in radians, and distance in micrometers. All of these
-        will be converted to SI units internally as needed for upload to the hardware, and frequency will be
-        converted to angular frequency (multiplied by :math:`2 \pi`).
+        It is important to keep track of units when specifying electromagnetic pulses for hardware
+        control. The frequency and amplitude provided in PennyLane for Rydberg atom systems are
+        expected to be in units of MHz, time in microseconds, phase in radians, and distance in
+        micrometers. All of these will be converted to SI units internally as needed for upload to
+        the hardware, and frequency will be converted to angular frequency (multiplied by
+        :math:`2 \pi`).
 
-        When reading hardware specifications from the Braket backend, bear in mind that all units are SI
-        and frequencies are in rad/s. This conversion is done when creating a pulse program for upload, and
-        units in the PennyLane functions should follow the conventions specified in the PennyLane docs to ensure
-        correct unit conversion. See
-        `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
-        in Pennylane for specification of expected input units, and examples for creating hardware-compatible
-        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        When reading hardware specifications from the Braket backend, bear in mind that all units
+        are SI and frequencies are in rad/s. This conversion is done when creating a pulse program
+        for upload, and units in the PennyLane functions should follow the conventions specified in
+        the PennyLane docs to ensure correct unit conversion. See `rydberg_interaction
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
+        in Pennylane for specification of expected input units, and examples for creating hardware
+        compatible `ParametrizedEvolution
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
         operators in PennyLane.
     """
 
@@ -463,8 +474,108 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         # C6 for the Rubidium transition used by the simulator, converted to MHz x um^6
         return {"interaction_coeff": 862620}
 
+    def _ahs_program_from_evolution(self, evolution):
+        """Create AHS program for simulation from a ParametrizedEvolution
+
+        Args:
+            evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
+                to be converted into an Analogue Hamiltonian Simulation program
+
+        Returns:
+            AnalogHamiltonianSimulation: a program containing the register and drive
+                information for running an AHS task on simulation."""
+
+        # sets self.pulses to be the evaluated pulses (now only a function of time)
+        self._pulses = _evaluate_pulses(evolution)
+        self._register = _create_register(evolution.H.settings.register)
+
+        time_interval = evolution.t
+        time_points = _get_sample_times(time_interval)
+
+        H = translate_pulse_to_driving_field(self._pulses[self._global_pulse_idx], time_points)
+
+        # Create local detunings
+        local_pulses = self._pulses.copy()
+        local_pulses.pop(self._global_pulse_idx)
+
+        local_detunings = _create_valid_local_detunings(local_pulses, self.wires)
+        if local_detunings is not None:
+            shift = translate_pulses_to_shifting_field(local_detunings, time_points)
+            H = H + shift
+
+        ahs_program = AnalogHamiltonianSimulation(register=self.register, hamiltonian=H)
+
+        return ahs_program
+
     def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
         """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
+
+    def _validate_pulses(self, pulses):  # noqa: C901
+        """Validate that all pulses are defined as expected by the device. This validation includes:
+
+        * Verifying that a global drive is present
+        * Verifying that all local pulses have zero amplitude and phase
+        * Verifying that there are no overlapping wires among the local drives
+        * Verifying that all local detunings are of the same type (float or callable)
+
+        Args:
+            pulses (List[RydbergPulse]): List containing all pulses
+
+        Raises:
+            ValueError: if pulses are invalid
+        """
+
+        # Iterate through pulses to find global drive
+        global_index = None
+        for i, pulse in enumerate(pulses):
+            if set(pulse.wires) == set(self.wires):
+                if global_index is not None:
+                    raise ValueError(
+                        "Cannot execute a ParametrizedEvolution with multiple global drives."
+                    )
+                global_index = i
+            elif not self.wires.contains_wires(pulse.wires):
+                raise ValueError(
+                    f"ParametrizedEvolution contains wires {pulse.wires} which are not a subset "
+                    f"of device wires {self.wires}."
+                )
+
+        # Validate that global drive covers all wires
+        if global_index is None:
+            raise ValueError(
+                "ParametrizedEvolution doesn't apply a global driving field to all wires."
+            )
+
+        self._global_pulse_idx = global_index
+
+        local_pulses = pulses.copy()
+        local_pulses.pop(global_index)
+
+        if len(local_pulses) == 0:
+            return
+
+        # Validate that local drives don't have amplitude or phase, and that various detunings
+        # aren't inconsistent The detunings are stored in the `frequency` attribute of
+        # `HardwarePulse`.
+        callable_detunings = callable(local_pulses[0].frequency)
+        local_wires = set()
+
+        for pulse in local_pulses:
+            if pulse.amplitude is not None and (
+                callable(pulse.amplitude) or not np.isclose(pulse.amplitude, 0.0)
+            ):
+                raise ValueError(
+                    "Shifting field only allows specification of detuning. Amplitude must be zero."
+                )
+            if callable(pulse.frequency) ^ callable_detunings:
+                raise ValueError(
+                    "Found local pulses with both `float` and `callable` detunings. Pulses for "
+                    "local detunings must all have only `float` or `callable` detuning (frequency)."
+                )
+            if set(pulse.wires).intersection(local_wires):
+                raise ValueError("Local drives must not have overlapping wires.")
+
+            local_wires.update(set(pulse.wires))

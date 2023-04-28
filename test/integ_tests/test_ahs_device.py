@@ -131,12 +131,17 @@ class TestDeviceAttributes:
 
         assert len(res) == shots
 
+    def test_local_device_settings(self):
+        """Test that device settings dictionary stores the correct keys and values."""
+        dev = qml.device("braket.local.ahs", wires=2)
+        assert dev.settings == {"interaction_coeff": 5420000}
+
 
 class TestQnodeIntegration:
     """Test integration with the qnode"""
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
-    def test_circuit_can_be_called(self, H, params):
+    def test_circuit_can_be_called_global_drive(self, H, params):
         """Test that the circuit consisting of a ParametrizedEvolution with a single, global pulse
         runs successfully for all combinations of amplitude, phase and detuning being constants
         or callables
