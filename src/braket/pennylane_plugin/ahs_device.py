@@ -257,9 +257,11 @@ class BraketAhsDevice(QubitDevice):
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
-    """Amazon Braket AHS device for hardware in PennyLane.
+    r"""Amazon Braket AHS device for hardware in PennyLane.
 
-    More information about AHS and the capabilities of the hardware can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
+    More information about AHS and the capabilities of the hardware can be found in the
+    `Amazon Braket Developer Guide
+    <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
 
     Args:
         wires (int or Iterable[int, str]): Number of subsystems represented by the device,
@@ -281,19 +283,24 @@ class BraketAwsAhsDevice(BraketAhsDevice):
             is desired. Default: None
 
     .. note::
-        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
-        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
-        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
-        (multiplied by :math:`2 \pi`).
+        It is important to keep track of units when specifying electromagnetic pulses for hardware
+        control. The frequency and amplitude provided in PennyLane for Rydberg atom systems are
+        expected to be in units of MHz, time in microseconds, phase in radians, and distance in
+        micrometers. All of these will be converted to SI units internally as needed for upload to
+        the hardware, and frequency will be converted to angular frequency (multiplied by
+        :math:`2 \pi`).
 
-        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
-        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
-        functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
-        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
-        Pennylane for specification of expected input units, and examples for creating hardware-compatible
-        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        When reading hardware specifications from the Braket backend, bear in mind that all units
+        are SI and frequencies are in rad/s. This conversion is done when creating a pulse program
+        for upload, and units in the PennyLane functions should follow the conventions specified
+        in the PennyLane docs to ensure correct unit conversion. See
+        `rydberg_interaction
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
+        in Pennylane for specification of expected input units, and examples for creating hardware
+        compatible `ParametrizedEvolution
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
         operators in PennyLane.
     """
 
@@ -384,9 +391,10 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
 
 class BraketLocalAhsDevice(BraketAhsDevice):
-    """Amazon Braket LocalSimulator AHS device for PennyLane.
+    r"""Amazon Braket LocalSimulator AHS device for PennyLane.
 
-    Runs programs on `Braket's local AHS simulator <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_.
+    Runs programs on `Braket's local AHS simulator
+    <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html#braket-simulator-ahs-local>`_.
     Can be used to emulate the :class:`~.BraketAwsAhsDevice`.
 
     Args:
@@ -397,19 +405,23 @@ class BraketLocalAhsDevice(BraketAhsDevice):
             Default: Shots.DEFAULT
 
     .. note::
-        It is important to keep track of units when specifying electromagnetic pulses for hardware control.
-        The frequency and amplitude provided in PennyLane for Rydberg atom systems are expected to be in units of MHz,
-        time in microseconds, phase in radians, and distance in micrometers. All of these will be converted to SI units
-        internally as needed for upload to the hardware, and frequency will be converted to angular frequency
-        (multiplied by :math:`2 \pi`).
+        It is important to keep track of units when specifying electromagnetic pulses for hardware
+        control. The frequency and amplitude provided in PennyLane for Rydberg atom systems are
+        expected to be in units of MHz, time in microseconds, phase in radians, and distance in
+        micrometers. All of these will be converted to SI units internally as needed for upload to
+        the hardware, and frequency will be converted to angular frequency (multiplied by
+        :math:`2 \pi`).
 
-        When reading hardware specifications from the Braket backend, bear in mind that all units are SI and frequencies
-        are in rad/s. This conversion is done when creating a pulse program for upload, and units in the PennyLane
-        functions should follow the conventions specified in the PennyLane docs to ensure correct unit conversion.
-        See `rydberg_interaction <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
-        and `rydberg_drive <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_ in
-        Pennylane for specification of expected input units, and examples for creating hardware-compatible
-        `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+        When reading hardware specifications from the Braket backend, bear in mind that all units
+        are SI and frequencies are in rad/s. This conversion is done when creating a pulse program
+        for upload, and units in the PennyLane functions should follow the conventions specified in
+        the PennyLane docs to ensure correct unit conversion. See `rydberg_interaction
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_interaction.html>`_
+        and `rydberg_drive
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.rydberg_drive.html>`_
+        in Pennylane for specification of expected input units, and examples for creating hardware
+        compatible `ParametrizedEvolution
+        <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
         operators in PennyLane.
     """
 
@@ -484,7 +496,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
 
-    def _validate_pulses(self, pulses):
+    def _validate_pulses(self, pulses):  # noqa: C901
         """Validate that all pulses are defined as expected by the device. This validation includes:
 
         * Verifying that a global drive is present
@@ -528,8 +540,9 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         if len(local_pulses) == 0:
             return
 
-        # Validate that local drives don't have amplitude or phase, and that various detunings aren't inconsistent
-        # The detunings are stored in the `frequency` attribute of `HardwarePulse`
+        # Validate that local drives don't have amplitude or phase, and that various detunings
+        # aren't inconsistent The detunings are stored in the `frequency` attribute of
+        # `HardwarePulse`.
         callable_detunings = callable(local_pulses[0].frequency)
         local_wires = set()
 
@@ -542,8 +555,8 @@ class BraketLocalAhsDevice(BraketAhsDevice):
                 )
             if callable(pulse.frequency) ^ callable_detunings:
                 raise ValueError(
-                    "Found local pulses with both `float` and `callable` detunings. Pulses for local detunings "
-                    "must all have only `float` or `callable` detuning (frequency)."
+                    "Found local pulses with both `float` and `callable` detunings. Pulses for "
+                    "local detunings must all have only `float` or `callable` detuning (frequency)."
                 )
             if set(pulse.wires).intersection(local_wires):
                 raise ValueError("Local drives must not have overlapping wires.")
