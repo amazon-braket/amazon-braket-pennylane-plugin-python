@@ -314,7 +314,9 @@ def _extract_pattern_from_detunings(detunings, time_points):
     return max_detuning, Pattern(pattern)
 
 
-def translate_pulses_to_shifting_field(detunings, time_points):
+def translate_pulses_to_shifting_field(
+    detunings: List[Union[float, callable]], time_points: np.array
+):
     """Uses the overall detuning and pattern to create a ``ShiftingField`` object from
     AWS Braket.
 
