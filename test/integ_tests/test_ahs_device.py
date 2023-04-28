@@ -134,7 +134,7 @@ class TestDeviceAttributes:
     def test_local_device_settings(self):
         """Test that device settings dictionary stores the correct keys and values."""
         dev = qml.device("braket.local.ahs", wires=2)
-        assert dev.settings == {"interaction_coeff": 5420000}
+        assert dev.settings == {"interaction_coeff": 862620}
 
 
 class TestQnodeIntegration:
