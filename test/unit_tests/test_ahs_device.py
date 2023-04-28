@@ -287,7 +287,7 @@ class TestBraketAhsDevice:
         assert isinstance(dev.settings, dict)
         assert "interaction_coeff" in dev.settings.keys()
         assert len(dev.settings.keys()) == 1
-        assert dev.settings["interaction_coeff"] == 5420000
+        assert dev.settings["interaction_coeff"] == 862620
 
     def test_run_task_not_implemented(self):
         """Test that the _run_task method raises a NotImplemented error in the base class"""
@@ -401,9 +401,9 @@ class TestBraketAhsDevice:
             fn = pulse.amplitude
             p = params[params_idx]
             params_idx += 1
-            assert np.allclose([fn(p, t * 1e6) * 1e6 for t in amp_time], amp_vals)
+            assert np.allclose([fn(p, t * 1e6) * 2 * np.pi * 1e6 for t in amp_time], amp_vals)
         else:
-            assert np.allclose([pulse.amplitude * 1e6 for t in amp_time], amp_vals)
+            assert np.allclose([pulse.amplitude * 2 * np.pi * 1e6 for t in amp_time], amp_vals)
 
         if callable(pulse.phase):
             fn = pulse.phase
@@ -417,9 +417,9 @@ class TestBraketAhsDevice:
             fn = pulse.frequency
             p = params[params_idx]
             params_idx += 1
-            assert np.allclose([fn(p, t * 1e6) * 1e6 for t in amp_time], det_vals)
+            assert np.allclose([fn(p, t * 1e6) * 2 * np.pi * 1e6 for t in amp_time], det_vals)
         else:
-            assert np.allclose([pulse.frequency * 1e6 for t in amp_time], det_vals)
+            assert np.allclose([pulse.frequency * 2 * np.pi * 1e6 for t in amp_time], det_vals)
 
     def test_generate_samples(self):
         """Test that generate_samples creates a list of arrays with the expected shape for the
@@ -581,14 +581,15 @@ class TestBraketAhsDevice:
         times = _get_sample_times(time_interval)
 
         num_points = len(times)
-        diffs = [times[i] - times[i - 1] for i in range(1, num_points)]
+        diffs = np.array([times[i] - times[i - 1] for i in range(1, num_points)])
+        diffs = np.around(diffs, decimals=9)  # precision level is ns
 
         # start and end times match but are in units of s and us respectively
         assert times[0] * 1e6 == time_interval[0]
         assert times[-1] * 1e6 == time_interval[1]
 
-        # distances between points are close to but exceed 50ns
-        assert all(d > 50e-9 for d in diffs)
+        # distances between points are close to 50ns
+        assert np.all(d >= 50e-9 for d in diffs)
         assert np.allclose(diffs, 50e-9, atol=5e-9)
 
     def test_convert_to_time_series_constant(self):
@@ -735,7 +736,7 @@ class TestBraketAwsAhsDevice:
     def test_settings(self, mock_aws_device):
         dev = mock_aws_device()
         assert list(dev.settings.keys()) == ["interaction_coeff"]
-        assert np.isclose(dev.settings["interaction_coeff"], 5420000)
+        assert np.isclose(dev.settings["interaction_coeff"], 862620)
 
     def test_validate_operations_multiple_drive_terms(self, mock_aws_device):
         """Test that an error is raised if there are multiple drive terms on
@@ -830,13 +831,13 @@ class TestBraketAwsAhsDevice:
             params_idx += 1
             # atol 200 because of discretization, i.e. 27772.49134560574 --> 27600.0
             assert np.allclose(
-                [fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
+                [fn(p, float(t) * 1e6) * 2 * np.pi * 1e6 for t in amp_time],
                 [float(v) for v in amp_vals],
                 atol=200,
             )
         else:
             assert np.allclose(
-                [pulse.amplitude * 1e6 for t in amp_time], [float(v) for v in amp_vals], atol=200
+                [pulse.amplitude * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in amp_vals], atol=200
             )
 
         if callable(pulse.phase):
@@ -856,11 +857,11 @@ class TestBraketAwsAhsDevice:
             p = params[params_idx]
             params_idx += 1
             assert np.allclose(
-                [fn(p, float(t) * 1e6) * 1e6 for t in amp_time], [float(v) for v in det_vals]
+                [fn(p, float(t) * 1e6) * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in det_vals]
             )
         else:
             assert np.allclose(
-                [pulse.frequency * 1e6 for t in amp_time], [float(v) for v in det_vals]
+                [pulse.frequency * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in det_vals]
             )
 
     def test_run_task(self, mock_aws_device):

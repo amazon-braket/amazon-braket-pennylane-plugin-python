@@ -121,6 +121,21 @@ class BraketAhsDevice(QubitDevice):
         ahs_program = self.create_ahs_program(ev_op)
         self._task = self._run_task(ahs_program)
 
+    def expval(self, observable, shot_range=None, bin_size=None):
+         if not observable.basis == 'Z':
+             raise RuntimeError(f"{self.short_name} can only measure in the Z basis, "
+                                f"but recieved observable {observable}")
+
+         # estimate the ev
+         samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
+
+         # With broadcasting, we want to take the mean over axis 1, which is the -1st/-2nd with/
+         # without bin_size. Without broadcasting, axis 0 is the -1st/-2nd with/without bin_size
+         axis = -1 if bin_size is None else -2
+
+         # use nanmean to ignore failed measurements in taking the average
+         return np.nanmean(samples, axis=axis)
+
     @property
     def task(self):
         return self._task
