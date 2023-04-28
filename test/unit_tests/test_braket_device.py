@@ -383,7 +383,9 @@ PARAM_6 = np.tensor(0.432, requires_grad=True)
 CIRCUIT_6 = QuantumScript(
     ops=[
         qml.Hadamard(wires=0),
-        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0),
+        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]],
+                         requires_grad=True),
+                         wires=0),
         qml.RX(PARAM_6, wires=0),
         qml.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0),
         qml.CNOT(wires=[0, 1]),
