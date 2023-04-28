@@ -11,8 +11,9 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from setuptools import find_namespace_packages, setup
 import platform
+
+from setuptools import find_namespace_packages, setup
 
 with open("README.rst", "r") as fh:
     long_description = fh.read()
@@ -21,9 +22,9 @@ with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 if platform.system() == "Darwin" and platform.machine() == "arm64":
-    TF_VERSION = "tensorflow-macos>=2.6.0"
+    TF_VERSION = "tensorflow-macos>=2.12"
 else:
-    TF_VERSION = "tensorflow>=2.6.0"
+    TF_VERSION = "tensorflow>=2.12"
 
 setup(
     name="amazon-braket-pennylane-plugin",
@@ -53,7 +54,7 @@ setup(
     extras_require={
         "test": [
             "black",
-            "docutils<0.16,>=0.10",
+            "docutils>=0.19",
             "flake8",
             "isort",
             "pre-commit",
@@ -90,5 +91,6 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
