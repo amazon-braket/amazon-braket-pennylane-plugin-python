@@ -11,8 +11,9 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from setuptools import find_namespace_packages, setup
 import platform
+
+from setuptools import find_namespace_packages, setup
 
 with open("README.rst", "r") as fh:
     long_description = fh.read()

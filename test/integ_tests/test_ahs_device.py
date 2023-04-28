@@ -16,7 +16,6 @@
 import numpy as np
 import pennylane as qml
 import pytest
-
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
 from pennylane.pulse.rydberg import rydberg_drive, rydberg_interaction
 
@@ -161,7 +160,8 @@ class TestQnodeIntegration:
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
     @pytest.mark.parametrize(
-        "local_detuning, local_params, local_wires", [(amp, [[0.5, 1.1, 2.9]], [0, 1]), (4.5, [], [1, 2])]
+        "local_detuning, local_params, local_wires",
+        [(amp, [[0.5, 1.1, 2.9]], [0, 1]), (4.5, [], [1, 2])],
     )
     def test_circuit_can_be_called_local_detunings(
         self, H, params, local_detuning, local_params, local_wires

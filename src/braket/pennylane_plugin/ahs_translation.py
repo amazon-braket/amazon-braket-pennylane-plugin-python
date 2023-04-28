@@ -17,9 +17,9 @@ from typing import Callable, List, Tuple, Union
 import numpy as np
 from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.driving_field import DrivingField
-from braket.ahs.shifting_field import ShiftingField
 from braket.ahs.field import Field
 from braket.ahs.pattern import Pattern
+from braket.ahs.shifting_field import ShiftingField
 from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
 from braket.timings.time_series import TimeSeries
 from numpy.typing import ArrayLike
@@ -257,9 +257,9 @@ def _extract_pattern_from_detunings(detunings, time_points):
     )
 
     if callable_detunings:
-        evaluated_detunings = np.array([
-            [float(detuning(t * 1e6)) for t in time_points] for detuning in detunings
-        ])
+        evaluated_detunings = np.array(
+            [[float(detuning(t * 1e6)) for t in time_points] for detuning in detunings]
+        )
         if not np.allclose(evaluated_detunings, np.abs(evaluated_detunings)):
             raise ValueError(negative_detunings_error)
 
@@ -300,7 +300,7 @@ def _extract_pattern_from_detunings(detunings, time_points):
     # Validate that detunings follow pattern along all time steps for callable detunings
     for i, t in enumerate(time_points):
         time_slice = evaluated_detunings[:, i]
-        
+
         new_time_slice = [p * float(max_detuning(t * 1e6)) for p in pattern]
         if not np.allclose(time_slice, new_time_slice):
             raise ValueError(
@@ -323,9 +323,7 @@ def translate_pulses_to_shifting_field(detunings, time_points):
         ShiftingField: the object representing the local drive for the AnalogueHamiltonianSimulation object
     """
     detuning, pattern = _extract_pattern_from_detunings(detunings, time_points)
-    ts_detuning = _convert_to_time_series(
-        detuning, time_points, scaling_factor=1e6
-    )
+    ts_detuning = _convert_to_time_series(detuning, time_points, scaling_factor=1e6)
     shift = ShiftingField(magnitude=Field(time_series=ts_detuning, pattern=pattern))
 
     return shift
