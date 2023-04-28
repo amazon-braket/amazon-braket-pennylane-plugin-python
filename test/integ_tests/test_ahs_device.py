@@ -166,9 +166,9 @@ class TestQnodeIntegration:
     def test_circuit_can_be_called_local_detunings(
         self, H, params, local_detuning, local_params, local_wires
     ):
-        """Test that the circuit consisting of a ParametrizedEvolution with a one global pulse as well
-        as local detunings runs successfully for combinations of amplitude, phase, local detuning being
-        constants or callables."""
+        """Test that the circuit consisting of a ParametrizedEvolution with a one global pulse as
+        well as local detunings runs successfully for combinations of amplitude, phase, local
+        detuning being constants or callables."""
 
         dev = qml.device("braket.local.ahs", wires=3)
         H += rydberg_drive(0, 0, local_detuning, local_wires)

@@ -76,7 +76,9 @@ def translate_pulse_to_driving_field(pulse: HardwarePulse, time_points: ArrayLik
     """
 
     # scaling factor for amp and frequency detuning converts from MHz to rad/s
-    amplitude = _convert_to_time_series(pulse.amplitude, time_points, scaling_factor=2 * np.pi * 1e6)
+    amplitude = _convert_to_time_series(
+        pulse.amplitude, time_points, scaling_factor=2 * np.pi * 1e6
+    )
     detuning = _convert_to_time_series(pulse.frequency, time_points, scaling_factor=2 * np.pi * 1e6)
     phase = _convert_to_time_series(pulse.phase, time_points)
 
@@ -203,10 +205,10 @@ def _get_sample_times(time_interval: ArrayLike):
 def _create_valid_local_detunings(local_pulses, dev_wires):
     """Return ordered list of local detunings for all wires in device.
 
-    This function uses the local detunings of the pulses of the ``ParametrizedEvolution`` being executed
-    to create a list of local detunings with the same length and order as the device wires. For wires that
-    aren't locally detuned, the list is padded with zeros if the detunings are of type ``float``, or functions
-    that return zero if the detunings are ``callable``.
+    This function uses the local detunings of the pulses of the ``ParametrizedEvolution`` being
+    executed to create a list of local detunings with the same length and order as the device
+    wires. For wires that aren't locally detuned, the list is padded with zeros if the detunings
+    are of type ``float``, or functions that return zero if the detunings are ``callable``.
 
     Args:
         local_pulses (List[HardwarePulse]): Partially evaluated list of local pulses
@@ -246,7 +248,8 @@ def _extract_pattern_from_detunings(detunings, time_points):
         Pattern: object containing magnitude of detunings for individual atoms in the device
 
     Raises:
-        ValueError: if the shape of all local detunings don't match or the detunings have negative values
+        ValueError: if the shape of all local detunings don't match or the detunings have negative
+        values
     """
     # If a single item is not callable, no others should be callable. This validation happens in
     # ``_validate_pulses``.
@@ -320,7 +323,8 @@ def translate_pulses_to_shifting_field(detunings, time_points):
         time_points (array[Number, Number]]): Array of sampled time steps
 
     Returns:
-        ShiftingField: the object representing the local drive for the AnalogueHamiltonianSimulation object
+        ShiftingField: the object representing the local drive for the
+        ``AnalogueHamiltonianSimulation`` object
     """
     detuning, pattern = _extract_pattern_from_detunings(detunings, time_points)
     ts_detuning = _convert_to_time_series(detuning, time_points, scaling_factor=1e6)
