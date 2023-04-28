@@ -278,7 +278,7 @@ class TestBraketAhsDevice:
         assert dev.short_name == "braket.local.ahs"
         assert dev.shots == 11
         assert dev.ahs_program is None
-        assert dev.samples is None
+        assert dev.result is None
         assert dev.pennylane_requires == ">=0.30.0"
         assert dev.operations == {"ParametrizedEvolution"}
 
@@ -333,23 +333,23 @@ class TestBraketAhsDevice:
 
     @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
     def test_apply(self, hamiltonian, params):
-        """Test that apply creates and saves an ahs_program and samples as expected"""
+        """Test that apply creates and saves an ahs_program and restuls as expected"""
         t = 0.4
         operations = [ParametrizedEvolution(hamiltonian, params, t)]
         dev = BraketLocalAhsDevice(wires=operations[0].wires)
 
         assert dev._task is None
         assert dev.task is None
-        assert dev.samples is None
+        assert dev.result is None
         assert dev.ahs_program is None
 
         dev.apply(operations)
 
-        assert dev.samples is not None
+        assert dev.result is not None
         assert dev.task is not None
         assert dev.task == dev._task
-        assert len(dev.samples.measurements) == dev.shots
-        assert len(dev.samples.measurements[0].pre_sequence) == len(dev.wires)
+        assert len(dev.result.measurements) == dev.shots
+        assert len(dev.result.measurements[0].pre_sequence) == len(dev.wires)
 
         assert isinstance(dev.ahs_program, AnalogHamiltonianSimulation)
         assert dev.ahs_program.register == dev.register
@@ -440,6 +440,22 @@ class TestBraketAhsDevice:
         assert len(samples) == 17
         assert len(samples[0]) == len(dev_sim.wires)
         assert isinstance(samples[0], np.ndarray)
+
+    def test_expval_handles_nan(self):
+        """Test that expval takes the average ignoring NaN values"""
+
+        dev = qml.device("braket.local.ahs", wires=4, shots=4)
+
+        dev._samples = np.array([
+            [0, 1, 1, np.NaN],
+            [1, 1, 0, 0],
+            [1, 0, 0, 1],
+            [0, 1, 1, 1],
+        ])
+
+        res = dev.expval(qml.PauliZ(3))
+
+        assert res != np.NaN
 
     def test_validate_operations_multiple_operators(self):
         """Test that an error is raised if there are multiple operators"""
@@ -720,7 +736,7 @@ class TestBraketAwsAhsDevice:
         assert dev._s3_folder == ("foo", "bar")
         assert dev.shots == 17
         assert dev.ahs_program is None
-        assert dev.samples is None
+        assert dev.result is None
         assert dev.pennylane_requires == ">=0.30.0"
         assert dev.operations == {"ParametrizedEvolution"}
         assert dev.short_name == "braket.aws.ahs"

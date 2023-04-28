@@ -77,7 +77,7 @@ def test_initialization(arn_nr, name):
     assert dev.short_name == "braket.aws.ahs"
     assert dev.shots == 11
     assert dev.ahs_program is None
-    assert dev.samples is None
+    assert dev.result is None
     assert dev.pennylane_requires == ">=0.30.0"
     assert dev.operations == {"ParametrizedEvolution"}
 
@@ -153,6 +153,38 @@ class TestQnodeIntegration:
             return qml.sample()
 
         circuit()
+
+    def test_qnode_shape_multimeasure(self):
+        """Test that a qnode with multiple measurements has the correct shape"""
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        H = H_i + rydberg_drive(3, 2, 1, [0, 1, 2])
+        measurements = (
+            qml.sample(wires=1),
+            qml.expval(qml.PauliZ(0)),
+            qml.var(qml.PauliZ(0)),
+            qml.probs(wires=[1, 2]),
+            qml.probs(op=qml.PauliZ(1)),
+            qml.sample(qml.PauliZ(2)),
+        )
+
+        @qml.qnode(dev)
+        def circuit():
+            ParametrizedEvolution(H, [], 1.8)
+            return (
+                qml.sample(wires=1),
+                qml.expval(qml.PauliZ(0)),
+                qml.var(qml.PauliZ(0)),
+                qml.probs(wires=[1, 2]),
+                qml.probs(op=qml.PauliZ(1)),
+                qml.sample(qml.PauliZ(2)),
+            )
+
+        res = circuit()
+        expected_shape = (mp.shape(dev, qml.measurements.Shots(dev.shots)) for mp in measurements)
+
+        assert len(res) == len(measurements)
+        assert all(r.shape == es for r, es in zip(res, expected_shape))
 
     def test_observable_not_in_z_basis_raises_error(self):
         """Test that asking for the expectation value of an observable not in
