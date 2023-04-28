@@ -214,7 +214,8 @@ class TestQnodeIntegration:
         # def exact(H, H_obj, t):
         #     psi0 = np.eye(2 ** len(H.wires))[0]
         #     U_exact = jax.scipy.linalg.expm(-1j * t * qml.matrix(H([], 1)))
-        #     return psi0 @ U_exact.conj().T @ qml.matrix(H_obj, wire_order=[0, 1, 2]) @ U_exact @ psi0
+        #     v = psi0 @ U_exact.conj().T @ qml.matrix(H_obj, wire_order=[0, 1, 2]) @ U_exact @ psi0
+        #     return v
 
         # exact_result = np.array([exact(H, H_obj, _t) for _t in t])
 
