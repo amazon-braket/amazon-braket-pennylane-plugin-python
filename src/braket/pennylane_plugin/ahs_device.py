@@ -462,7 +462,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         Args:
             evolution (ParametrizedEvolution): the PennyLane operator describing the pulse
-                to be converted into an Analogue Hamiltonian Simulation program
+                to be converted into an analog Hamiltonian simulation program
 
         Returns:
             AnalogHamiltonianSimulation: a program containing the register and drive
