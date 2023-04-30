@@ -94,6 +94,11 @@ def quad_fn(t):
     return 4.5 * t**2
 
 
+def dummy_cfunc(t):
+    """Dummy function for testing local detunings"""
+    return 10
+
+
 params1 = 1.2
 params2 = [3.4, 5.6]
 params_amp = [2.5, 0.9, 0.3]
@@ -769,11 +774,6 @@ class TestLocalAhsDevice:
         assert isinstance(task, LocalQuantumTask)
         assert len(task.result().measurements) == 17  # dev_sim takes 17 shots
         assert isinstance(task.result().measurements[0], ShotResult)
-
-    @staticmethod
-    def dummy_cfunc(t):
-        """Dummy function for testing local detunings"""
-        return 10
 
     @pytest.mark.parametrize(
         "pulses, expected_detunings",
