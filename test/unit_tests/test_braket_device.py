@@ -1260,7 +1260,6 @@ def test_execute_some_samples(mock_run, old_return_type):
     assert results[1] == 0.0
 
 
-
 @pytest.mark.xfail(raises=ValueError)
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 def test_non_circuit_device(name_mock):

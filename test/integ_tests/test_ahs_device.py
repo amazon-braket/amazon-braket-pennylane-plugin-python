@@ -429,9 +429,11 @@ class TestQnodeIntegration:
         ahs = qml.QNode(circuit, ahs_local)
         default = qml.QNode(circuit, default_qubit, interface="jax")
 
-        t = jnp.linspace(0., 1.5, 151)
+        t = jnp.linspace(0.0, 1.5, 151)
 
-        ahs_results = [ahs(_t, False) for _t in t[10:]]  # _t at timestamps 0-9 is too short for an AHS program
+        ahs_results = [
+            ahs(_t, False) for _t in t[10:]
+        ]  # _t at timestamps 0-9 is too short for an AHS program
         pennylane_results = default(t, True)[10:]
 
         assert np.allclose(ahs_results, pennylane_results, rtol=0.1, atol=0.01)
@@ -468,9 +470,11 @@ class TestQnodeIntegration:
         ahs = qml.QNode(circuit, ahs_local)
         default = qml.QNode(circuit, default_qubit, interface="jax")
 
-        t = jnp.linspace(0., 1.5, 151)
+        t = jnp.linspace(0.0, 1.5, 151)
 
-        ahs_results = [ahs(_t, False) for _t in t[10:]]  # _t at timestamps 0-9 is too short for an AHS program
+        ahs_results = [
+            ahs(_t, False) for _t in t[10:]
+        ]  # _t at timestamps 0-9 is too short for an AHS program
         pennylane_results = default(t, True)[10:]
 
         assert np.allclose(ahs_results, pennylane_results, rtol=0.1, atol=0.01)
