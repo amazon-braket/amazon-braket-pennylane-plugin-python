@@ -1260,6 +1260,7 @@ def test_execute_some_samples(mock_run, old_return_type):
     assert results[1] == 0.0
 
 
+
 @pytest.mark.xfail(raises=ValueError)
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 def test_non_circuit_device(name_mock):
@@ -1564,7 +1565,7 @@ def test_execute_and_gradients(
         device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
     )
 
-    results, jacs = results_and_jacobians
+    results, jacs = dev.execute_and_gradients([pl_circ])
     qml.enable_return()
 
     assert dev.task == task
