@@ -17,10 +17,12 @@ Amazon Braket PennyLane Plugin
     :alt: Documentation Status
     :target: https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/?badge=latest
 
-The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
+The Amazon Braket PennyLane plugin offers four Amazon Braket quantum devices to work with PennyLane:
 
 * ``braket.aws.qubit`` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
 * ``braket.local.qubit`` for running the Amazon Braket SDK's local simulator where you can optionally specify the backend ("default", "braket_sv", "braket_dm" etc)
+* ``braket.aws.ahs`` for running with the Amazon Braket service's analog Hamiltonian simulation QPUs
+* ``braket.local.ahs`` for running analog Hamiltonian simulation on Amazon Braket SDK's local simulator
 
 .. header-start-inclusion-marker-do-not-remove
 
@@ -38,8 +40,15 @@ The plugin documentation can be found here: `<https://amazon-braket-pennylane-pl
 Features
 ========
 
-* Provides two devices to be used with PennyLane: ``braket.aws.qubit`` for running on the Amazon Braket service,
-  and ``braket.local.qubit`` for running on the Amazon Braket SDK's local simulator.
+* Provides four devices to be used with PennyLane:
+  * Two gate-based devices, ``braket.aws.qubit`` for running on the Amazon Braket service,
+    and ``braket.local.qubit`` for running on the Amazon Braket SDK's local simulator.
+  * Two analog Hamiltonian simulation devices, ``braket.aws.ahs`` for running on QPU via the Amazon Braket service,
+    and ``braket.local.ahs`` for running on the Amazon Braket SDK's local simulator.
+* Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
+
+
+For the gate-based devices:
 
 * Both devices support most core qubit PennyLane operations.
 
@@ -48,7 +57,16 @@ Features
 * Provides custom PennyLane operations to cover additional Braket operations: ``ISWAP``, ``PSWAP``, and many more.
   Every custom operation supports analytic differentiation.
 
-* Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
+
+For the analog Hamiltonian simulation devices:
+
+* The devices support ``ParametrizedEvolution`` operators created via the
+  `PennyLane pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ module.
+
+* PennyLane observables in the measurement (Z) basis are supported
+
+* Provides translation of user-defined pulse level control to simulation and hardware implementation
+
 
 .. installation-start-inclusion-marker-do-not-remove
 
