@@ -1193,8 +1193,9 @@ def test_execute_all_samples(mock_run):
     assert results[1].shape == (4,)
 
 
+@pytest.mark.parametrize("old_return_type", [True, False])
 @patch.object(AwsDevice, "run")
-def test_execute_some_samples(mock_run):
+def test_execute_some_samples(mock_run, old_return_type):
     """Tests that a combination with sample returns correctly and does not put single-number
     results in superflous arrays"""
     result = GateModelQuantumTaskResult.from_string(
@@ -1237,6 +1238,8 @@ def test_execute_some_samples(mock_run):
             }
         )
     )
+    if old_return_type:
+        qml.disable_return()
     task = Mock()
     task.result.return_value = result
     mock_run.return_value = task
@@ -1249,10 +1252,13 @@ def test_execute_some_samples(mock_run):
         qml.expval(qml.PauliZ(2))
 
     results = dev.execute(circuit)
+    qml.enable_return()
+
     assert len(results) == 2
     assert results[0].shape == (4,)
     assert isinstance(results[0], np.ndarray)
     assert results[1] == 0.0
+
 
 
 @pytest.mark.xfail(raises=ValueError)
@@ -1457,6 +1463,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
 
 
 @patch.object(AwsDevice, "run")
+@pytest.mark.parametrize("old_return_type", [True, False])
 @pytest.mark.parametrize(
     "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
     [
@@ -1541,7 +1548,10 @@ def test_execute_and_gradients(
     expected_inputs,
     result_types,
     expected_pl_result,
+    old_return_type,
 ):
+    if old_return_type:
+        qml.disable_return()
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
@@ -1555,7 +1565,9 @@ def test_execute_and_gradients(
         device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
     )
 
-    results, jacs = dev.execute_and_gradients([pl_circ])
+    results, jacs = results_and_jacobians
+    qml.enable_return()
+
     assert dev.task == task
     mock_run.assert_called_with(
         expected_braket_circ,
