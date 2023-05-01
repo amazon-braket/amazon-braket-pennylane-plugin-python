@@ -32,7 +32,7 @@ from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane.tape import QuantumTape
+from pennylane.tape import QuantumTape, QuantumScript
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
@@ -321,55 +321,140 @@ def test_execute(mock_run):
     )
 
 
-with QuantumTape() as CIRCUIT_1:
-    qml.Hadamard(wires=0)
-    qml.CNOT(wires=[0, 1])
-    qml.RX(0.432, wires=0)
-    qml.RY(0.543, wires=0)
-    qml.expval(qml.PauliX(1))
+@patch.object(AwsDevice, "run")
+def test_execute_legacy(mock_run):
+    mock_run.return_value = TASK
+    dev = _aws_device(wires=4, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qml.RX(0.432, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    # If the tape is constructed with a QNode, only the parameters marked requires_grad=True
+    # will appear
+    circuit._trainable_params = [0]
+
+    results = dev._execute_legacy(circuit)
+
+    assert np.allclose(
+        results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+    )
+    assert np.allclose(
+        results[1],
+        RESULT.get_value_by_result_type(
+            result_types.Expectation(observable=Observable.X(), target=1)
+        ),
+    )
+    assert np.allclose(
+        results[2],
+        RESULT.get_value_by_result_type(result_types.Variance(observable=Observable.Y(), target=2)),
+    )
+    assert np.allclose(
+        results[3],
+        RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
+    )
+    assert dev.task == TASK
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
+    mock_run.assert_called_with(
+        EXPECTED_CIRC,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs={},
+    )
+
+
+CIRCUIT_1 = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+        qml.RX(0.432, wires=0),
+        qml.RY(0.543, wires=0),
+    ],
+    measurements=[qml.expval(qml.PauliX(1))],
+)
 CIRCUIT_1.trainable_params = [0]
 
-with QuantumTape() as CIRCUIT_2:
-    qml.Hadamard(wires=0)
-    qml.CNOT(wires=[0, 1])
-    qml.RX(0.432, wires=0)
-    qml.RY(0.543, wires=0)
-    qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1))
+CIRCUIT_2 = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+        qml.RX(0.432, wires=0),
+        qml.RY(0.543, wires=0),
+    ],
+    measurements=[qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1))],
+)
 CIRCUIT_2.trainable_params = [0, 1]
 
-with QuantumTape() as CIRCUIT_3:
-    qml.Hadamard(wires=0)
-    qml.CNOT(wires=[0, 1])
-    qml.RX(0.432, wires=0)
-    qml.RY(0.543, wires=0)
-    qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1))
+CIRCUIT_3 = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+        qml.RX(0.432, wires=0),
+        qml.RY(0.543, wires=0),
+    ],
+    measurements=[
+        qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)),
+    ],
+)
 CIRCUIT_3.trainable_params = [0, 1]
 
-with QuantumTape() as CIRCUIT_4:
-    qml.Hadamard(wires=0)
-    qml.CNOT(wires=[0, 1])
-    qml.RX(0.432, wires=0)
-    qml.RY(0.543, wires=0)
-    qml.expval(qml.PauliX(1))
+CIRCUIT_4 = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+        qml.RX(0.432, wires=0),
+        qml.RY(0.543, wires=0),
+    ],
+    measurements=[qml.expval(qml.PauliX(1))],
+)
 CIRCUIT_4.trainable_params = []
 
 PARAMS_5 = np.array([0.432, 0.543], requires_grad=True)
-with QuantumTape() as CIRCUIT_5:
-    qml.Hadamard(wires=0)
-    qml.CNOT(wires=[0, 1])
-    qml.RX(PARAMS_5[0], wires=0)
-    qml.RY(PARAMS_5[1], wires=0)
-    qml.var(qml.PauliX(0) @ qml.PauliY(1))
+CIRCUIT_5 = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+        qml.RX(PARAMS_5[0], wires=0),
+        qml.RY(PARAMS_5[1], wires=0),
+    ],
+    measurements=[qml.var(qml.PauliX(0) @ qml.PauliY(1))],
+)
 CIRCUIT_5.trainable_params = [0, 1]
 
 PARAM_6 = np.tensor(0.432, requires_grad=True)
-with QuantumTape() as CIRCUIT_6:
-    qml.Hadamard(wires=0)
-    qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
-    qml.RX(PARAM_6, wires=0)
-    qml.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0)
-    qml.CNOT(wires=[0, 1])
-    qml.expval(qml.PauliX(1))
+CIRCUIT_6 = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.QubitUnitary(
+            1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0
+        ),
+        qml.RX(PARAM_6, wires=0),
+        qml.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0),
+        qml.CNOT(wires=[0, 1]),
+    ],
+    measurements=[qml.expval(qml.PauliX(1))],
+)
 
 
 @patch.object(AwsDevice, "run")
@@ -510,8 +595,8 @@ def test_execute_with_gradient(
         foo="bar",
         inputs=expected_inputs,
     )
-    assert (results[0][0] == expected_pl_result[0][0]).all()
-    assert (results[0][1] == expected_pl_result[0][1]).all()
+    assert (results[0] == expected_pl_result[0][0]).all()
+    assert (results[1] == expected_pl_result[0][1]).all()
 
 
 @patch.object(AwsDevice, "run")
@@ -1045,8 +1130,9 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
+@pytest.mark.parametrize("old_return_type", [True, False])
 @patch.object(AwsDevice, "run")
-def test_execute_all_samples(mock_run):
+def test_execute_all_samples(mock_run, old_return_type):
     result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
@@ -1102,7 +1188,81 @@ def test_execute_all_samples(mock_run):
         qml.sample(qml.Hadamard(0) @ qml.Identity(1))
         qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
 
-    assert dev.execute(circuit).shape == (2, 4)
+    if old_return_type:
+        qml.disable_return()
+    results = dev.execute(circuit)
+    qml.enable_return()
+
+    assert len(results) == 2
+    assert results[0].shape == (4,)
+    assert results[1].shape == (4,)
+
+
+@pytest.mark.parametrize("old_return_type", [True, False])
+@patch.object(AwsDevice, "run")
+def test_execute_some_samples(mock_run, old_return_type):
+    """Tests that a combination with sample returns correctly and does not put single-number
+    results in superflous arrays"""
+    result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": [[0, 0, 1], [1, 0, 1], [1, 1, 0], [0, 0, 0]],
+                "resultTypes": [
+                    {
+                        "type": {"observable": ["h", "i"], "targets": [0, 1], "type": "sample"},
+                        "value": [1, -1, 1, 1],
+                    },
+                    {
+                        "type": {"observable": ["z"], "targets": [2], "type": "expectation"},
+                        "value": 0.0,
+                    },
+                ],
+                "measuredQubits": [0, 1, 3],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 0,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+    if old_return_type:
+        qml.disable_return()
+    task = Mock()
+    task.result.return_value = result
+    mock_run.return_value = task
+    dev = _aws_device(wires=3)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.sample(qml.Hadamard(0) @ qml.Identity(1))
+        qml.expval(qml.PauliZ(2))
+
+    results = dev.execute(circuit)
+    qml.enable_return()
+
+    assert len(results) == 2
+    assert results[0].shape == (4,)
+    assert isinstance(results[0], np.ndarray)
+    assert results[1] == 0.0
 
 
 @pytest.mark.xfail(raises=ValueError)
@@ -1235,24 +1395,37 @@ def test_projection():
     def f(thetas, **kwargs):
         [qml.RY(thetas[i], wires=i) for i in range(wires)]
 
-    measure_types = ["expval", "var", "sample"]
     projector_01 = qml.Projector([0, 1], wires=range(wires))
     projector_10 = qml.Projector([1, 0], wires=range(wires))
 
     # 01 case
-    fs = [qml.map(f, [projector_01], dev, measure=m) for m in measure_types]
-    assert np.allclose(fs[0](thetas), p_01)
-    assert np.allclose(fs[1](thetas), p_01 - p_01**2)
+    @qml.qnode(dev)
+    def f_01(thetas, measure_type):
+        f(thetas)
+        return measure_type(projector_01)
 
-    samples = fs[2](thetas, shots=100)[0].tolist()
+    expval_01 = f_01(thetas, qml.expval)
+    assert np.allclose(expval_01, p_01)
+
+    var_01 = f_01(thetas, qml.var)
+    assert np.allclose(var_01, p_01 - p_01**2)
+
+    samples = f_01(thetas, qml.sample, shots=100).tolist()
     assert set(samples) == {0, 1}
 
     # 10 case
-    fs = [qml.map(f, [projector_10], dev, measure=m) for m in measure_types]
-    assert np.allclose(fs[0](thetas), p_10)
-    assert np.allclose(fs[1](thetas), p_10 - p_10**2)
+    @qml.qnode(dev)
+    def f_10(thetas, measure_type):
+        f(thetas)
+        return measure_type(projector_10)
 
-    samples = fs[2](thetas, shots=100)[0].tolist()
+    exp_10 = f_10(thetas, qml.expval)
+    assert np.allclose(exp_10, p_10)
+
+    var_10 = f_10(thetas, qml.var)
+    assert np.allclose(var_10, p_10 - p_10**2)
+
+    samples = f_10(thetas, qml.sample, shots=100).tolist()
     assert set(samples) == {0, 1}
 
 
@@ -1294,6 +1467,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
 
 
 @patch.object(AwsDevice, "run")
+@pytest.mark.parametrize("old_return_type", [True, False])
 @pytest.mark.parametrize(
     "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
     [
@@ -1378,7 +1552,10 @@ def test_execute_and_gradients(
     expected_inputs,
     result_types,
     expected_pl_result,
+    old_return_type,
 ):
+    if old_return_type:
+        qml.disable_return()
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
@@ -1393,6 +1570,8 @@ def test_execute_and_gradients(
     )
 
     results, jacs = dev.execute_and_gradients([pl_circ])
+    qml.enable_return()
+
     assert dev.task == task
     mock_run.assert_called_with(
         expected_braket_circ,
