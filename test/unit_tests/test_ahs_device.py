@@ -24,6 +24,9 @@ import pytest
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.driving_field import DrivingField
+from braket.ahs.hamiltonian import Hamiltonian
+from braket.ahs.pattern import Pattern
+from braket.ahs.shifting_field import ShiftingField
 from braket.aws import AwsDevice, AwsQuantumTask
 from braket.device_schema import DeviceActionProperties, DeviceActionType
 from braket.device_schema.quera.quera_ahs_paradigm_properties_v1 import QueraAhsParadigmProperties
@@ -42,10 +45,13 @@ from braket.pennylane_plugin.ahs_device import (
 from braket.pennylane_plugin.ahs_translation import (
     _convert_to_time_series,
     _create_register,
+    _create_valid_local_detunings,
     _evaluate_pulses,
+    _extract_pattern_from_detunings,
     _get_sample_times,
     translate_ahs_shot_result,
     translate_pulse_to_driving_field,
+    translate_pulses_to_shifting_field,
 )
 
 coordinates1 = [[0, 0], [0, 5], [5, 0], [10, 5], [5, 10], [10, 10]]
@@ -72,6 +78,10 @@ def sin_fn(t):
     return np.sin(t)
 
 
+def sin_squared(t):
+    return np.sin(t) ** 2
+
+
 def cos_fn(t):
     return np.cos(t)
 
@@ -82,6 +92,11 @@ def lin_fn(t):
 
 def quad_fn(t):
     return 4.5 * t**2
+
+
+def dummy_cfunc(t):
+    """Dummy function for testing local detunings"""
+    return 10
 
 
 params1 = 1.2
@@ -278,7 +293,7 @@ class TestBraketAhsDevice:
         assert dev.short_name == "braket.local.ahs"
         assert dev.shots == 11
         assert dev.ahs_program is None
-        assert dev.samples is None
+        assert dev.result is None
         assert dev.pennylane_requires == ">=0.30.0"
         assert dev.operations == {"ParametrizedEvolution"}
 
@@ -287,7 +302,7 @@ class TestBraketAhsDevice:
         assert isinstance(dev.settings, dict)
         assert "interaction_coeff" in dev.settings.keys()
         assert len(dev.settings.keys()) == 1
-        assert dev.settings["interaction_coeff"] == 5420000
+        assert dev.settings["interaction_coeff"] == 862620
 
     def test_run_task_not_implemented(self):
         """Test that the _run_task method raises a NotImplemented error in the base class"""
@@ -333,23 +348,23 @@ class TestBraketAhsDevice:
 
     @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
     def test_apply(self, hamiltonian, params):
-        """Test that apply creates and saves an ahs_program and samples as expected"""
+        """Test that apply creates and saves an ahs_program and restuls as expected"""
         t = 0.4
         operations = [ParametrizedEvolution(hamiltonian, params, t)]
         dev = BraketLocalAhsDevice(wires=operations[0].wires)
 
         assert dev._task is None
         assert dev.task is None
-        assert dev.samples is None
+        assert dev.result is None
         assert dev.ahs_program is None
 
         dev.apply(operations)
 
-        assert dev.samples is not None
+        assert dev.result is not None
         assert dev.task is not None
         assert dev.task == dev._task
-        assert len(dev.samples.measurements) == dev.shots
-        assert len(dev.samples.measurements[0].pre_sequence) == len(dev.wires)
+        assert len(dev.result.measurements) == dev.shots
+        assert len(dev.result.measurements[0].pre_sequence) == len(dev.wires)
 
         assert isinstance(dev.ahs_program, AnalogHamiltonianSimulation)
         assert dev.ahs_program.register == dev.register
@@ -371,6 +386,7 @@ class TestBraketAhsDevice:
 
         assert dev.ahs_program is None
 
+        dev._validate_pulses(evolution.H.pulses)
         ahs_program = dev.create_ahs_program(evolution)
 
         # AHS program is created and stored on the device
@@ -401,9 +417,9 @@ class TestBraketAhsDevice:
             fn = pulse.amplitude
             p = params[params_idx]
             params_idx += 1
-            assert np.allclose([fn(p, t * 1e6) * 1e6 for t in amp_time], amp_vals)
+            assert np.allclose([fn(p, t * 1e6) * 2 * np.pi * 1e6 for t in amp_time], amp_vals)
         else:
-            assert np.allclose([pulse.amplitude * 1e6 for t in amp_time], amp_vals)
+            assert np.allclose([pulse.amplitude * 2 * np.pi * 1e6 for t in amp_time], amp_vals)
 
         if callable(pulse.phase):
             fn = pulse.phase
@@ -417,29 +433,47 @@ class TestBraketAhsDevice:
             fn = pulse.frequency
             p = params[params_idx]
             params_idx += 1
-            assert np.allclose([fn(p, t * 1e6) * 1e6 for t in amp_time], det_vals)
+            assert np.allclose([fn(p, t * 1e6) * 2 * np.pi * 1e6 for t in amp_time], det_vals)
         else:
-            assert np.allclose([pulse.frequency * 1e6 for t in amp_time], det_vals)
+            assert np.allclose([pulse.frequency * 2 * np.pi * 1e6 for t in amp_time], det_vals)
 
     def test_generate_samples(self):
         """Test that generate_samples creates a list of arrays with the expected shape for the
         task run"""
         ahs_program = dummy_ahs_program()
+        dev = qml.device("braket.local.ahs", wires=3)
 
         # checked in _validate_operations in the full pipeline
         # since these are created manually for the unit test elsewhere in the file,
         # we confirm the values used for the test are valid here
-        assert len(ahs_program.register.coordinate_list(0)) == len(dev_sim.wires)
+        assert len(ahs_program.register.coordinate_list(0)) == len(dev.wires)
 
-        task = dev_sim._run_task(ahs_program)
+        task = dev._run_task(ahs_program)
 
-        dev_sim._task = task
+        dev._task = task
+        samples = dev.generate_samples()
 
-        samples = dev_sim.generate_samples()
-
-        assert len(samples) == 17
-        assert len(samples[0]) == len(dev_sim.wires)
+        assert len(samples) == 1000
+        assert len(samples[0]) == len(dev.wires)
         assert isinstance(samples[0], np.ndarray)
+
+    def test_expval_handles_nan(self):
+        """Test that expval takes the average ignoring NaN values"""
+
+        dev = qml.device("braket.local.ahs", wires=4, shots=4)
+
+        dev._samples = np.array(
+            [
+                [0, 1, 1, np.NaN],
+                [1, 1, 0, 0],
+                [1, 0, 0, 1],
+                [0, 1, 1, 1],
+            ]
+        )
+
+        res = dev.expval(qml.PauliZ(3))
+
+        assert res != np.NaN
 
     def test_validate_operations_multiple_operators(self):
         """Test that an error is raised if there are multiple operators"""
@@ -491,12 +525,13 @@ class TestBraketAhsDevice:
         with pytest.raises(RuntimeError, match="Expected a HardwareHamiltonian instance"):
             dev_sim._validate_operations([op1])
 
-    def test_validate_pulses_no_pulses(self):
+    def test_validate_pulses_no_pulses(self, mock_aws_device):
         """Test that _validate_pulses raises an error if there are no pulses saved
         on the Hamiltonian"""
+        dev = mock_aws_device()
 
         with pytest.raises(RuntimeError, match="No pulses found"):
-            dev_sim._validate_pulses(H_i.pulses)
+            dev._validate_pulses(H_i.pulses)
 
     @pytest.mark.parametrize("coordinates", [coordinates1, coordinates2])
     def test_create_register(self, coordinates):
@@ -581,14 +616,15 @@ class TestBraketAhsDevice:
         times = _get_sample_times(time_interval)
 
         num_points = len(times)
-        diffs = [times[i] - times[i - 1] for i in range(1, num_points)]
+        diffs = np.array([times[i] - times[i - 1] for i in range(1, num_points)])
+        diffs = np.around(diffs, decimals=9)  # precision level is ns
 
         # start and end times match but are in units of s and us respectively
         assert times[0] * 1e6 == time_interval[0]
         assert times[-1] * 1e6 == time_interval[1]
 
-        # distances between points are close to but exceed 50ns
-        assert all(d > 50e-9 for d in diffs)
+        # distances between points are close to 50ns
+        assert np.all(d >= 50e-9 for d in diffs)
         assert np.allclose(diffs, 50e-9, atol=5e-9)
 
     def test_convert_to_time_series_constant(self):
@@ -662,44 +698,75 @@ class TestBraketAhsDevice:
         assert np.allclose(output, expected_output, equal_nan=True)
 
 
-class TestLocalAquilaDevice:
+class TestLocalAhsDevice:
     """Test functionality specific to the local simulator device"""
 
-    def test_validate_operations_multiple_drive_terms(self):
-        """Test that an error is raised if there are multiple drive terms on
-        the Hamiltonian"""
-        pulses = [HardwarePulse(3, 4, 5, [0, 1]), HardwarePulse(4, 6, 7, [1, 2])]
-
-        with pytest.raises(
-            NotImplementedError,
-            match="Multiple pulses in a Hamiltonian are not currently supported",
-        ):
+    @pytest.mark.parametrize(
+        "pulses, error",
+        [
+            (
+                [HardwarePulse(3, 4, 5, [0, 1, 2]), HardwarePulse(4, 6, 7, [1, 0, 2])],
+                "ParametrizedEvolution with multiple global drives",
+            ),
+            (
+                [HardwarePulse(3, 4, 5, [3, 4])],
+                "which are not a subset of device wires",
+            ),
+            (
+                [HardwarePulse(3, 4, 5, [0])],
+                "doesn't apply a global driving field to all wires",
+            ),
+            ([], "doesn't apply a global driving field to all wires"),
+            (
+                [HardwarePulse(3, 4, 5, [0]), HardwarePulse(3, 4, 5, [0, 1, 2])],
+                "Amplitude must be zero.",
+            ),
+            (
+                [
+                    HardwarePulse(3, 4, 5, [0, 1, 2]),
+                    HardwarePulse(0, 0, f1, [0]),
+                    HardwarePulse(0, 0, 2, [0]),
+                ],
+                "Found local pulses with both `float` and `callable` detunings.",
+            ),
+            (
+                [
+                    HardwarePulse(3, 4, 5, [0, 1, 2]),
+                    HardwarePulse(0, 0, 2, [0, 1]),
+                    HardwarePulse(0, 0, 4, [0, 2]),
+                ],
+                "Local drives must not have overlapping wires.",
+            ),
+        ],
+    )
+    def test_invalid_pulses(self, pulses, error):
+        """Test that invalid pulses raise the correct errors during validation"""
+        with pytest.raises(ValueError, match=error):
             dev_sim._validate_pulses(pulses)
 
     @pytest.mark.parametrize(
-        "pulse_wires, dev_wires, res",
-        [
-            ([0, 1, 2], [0, 1, 2, 3], "error"),  # subset
-            ([5, 6, 7, 8, 9], [4, 5, 6, 7, 8], "error"),  # mismatch
-            ([0, 1, 2, 3, 6], [1, 2, 3], "error"),
-            ([0, 1, 2], [0, 1, 2], "success"),
-        ],
+        "pulses",
+        (
+            [HardwarePulse(3, 4, 5, [0, 1, 2])],
+            [
+                HardwarePulse(3, 4, 5, [0, 1, 2]),
+                HardwarePulse(0, 0, f1, [1]),
+                HardwarePulse(0, 0, f2, [2]),
+            ],
+            [
+                HardwarePulse(0, 0, 3.5, [0]),
+                HardwarePulse(0, 0, 5.4, [2]),
+                HardwarePulse(3, 4, 5, [0, 1, 2]),
+            ],
+        ),
     )
-    def test_validate_pulse_is_global_drive(self, pulse_wires, dev_wires, res):
-        """Test that an error is raised if the pulse does not describe a global drive"""
-
-        dev = BraketLocalAhsDevice(wires=dev_wires)
-        pulse = HardwarePulse(3, 4, 5, pulse_wires)
-
-        if res == "error":
-            with pytest.raises(
-                NotImplementedError, match="Only global drive is currently supported"
-            ):
-                dev._validate_pulses([pulse])
-        else:
-            dev._validate_pulses([pulse])
+    def test_validate_pulses_valid_pulses(self, pulses):
+        """Test that `_validate_pulses` does not raise any errors when the pulses are valid."""
+        dev_sim._validate_pulses(pulses)
 
     def test_run_task(self):
+        """Test that `run_task` returns the correct objects with the number of measurements
+        equal to the number of shots."""
         ahs_program = dummy_ahs_program()
 
         task = dev_sim._run_task(ahs_program)
@@ -707,6 +774,202 @@ class TestLocalAquilaDevice:
         assert isinstance(task, LocalQuantumTask)
         assert len(task.result().measurements) == 17  # dev_sim takes 17 shots
         assert isinstance(task.result().measurements[0], ShotResult)
+
+    @pytest.mark.parametrize(
+        "pulses, expected_detunings",
+        [
+            ([HardwarePulse(0, 0, 2, [0, 1])], [2, 2, 0]),
+            (
+                [
+                    HardwarePulse(0, 0, dummy_cfunc, [0]),
+                    HardwarePulse(0, 0, dummy_cfunc, [1, 2]),
+                ],
+                [dummy_cfunc, dummy_cfunc, dummy_cfunc],
+            ),
+            (
+                [
+                    HardwarePulse(0, 0, 4, [0]),
+                    HardwarePulse(0, 0, 2, [1, 2]),
+                ],
+                [4, 2, 2],
+            ),
+            (
+                [HardwarePulse(0, 0, dummy_cfunc, [0, 1])],
+                [dummy_cfunc, dummy_cfunc, lambda t: 0],
+            ),
+        ],
+    )
+    def test_create_valid_local_detunings(self, pulses, expected_detunings):
+        """Test that BraketLocalAhsDevice._create_valid_local_detunings expands and pads the
+        detunings so that there is one local detuning per device wire, and that the detunings
+        are mapped correctly."""
+
+        detunings = _create_valid_local_detunings(pulses, dev_sim.wires)
+
+        assert len(detunings) == len(dev_sim.wires)
+
+        if callable(pulses[0].frequency):
+            for det, expected_det in zip(detunings, expected_detunings):
+                for i in range(10):
+                    assert det(i) == expected_det(i)
+        else:
+            assert all(detunings[i] == expected_detunings[i] for i in range(len(dev_sim.wires)))
+
+    def test_create_valid_local_detunings_no_local_detunings(self):
+        """Test that _create_valid_local_detunings returns `None` if there are no local
+        detunings."""
+
+        valid_detunings = _create_valid_local_detunings([], dev_sim.wires)
+        assert valid_detunings is None
+
+    def test_extract_pattern_from_detunings_mismatched_detuning(self):
+        """Test that an error is raised when the shapes of the local detunings
+        don't match."""
+        detunings = [lambda t: np.sin(t) ** 2, lambda t: np.cos(t) ** 2]
+        time_interval = [0, 20]
+        time_points = _get_sample_times(time_interval)
+
+        with pytest.raises(ValueError, match="Local detunings don't match"):
+            _ = _extract_pattern_from_detunings(detunings, time_points)
+
+    @pytest.mark.parametrize(
+        "detunings", ([lambda t: np.sin(t), lambda t: 0.5 * np.sin(t)], [-1, 2])
+    )
+    def test_extract_pattern_from_detuning_negative_detuning(self, detunings):
+        """Test that negative values in local detunings raise the correct error."""
+        with pytest.raises(ValueError, match="Found negative value in local detunings"):
+            _ = _extract_pattern_from_detunings(detunings, _get_sample_times([0, 20]))
+
+    @pytest.mark.parametrize(
+        "detunings, expected_max, expected_pattern",
+        [
+            ([3, 2, 1], 3, [1, 2 / 3, 1 / 3]),
+            ([lambda t: 2, dummy_cfunc, lambda t: 0], dummy_cfunc, [0.2, 1, 0]),
+            (
+                [sin_squared, lambda t: 0.5 * sin_squared(t), lambda t: 0.333 * sin_squared(t)],
+                sin_squared,
+                [1, 0.5, 0.333],
+            ),
+            ([0, 0, 0], 0, [1, 1, 1]),
+            ([lambda t: 0] * 3, 0, [1, 1, 1]),
+        ],
+    )
+    def test_extract_pattern_from_detunings(self, detunings, expected_max, expected_pattern):
+        """Test that BraketLocalAhsDevice._extract_pattern_from_detunings
+        finds the pattern from valid local detunings correctly."""
+        max_detuning, pattern = _extract_pattern_from_detunings(
+            detunings, _get_sample_times([0, 20])
+        )
+
+        assert max_detuning == expected_max
+        assert isinstance(pattern, Pattern)
+        assert np.allclose(pattern.series, expected_pattern)
+
+    @pytest.mark.parametrize(
+        "detunings, pattern",
+        [
+            (
+                [lambda t: sin_squared(t), lambda t: sin_squared(t), lambda t: 5 * sin_squared(t)],
+                [0.2, 0.2, 1],
+            ),
+            ([1, 8.9, 10], [0.1, 0.89, 1]),
+        ],
+    )
+    def test_convert_pulses_to_shifting_field(self, detunings, pattern):
+        """Test that BraketLocalAhsDevice._convert_pulses_to_shifting_field
+        creates a valid `ShiftingField`."""
+        times = _get_sample_times([0, 20])
+        shift = translate_pulses_to_shifting_field(detunings, times)
+        assert isinstance(shift, ShiftingField)
+        assert np.allclose(shift.magnitude.pattern.series, pattern)
+
+        shift_times = shift.magnitude.time_series.times()
+        assert np.allclose(shift_times, times)
+
+    @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
+    def test_ahs_program_from_evolution_no_local_detuning(self, hamiltonian, params):
+        """Test that BraketLocalAhsDevice._ahs_program_from_evolution creates a valid
+        AnalogHamiltonianSimulation when no local detuning is present."""
+
+        evolution = ParametrizedEvolution(hamiltonian, params, 1.5)
+        dev = BraketLocalAhsDevice(3)
+
+        dev._validate_pulses(evolution.H.pulses)
+        ahs_program = dev._ahs_program_from_evolution(evolution)
+
+        assert isinstance(ahs_program, AnalogHamiltonianSimulation)
+
+        # compare evolution and ahs_program registers
+        assert ahs_program.register.coordinate_list(0) == [
+            c[0] * 1e-6 for c in evolution.H.settings.register
+        ]
+        assert ahs_program.register.coordinate_list(1) == [
+            c[1] * 1e-6 for c in evolution.H.settings.register
+        ]
+
+        # elements of the hamiltonian have the expected shape
+        drive = ahs_program.hamiltonian
+        assert isinstance(drive, DrivingField)
+
+        amp_time = drive.amplitude.time_series.times()
+        phase_time = drive.phase.time_series.times()
+        det_time = drive.detuning.time_series.times()
+
+        assert amp_time == phase_time == det_time
+        assert amp_time[0] == evolution.t[0] * 1e-6
+        assert amp_time[-1] == evolution.t[1] * 1e-6
+
+    @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
+    @pytest.mark.parametrize(
+        "local_detuning, local_params, local_wires",
+        [(amp, [[0.5, 1.1, 2.9]], [0, 1]), (4.5, [], [1, 2])],
+    )
+    def test_ahs_program_from_evolution_with_local_detuning(
+        self, hamiltonian, params, local_detuning, local_params, local_wires
+    ):
+        """Test that BraketLocalAhsDevice._ahs_program_from_evolution creates a valid
+        AnalogHamiltonianSimulation when local detunings are present."""
+        hamiltonian += rydberg_drive(0, 0, local_detuning, local_wires)
+        params += local_params
+
+        evolution = ParametrizedEvolution(hamiltonian, params, 1.5)
+        dev = BraketLocalAhsDevice(3)
+
+        dev._validate_pulses(evolution.H.pulses)
+        ahs_program = dev._ahs_program_from_evolution(evolution)
+
+        assert isinstance(ahs_program, AnalogHamiltonianSimulation)
+
+        # compare evolution and ahs_program registers
+        assert ahs_program.register.coordinate_list(0) == [
+            c[0] * 1e-6 for c in evolution.H.settings.register
+        ]
+        assert ahs_program.register.coordinate_list(1) == [
+            c[1] * 1e-6 for c in evolution.H.settings.register
+        ]
+
+        # elements of the hamiltonian have the expected shape
+        h = ahs_program.hamiltonian
+
+        assert isinstance(h, Hamiltonian)
+        drive, shift = h.terms
+        assert isinstance(drive, DrivingField)
+        assert isinstance(shift, ShiftingField)
+
+        amp_time = drive.amplitude.time_series.times()
+        phase_time = drive.phase.time_series.times()
+        det_time = drive.detuning.time_series.times()
+
+        assert amp_time == phase_time == det_time
+        assert amp_time[0] == evolution.t[0] * 1e-6
+        assert amp_time[-1] == evolution.t[1] * 1e-6
+
+        expected_pattern = [1 if i in local_wires else 0 for i in dev.wires]
+        assert shift.magnitude.pattern.series == expected_pattern
+
+        local_det_time = shift.magnitude.time_series.times()
+        assert local_det_time[0] == evolution.t[0] * 1e-6
+        assert local_det_time[-1] == evolution.t[1] * 1e-6
 
 
 class TestBraketAwsAhsDevice:
@@ -719,7 +982,7 @@ class TestBraketAwsAhsDevice:
         assert dev._s3_folder == ("foo", "bar")
         assert dev.shots == 17
         assert dev.ahs_program is None
-        assert dev.samples is None
+        assert dev.result is None
         assert dev.pennylane_requires == ">=0.30.0"
         assert dev.operations == {"ParametrizedEvolution"}
         assert dev.short_name == "braket.aws.ahs"
@@ -735,7 +998,7 @@ class TestBraketAwsAhsDevice:
     def test_settings(self, mock_aws_device):
         dev = mock_aws_device()
         assert list(dev.settings.keys()) == ["interaction_coeff"]
-        assert np.isclose(dev.settings["interaction_coeff"], 5420000)
+        assert np.isclose(dev.settings["interaction_coeff"], 862620)
 
     def test_validate_operations_multiple_drive_terms(self, mock_aws_device):
         """Test that an error is raised if there are multiple drive terms on
@@ -830,13 +1093,15 @@ class TestBraketAwsAhsDevice:
             params_idx += 1
             # atol 200 because of discretization, i.e. 27772.49134560574 --> 27600.0
             assert np.allclose(
-                [fn(p, float(t) * 1e6) * 1e6 for t in amp_time],
+                [fn(p, float(t) * 1e6) * 2 * np.pi * 1e6 for t in amp_time],
                 [float(v) for v in amp_vals],
                 atol=200,
             )
         else:
             assert np.allclose(
-                [pulse.amplitude * 1e6 for t in amp_time], [float(v) for v in amp_vals], atol=200
+                [pulse.amplitude * 2 * np.pi * 1e6 for t in amp_time],
+                [float(v) for v in amp_vals],
+                atol=200,
             )
 
         if callable(pulse.phase):
@@ -856,11 +1121,12 @@ class TestBraketAwsAhsDevice:
             p = params[params_idx]
             params_idx += 1
             assert np.allclose(
-                [fn(p, float(t) * 1e6) * 1e6 for t in amp_time], [float(v) for v in det_vals]
+                [fn(p, float(t) * 1e6) * 2 * np.pi * 1e6 for t in amp_time],
+                [float(v) for v in det_vals],
             )
         else:
             assert np.allclose(
-                [pulse.frequency * 1e6 for t in amp_time], [float(v) for v in det_vals]
+                [pulse.frequency * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in det_vals]
             )
 
     def test_run_task(self, mock_aws_device):
