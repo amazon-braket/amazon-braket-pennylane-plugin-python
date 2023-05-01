@@ -1213,7 +1213,7 @@ def test_execute_some_samples(mock_run):
                     {
                         "type": {"observable": ["z"], "targets": [2], "type": "expectation"},
                         "value": 0.0,
-                    }
+                    },
                 ],
                 "measuredQubits": [0, 1, 3],
                 "taskMetadata": {
