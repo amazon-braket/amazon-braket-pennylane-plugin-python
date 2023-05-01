@@ -1129,9 +1129,9 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
 
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
-
+@pytest.mark.parametrize("old_return_type", [True, False])
 @patch.object(AwsDevice, "run")
-def test_execute_all_samples(mock_run):
+def test_execute_all_samples(mock_run, old_return_type):
     result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
@@ -1187,7 +1187,11 @@ def test_execute_all_samples(mock_run):
         qml.sample(qml.Hadamard(0) @ qml.Identity(1))
         qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
 
+    if old_return_type:
+        qml.disable_return()
     results = dev.execute(circuit)
+    qml.enable_return()
+
     assert len(results) == 2
     assert results[0].shape == (4,)
     assert results[1].shape == (4,)
