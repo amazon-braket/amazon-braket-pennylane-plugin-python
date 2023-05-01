@@ -321,6 +321,69 @@ def test_execute(mock_run):
     )
 
 
+@patch.object(AwsDevice, "run")
+def test_execute_legacy(mock_run):
+    mock_run.return_value = TASK
+    dev = _aws_device(wires=4, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qml.RX(0.432, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    # If the tape is constructed with a QNode, only the parameters marked requires_grad=True
+    # will appear
+    circuit._trainable_params = [0]
+
+    results = dev._execute_legacy(circuit)
+
+    assert np.allclose(
+        results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+    )
+    assert np.allclose(
+        results[1],
+        RESULT.get_value_by_result_type(
+            result_types.Expectation(observable=Observable.X(), target=1)
+        ),
+    )
+    assert np.allclose(
+        results[2],
+        RESULT.get_value_by_result_type(result_types.Variance(observable=Observable.Y(), target=2)),
+    )
+    assert np.allclose(
+        results[3],
+        RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
+    )
+    assert dev.task == TASK
+    EXPECTED_CIRC = (
+        Circuit()
+        .h(0)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=Observable.X(), target=1)
+        .variance(observable=Observable.Y(), target=2)
+        .sample(observable=Observable.Z(), target=3)
+    )
+    mock_run.assert_called_with(
+        EXPECTED_CIRC,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs={},
+    )
+
+
 CIRCUIT_1 = QuantumScript(
     ops=[
         qml.Hadamard(wires=0),
@@ -1128,6 +1191,68 @@ def test_execute_all_samples(mock_run):
     assert len(results) == 2
     assert results[0].shape == (4,)
     assert results[1].shape == (4,)
+
+
+@patch.object(AwsDevice, "run")
+def test_execute_some_samples(mock_run):
+    """Tests that a combination with sample returns correctly and does not put single-number
+    results in superflous arrays"""
+    result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": [[0, 0, 1], [1, 0, 1], [1, 1, 0], [0, 0, 0]],
+                "resultTypes": [
+                    {
+                        "type": {"observable": ["h", "i"], "targets": [0, 1], "type": "sample"},
+                        "value": [1, -1, 1, 1],
+                    },
+                    {
+                        "type": {"observable": ["z"], "targets": [2], "type": "expectation"},
+                        "value": 0.0,
+                    }
+                ],
+                "measuredQubits": [0, 1, 3],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 0,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+    task = Mock()
+    task.result.return_value = result
+    mock_run.return_value = task
+    dev = _aws_device(wires=3)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.sample(qml.Hadamard(0) @ qml.Identity(1))
+        qml.expval(qml.PauliZ(2))
+
+    results = dev.execute(circuit)
+    assert len(results) == 2
+    assert results[0].shape == (4,)
+    assert isinstance(results[0], np.ndarray)
+    assert results[1] == 0.0
 
 
 @pytest.mark.xfail(raises=ValueError)
