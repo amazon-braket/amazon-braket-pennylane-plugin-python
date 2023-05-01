@@ -1129,6 +1129,7 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
 
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
+
 @pytest.mark.parametrize("old_return_type", [True, False])
 @patch.object(AwsDevice, "run")
 def test_execute_all_samples(mock_run, old_return_type):
