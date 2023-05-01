@@ -41,9 +41,9 @@ Features
 ========
 
 * Provides four devices to be used with PennyLane:
-  * two gate-based devices, ``braket.aws.qubit`` for running on the Amazon Braket service,
+  * Two gate-based devices, ``braket.aws.qubit`` for running on the Amazon Braket service,
     and ``braket.local.qubit`` for running on the Amazon Braket SDK's local simulator.
-  * two analog Hamiltonian simulation devices, ``braket.aws.ahs`` for running on QPU via the Amazon Braket service,
+  * Two analog Hamiltonian simulation devices, ``braket.aws.ahs`` for running on QPU via the Amazon Braket service,
     and ``braket.local.ahs`` for running on the Amazon Braket SDK's local simulator.
 * Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
 
