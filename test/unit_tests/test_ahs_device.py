@@ -475,6 +475,15 @@ class TestBraketAhsDevice:
 
         assert res != np.NaN
 
+    def test_observable_not_in_z_basis_raises_error(self):
+        """Test that asking for the expectation value of an observable not in
+        the computational basis raises an error"""
+
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
+            dev.expval(qml.PauliX(0))
+
     def test_validate_operations_multiple_operators(self):
         """Test that an error is raised if there are multiple operators"""
 
