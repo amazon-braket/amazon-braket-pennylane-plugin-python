@@ -50,10 +50,12 @@ from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import QuantumFunctionError, QubitDevice, active_return
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
-from pennylane.measurements import Expectation, Probability, Sample, State, Variance
+from pennylane.measurements import Expectation, Probability, Sample, State, Variance, MeasurementTransform, ShadowExpvalMP
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
 from pennylane.tape import QuantumTape
+from pennylane.interfaces import set_shots
+import pennylane as qml
 
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
@@ -162,6 +164,8 @@ class BraketQubitDevice(QubitDevice):
         )
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
+        elif isinstance(circuit.observables[0], ShadowExpvalMP):
+            return braket_circuit
         else:
             for observable in circuit.observables:
                 dev_wires = self.map_wires(observable.wires).tolist()
@@ -288,6 +292,50 @@ class BraketQubitDevice(QubitDevice):
         else:
             return {"braket_failed_task_id": task.id}
 
+    def classical_shadow(self, obs, circuit):
+        if circuit is None:  # pragma: no cover
+            raise ValueError("Circuit must be provided when measuring classical shadows")
+
+        wires = obs.wires
+        n_snapshots = self.shots
+        seed = obs.seed
+
+        with set_shots(self, shots=1):
+            # slow implementation but works for all devices
+            n_qubits = len(wires)
+            mapped_wires = np.array(self.map_wires(wires))
+
+            # seed the random measurement generation so that recipes
+            # are the same for different executions with the same seed
+            rng = np.random.default_rng(seed)
+            recipes = rng.integers(0, 3, size=(n_snapshots, n_qubits))
+            obs_list = [qml.PauliX, qml.PauliY, qml.PauliZ]
+
+            outcomes = np.zeros((n_snapshots, n_qubits))
+
+            for t in range(n_snapshots):
+                # compute rotations for the Pauli measurements
+                rotations = [
+                    rot
+                    for wire_idx, wire in enumerate(wires)
+                    for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(
+                        wires=wire
+                    )
+                ]
+
+                self.reset()
+                self.apply(circuit.operations, rotations=circuit.diagonalizing_gates + rotations)
+                # MUST BE INSERTED or shadow measurement will fail
+                self._circuit = self._pl_to_braket_circuit(circuit)
+                outcomes[t] = self.generate_samples()[0][mapped_wires]
+
+        return self._cast(self._stack([outcomes, recipes]), dtype=np.int8)
+
+    def shadow_expval(self, obs, circuit):
+        bits, recipes = self.classical_shadow(obs, circuit)
+        shadow = qml.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
+        return shadow.expval(obs.H, obs.k)
+
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         trainable = BraketQubitDevice._get_trainable_parameters(circuit) if compute_gradient else {}
@@ -299,16 +347,19 @@ class BraketQubitDevice(QubitDevice):
         )
         if self._noise_model:
             self._circuit = self._noise_model.apply(self._circuit)
-        self._task = self._run_task(
-            self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
-        )
-        braket_result = self._task.result()
+        if not isinstance(circuit.observables[0], MeasurementTransform):
+            self._task = self._run_task(
+                self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
+            )
+            braket_result = self._task.result()
 
-        if self.tracker.active:
-            tracking_data = self._tracking_data(self._task)
-            self.tracker.update(executions=1, shots=self.shots, **tracking_data)
-            self.tracker.record()
-        return self._braket_to_pl_result(braket_result, circuit)
+            if self.tracker.active:
+                tracking_data = self._tracking_data(self._task)
+                self.tracker.update(executions=1, shots=self.shots, **tracking_data)
+                self.tracker.record()
+            return self._braket_to_pl_result(braket_result, circuit)
+        elif isinstance(circuit.observables[0], ShadowExpvalMP):
+            return [self.shadow_expval(circuit.observables[0], circuit)] 
 
     def _execute_legacy(
         self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
