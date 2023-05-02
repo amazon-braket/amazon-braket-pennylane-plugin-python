@@ -1654,7 +1654,9 @@ def test_execute_and_gradients_non_adjoint(
 
     # assert results & jacs are right
     assert (results == expected_pl_result[0]).all()
-    assert jacs == [grad]
+    assert np.allclose(jacs[0][0], grad[0])
+    assert np.allclose(jacs[0][1], grad[1])
+    assert len(jacs[0]) == len(grad)
 
 
 def test_capabilities_class_and_instance_method():
