@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.15.0.post0 (2023-05-02)
+
+### Documentation Changes
+
+ * Correct README format for PyPI
+
 ## v1.15.0 (2023-05-02)
 
 ### Features
