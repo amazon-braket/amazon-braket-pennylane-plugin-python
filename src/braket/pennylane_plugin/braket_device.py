@@ -39,6 +39,7 @@ import numbers
 from enum import Enum, auto
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
+import numpy as onp
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.circuits.noise_model import NoiseModel
@@ -46,7 +47,7 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice, active_return
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
@@ -230,7 +231,13 @@ class BraketQubitDevice(QubitDevice):
         also determines the output observables."""
         # Compute the required statistics
         results = self.statistics(braket_result, circuit.observables)
-
+        if active_return():
+            # Assuming that the braket device doesn't have native parameter broadcasting
+            # Assuming that the braket device doesn't support shot vectors.
+            # Otherwise, we may need additional nesting
+            if len(circuit.measurements) == 1:
+                return onp.array(results).squeeze()
+            return tuple(onp.array(res).squeeze() for res in results)
         ag_results = [
             result
             for result in braket_result.result_types
@@ -301,6 +308,11 @@ class BraketQubitDevice(QubitDevice):
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
         return self._braket_to_pl_result(braket_result, circuit)
+
+    def _execute_legacy(
+        self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
+    ) -> np.ndarray:
+        return self.execute(circuit, compute_gradient=compute_gradient, **run_kwargs)
 
     def apply(
         self,
@@ -580,11 +592,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 new_res = self.execute(circuit, compute_gradient=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
-                new_res, new_jac = results[0]
+                if active_return():
+                    new_res, new_jac = results
+                else:
+                    new_res, new_jac = results[0]
             res.append(new_res)
-            jacs.append(new_jac)
+            jacs.append(self._adjoint_jacobian_processing(new_jac) if active_return() else new_jac)
 
-        return res, jacs
+        return res[0] if len(res) == 1 else res, jacs
 
 
 class BraketLocalQubitDevice(BraketQubitDevice):
