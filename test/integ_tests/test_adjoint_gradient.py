@@ -140,4 +140,3 @@ class TestAdjointGradient:
         qml.disable_return()
         qml.grad(circuit)(x, y, z)
         qml.enable_return()
-
