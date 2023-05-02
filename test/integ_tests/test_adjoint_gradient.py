@@ -70,7 +70,9 @@ class TestAdjointGradient:
         y = np.array(0.2, requires_grad=True)
         z = np.array(0.3, requires_grad=True)
 
+        qml.disable_return()
         adj_grad_test_helper(dev, circuit, [x, y, z])
+        qml.enable_return()
 
     def test_grad_large_circuit(self, on_demand_sv_device):
         num_qubits = 8
@@ -114,7 +116,9 @@ class TestAdjointGradient:
         x = np.array([i / 10 for i in range(num_params)], requires_grad=True)
         x[1] = np.array(x[1], requires_grad=False)
 
+        qml.disable_return()
         adj_grad_test_helper(dev, circuit, [x])
+        qml.enable_return()
 
     # this test runs on sv1, dm1, and the local simulator to validate that
     # calls to qml.grad() without a specified diff_method succeed
@@ -133,4 +137,6 @@ class TestAdjointGradient:
         y = np.array(0.2, requires_grad=True)
         z = np.array(0.3, requires_grad=True)
 
+        qml.disable_return()
         qml.grad(circuit)(x, y, z)
+        qml.enable_return()
