@@ -6,14 +6,14 @@ import pytest
 seed = 42
 np.random.seed(seed)
 H = qml.PauliZ(0) @ qml.PauliZ(1)
-shots = 10000
 wires = 2
 
+@pytest.mark.parametrize("shots", [10000])
 class TestShadowExpval:
     """Test shadow_expval computation of expectation values."""
 
-    @pytest.mark.parametrize("dev", [qml.device("default.qubit", wires=wires, shots=shots), qml.device("braket.local.qubit", wires=wires, shots=shots)])
-    def test_shadow_expval(self, dev):
+    def test_shadow_expval(self, device, shots):
+        dev = device(wires)
         @qml.qnode(dev)
         def shadow_circuit(x):
             qml.Hadamard(wires=0)

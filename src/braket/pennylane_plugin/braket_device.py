@@ -300,34 +300,54 @@ class BraketQubitDevice(QubitDevice):
         n_snapshots = self.shots
         seed = obs.seed
 
-        with set_shots(self, shots=1):
-            # slow implementation but works for all devices
-            n_qubits = len(wires)
-            mapped_wires = np.array(self.map_wires(wires))
+        n_qubits = len(wires)
+        mapped_wires = np.array(self.map_wires(wires))
+        # seed the random measurement generation so that recipes
+        # are the same for different executions with the same seed
+        rng = np.random.default_rng(seed)
+        recipes = rng.integers(0, 3, size=(n_snapshots, n_qubits))
+        obs_list = [qml.PauliX, qml.PauliY, qml.PauliZ]
 
-            # seed the random measurement generation so that recipes
-            # are the same for different executions with the same seed
-            rng = np.random.default_rng(seed)
-            recipes = rng.integers(0, 3, size=(n_snapshots, n_qubits))
-            obs_list = [qml.PauliX, qml.PauliY, qml.PauliZ]
+        outcomes = np.zeros((n_snapshots, n_qubits))
 
-            outcomes = np.zeros((n_snapshots, n_qubits))
-
-            for t in range(n_snapshots):
-                # compute rotations for the Pauli measurements
-                rotations = [
+        snapshot_rotations = [[
                     rot
                     for wire_idx, wire in enumerate(wires)
                     for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(
                         wires=wire
-                    )
-                ]
+                    )] for t in range(n_snapshots)]
 
-                self.reset()
-                self.apply(circuit.operations, rotations=circuit.diagonalizing_gates + rotations)
-                # MUST BE INSERTED or shadow measurement will fail
-                self._circuit = self._pl_to_braket_circuit(circuit)
-                outcomes[t] = self.generate_samples()[0][mapped_wires]
+        snapshot_circuits = [self.apply(circuit.operations, rotations=circuit.diagonalizing_gates + snapshot_rotation, use_unique_params=False) for snapshot_rotation in snapshot_rotations]
+        task_batch = self._device.run_batch(
+            snapshot_circuits,
+            s3_destination_folder=self._s3_folder,
+            shots=1,
+            max_parallel=self._max_parallel,
+            max_connections=self._max_connections,
+            poll_timeout_seconds=self._poll_timeout_seconds,
+            poll_interval_seconds=self._poll_interval_seconds,
+            **self._run_kwargs,
+        )
+        
+        # Call results() to retrieve the Braket results in parallel.
+        try:
+            braket_results_batch = task_batch.results(
+                fail_unsuccessful=True, max_retries=self._max_retries
+            )
+
+        # Update the tracker before raising an exception further if some circuits do not complete.
+        finally:
+            if self.tracker.active:
+                for task in task_batch.tasks:
+                    tracking_data = self._tracking_data(task)
+                    self.tracker.update(**tracking_data)
+                total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+                total_shots = total_executions * batch_shots
+                self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+                self.tracker.record()
+
+        for t in range(n_snapshots):
+            outcomes[t] = np.array(braket_results_batch[t].measurements[0])[mapped_wires]
 
         return self._cast(self._stack([outcomes, recipes]), dtype=np.int8)
 
@@ -694,3 +714,37 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             inputs=inputs or {},
             **self._run_kwargs,
         )
+    
+    def classical_shadow(self, obs, circuit):
+        if circuit is None:  # pragma: no cover
+            raise ValueError("Circuit must be provided when measuring classical shadows")
+
+        wires = obs.wires
+        n_snapshots = self.shots
+        seed = obs.seed
+
+        n_qubits = len(wires)
+        mapped_wires = np.array(self.map_wires(wires))
+        # seed the random measurement generation so that recipes
+        # are the same for different executions with the same seed
+        rng = np.random.default_rng(seed)
+        recipes = rng.integers(0, 3, size=(n_snapshots, n_qubits))
+        obs_list = [qml.PauliX, qml.PauliY, qml.PauliZ]
+
+        outcomes = np.zeros((n_snapshots, n_qubits))
+
+        snapshot_rotations = [[
+                    rot
+                    for wire_idx, wire in enumerate(wires)
+                    for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(
+                        wires=wire
+                    )] for t in range(n_snapshots)]
+
+        snapshot_circuits = [self.apply(circuit.operations, rotations=circuit.diagonalizing_gates + snapshot_rotation, use_unique_params=False) for snapshot_rotation in snapshot_rotations]
+        for t in range(n_snapshots):
+            task = self._device.run(snapshot_circuits[t], shots=1, **self._run_kwargs)
+            
+            res = task.result()
+            outcomes[t] = np.array(res.measurements[0])[mapped_wires]
+
+        return self._cast(self._stack([outcomes, recipes]), dtype=np.int8)
