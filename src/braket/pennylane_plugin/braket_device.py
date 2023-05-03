@@ -50,11 +50,18 @@ from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import QuantumFunctionError, QubitDevice, active_return
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
-from pennylane.measurements import Expectation, Probability, Sample, State, Variance, MeasurementTransform, ShadowExpvalMP
+from pennylane.measurements import (
+    Expectation,
+    Probability,
+    Sample,
+    State,
+    Variance,
+    MeasurementTransform,
+    ShadowExpvalMP,
+)
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
 from pennylane.tape import QuantumTape
-from pennylane.interfaces import set_shots
 import pennylane as qml
 
 from braket.pennylane_plugin.translation import (
@@ -310,14 +317,23 @@ class BraketQubitDevice(QubitDevice):
 
         outcomes = np.zeros((n_snapshots, n_qubits))
 
-        snapshot_rotations = [[
-                    rot
-                    for wire_idx, wire in enumerate(wires)
-                    for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(
-                        wires=wire
-                    )] for t in range(n_snapshots)]
+        snapshot_rotations = [
+            [
+                rot
+                for wire_idx, wire in enumerate(wires)
+                for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(wires=wire)
+            ]
+            for t in range(n_snapshots)
+        ]
 
-        snapshot_circuits = [self.apply(circuit.operations, rotations=circuit.diagonalizing_gates + snapshot_rotation, use_unique_params=False) for snapshot_rotation in snapshot_rotations]
+        snapshot_circuits = [
+            self.apply(
+                circuit.operations,
+                rotations=circuit.diagonalizing_gates + snapshot_rotation,
+                use_unique_params=False,
+            )
+            for snapshot_rotation in snapshot_rotations
+        ]
         task_batch = self._device.run_batch(
             snapshot_circuits,
             s3_destination_folder=self._s3_folder,
@@ -328,7 +344,7 @@ class BraketQubitDevice(QubitDevice):
             poll_interval_seconds=self._poll_interval_seconds,
             **self._run_kwargs,
         )
-        
+
         # Call results() to retrieve the Braket results in parallel.
         try:
             braket_results_batch = task_batch.results(
@@ -342,7 +358,7 @@ class BraketQubitDevice(QubitDevice):
                     tracking_data = self._tracking_data(task)
                     self.tracker.update(**tracking_data)
                 total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
-                total_shots = total_executions * batch_shots
+                total_shots = total_executions
                 self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
                 self.tracker.record()
 
@@ -379,7 +395,7 @@ class BraketQubitDevice(QubitDevice):
                 self.tracker.record()
             return self._braket_to_pl_result(braket_result, circuit)
         elif isinstance(circuit.observables[0], ShadowExpvalMP):
-            return [self.shadow_expval(circuit.observables[0], circuit)] 
+            return [self.shadow_expval(circuit.observables[0], circuit)]
 
     def _execute_legacy(
         self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
@@ -714,7 +730,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             inputs=inputs or {},
             **self._run_kwargs,
         )
-    
+
     def classical_shadow(self, obs, circuit):
         if circuit is None:  # pragma: no cover
             raise ValueError("Circuit must be provided when measuring classical shadows")
@@ -733,17 +749,26 @@ class BraketLocalQubitDevice(BraketQubitDevice):
 
         outcomes = np.zeros((n_snapshots, n_qubits))
 
-        snapshot_rotations = [[
-                    rot
-                    for wire_idx, wire in enumerate(wires)
-                    for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(
-                        wires=wire
-                    )] for t in range(n_snapshots)]
+        snapshot_rotations = [
+            [
+                rot
+                for wire_idx, wire in enumerate(wires)
+                for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(wires=wire)
+            ]
+            for t in range(n_snapshots)
+        ]
 
-        snapshot_circuits = [self.apply(circuit.operations, rotations=circuit.diagonalizing_gates + snapshot_rotation, use_unique_params=False) for snapshot_rotation in snapshot_rotations]
+        snapshot_circuits = [
+            self.apply(
+                circuit.operations,
+                rotations=circuit.diagonalizing_gates + snapshot_rotation,
+                use_unique_params=False,
+            )
+            for snapshot_rotation in snapshot_rotations
+        ]
         for t in range(n_snapshots):
             task = self._device.run(snapshot_circuits[t], shots=1, **self._run_kwargs)
-            
+
             res = task.result()
             outcomes[t] = np.array(res.measurements[0])[mapped_wires]
 
