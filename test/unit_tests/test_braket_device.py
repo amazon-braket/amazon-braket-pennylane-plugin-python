@@ -853,6 +853,11 @@ def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
     assert braket_circuit_true == braket_circuit
 
 
+def test_parametrized_evolution_in_oqc_lucy_supported_ops():
+    dev = _aws_device(device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+    assert "ParametrizedEvolution" in dev.operations
+
+
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
