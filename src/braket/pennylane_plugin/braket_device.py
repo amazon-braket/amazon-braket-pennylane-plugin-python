@@ -602,7 +602,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                     new_res, new_jac = results[0]
             res.append(new_res)
             jacs.append(new_jac)
-        res = res[0] if active_jac else res
+        res = res[0] if len(res) == 1 and active_jac else res
         return res, jacs
 
 
