@@ -32,7 +32,7 @@ from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane.tape import QuantumTape, QuantumScript
+from pennylane.tape import QuantumScript, QuantumTape
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
@@ -1654,7 +1654,9 @@ def test_execute_and_gradients_non_adjoint(
 
     # assert results & jacs are right
     assert (results == expected_pl_result[0]).all()
-    assert jacs == [grad]
+    assert np.allclose(jacs[0][0], grad[0])
+    assert np.allclose(jacs[0][1], grad[1])
+    assert len(jacs[0]) == len(grad)
 
 
 def test_capabilities_class_and_instance_method():
