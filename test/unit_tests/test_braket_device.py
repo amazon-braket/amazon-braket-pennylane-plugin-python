@@ -32,7 +32,7 @@ from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
-from pennylane.tape import QuantumTape, QuantumScript
+from pennylane.tape import QuantumScript, QuantumTape
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
