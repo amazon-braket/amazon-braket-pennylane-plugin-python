@@ -39,6 +39,7 @@ import numbers
 from enum import Enum, auto
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
+import numpy as onp
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.circuits.noise_model import NoiseModel
@@ -46,7 +47,7 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError, QubitDevice, active_return
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
@@ -203,7 +204,7 @@ class BraketQubitDevice(QubitDevice):
 
     def statistics(
         self, braket_result: GateModelQuantumTaskResult, observables: Sequence[Observable]
-    ) -> Union[float, List[float]]:
+    ) -> List[float]:
         """Processes measurement results from a Braket task result and returns statistics.
 
         Args:
@@ -214,7 +215,7 @@ class BraketQubitDevice(QubitDevice):
             QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
 
         Returns:
-            Union[float, List[float]]: the corresponding statistics
+            List[float]: the corresponding statistics
         """
         results = []
         for obs in observables:
@@ -230,7 +231,6 @@ class BraketQubitDevice(QubitDevice):
         also determines the output observables."""
         # Compute the required statistics
         results = self.statistics(braket_result, circuit.observables)
-
         ag_results = [
             result
             for result in braket_result.result_types
@@ -246,14 +246,22 @@ class BraketQubitDevice(QubitDevice):
             # type, which is why this changing of dtype works. If we ever change this plugin
             # to submit another result type alongside adjoint gradient, this logic will need to
             # change.
-            return np.asarray(
-                [
-                    np.asarray(result, dtype="object")
-                    if isinstance(result, collections.abc.Sequence)
-                    else result
-                    for result in results
-                ]
-            )
+            results_list = [
+                np.asarray(result, dtype="object")
+                if isinstance(result, collections.abc.Sequence)
+                else result
+                for result in results
+            ]
+            return results_list[0] if active_return() else np.asarray(results_list)
+
+        if active_return():
+            # Assuming that the braket device doesn't have native parameter broadcasting
+            # Assuming that the braket device doesn't support shot vectors.
+            # Otherwise, we may need additional nesting
+            if len(circuit.measurements) == 1:
+                return onp.array(results).squeeze()
+            return tuple(onp.array(result).squeeze() for result in results)
+
         # Ensures that a combination with sample does not put
         # single-number results in superfluous arrays
         all_sampled = all(obs.return_type is Sample for obs in circuit.observables)
@@ -301,6 +309,11 @@ class BraketQubitDevice(QubitDevice):
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
         return self._braket_to_pl_result(braket_result, circuit)
+
+    def _execute_legacy(
+        self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
+    ) -> np.ndarray:
+        return self.execute(circuit, compute_gradient=compute_gradient, **run_kwargs)
 
     def apply(
         self,
@@ -565,6 +578,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """
         res = []
         jacs = []
+        active_jac = False
         for circuit in circuits:
             observables = circuit.observables
             if not circuit.trainable_params:
@@ -580,10 +594,15 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 new_res = self.execute(circuit, compute_gradient=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
-                new_res, new_jac = results[0]
+                if active_return():
+                    active_jac = True
+                    new_res, new_jac = results
+                    new_jac = self._adjoint_jacobian_processing(new_jac)
+                else:
+                    new_res, new_jac = results[0]
             res.append(new_res)
             jacs.append(new_jac)
-
+        res = res[0] if len(res) == 1 and active_jac else res
         return res, jacs
 
 

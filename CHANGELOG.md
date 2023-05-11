@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.15.1 (2023-05-09)
+
+### Bug Fixes and Other Changes
+
+ * Adjoint gradient active return compatibility
+
+## v1.15.0.post0 (2023-05-02)
+
+### Documentation Changes
+
+ * Correct README format for PyPI
+
+## v1.15.0 (2023-05-02)
+
+### Features
+
+ * Add AHS devices
+
+### Bug Fixes and Other Changes
+
+ * Tempfix for failing tests
+ * Postprocess jacobian result shape
+
 ## v1.14.1 (2023-04-26)
 
 ### Bug Fixes and Other Changes
