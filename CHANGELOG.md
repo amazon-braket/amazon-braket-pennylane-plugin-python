@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.15.2 (2023-05-15)
+
+### Bug Fixes and Other Changes
+
+ * update the project name for coverage runs and clean the tox env
+
 ## v1.15.1 (2023-05-09)
 
 ### Bug Fixes and Other Changes
