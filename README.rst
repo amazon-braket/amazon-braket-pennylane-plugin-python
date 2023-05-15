@@ -17,10 +17,12 @@ Amazon Braket PennyLane Plugin
     :alt: Documentation Status
     :target: https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/?badge=latest
 
-The Amazon Braket PennyLane plugin offers two Amazon Braket quantum devices to work with PennyLane:
+The Amazon Braket PennyLane plugin offers four Amazon Braket quantum devices to work with PennyLane:
 
 * ``braket.aws.qubit`` for running with the Amazon Braket service's quantum devices, both QPUs and simulators
 * ``braket.local.qubit`` for running the Amazon Braket SDK's local simulator where you can optionally specify the backend ("default", "braket_sv", "braket_dm" etc)
+* ``braket.aws.ahs`` for running with the Amazon Braket service's analog Hamiltonian simulation QPUs
+* ``braket.local.ahs`` for running analog Hamiltonian simulation on Amazon Braket SDK's local simulator
 
 .. header-start-inclusion-marker-do-not-remove
 
@@ -38,33 +40,44 @@ The plugin documentation can be found here: `<https://amazon-braket-pennylane-pl
 Features
 ========
 
-* Provides two devices to be used with PennyLane: ``braket.aws.qubit`` for running on the Amazon Braket service,
+Provides four devices to be used with PennyLane:
+
+* Two gate-based devices, ``braket.aws.qubit`` for running on the Amazon Braket service,
   and ``braket.local.qubit`` for running on the Amazon Braket SDK's local simulator.
+* Two analog Hamiltonian simulation devices, ``braket.aws.ahs`` for running on QPU via the Amazon Braket service,
+  and ``braket.local.ahs`` for running on the Amazon Braket SDK's local simulator.
+* Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
+
+
+For the gate-based devices:
 
 * Both devices support most core qubit PennyLane operations.
-
 * All PennyLane observables are supported.
-
 * Provides custom PennyLane operations to cover additional Braket operations: ``ISWAP``, ``PSWAP``, and many more.
   Every custom operation supports analytic differentiation.
 
-* Combines Amazon Braket with PennyLane's automatic differentiation and optimization.
+
+For the analog Hamiltonian simulation devices:
+
+* The devices support ``ParametrizedEvolution`` operators created via the
+  `PennyLane pulse programming <https://docs.pennylane.ai/en/stable/code/qml_pulse.html>`_ module.
+* PennyLane observables in the measurement (Z) basis are supported
+* Provides translation of user-defined pulse level control to simulation and hardware implementation
+
 
 .. installation-start-inclusion-marker-do-not-remove
 
 Installation
 ============
 
-Before you begin working with the Amazon Braket PennyLane Plugin, make sure 
+Before you begin working with the Amazon Braket PennyLane Plugin, make sure
 that you installed or configured the following prerequisites:
 
 
 * Download and install `Python 3.7.2 <https://www.python.org/downloads/>`__ or greater.
   If you are using Windows, choose the option *Add Python to environment variables* before you begin the installation.
-
 * Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions
   `here <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`__.
-
 * Download and install `PennyLane <https://pennylane.ai/install.html>`__:
 
   .. code-block:: bash
@@ -79,7 +92,7 @@ You can then install the latest release of the PennyLane-Braket plugin as follow
     pip install amazon-braket-pennylane-plugin
 
 
-You can also install the development version from source by cloning this repository and running a 
+You can also install the development version from source by cloning this repository and running a
 pip install command in the root directory of the repository:
 
 .. code-block:: bash
