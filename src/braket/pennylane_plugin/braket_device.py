@@ -37,14 +37,17 @@ import numbers
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
+from functools import partial
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 import numpy as onp
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
+from braket.circuits.gates import PulseGate
 from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
+from braket.pulse import ArbitraryWaveform, PulseSequence
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import QuantumFunctionError, QubitDevice, active_return
@@ -53,6 +56,7 @@ from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
+from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
@@ -338,12 +342,19 @@ class BraketQubitDevice(QubitDevice):
                 else:
                     param_names.append(None)
                 param_index += 1
-            gate = translate_operation(
-                operation,
-                use_unique_params=bool(trainable_indices) or use_unique_params,
-                param_names=param_names,
-            )
+
             dev_wires = self.map_wires(operation.wires).tolist()
+
+            if isinstance(operation, ParametrizedEvolution):
+                ps = self._parametrized_evolution_to_pulse_sequence(operation, dev_wires)
+                gate = PulseGate(ps, len(dev_wires))
+            else:
+                gate = translate_operation(
+                    operation,
+                    use_unique_params=bool(trainable_indices) or use_unique_params,
+                    param_names=param_names,
+                )
+
             ins = Instruction(gate, dev_wires)
             circuit.add_instruction(ins)
 
@@ -354,6 +365,33 @@ class BraketQubitDevice(QubitDevice):
             circuit.i(qubit)
 
         return circuit
+
+    def _parametrized_evolution_to_pulse_sequence(
+        self, op: ParametrizedEvolution, dev_wires
+    ) -> PulseSequence:
+        pulse = op.H.pulses[0]  # Assume only one `HardwarePulse`
+        amplitude = partial(pulse.amplitude, op.parameters[0])
+
+        frames = [self._device.frames[f"q{w}_drive"] for w in dev_wires]
+        sampling_periods = [f.port.dt * 1e9 for f in frames]  # seconds to nanoseconds
+
+        # TODO: Figure out unit of amplitude for `ArbitraryWaveform` and do conversion
+        amplitudes = [
+            [amplitude(t) * 1e9 for t in np.arange(op.t[0], op.t[1], dt)] for dt in sampling_periods
+        ]  # GHz to Hz
+
+        waveforms = [ArbitraryWaveform(amp) for amp in amplitudes]
+
+        pulse_sequence = PulseSequence().barrier(frames)
+
+        for f, w in zip(frames, waveforms):
+            pulse_sequence = (
+                pulse_sequence.set_frequency(f, pulse.frequency * 1e9)  # GHz to Hz
+                .set_phase(f, pulse.phase)
+                .play(f, w)
+            )
+
+        return pulse_sequence.barrier(frames)
 
     def _check_supported_result_types(self):
         supported_result_types = self._device.properties.action[

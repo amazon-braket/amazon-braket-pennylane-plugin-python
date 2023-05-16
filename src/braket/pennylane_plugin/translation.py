@@ -112,7 +112,10 @@ def supported_operations(device: Device) -> FrozenSet[str]:
         if op.lower() in supported_ops or f"braket_noise_{op.lower()}" in supported_pragmas
     )
 
-    if isinstance(device, AwsDevice) and device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+    if (
+        isinstance(device, AwsDevice)
+        and device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy"
+    ):
         op_set = op_set.union({"ParametrizedEvolution"})
 
     return op_set
