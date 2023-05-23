@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.15.2.post0 (2023-05-22)
+
+### Testing and Release Infrastructure
+
+ * twine check action
+
+## v1.15.2 (2023-05-15)
+
+### Bug Fixes and Other Changes
+
+ * update the project name for coverage runs and clean the tox env
+
+## v1.15.1 (2023-05-09)
+
+### Bug Fixes and Other Changes
+
+ * Adjoint gradient active return compatibility
+
 ## v1.15.0.post0 (2023-05-02)
 
 ### Documentation Changes
