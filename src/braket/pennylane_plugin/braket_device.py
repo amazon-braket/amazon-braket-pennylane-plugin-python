@@ -37,17 +37,14 @@ import numbers
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
-from functools import partial
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 import numpy as onp
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
-from braket.circuits.gates import PulseGate
 from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
-from braket.pulse import ArbitraryWaveform, PulseSequence
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import QuantumFunctionError, QubitDevice, active_return
@@ -63,6 +60,7 @@ from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
     supported_operations,
     translate_operation,
+    translate_parametrized_evolution,
     translate_result,
     translate_result_type,
 )
@@ -346,8 +344,12 @@ class BraketQubitDevice(QubitDevice):
             dev_wires = self.map_wires(operation.wires).tolist()
 
             if isinstance(operation, ParametrizedEvolution):
-                ps = self._parametrized_evolution_to_pulse_sequence(operation, dev_wires)
-                gate = PulseGate(ps, len(dev_wires))
+                gate = translate_parametrized_evolution(
+                    operation,
+                    self.wire_map,
+                    self._device.frames,
+                    self._device.properties.pulse.validationParameters["MAX_AMPLITUDE"],
+                )
             else:
                 gate = translate_operation(
                     operation,
@@ -365,33 +367,6 @@ class BraketQubitDevice(QubitDevice):
             circuit.i(qubit)
 
         return circuit
-
-    def _parametrized_evolution_to_pulse_sequence(
-        self, op: ParametrizedEvolution, dev_wires
-    ) -> PulseSequence:
-        pulse = op.H.pulses[0]  # Assume only one `HardwarePulse`
-        amplitude = partial(pulse.amplitude, op.parameters[0])
-
-        frames = [self._device.frames[f"q{w}_drive"] for w in dev_wires]
-        sampling_periods = [f.port.dt * 1e9 for f in frames]  # seconds to nanoseconds
-
-        # TODO: Figure out unit of amplitude for `ArbitraryWaveform` and do conversion
-        amplitudes = [
-            [amplitude(t) * 1e9 for t in np.arange(op.t[0], op.t[1], dt)] for dt in sampling_periods
-        ]  # GHz to Hz
-
-        waveforms = [ArbitraryWaveform(amp) for amp in amplitudes]
-
-        pulse_sequence = PulseSequence().barrier(frames)
-
-        for f, w in zip(frames, waveforms):
-            pulse_sequence = (
-                pulse_sequence.set_frequency(f, pulse.frequency * 1e9)  # GHz to Hz
-                .set_phase(f, pulse.phase)
-                .play(f, w)
-            )
-
-        return pulse_sequence.barrier(frames)
 
     def _check_supported_result_types(self):
         supported_result_types = self._device.properties.action[

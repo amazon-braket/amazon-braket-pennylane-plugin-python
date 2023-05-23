@@ -11,9 +11,10 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from functools import reduce, singledispatch
+from functools import partial, reduce, singledispatch
 from typing import Any, FrozenSet, List, Optional, Tuple, Union
 
+import numpy as onp
 import pennylane as qml
 from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
@@ -27,11 +28,13 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
+from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 from pennylane.ops import Adjoint
+from pennylane.pulse import ParametrizedEvolution
 
 from braket.pennylane_plugin.ops import (
     MS,
@@ -411,6 +414,43 @@ def _(adjoint: Adjoint, parameters):
             f"The adjoint of the Braket operation {base} contains more than one operation."
         )
     return base.adjoint()[0]
+
+
+def translate_parametrized_evolution(
+    op: ParametrizedEvolution, wire_map, device_frames, max_amplitude
+):
+    dev_wires = op.wires.map(wire_map)
+
+    start, end = op.t[0], op.t[1]
+    pulse_length = (end - start) * 1e-9  # nanoseconds to seconds
+    pulses = op.H.pulses
+
+    frames = {w: device_frames[f"q{w}_drive"] for w in dev_wires}
+    time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
+
+    pulse_sequence = PulseSequence().barrier(frames.values())
+
+    for pulse in pulses:
+        if callable(pulse.amplitude):
+            amplitude = partial(pulse.amplitude, op.parameters[0])
+
+            amplitudes = onp.array([amplitude(t) for t in np.arange(start, end, time_step)])
+            amplitudes = amplitudes / onp.amax(amplitudes) * max_amplitude
+            waveform = ArbitraryWaveform(amplitudes)
+
+        else:
+            amplitude = max_amplitude
+            waveform = ConstantWaveform(pulse_length, amplitude)
+
+        for w in pulse.wires.map(wire_map):
+            pulse_sequence = (
+                pulse_sequence.set_frequency(frames[w], pulse.frequency * 1e9)  # GHz to Hz
+                .set_phase(frames[w], pulse.phase)
+                .play(frames[w], waveform)
+            )
+
+    pulse_sequence = pulse_sequence.barrier(frames.values())
+    return gates.PulseGate(pulse_sequence, num_qubits=len(dev_wires))
 
 
 def get_adjoint_gradient_result_type(
