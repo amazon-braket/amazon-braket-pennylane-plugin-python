@@ -172,9 +172,7 @@ class BraketQubitDevice(QubitDevice):
         )
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
-        elif isinstance(circuit.observables[0], ShadowExpvalMP):
-            return braket_circuit
-        else:
+        elif not isinstance(circuit.observables[0], ShadowExpvalMP):
             for observable in circuit.observables:
                 dev_wires = self.map_wires(observable.wires).tolist()
                 translated = translate_result_type(observable, dev_wires, self._braket_result_types)
@@ -183,6 +181,8 @@ class BraketQubitDevice(QubitDevice):
                         braket_circuit.add_result_type(result_type)
                 else:
                     braket_circuit.add_result_type(translated)
+        else:
+            return braket_circuit
         return braket_circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
