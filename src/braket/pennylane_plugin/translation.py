@@ -419,29 +419,36 @@ def _(adjoint: Adjoint, parameters):
 def translate_parametrized_evolution(
     op: ParametrizedEvolution, wire_map, device_frames, max_amplitude
 ):
-    dev_wires = op.wires.map(wire_map)
-
     start, end = op.t[0], op.t[1]
     pulse_length = (end - start) * 1e-9  # nanoseconds to seconds
     pulses = op.H.pulses
 
-    frames = {w: device_frames[f"q{w}_drive"] for w in dev_wires}
+    # The driven wires aren't the same as `op.wires` as `op.wires` contains
+    # all device wires due to interaction term.
+    op_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
+    mapped_wires = op_wires.map(wire_map)
+
+    frames = {w: device_frames[f"q{w}_drive"] for w in mapped_wires}
     time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
 
     pulse_sequence = PulseSequence().barrier(frames.values())
 
     for pulse in pulses:
+        # Create waveform for each pulse in `ParametrizedEvolution`
         if callable(pulse.amplitude):
             amplitude = partial(pulse.amplitude, op.parameters[0])
 
+            # Calculate amplitude for each time step and normalize
             amplitudes = onp.array([amplitude(t) for t in np.arange(start, end, time_step)])
             amplitudes = amplitudes / onp.amax(amplitudes) * max_amplitude
             waveform = ArbitraryWaveform(amplitudes)
 
         else:
+            # Normalize amplitude to `max_amplitude` if constant
             amplitude = max_amplitude
             waveform = ConstantWaveform(pulse_length, amplitude)
 
+        # Play pulse for each frame
         for w in pulse.wires.map(wire_map):
             pulse_sequence = (
                 pulse_sequence.set_frequency(frames[w], pulse.frequency * 1e9)  # GHz to Hz
@@ -450,7 +457,7 @@ def translate_parametrized_evolution(
             )
 
     pulse_sequence = pulse_sequence.barrier(frames.values())
-    return gates.PulseGate(pulse_sequence, num_qubits=len(dev_wires))
+    return gates.PulseGate(pulse_sequence, num_qubits=len(op_wires))
 
 
 def get_adjoint_gradient_result_type(
