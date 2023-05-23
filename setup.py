@@ -55,6 +55,7 @@ setup(
             "black",
             "docutils>=0.19",
             "flake8",
+            "flake8-rst-docstrings",
             "isort",
             "pre-commit",
             "pylint",
