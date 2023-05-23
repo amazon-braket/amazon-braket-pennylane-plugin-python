@@ -76,6 +76,7 @@ from ._version import __version__
 
 RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
 MIN_SIMULATOR_BILLED_MS = 3000
+OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
 
 
 class Shots(Enum):
@@ -313,7 +314,6 @@ class BraketQubitDevice(QubitDevice):
         # are the same for different executions with the same seed
         rng = np.random.default_rng(seed)
         recipes = rng.integers(0, 3, size=(n_snapshots, n_qubits))
-        obs_list = [qml.PauliX, qml.PauliY, qml.PauliZ]
 
         outcomes = np.zeros((n_snapshots, n_qubits))
 
@@ -321,7 +321,7 @@ class BraketQubitDevice(QubitDevice):
             [
                 rot
                 for wire_idx, wire in enumerate(wires)
-                for rot in obs_list[recipes[t][wire_idx]].compute_diagonalizing_gates(wires=wire)
+                for rot in OBS_LIST[recipes[t][wire_idx]].compute_diagonalizing_gates(wires=wire)
             ]
             for t in range(n_snapshots)
         ]
