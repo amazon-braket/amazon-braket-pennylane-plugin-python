@@ -41,6 +41,7 @@ from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from pennylane import QubitDevice
 from pennylane._version import __version__
+from pennylane.measurements import MeasurementProcess
 from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
@@ -112,22 +113,12 @@ class BraketAhsDevice(QubitDevice):
             operations(List[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
-
-        if not np.all([op.name in self.operations for op in operations]):
-            raise NotImplementedError(
-                "Device {self.short_name} expected only operations "
-                "{self.operations} but recieved {operations}"
-            )
-        self._validate_operations(operations)
         ev_op = operations[0]  # only one!
 
-        self._validate_pulses(ev_op.H.pulses)
         ahs_program = self.create_ahs_program(ev_op)
         self._task = self._run_task(ahs_program)
 
     def expval(self, observable, shot_range=None, bin_size=None):
-        self._validate_measurement_basis(observable)
-
         # estimate the ev
         samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
 
@@ -209,6 +200,32 @@ class BraketAhsDevice(QubitDevice):
         """
         return np.array([translate_ahs_shot_result(res) for res in self.result.measurements])
 
+    def check_validity(self, queue, observables):
+        """Checks whether the operations and observables in queue are all supported by the device.
+
+        Args:
+            queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
+                to be applied on the device
+            observables (Iterable[~.operation.Observable]): observables which are intended
+                to be evaluated on the device
+
+        Raises:
+            Exception: if there are operations in the queue or observables that the device does
+                not support
+        """
+        # Validate operations
+        self._validate_operations(queue)
+
+        # Validate pulses
+        pulses = queue[0].H.pulses
+        self._validate_pulses(pulses)
+
+        # Validate observables
+        for o in observables:
+            if isinstance(o, MeasurementProcess) and o.obs is not None:
+                o = o.obs
+            self._validate_measurement_basis(o)
+
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
         from a HardwareHamiltonian with only a single, global pulse
@@ -217,6 +234,12 @@ class BraketAhsDevice(QubitDevice):
             operations(List[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
+
+        if not np.all([op.name in self.operations for op in operations]):
+            raise NotImplementedError(
+                f"Device {self.short_name} expected only operations "
+                f"{self.operations} but recieved {operations}."
+            )
 
         if len(operations) > 1:
             raise NotImplementedError(
