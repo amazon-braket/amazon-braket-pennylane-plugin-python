@@ -600,6 +600,21 @@ def test_execute_with_gradient(
 
 
 @patch.object(AwsDevice, "run")
+def test_number_executions(mock_run):
+    """Asserts tracker stores information during execute when active"""
+    mock_run.side_effect = [TASK, SIM_TASK, SIM_TASK, TASK]
+    dev = _aws_device(wires=4, foo="bar")
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+        dev.execute(circuit)
+        dev.execute(circuit)
+
+    assert dev.num_executions == 2
+
+
+@patch.object(AwsDevice, "run")
 def test_execute_tracker(mock_run):
     """Asserts tracker stores information during execute when active"""
     mock_run.side_effect = [TASK, SIM_TASK, SIM_TASK, TASK]

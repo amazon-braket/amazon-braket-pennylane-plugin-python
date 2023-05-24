@@ -309,6 +309,10 @@ class BraketQubitDevice(QubitDevice):
             tracking_data = self._tracking_data(self._task)
             self.tracker.update(executions=1, shots=self.shots, **tracking_data)
             self.tracker.record()
+
+        # increment counter for number of executions of device
+        self._num_executions += 1
+
         return self._braket_to_pl_result(braket_result, circuit)
 
     def _execute_legacy(
@@ -532,6 +536,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         # Update the tracker before raising an exception further if some circuits do not complete.
         finally:
+            self._num_executions += len(task_batch.tasks)
             if self.tracker.active:
                 for task in task_batch.tasks:
                     tracking_data = self._tracking_data(task)
