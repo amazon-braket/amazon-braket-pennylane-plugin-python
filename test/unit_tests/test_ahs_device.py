@@ -518,13 +518,13 @@ class TestBraketAhsDevice:
             ),
         ],
     )
-    def test_validate_measurement_basis(self, observable, error):
+    def test_validate_measurement_basis(self, observable, error_expected):
         """Tests that when given an Observable not in the Z basis, _validate_measurement_basis,
         fails with an error, but otherwise passes"""
 
         dev = qml.device("braket.local.ahs", wires=3)
 
-        if error==True:
+        if error_expected:
             with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
                 dev._validate_measurement_basis(observable)
         else:

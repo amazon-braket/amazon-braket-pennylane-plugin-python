@@ -40,8 +40,8 @@ from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from pennylane import QubitDevice
-from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane._version import __version__
+from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
