@@ -524,7 +524,7 @@ class TestBraketAhsDevice:
 
         dev = qml.device("braket.local.ahs", wires=3)
 
-        if error == True:
+        if error==True:
             with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
                 dev._validate_measurement_basis(observable)
         else:
@@ -534,12 +534,7 @@ class TestBraketAhsDevice:
         """Test _validate_measurement_basis for an observable composed of many
         elements and many layers of CompositeOps, with a large matrix"""
 
-        omega_max = 2.5
-        detuning_max = 20
-        time_max = 4
-        C6 = 862619.79
         a = 6.7
-        R = (C6 / omega_max) ** (1 / 6)
 
         coords = [
             [0, 0],
@@ -554,7 +549,7 @@ class TestBraketAhsDevice:
 
         edges = [[1, 2], [2, 3], [3, 1], [1, 0], [0, 4], [0, 5], [5, 6], [6, 7], [7, 5]]
 
-        # creates a nested operator of sums of Projectors and products of sums... with several layers
+        # nested operator of sums of Projectors and products of sums etc with several layers
         H_edges = qml.Identity(wires=range(len(coords)))
         for ind_edge, edge in enumerate(edges):
             H_edge = qml.prod(

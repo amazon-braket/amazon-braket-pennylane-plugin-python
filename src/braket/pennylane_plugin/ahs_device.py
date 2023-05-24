@@ -274,7 +274,8 @@ class BraketAhsDevice(QubitDevice):
         """Confirm that all elements of the observable are in the measurement basis,
         and otherwise raise an error"""
 
-        # if the observable is a composite of other operations, loop through those and evaluate individually
+        # if the observable is a composite of other operations,
+        # loop through those and evaluate individually
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
                 self._validate_measurement_basis(op)
@@ -285,7 +286,8 @@ class BraketAhsDevice(QubitDevice):
         else:
             if not observable.has_diagonalizing_gates:
                 raise RuntimeError(
-                    f"Recieved observable {observable} with no diagonlizing gates; cannot determine basis"
+                    f"Recieved observable {observable} with no diagonlizing gates; "
+                    f"cannot determine basis"
                 )
             else:
                 if observable.diagonalizing_gates():
