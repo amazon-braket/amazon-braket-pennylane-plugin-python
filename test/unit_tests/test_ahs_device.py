@@ -487,7 +487,7 @@ class TestBraketAhsDevice:
             dev._validate_measurement_basis(qml.CNOT([0, 1]))
 
     @pytest.mark.parametrize(
-        "observable, error",
+        "observable, error_expected",
         [
             (qml.PauliX(0), True),
             (qml.PauliZ(0), False),
