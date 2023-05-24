@@ -358,6 +358,8 @@ class TestBraketAhsDevice:
         assert dev.result is None
         assert dev.ahs_program is None
 
+        # Need to run dev._validate_pulses to set dev.global_pulse_idx
+        dev._validate_pulses(operations[0].H.pulses)
         dev.apply(operations)
 
         assert dev.result is not None
@@ -370,11 +372,27 @@ class TestBraketAhsDevice:
         assert dev.ahs_program.register == dev.register
         assert dev.ahs_program.hamiltonian.amplitude.time_series.times()[-1] == t * 1e-6
 
-    def test_apply_unsupported(self):
-        """Tests that apply() throws NotImplementedError when it encounters an unknown gate."""
+    def test_check_validity_unsupported_op(self):
+        """Tests that check_validity() throws NotImplementedError when it encounters
+        an unknown gate."""
 
         with pytest.raises(NotImplementedError):
-            dev_sim.apply([qml.PauliX(0)])
+            dev_sim.check_validity([qml.PauliX(0)], [])
+
+    @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
+    def test_check_validity_valid_circuit(self, H, params):
+        """Tests that check_validity() doesn't raise any errors when the operations and
+        observables are valid."""
+        ops = [ParametrizedEvolution(H, params, [0, 1.5])]
+        obs = [
+            qml.expval(qml.PauliZ(0)),
+            qml.var(qml.Identity(0)),
+            qml.sample(qml.PauliZ(0)),
+            qml.prod(qml.PauliZ(0), qml.Identity(1)),
+        ]
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        dev.check_validity(ops, obs)
 
     @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
     def test_create_ahs_program(self, hamiltonian, params):
@@ -574,14 +592,14 @@ class TestBraketAhsDevice:
         dev = qml.device("braket.local.ahs", wires=3)
         dev._validate_measurement_basis(H_cost)
 
-    def test_observable_not_in_z_basis_raises_error_in_expval(self):
-        """Test that asking for the expectation value of an observable not in
+    def test_observable_not_in_z_basis_raises_error(self):
+        """Test that measuring an observable not in
         the computational basis raises an error"""
 
         dev = qml.device("braket.local.ahs", wires=3)
 
         with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
-            dev.expval(qml.PauliX(0))
+            dev._validate_measurement_basis(qml.PauliX(0))
 
     def test_validate_operations_multiple_operators(self):
         """Test that an error is raised if there are multiple operators"""
