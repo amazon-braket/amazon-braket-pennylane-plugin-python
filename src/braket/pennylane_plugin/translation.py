@@ -439,7 +439,7 @@ def translate_parametrized_evolution(
             amplitude = partial(pulse.amplitude, op.parameters[0])
 
             # Calculate amplitude for each time step and normalize
-            amplitudes = onp.array([amplitude(t) for t in np.arange(start, end, time_step)])
+            amplitudes = onp.array([amplitude(t) for t in np.arange(start, end + time_step, time_step)])
             amplitudes = amplitudes / onp.amax(amplitudes) * max_amplitude
             waveform = ArbitraryWaveform(amplitudes)
 
