@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.15.3 (2023-05-24)
+
+### Bug Fixes and Other Changes
+
+ * docs: add a linter to check proper rst formatting and fix up incorrect docs
+
 ## v1.15.2.post0 (2023-05-22)
 
 ### Testing and Release Infrastructure
