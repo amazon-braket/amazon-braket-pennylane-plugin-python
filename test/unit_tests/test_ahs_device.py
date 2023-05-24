@@ -475,7 +475,111 @@ class TestBraketAhsDevice:
 
         assert res != np.NaN
 
-    def test_observable_not_in_z_basis_raises_error(self):
+    def test_no_diagonalzing_gates_raises_error(self):
+        """Tests that if passed an Operator with no diagonalizing gates,
+        a suitable error message is raised in _validate_measurement_basis"""
+
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        with pytest.raises(
+            RuntimeError, match="with no diagonlizing gates; cannot determine basis"
+        ):
+            dev._validate_measurement_basis(qml.CNOT([0, 1]))
+
+    @pytest.mark.parametrize(
+        "observable, error",
+        [
+            (qml.PauliX(0), True),
+            (qml.PauliZ(0), False),
+            (qml.Projector([0], wires=[0]), False),
+            (qml.sum(qml.PauliZ(0), qml.PauliZ(0)), False),  # sum
+            (qml.sum(qml.PauliZ(0), qml.PauliY(0)), True),
+            (qml.s_prod(3, qml.PauliY(0)), True),  # scalar prod
+            (qml.s_prod(-1, qml.Projector([0], wires=[0])), False),
+            (qml.prod(qml.PauliZ(0), qml.PauliZ(1)), False),  # product
+            (qml.prod(qml.PauliY(2), qml.PauliX(1)), True),
+            (qml.exp(qml.PauliY(1), 2), True),  # exp
+            (qml.exp(qml.prod(qml.PauliZ(0), qml.Identity(1)), 3), False),
+            (qml.Hamiltonian([2, 3], [qml.PauliZ(0), qml.PauliZ(1)]), False),
+            (qml.Hamiltonian([2, 3], [qml.PauliZ(0), qml.PauliY(1)]), True),
+            (
+                qml.sum(
+                    qml.prod(qml.PauliZ(0), qml.Projector([0], wires=[1])),
+                    qml.prod(qml.Projector([0], wires=[5]), qml.PauliZ(1)),
+                ),
+                False,
+            ),  # sum of prods
+            (
+                qml.sum(
+                    qml.prod(qml.PauliX(0), qml.Projector([0], wires=[1])),
+                    qml.prod(qml.Projector([0], wires=[5]), qml.PauliZ(1)),
+                ),
+                True,
+            ),
+        ],
+    )
+    def test_validate_measurement_basis(self, observable, error):
+        """Tests that when given an Observable not in the Z basis, _validate_measurement_basis,
+        fails with an error, but otherwise passes"""
+
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        if error == True:
+            with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
+                dev._validate_measurement_basis(observable)
+        else:
+            dev._validate_measurement_basis(observable)
+
+    def test_validate_measurement_basis_large_observable(self):
+        """Test _validate_measurement_basis for an observable composed of many
+        elements and many layers of CompositeOps, with a large matrix"""
+
+        omega_max = 2.5
+        detuning_max = 20
+        time_max = 4
+        C6 = 862619.79
+        a = 6.7
+        R = (C6 / omega_max) ** (1 / 6)
+
+        coords = [
+            [0, 0],
+            [0, a],
+            [a / 2, a + np.sqrt(3) / 2 * a],
+            [-a / 2, a + np.sqrt(3) / 2 * a],
+            [-a, 0],
+            [0, -a],
+            [a / 2, -a - np.sqrt(3) / 2 * a],
+            [-a / 2, -a - np.sqrt(3) / 2 * a],
+        ]
+
+        edges = [[1, 2], [2, 3], [3, 1], [1, 0], [0, 4], [0, 5], [5, 6], [6, 7], [7, 5]]
+
+        # creates a nested operator of sums of Projectors and products of sums... with several layers
+        H_edges = qml.Identity(wires=range(len(coords)))
+        for ind_edge, edge in enumerate(edges):
+            H_edge = qml.prod(
+                qml.Projector([0], wires=[edge[0]]), qml.Projector([0], wires=[edge[1]])
+            )
+            H_edge += qml.prod(
+                qml.Projector([0], wires=[edge[0]]), qml.Projector([1], wires=[edge[1]])
+            )
+            H_edge += qml.prod(
+                qml.Projector([1], wires=[edge[0]]), qml.Projector([0], wires=[edge[1]])
+            )
+            H_edges = qml.prod(H_edges, H_edge)
+
+        H_vertices = 0
+        for i in range(len(coords)):
+            H_vertices += -1 * qml.Projector([1], wires=[i])
+
+        # creates product of a Hamiltonian and the above H_edges operator
+        H_cost = qml.prod(H_vertices, H_edges)
+
+        # we expect the function to pass without raising an error
+        dev = qml.device("braket.local.ahs", wires=3)
+        dev._validate_measurement_basis(H_cost)
+
+    def test_observable_not_in_z_basis_raises_error_in_expval(self):
         """Test that asking for the expectation value of an observable not in
         the computational basis raises an error"""
 

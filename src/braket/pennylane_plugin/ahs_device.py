@@ -40,6 +40,8 @@ from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from pennylane import QubitDevice
+from pennylane.ops import CompositeOp, Hamiltonian
+from pennylane import Hamiltonian
 from pennylane._version import __version__
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
@@ -125,11 +127,7 @@ class BraketAhsDevice(QubitDevice):
         self._task = self._run_task(ahs_program)
 
     def expval(self, observable, shot_range=None, bin_size=None):
-        if not observable.basis == "Z":
-            raise RuntimeError(
-                f"{self.short_name} can only measure in the Z basis, "
-                f"but recieved observable {observable}"
-            )
+        self._validate_measurement_basis(observable)
 
         # estimate the ev
         samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
@@ -272,6 +270,31 @@ class BraketAhsDevice(QubitDevice):
                 f"Only global drive is currently supported. Found drive defined for subset "
                 f"{[pulses[0].wires]} of all wires [{self.wires}]"
             )
+
+    def _validate_measurement_basis(self, observable):
+        """Confirm that all elements of the observable are in the measurement basis,
+        and otherwise raise an error"""
+
+        # if the observable is a composite of other operations, loop through those and evaluate individually
+        if isinstance(observable, CompositeOp):
+            for op in observable.operands:
+                self._validate_measurement_basis(op)
+        elif isinstance(observable, Hamiltonian):
+            for op in observable.ops:
+                self._validate_measurement_basis(op)
+
+        else:
+            if not observable.has_diagonalizing_gates:
+                raise RuntimeError(
+                    f"Recieved observable {observable} with no diagonlizing gates; cannot determine basis"
+                )
+            else:
+                if observable.diagonalizing_gates():
+                    # if diagonalizing gates are not empty (i.e. `[]`), raise an error
+                    raise RuntimeError(
+                        f"{self.short_name} can only measure in the Z basis, "
+                        f"but recieved observable {observable}"
+                    )
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
