@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 """
+=======
 Devices
 =======
 
@@ -98,7 +99,7 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+        `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket PennyLane plugin"
     pennylane_requires = ">=0.18.0"
@@ -533,7 +534,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_retries (int): The maximum number of retries to use for batch execution.
             When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
             times. Ignored if ``parallel=False``.
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
+        `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket AwsDevice for PennyLane"
     short_name = "braket.aws.qubit"
@@ -715,7 +716,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             to estimate expectation values of observables. If this value is set to ``None`` or
             ``0``, then the device runs in analytic mode (calculations will be exact).
             Default: None
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
+        `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket LocalSimulator for PennyLane"
     short_name = "braket.local.qubit"
