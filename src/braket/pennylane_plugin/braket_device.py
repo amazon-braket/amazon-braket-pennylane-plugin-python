@@ -343,20 +343,12 @@ class BraketQubitDevice(QubitDevice):
                 param_index += 1
 
             dev_wires = self.map_wires(operation.wires).tolist()
-
-            if isinstance(operation, ParametrizedEvolution):
-                gate = translate_parametrized_evolution(
-                    operation,
-                    self.wire_map,
-                    self._device.frames,
-                    self._device.properties.pulse.validationParameters["MAX_AMPLITUDE"],
-                )
-            else:
-                gate = translate_operation(
-                    operation,
-                    use_unique_params=bool(trainable_indices) or use_unique_params,
-                    param_names=param_names,
-                )
+            gate = translate_operation(
+                operation,
+                use_unique_params=bool(trainable_indices) or use_unique_params,
+                param_names=param_names,
+                device=self,
+            )
 
             ins = Instruction(gate, dev_wires)
             circuit.add_instruction(ins)
