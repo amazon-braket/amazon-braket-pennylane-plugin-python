@@ -224,7 +224,7 @@ class BraketAhsDevice(QubitDevice):
         for o in observables:
             if isinstance(o, MeasurementProcess) and o.obs is not None:
                 o = o.obs
-            self._validate_measurement_basis(o)
+                self._validate_measurement_basis(o)
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
