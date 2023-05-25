@@ -606,6 +606,59 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         res = res[0] if len(res) == 1 and active_jac else res
         return res, jacs
 
+    def _is_single_qubit_01_frame(self, f):
+        if self._device.name == "Aspen-M-3":
+            return "rf" in f and "f12" not in f
+        elif self._device.name == "Lucy":
+            return "drive" in f
+        else:
+            raise RuntimeError(
+                f"Single-qubit drive frame for pulse control not defined for device {self._device.name}"
+            )
+
+    def _is_single_qubit_12_frame(self, f):
+        if self._device.name == "Aspen-M-3":
+            return "rf" in f and "f12" in f
+        elif self._device.name == "Lucy":
+            return "second_state" in f
+        else:
+            raise RuntimeError(
+                f"Single-qubit drive frame for pulse control not defined for device {self._device.name}"
+            )
+
+    def _get_frames(self, filter):
+        return {f: info for f, info in self._device.properties.pulse.dict()["frames"].items() if filter(f)}
+
+    @property
+    def settings(self):
+        frames = self._get_frames(filter=self._is_single_qubit_01_frame)
+        frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
+
+        drive_frequencies = [frames[f]["frequency"] * 1e-9 for f in frames]  # Hz to GHz
+        device_info = self._device.properties.dict()["paradigm"]
+
+        connections = []
+        couplings = []
+
+        for q1, connected_qubits in device_info["connectivity"]["connectivityGraph"].items():
+            for q2 in connected_qubits:
+                connection = (int(q1), int(q2))
+                connections.append(connection)
+
+        # need to decide how to deal with non-chronological wiring order on rigetti if using
+        wires = [i for i in range(device_info["qubitCount"])]
+
+        second_excitation_freqs = [frames_12[f]["frequency"] * 1e-9 for f in frames_12]  # Hz to GHz
+        anharmonicities = [f01-f12 for f01, f12 in zip(drive_frequencies, second_excitation_freqs)]
+
+        return {
+            "qubit_freq": drive_frequencies,
+            "connections": connections,
+            "coupling": couplings if couplings else 0.2,  # currently setting all couplings to 0.2
+            "wires": wires,
+            "anharmonicity": anharmonicities
+        }  # should we include anharmonicity? I think yes, and then the default kwarg in transmon_interaction is n=2 so anharmonicity is ignored
+
 
 class BraketLocalQubitDevice(BraketQubitDevice):
     r"""Amazon Braket LocalSimulator qubit device for PennyLane.
