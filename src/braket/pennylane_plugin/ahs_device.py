@@ -41,7 +41,7 @@ from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from pennylane import QubitDevice
 from pennylane._version import __version__
-from pennylane.measurements import MeasurementProcess
+from pennylane.measurements import MeasurementProcess, SampleMeasurement
 from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
@@ -222,9 +222,15 @@ class BraketAhsDevice(QubitDevice):
 
         # Validate observables
         for o in observables:
-            if isinstance(o, MeasurementProcess) and o.obs is not None:
-                o = o.obs
-                self._validate_measurement_basis(o)
+            if isinstance(o, MeasurementProcess):
+                # state-based measurements not supported
+                if not isinstance(o, SampleMeasurement):
+                    raise RuntimeError(
+                        f"Device only support sample-based measurement, but recieved observable {o}"
+                    )
+                # validate basis of observable for measurement processes with observables
+                continue
+            self._validate_measurement_basis(o)
 
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution

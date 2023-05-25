@@ -389,10 +389,24 @@ class TestBraketAhsDevice:
             qml.var(qml.Identity(0)),
             qml.sample(qml.PauliZ(0)),
             qml.prod(qml.PauliZ(0), qml.Identity(1)),
+            qml.counts(),
         ]
         dev = qml.device("braket.local.ahs", wires=3)
 
         dev.check_validity(ops, obs)
+
+    @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
+    def test_check_validity_raises_error_for_state_based_measurement(self, H, params):
+        """Tests that requesting a measurement other than a sample-based
+        measurement raises an error"""
+
+        dev = qml.device("braket.local.ahs", wires=3)
+
+        ops = [ParametrizedEvolution(H, params, [0, 1.5])]
+        obs = [qml.state()]
+
+        with pytest.raises(RuntimeError, match="only support sample-based measurement"):
+            dev.check_validity(ops, obs)
 
     @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
     def test_create_ahs_program(self, hamiltonian, params):
