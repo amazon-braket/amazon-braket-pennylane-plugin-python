@@ -226,7 +226,7 @@ class BraketAhsDevice(QubitDevice):
                 # state-based measurements not supported
                 if not isinstance(o, SampleMeasurement):
                     raise RuntimeError(
-                        f"Device only support sample-based measurement, but recieved observable {o}"
+                        f"Device only support sample-based measurement, but received observable {o}"
                     )
                 continue
             self._validate_measurement_basis(o)
