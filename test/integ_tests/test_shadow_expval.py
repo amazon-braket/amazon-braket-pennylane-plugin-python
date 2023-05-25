@@ -2,7 +2,6 @@ import pennylane as qml
 import pennylane.numpy as np
 import pytest
 
-
 seed = 42
 np.random.seed(seed)
 H = qml.PauliZ(0) @ qml.PauliZ(1)
