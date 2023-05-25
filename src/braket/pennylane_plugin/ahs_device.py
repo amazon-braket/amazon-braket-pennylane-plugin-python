@@ -243,7 +243,7 @@ class BraketAhsDevice(QubitDevice):
         if not np.all([op.name in self.operations for op in operations]):
             raise NotImplementedError(
                 f"Device {self.short_name} expected only operations "
-                f"{self.operations} but recieved {operations}."
+                f"{self.operations} but received {operations}."
             )
 
         if len(operations) > 1:
