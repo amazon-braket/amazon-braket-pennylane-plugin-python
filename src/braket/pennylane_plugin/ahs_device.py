@@ -312,13 +312,12 @@ class BraketAhsDevice(QubitDevice):
                     f"Recieved observable {observable} with no diagonlizing gates; "
                     f"cannot determine basis"
                 )
-            else:
-                if observable.diagonalizing_gates():
-                    # if diagonalizing gates are not empty (i.e. `[]`), raise an error
-                    raise RuntimeError(
-                        f"{self.short_name} can only measure in the Z basis, "
-                        f"but recieved observable {observable}"
-                    )
+            elif observable.diagonalizing_gates():
+                # if diagonalizing gates are not empty (i.e. `[]`), raise an error
+                raise RuntimeError(
+                    f"{self.short_name} can only measure in the Z basis, "
+                    f"but recieved observable {observable}"
+                )
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
