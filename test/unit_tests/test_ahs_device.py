@@ -385,6 +385,7 @@ class TestBraketAhsDevice:
         observables are valid."""
         ops = [ParametrizedEvolution(H, params, [0, 1.5])]
         obs = [
+            qml.PauliZ(0),
             qml.expval(qml.PauliZ(0)),
             qml.var(qml.Identity(0)),
             qml.sample(qml.PauliZ(0)),

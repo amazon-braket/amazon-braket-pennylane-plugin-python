@@ -228,7 +228,6 @@ class BraketAhsDevice(QubitDevice):
                     raise RuntimeError(
                         f"Device only support sample-based measurement, but recieved observable {o}"
                     )
-                # validate basis of observable for measurement processes with observables
                 continue
             self._validate_measurement_basis(o)
 
