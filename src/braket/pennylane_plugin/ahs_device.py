@@ -311,18 +311,17 @@ class BraketAhsDevice(QubitDevice):
             for op in observable.ops:
                 self._validate_measurement_basis(op)
 
-        else:
-            if not observable.has_diagonalizing_gates:
-                raise RuntimeError(
-                    f"Recieved observable {observable} with no diagonlizing gates; "
-                    f"cannot determine basis"
-                )
-            elif observable.diagonalizing_gates():
-                # if diagonalizing gates are not empty (i.e. `[]`), raise an error
-                raise RuntimeError(
-                    f"{self.short_name} can only measure in the Z basis, "
-                    f"but recieved observable {observable}"
-                )
+        elif not observable.has_diagonalizing_gates:
+            raise RuntimeError(
+                f"Received observable {observable} with no diagonalizing gates; "
+                f"cannot determine basis"
+            )
+        elif observable.diagonalizing_gates():
+            # if diagonalizing gates are not empty (i.e. `[]`), raise an error
+            raise RuntimeError(
+                f"{self.short_name} can only measure in the Z basis, "
+                f"but received observable {observable}"
+            )
 
 
 class BraketAwsAhsDevice(BraketAhsDevice):
