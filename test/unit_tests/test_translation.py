@@ -13,11 +13,13 @@
 
 import json
 import re
-from unittest.mock import patch
+from unittest import mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pennylane as qml
 import pytest
+from braket.aws import AwsDevice, AwsDeviceType
 from braket.circuits import FreeParameter, gates, noises, observables
 from braket.circuits.result_types import (
     AdjointGradient,
@@ -29,12 +31,21 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.circuits.serialization import IRType
+from braket.device_schema import DeviceActionType, OpenQASMDeviceActionProperties
+from braket.pulse import ArbitraryWaveform, ConstantWaveform
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as pnp
 from pennylane.measurements import ObservableReturnTypes
+from pennylane.pulse import ParametrizedEvolution, transmon_drive
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import (
+    PSWAP,
+    BraketAwsQubitDevice,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+)
 from braket.pennylane_plugin.ops import MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
@@ -44,6 +55,64 @@ from braket.pennylane_plugin.translation import (
     translate_result,
     translate_result_type,
 )
+
+
+def mock_aws_init(self, arn, aws_session):
+    self._arn = arn
+
+
+ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.openqasm.program",
+            "version": ["1"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "AdjointGradient",
+                    "observables": ["x", "y", "z", "h", "i"],
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
+            ],
+        }
+    )
+)
+
+
+@patch.object(AwsDevice, "__init__", mock_aws_init)
+@patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "properties")
+def _aws_device(
+    properties_mock,
+    type_mock,
+    session_mock,
+    wires,
+    device_type=AwsDeviceType.QPU,
+    shots=10000,
+    device_arn="baz",
+    action_properties=ACTION_PROPERTIES,
+    **kwargs,
+):
+    properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
+    properties_mock.return_value.action.return_value = {
+        DeviceActionType.OPENQASM: action_properties
+    }
+    type_mock.return_value = device_type
+    dev = BraketAwsQubitDevice(
+        wires=wires,
+        s3_destination_folder=("foo", "bar"),
+        device_arn=device_arn,
+        aws_session=Mock(),
+        shots=shots,
+        **kwargs,
+    )
+    # needed by the BraketAwsQubitDevice.capabilities function
+    # dev._device._arn = device_arn
+    return dev
+
 
 testdata = [
     (qml.Identity, gates.I, [0], []),
@@ -295,6 +364,47 @@ def test_translate_operation_with_unique_params(
             _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
             == pl_op.name
         )
+
+
+def test_translate_operation_parametrized_evolution():
+    """Test that a ParametrizedEvolution is translated to a PulseGate correctly."""
+
+    def amplitude(p, t):
+        return p * (np.sin(t) + 1)
+
+    H = transmon_drive(0.02, np.pi, 0.5, [0, 1])
+    H += transmon_drive(amplitude, -np.pi / 2, 0.75, [2, 3])
+
+    amplitude_param = 0.1
+    op = ParametrizedEvolution(H, [amplitude_param], t=50)
+
+    dev = _aws_device(wires=4, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+    braket_gate = translate_operation(op, device=dev)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 4
+
+    ps = braket_gate.pulse_sequence
+    expected_frames = set(dev._device.frames[f"q{w}_drive"] for w in range(4))
+
+    assert set(ps.frames.values()) == expected_frames
+
+    max_amplitude = dev._device.properties.pulse.validationParameters["MAX_AMPLITUDE"]
+    dt = expected_frames[0].port.dt * 1e9
+
+    waveform_01 = ConstantWaveform(50e-9, 0.02)
+    amplitudes = (
+        np.array([amplitude(amplitude_param, t) for t in range(50 + dt)])
+        * amplitude_param
+        / max_amplitude
+    )
+    waveform_23 = ArbitraryWaveform(amplitudes)
+
+    c_waveforms = [wf for wf in ps.waveforms.values() if isinstance(wf, ConstantWaveform)]
+    a_waveforms = [wf for wf in ps.waveforms.values() if isinstance(wf, ArbitraryWaveform)]
+
+    assert all(wf == waveform_01 for wf in c_waveforms)
+    assert all(wf == waveform_23 for wf in a_waveforms)
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params, inv_params", testdata_inverses)

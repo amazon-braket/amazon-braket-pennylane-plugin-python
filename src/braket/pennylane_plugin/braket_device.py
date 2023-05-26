@@ -53,14 +53,12 @@ from pennylane.gradients import param_shift
 from pennylane.measurements import Expectation, Probability, Sample, State, Variance
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
-from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
     supported_operations,
     translate_operation,
-    translate_parametrized_evolution,
     translate_result,
     translate_result_type,
 )
