@@ -24,12 +24,12 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskB
 from braket.circuits import Circuit, FreeParameter, Gate, Noise, Observable, result_types
 from braket.circuits.noise_model import GateCriteria, NoiseModel, NoiseModelInstruction
 from braket.device_schema import DeviceActionType
-from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
-from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
-from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
 from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
     GateModelQpuParadigmProperties,
 )
+from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
+from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
+from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.task_result import GateModelTaskResult
@@ -2085,7 +2085,16 @@ class TestPulseFunctionality:
         dev._device._properties = DummyProperties()
 
         settings = dev.settings
-        assert settings["connections"] == [(0, 1), (0, 7), (1, 2), (2, 3), (4, 3), (4, 5), (6, 5), (7, 6)]
+        assert settings["connections"] == [
+            (0, 1),
+            (0, 7),
+            (1, 2),
+            (2, 3),
+            (4, 3),
+            (4, 5),
+            (6, 5),
+            (7, 6),
+        ]
         assert settings["wires"] == [0, 1, 2, 3, 4, 5, 6, 7]
         assert np.allclose(settings["qubit_freq"], 4.6)
         assert np.allclose(settings["anharmonicity"], 0.1)

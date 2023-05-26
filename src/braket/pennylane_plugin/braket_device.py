@@ -623,7 +623,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             )
 
     def _get_frames(self, filter):
-        return {f: info for f, info in self._device.properties.pulse.dict()["frames"].items() if filter(f)}
+        return {
+            f: info
+            for f, info in self._device.properties.pulse.dict()["frames"].items()
+            if filter(f)
+        }
 
     @property
     def settings(self):
@@ -644,14 +648,16 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         wires = [i for i in range(device_info["qubitCount"])]
 
         second_excitation_freqs = [frames_12[f]["frequency"] * 1e-9 for f in frames_12]  # Hz to GHz
-        anharmonicities = [f01-f12 for f01, f12 in zip(drive_frequencies, second_excitation_freqs)]
+        anharmonicities = [
+            f01 - f12 for f01, f12 in zip(drive_frequencies, second_excitation_freqs)
+        ]
 
         return {
             "qubit_freq": drive_frequencies,
             "connections": connections,
             "wires": wires,
-            "anharmonicity": anharmonicities
-        }  
+            "anharmonicity": anharmonicities,
+        }
 
 
 class BraketLocalQubitDevice(BraketQubitDevice):
