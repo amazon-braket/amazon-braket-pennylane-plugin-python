@@ -41,6 +41,8 @@ from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from pennylane import QubitDevice
 from pennylane._version import __version__
+from pennylane.measurements import MeasurementProcess, SampleMeasurement
+from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
@@ -111,26 +113,12 @@ class BraketAhsDevice(QubitDevice):
             operations(List[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
-
-        if not np.all([op.name in self.operations for op in operations]):
-            raise NotImplementedError(
-                "Device {self.short_name} expected only operations "
-                "{self.operations} but recieved {operations}"
-            )
-        self._validate_operations(operations)
         ev_op = operations[0]  # only one!
 
-        self._validate_pulses(ev_op.H.pulses)
         ahs_program = self.create_ahs_program(ev_op)
         self._task = self._run_task(ahs_program)
 
     def expval(self, observable, shot_range=None, bin_size=None):
-        if not observable.basis == "Z":
-            raise RuntimeError(
-                f"{self.short_name} can only measure in the Z basis, "
-                f"but recieved observable {observable}"
-            )
-
         # estimate the ev
         samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
 
@@ -212,6 +200,37 @@ class BraketAhsDevice(QubitDevice):
         """
         return np.array([translate_ahs_shot_result(res) for res in self.result.measurements])
 
+    def check_validity(self, queue, observables):
+        """Checks whether the operations and observables in queue are all supported by the device.
+
+        Args:
+            queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
+                to be applied on the device
+            observables (Iterable[~.operation.Observable]): observables which are intended
+                to be evaluated on the device
+
+        Raises:
+            Exception: if there are operations in the queue or observables that the device does
+                not support
+        """
+        # Validate operations
+        self._validate_operations(queue)
+
+        # Validate pulses
+        pulses = queue[0].H.pulses
+        self._validate_pulses(pulses)
+
+        # Validate observables
+        for o in observables:
+            if isinstance(o, MeasurementProcess):
+                # state-based measurements not supported
+                if not isinstance(o, SampleMeasurement):
+                    raise RuntimeError(
+                        f"Device only support sample-based measurement, but received observable {o}"
+                    )
+                continue
+            self._validate_measurement_basis(o)
+
     def _validate_operations(self, operations: List[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
         from a HardwareHamiltonian with only a single, global pulse
@@ -220,6 +239,12 @@ class BraketAhsDevice(QubitDevice):
             operations(List[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
+
+        if not np.all([op.name in self.operations for op in operations]):
+            raise NotImplementedError(
+                f"Device {self.short_name} expected only operations "
+                f"{self.operations} but received {operations}."
+            )
 
         if len(operations) > 1:
             raise NotImplementedError(
@@ -271,6 +296,31 @@ class BraketAhsDevice(QubitDevice):
             raise NotImplementedError(
                 f"Only global drive is currently supported. Found drive defined for subset "
                 f"{[pulses[0].wires]} of all wires [{self.wires}]"
+            )
+
+    def _validate_measurement_basis(self, observable):
+        """Confirm that all elements of the observable are in the measurement basis,
+        and otherwise raise an error"""
+
+        # if the observable is a composite of other operations,
+        # loop through those and evaluate individually
+        if isinstance(observable, CompositeOp):
+            for op in observable.operands:
+                self._validate_measurement_basis(op)
+        elif isinstance(observable, Hamiltonian):
+            for op in observable.ops:
+                self._validate_measurement_basis(op)
+
+        elif not observable.has_diagonalizing_gates:
+            raise RuntimeError(
+                f"Received observable {observable} with no diagonalizing gates; "
+                f"cannot determine basis"
+            )
+        elif observable.diagonalizing_gates():
+            # if diagonalizing gates are not empty (i.e. `[]`), raise an error
+            raise RuntimeError(
+                f"{self.short_name} can only measure in the Z basis, "
+                f"but received observable {observable}"
             )
 
 
