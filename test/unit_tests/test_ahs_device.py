@@ -515,7 +515,7 @@ class TestBraketAhsDevice:
         dev = qml.device("braket.local.ahs", wires=3)
 
         with pytest.raises(
-            RuntimeError, match="with no diagonlizing gates; cannot determine basis"
+            RuntimeError, match="with no diagonalizing gates; cannot determine basis"
         ):
             dev._validate_measurement_basis(qml.CNOT([0, 1]))
 
