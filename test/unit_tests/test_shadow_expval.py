@@ -16,6 +16,8 @@ from braket.devices import LocalSimulator
 from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane.tape import QuantumScript, QuantumTape
+from pennylane.measurements import MeasurementTransform
+from pennylane.wires import Wires
 
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 from braket.pennylane_plugin.braket_device import BraketQubitDevice
@@ -457,3 +459,32 @@ def test_shadows_parallel_tracker(mock_run_batch):
     assert tracker.totals == totals
 
     callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
+class DummyMeasurementTransform(MeasurementTransform):
+    def __init__(
+        self, wires: Optional[Wires] = None, seed: Optional[int] = None, id: Optional[str] = None
+    ):
+        self.seed = seed
+        super().__init__(wires=wires, id=id)
+
+    def process(self, tape, device):
+        pass
+
+
+def dummy_measurement_transform():
+    return DummyMeasurementTransform()
+
+
+@pytest.mark.xfail(raises=RuntimeError)
+def test_non_shadow_expval_transform():
+    """Tests that an error is thrown when the circuit has an unsupported MeasurementTransform"""
+    dummy = DummyCircuitSimulator()
+    dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        dummy_measurement_transform()
+
+    dev.execute(circuit)

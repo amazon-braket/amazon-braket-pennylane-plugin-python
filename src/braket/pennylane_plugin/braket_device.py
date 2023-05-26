@@ -173,7 +173,7 @@ class BraketQubitDevice(QubitDevice):
         )
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
-        elif not isinstance(circuit.observables[0], ShadowExpvalMP):
+        elif not isinstance(circuit.observables[0], MeasurementTransform):
             for observable in circuit.observables:
                 dev_wires = self.map_wires(observable.wires).tolist()
                 translated = translate_result_type(observable, dev_wires, self._braket_result_types)
@@ -373,6 +373,8 @@ class BraketQubitDevice(QubitDevice):
                     "have that as its only result type."
                 )
             return [self.shadow_expval(circuit.observables[0], circuit)]
+        else:
+            raise RuntimeError("The circuit has an unsupported MeasurementTransform.")
 
     def _execute_legacy(
         self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
