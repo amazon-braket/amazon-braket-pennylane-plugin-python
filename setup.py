@@ -11,6 +11,8 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+import platform
+
 from setuptools import find_namespace_packages, setup
 
 with open("README.rst", "r") as fh:
@@ -18,6 +20,11 @@ with open("README.rst", "r") as fh:
 
 with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
+
+if platform.system() == "Darwin" and platform.machine() == "arm64":
+    TF_VERSION = "tensorflow-macos>=2.12.0"
+else:
+    TF_VERSION = "tensorflow>=2.12.0"
 
 setup(
     name="amazon-braket-pennylane-plugin",
@@ -28,7 +35,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk>=1.35.0",
-        "pennylane==0.29.1",
+        "pennylane==0.30.0",
     ],
     entry_points={
         "pennylane.plugins": [
@@ -39,13 +46,16 @@ setup(
             # `pennylane.device` device loader.
             "braket.aws.qubit = braket.pennylane_plugin:BraketAwsQubitDevice",
             "braket.local.qubit = braket.pennylane_plugin:BraketLocalQubitDevice",
+            "braket.aws.ahs = braket.pennylane_plugin:BraketAwsAhsDevice",
+            "braket.local.ahs = braket.pennylane_plugin:BraketLocalAhsDevice",
         ]
     },
     extras_require={
         "test": [
             "black",
-            "docutils<0.16,>=0.10",
+            "docutils>=0.19",
             "flake8",
+            "flake8-rst-docstrings",
             "isort",
             "pre-commit",
             "pylint",
@@ -59,8 +69,8 @@ setup(
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
-            "tensorflow>=2.6.0",
             "torch>=1.11",
+            TF_VERSION,
         ]
     },
     url="https://github.com/aws/amazon-braket-pennylane-plugin-python",
@@ -81,5 +91,6 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
