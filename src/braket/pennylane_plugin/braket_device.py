@@ -638,7 +638,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         device_info = self._device.properties.dict()["paradigm"]
 
         connections = []
-        couplings = []
 
         for q1, connected_qubits in device_info["connectivity"]["connectivityGraph"].items():
             for q2 in connected_qubits:
@@ -654,11 +653,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return {
             "qubit_freq": drive_frequencies,
             "connections": connections,
-            "coupling": couplings if couplings else 0.2,  # currently setting all couplings to 0.2
             "wires": wires,
             "anharmonicity": anharmonicities
-        }  # should we include anharmonicity? I think yes, and then the default kwarg in transmon_interaction is n=2 so anharmonicity is ignored
-
+        }  
 
 class BraketLocalQubitDevice(BraketQubitDevice):
     r"""Amazon Braket LocalSimulator qubit device for PennyLane.
