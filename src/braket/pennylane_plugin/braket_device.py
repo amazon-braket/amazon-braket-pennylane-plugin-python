@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 """
+=======
 Devices
 =======
 
@@ -40,6 +41,7 @@ from enum import Enum, auto
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 import numpy as onp
+import pennylane as qml
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
 from braket.circuits import Circuit, Instruction
 from braket.circuits.noise_model import NoiseModel
@@ -50,7 +52,15 @@ from braket.tasks import GateModelQuantumTaskResult, QuantumTask
 from pennylane import QuantumFunctionError, QubitDevice, active_return
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
-from pennylane.measurements import Expectation, Probability, Sample, State, Variance
+from pennylane.measurements import (
+    Expectation,
+    MeasurementTransform,
+    Probability,
+    Sample,
+    ShadowExpvalMP,
+    State,
+    Variance,
+)
 from pennylane.operation import Observable, Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
 from pennylane.tape import QuantumTape
@@ -67,6 +77,7 @@ from ._version import __version__
 
 RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
 MIN_SIMULATOR_BILLED_MS = 3000
+OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
 
 
 class Shots(Enum):
@@ -88,7 +99,7 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()`.
+        `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket PennyLane plugin"
     pennylane_requires = ">=0.18.0"
@@ -162,7 +173,7 @@ class BraketQubitDevice(QubitDevice):
         )
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
-        else:
+        elif not isinstance(circuit.observables[0], MeasurementTransform):
             for observable in circuit.observables:
                 dev_wires = self.map_wires(observable.wires).tolist()
                 translated = translate_result_type(observable, dev_wires, self._braket_result_types)
@@ -288,6 +299,49 @@ class BraketQubitDevice(QubitDevice):
         else:
             return {"braket_failed_task_id": task.id}
 
+    def classical_shadow(self, obs, circuit):
+        if circuit is None:  # pragma: no cover
+            raise ValueError("Circuit must be provided when measuring classical shadows")
+
+        wires = obs.wires
+        n_snapshots = self.shots
+        seed = obs.seed
+        n_qubits = len(wires)
+        mapped_wires = np.array(self.map_wires(wires))
+        # seed the random measurement generation so that recipes
+        # are the same for different executions with the same seed
+        rng = np.random.default_rng(seed)
+        recipes = rng.integers(0, 3, size=(n_snapshots, n_qubits))
+
+        outcomes = np.zeros((n_snapshots, n_qubits))
+
+        snapshot_rotations = [
+            [
+                rot
+                for wire_idx, wire in enumerate(wires)
+                for rot in OBS_LIST[recipes[t][wire_idx]].compute_diagonalizing_gates(wires=wire)
+            ]
+            for t in range(n_snapshots)
+        ]
+
+        snapshot_circuits = [
+            self.apply(
+                circuit.operations,
+                rotations=circuit.diagonalizing_gates + snapshot_rotation,
+                use_unique_params=False,
+            )
+            for snapshot_rotation in snapshot_rotations
+        ]
+
+        outcomes = self._run_snapshots(snapshot_circuits, n_qubits, mapped_wires)
+
+        return self._cast(self._stack([outcomes, recipes]), dtype=np.int8)
+
+    def shadow_expval(self, obs, circuit):
+        bits, recipes = self.classical_shadow(obs, circuit)
+        shadow = qml.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
+        return shadow.expval(obs.H, obs.k)
+
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
         trainable = BraketQubitDevice._get_trainable_parameters(circuit) if compute_gradient else {}
@@ -299,16 +353,25 @@ class BraketQubitDevice(QubitDevice):
         )
         if self._noise_model:
             self._circuit = self._noise_model.apply(self._circuit)
-        self._task = self._run_task(
-            self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
-        )
-        braket_result = self._task.result()
+        if not isinstance(circuit.observables[0], MeasurementTransform):
+            self._task = self._run_task(
+                self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
+            )
+            braket_result = self._task.result()
 
-        if self.tracker.active:
-            tracking_data = self._tracking_data(self._task)
-            self.tracker.update(executions=1, shots=self.shots, **tracking_data)
-            self.tracker.record()
-        return self._braket_to_pl_result(braket_result, circuit)
+            if self.tracker.active:
+                tracking_data = self._tracking_data(self._task)
+                self.tracker.update(executions=1, shots=self.shots, **tracking_data)
+                self.tracker.record()
+            return self._braket_to_pl_result(braket_result, circuit)
+        elif isinstance(circuit.observables[0], ShadowExpvalMP):
+            if len(circuit.observables) > 1:
+                raise ValueError(
+                    "A circuit with a ShadowExpvalMP observable must "
+                    "have that as its only result type."
+                )
+            return [self.shadow_expval(circuit.observables[0], circuit)]
+        raise RuntimeError("The circuit has an unsupported MeasurementTransform.")
 
     def _execute_legacy(
         self, circuit: QuantumTape, compute_gradient=False, **run_kwargs
@@ -382,6 +445,9 @@ class BraketQubitDevice(QubitDevice):
     def _run_task(self, circuit, inputs=None):
         raise NotImplementedError("Need to implement task runner")
 
+    def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
+        raise NotImplementedError("Need to implement snapshots runner")
+
     def _get_statistic(self, braket_result, observable):
         dev_wires = self.map_wires(observable.wires).tolist()
         return translate_result(braket_result, observable, dev_wires, self._braket_result_types)
@@ -438,7 +504,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_retries (int): The maximum number of retries to use for batch execution.
             When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
             times. Ignored if ``parallel=False``.
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
+        `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket AwsDevice for PennyLane"
     short_name = "braket.aws.qubit"
@@ -556,6 +622,56 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             **self._run_kwargs,
         )
 
+    def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
+        n_snapshots = len(snapshot_circuits)
+        outcomes = np.zeros((n_snapshots, n_qubits))
+        if self._parallel:
+            task_batch = self._device.run_batch(
+                snapshot_circuits,
+                s3_destination_folder=self._s3_folder,
+                shots=1,
+                max_parallel=self._max_parallel,
+                max_connections=self._max_connections,
+                poll_timeout_seconds=self._poll_timeout_seconds,
+                poll_interval_seconds=self._poll_interval_seconds,
+                **self._run_kwargs,
+            )
+
+            # Call results() to retrieve the Braket results in parallel.
+            try:
+                braket_results_batch = task_batch.results(
+                    fail_unsuccessful=True, max_retries=self._max_retries
+                )
+
+            # Update the tracker before raising an exception further
+            # if some circuits do not complete.
+            finally:
+                if self.tracker.active:
+                    for task in task_batch.tasks:
+                        tracking_data = self._tracking_data(task)
+                        self.tracker.update(**tracking_data)
+                    total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+                    total_shots = total_executions
+                    self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+                    self.tracker.record()
+
+            for t in range(n_snapshots):
+                outcomes[t] = np.array(braket_results_batch[t].measurements[0])[mapped_wires]
+        else:
+            for t in range(n_snapshots):
+                task = self._device.run(
+                    snapshot_circuits[t],
+                    shots=1,
+                    s3_destination_folder=self._s3_folder,
+                    poll_timeout_seconds=self._poll_timeout_seconds,
+                    poll_interval_seconds=self._poll_interval_seconds,
+                    **self._run_kwargs,
+                )
+                res = task.result()
+                outcomes[t] = np.array(res.measurements[0])[mapped_wires]
+
+        return outcomes
+
     def capabilities(self=None):
         """Add support for AG on sv1"""
         # normally, we'd just call super().capabilities() here, but super()
@@ -620,7 +736,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             to estimate expectation values of observables. If this value is set to ``None`` or
             ``0``, then the device runs in analytic mode (calculations will be exact).
             Default: None
-        **run_kwargs: Variable length keyword arguments for ``braket.devices.Device.run()``.
+        `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket LocalSimulator for PennyLane"
     short_name = "braket.local.qubit"
@@ -643,3 +759,12 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             inputs=inputs or {},
             **self._run_kwargs,
         )
+
+    def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
+        n_snapshots = len(snapshot_circuits)
+        outcomes = np.zeros((n_snapshots, n_qubits))
+        for t in range(n_snapshots):
+            task = self._device.run(snapshot_circuits[t], shots=1, **self._run_kwargs)
+            res = task.result()
+            outcomes[t] = np.array(res.measurements[0])[mapped_wires]
+        return outcomes
