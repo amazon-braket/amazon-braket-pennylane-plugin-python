@@ -607,23 +607,19 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return res, jacs
 
     def _is_single_qubit_01_frame(self, f):
-        if self._device.name == "Aspen-M-3":
-            return "rf" in f and "f12" not in f
-        elif self._device.name == "Lucy":
+        if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             return "drive" in f
         else:
             raise RuntimeError(
-                f"Single-qubit drive frame for pulse control not defined for device {self._device.name}"
+                f"Single-qubit drive frame for pulse control not defined for device {self._device.arn}"
             )
 
     def _is_single_qubit_12_frame(self, f):
-        if self._device.name == "Aspen-M-3":
-            return "rf" in f and "f12" in f
-        elif self._device.name == "Lucy":
+        if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             return "second_state" in f
         else:
             raise RuntimeError(
-                f"Single-qubit drive frame for pulse control not defined for device {self._device.name}"
+                f"Single-qubit drive frame for pulse control not defined for device {self._device.arn}"
             )
 
     def _get_frames(self, filter):
@@ -635,7 +631,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
 
         drive_frequencies = [frames[f]["frequency"] * 1e-9 for f in frames]  # Hz to GHz
-        device_info = self._device.properties.dict()["paradigm"]
+        device_info = self._device.properties.paradigm.dict()
 
         connections = []
 
@@ -656,6 +652,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             "wires": wires,
             "anharmonicity": anharmonicities
         }  
+
 
 class BraketLocalQubitDevice(BraketQubitDevice):
     r"""Amazon Braket LocalSimulator qubit device for PennyLane.
