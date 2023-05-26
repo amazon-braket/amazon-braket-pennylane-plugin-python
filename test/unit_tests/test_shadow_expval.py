@@ -2,18 +2,23 @@ import json
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
+from typing import Any, Dict, Optional
 import pennylane as qml
 import pytest
+import braket.ir as ir
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
 from braket.device_schema import DeviceActionType
 from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
+from braket.simulator import BraketSimulator
+from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane.tape import QuantumScript, QuantumTape
 
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
+from braket.pennylane_plugin.braket_device import BraketQubitDevice
 
 SHOTS = 2
 DEVICE_ARN = "baz"
@@ -336,3 +341,119 @@ def _aws_device(
     # needed by the BraketAwsQubitDevice.capabilities function
     dev._device._arn = device_arn
     return dev
+
+
+class DummyLocalQubitDevice(BraketQubitDevice):
+    short_name = "dummy"
+
+
+class DummyCircuitSimulator(BraketSimulator):
+    def run(
+        self, program: ir.openqasm.Program, qubits: int, shots: Optional[int], *args, **kwargs
+    ) -> Dict[str, Any]:
+        self._shots = shots
+        self._qubits = qubits
+        return GATE_MODEL_RESULT
+
+    @property
+    def properties(self) -> GateModelSimulatorDeviceCapabilities:
+        name = "braket.device_schema.simulators.gate_model_simulator_paradigm_properties"
+        input_json = {
+            "braketSchemaHeader": {
+                "name": "braket.device_schema.simulators.gate_model_simulator_device_capabilities",
+                "version": "1",
+            },
+            "service": {
+                "braketSchemaHeader": {
+                    "name": "braket.device_schema.device_service_properties",
+                    "version": "1",
+                },
+                "executionWindows": [
+                    {
+                        "executionDay": "Everyday",
+                        "windowStartHour": "09:00",
+                        "windowEndHour": "11:00",
+                    }
+                ],
+                "shotsRange": [1, 10],
+                "deviceCost": {"price": 0.25, "unit": "minute"},
+                "deviceDocumentation": {
+                    "imageUrl": "image_url",
+                    "summary": "Summary on the device",
+                    "externalDocumentationUrl": "external doc link",
+                },
+                "deviceLocation": "us-east-1",
+                "updatedAt": "2020-06-16T19:28:02.869136",
+            },
+            "action": {
+                "braket.ir.openqasm.program": {
+                    "actionType": "braket.ir.openqasm.program",
+                    "version": ["1"],
+                    "supportedOperations": ["x", "y", "h", "cnot"],
+                    "supportedResultTypes": [
+                        {
+                            "name": "resultType1",
+                            "observables": ["observable1"],
+                            "minShots": 2,
+                            "maxShots": 4,
+                        }
+                    ],
+                }
+            },
+            "paradigm": {
+                "braketSchemaHeader": {
+                    "name": name,
+                    "version": "1",
+                },
+                "qubitCount": 31,
+            },
+            "deviceParameters": {},
+        }
+        return GateModelSimulatorDeviceCapabilities.parse_obj(input_json)
+
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_run_snapshots_not_implemented():
+    """Tests that an error is thrown when the device doesn't have a _run_snapshots method"""
+    dummy = DummyCircuitSimulator()
+    dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.shadow_expval(qml.PauliX(1))
+
+    dev.execute(circuit)
+
+
+@patch.object(AwsDevice, "run_batch")
+def test_shadows_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel shadows computation"""
+
+    mock_run_batch.return_value = TASK_BATCH
+    type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
+    dev = _aws_device(wires=2, foo="bar", parallel=True, shots=SHOTS)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.Hadamard(wires=1)
+        qml.shadow_expval(qml.PauliX(1))
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.execute(circuit)
+    dev.execute(circuit)
+
+    latest = {"batches": 1, "executions": SHOTS, "shots": SHOTS}
+    history = {
+        "batches": [1],
+        "executions": [SHOTS],
+        "shots": [SHOTS],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
+    totals = {"batches": 1, "executions": SHOTS, "shots": SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
