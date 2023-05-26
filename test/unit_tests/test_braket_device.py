@@ -2041,7 +2041,7 @@ class TestPulseFunctionality:
     @pytest.mark.parametrize(
         "frameId, expected_result", [("q0_second_state", True), ("q0_drive", False)]
     )
-    def test_single_frame_filter_oqc_lucy(self, frameId, expected_result):
+    def test_single_frame_filter_oqc_lucy_12(self, frameId, expected_result):
         dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
         assert dev._is_single_qubit_12_frame(frameId) == expected_result
 

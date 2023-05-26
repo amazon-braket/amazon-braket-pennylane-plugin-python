@@ -611,7 +611,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             return "drive" in f
         else:
             raise RuntimeError(
-                f"Single-qubit drive frame for pulse control not defined for device {self._device.arn}"
+                f"Single-qubit drive frame for pulse control not defined for "
+                f"device {self._device.arn}"
             )
 
     def _is_single_qubit_12_frame(self, f):
@@ -619,7 +620,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             return "second_state" in f
         else:
             raise RuntimeError(
-                f"Single-qubit drive frame for pulse control not defined for device {self._device.arn}"
+                f"Single-qubit drive frame for pulse control not defined for "
+                f"device {self._device.arn}"
             )
 
     def _get_frames(self, filter):
