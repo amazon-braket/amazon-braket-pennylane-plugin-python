@@ -725,6 +725,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return res, jacs
 
     def _is_single_qubit_01_frame(self, f):
+        """Defines the condition for selecting frames addressing the qubit (01)
+        drive based on frame name"""
         if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             return "drive" in f
         else:
@@ -734,6 +736,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             )
 
     def _is_single_qubit_12_frame(self, f):
+        """Defines the condition for selecting frames addressing excitation to
+        the second excited state based on frame name"""
         if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             return "second_state" in f
         else:
@@ -743,6 +747,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             )
 
     def _get_frames(self, filter):
+        """Takes a filter defining how the relevant frames are labelled, and returns all the frames
+        that fit, i.e.:
+
+        cond = lambda f: "excited" in f
+        frames = _get_frames(cond)
+
+        would return all the frames with "excited" in the frame name.
+        """
         return {
             f: info
             for f, info in self._device.properties.pulse.dict()["frames"].items()
@@ -751,6 +763,24 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     @property
     def settings(self):
+        """Dictionary of constants set by the hardware (qubit resonant frequencies,
+        inter-qubit connection graph, wires and anharmonicities).
+
+        Used to enable initializing hardware-consistent Hamiltonians by returning
+        values that would need to be passed, i.e.:
+
+            >>> dev_remote = qml.device('braket.aws.qubit',
+            >>>                          wires=8,
+            >>>                          arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy')
+            >>> settings = dev_remote.settings
+            >>> H_int = qml.pulse.transmon_interaction(**settings, coupling=0.02)
+
+        By passing the ``settings`` from the remote device to ``transmon_interaction``, an
+        ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
+        This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
+
+        Note that the user must supply coupling coefficients, as these are not available from the hardware backend.
+        """
         drive_frames_01 = self._get_frames(filter=self._is_single_qubit_01_frame)
         drive_frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
 
