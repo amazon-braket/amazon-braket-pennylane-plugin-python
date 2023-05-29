@@ -109,8 +109,7 @@ def _aws_device(
         shots=shots,
         **kwargs,
     )
-    # needed by the BraketAwsQubitDevice.capabilities function
-    # dev._device._arn = device_arn
+
     return dev
 
 
