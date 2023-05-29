@@ -649,6 +649,8 @@ def test_execute_tracker(mock_run):
 
 def _aws_device_mock_init(self, arn, aws_session):
     self._arn = arn
+    self._properties = None
+    self._ports = None
 
 
 @patch.object(AwsDevice, "__init__", _aws_device_mock_init)
@@ -2063,7 +2065,7 @@ class TestPulseFunctionality:
         ):
             dev._is_single_qubit_12_frame("q0_second_state")
 
-    def test_get_frames_01(self):
+    def test_get_frames(self):
         dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
 
         class DummyProperties:
@@ -2072,11 +2074,11 @@ class TestPulseFunctionality:
 
         dev._device._properties = DummyProperties()
 
-        frames = dev._get_frames(filter=dev._is_single_qubit_01_frame)
+        frames_01 = dev._get_frames(filter=dev._is_single_qubit_01_frame)
         frames_12 = dev._get_frames(filter=dev._is_single_qubit_12_frame)
 
-        assert len(frames) == len(frames_12) == 1
-        assert "q0_drive" in frames.keys()
+        assert len(frames_01) == len(frames_12) == 1
+        assert "q0_drive" in frames_01.keys()
         assert "q0_second_state" in frames_12.keys()
 
     def test_settings(self):
