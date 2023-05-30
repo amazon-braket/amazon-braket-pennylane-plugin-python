@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.16.0 (2023-05-30)
+
+### Features
+
+ * implement support for classical shadows and computing expectation values with them
+
+### Bug Fixes and Other Changes
+
+ * temporarily disabling integ test.
+ * Update expval validation
+
 ## v1.15.3 (2023-05-24)
 
 ### Bug Fixes and Other Changes
