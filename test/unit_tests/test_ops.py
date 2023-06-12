@@ -86,10 +86,12 @@ def test_ops_parametrized_tf(pl_op, braket_gate, angle):
     "pl_op, braket_gate",
     gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
 )
-@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
-def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle):
+@pytest.mark.parametrize("angle_1", [(i + 1) * math.pi / 12 for i in range(12)])
+@pytest.mark.parametrize("angle_2", [(i + 1) * math.pi / 12 for i in range(12)])
+@pytest.mark.parametrize("angle_3", [(i + 1) * math.pi / 12 for i in range(6)])
+def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle_1, angle_2, angle_3):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
-    angles = [angle] * pl_op.num_params
+    angles = [angle_1, angle_2, angle_3][:pl_op.num_params]
     assert np.allclose(pl_op.compute_matrix(*angles), braket_gate(*angles).to_matrix())
 
 
