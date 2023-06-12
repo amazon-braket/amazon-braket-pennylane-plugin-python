@@ -499,7 +499,7 @@ class AAMS(Operation):
         if qml.math.get_interface(phi_1) == "tensorflow":
             phi_1 = qml.math.cast_like(phi_1, 1j)
         if qml.math.get_interface(theta) == "tensorflow":
-            phi_1 = qml.math.cast_like(theta, 1j)
+            theta = qml.math.cast_like(theta, 1j)
 
         return np.array(
             [
