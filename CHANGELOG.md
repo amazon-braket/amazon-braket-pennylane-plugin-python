@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.16.1 (2023-06-08)
+
+### Bug Fixes and Other Changes
+
+ * Lower shot count on shadow_expval integ test so it can finish
+
 ## v1.16.0 (2023-05-30)
 
 ### Features

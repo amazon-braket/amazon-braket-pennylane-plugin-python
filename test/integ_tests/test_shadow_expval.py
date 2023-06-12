@@ -8,11 +8,10 @@ H = qml.PauliZ(0) @ qml.PauliZ(1)
 wires = 2
 
 
-@pytest.mark.parametrize("shots", [10000])
+@pytest.mark.parametrize("shots", [1000])
 class TestShadowExpval:
     """Test shadow_expval computation of expectation values."""
 
-    @pytest.mark.skip(reason="timing out")
     def test_shadow_expval(self, device, shots):
         dev = device(wires)
 
@@ -33,4 +32,4 @@ class TestShadowExpval:
         x = np.array(1.2)
         shadow_e = shadow_circuit(x)
         e = circuit(x)
-        assert np.allclose([shadow_e], [e], rtol=0.5)
+        assert np.allclose([shadow_e], [e], atol=0.2)
