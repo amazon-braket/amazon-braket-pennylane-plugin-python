@@ -33,6 +33,7 @@ from pennylane.operation import Observable, Operation
 from pennylane.ops import Adjoint
 
 from braket.pennylane_plugin.ops import (
+    AAMS,
     MS,
     PSWAP,
     CPhaseShift00,
@@ -85,7 +86,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "ecr": "ECR",
     "gpi": "GPi",
     "gpi2": "GPi2",
-    "ms": "MS",
+    "ms": "AAMS",
 }
 
 
@@ -388,6 +389,12 @@ def _(gpi2: GPi2, parameters):
 def _(ms: MS, parameters):
     phi_0, phi_1 = parameters[:2]
     return gates.MS(phi_0, phi_1)
+
+
+@_translate_operation.register
+def _(ms: AAMS, parameters):
+    phi_0, phi_1, theta = parameters[:3]
+    return gates.MS(phi_0, phi_1, theta)
 
 
 @_translate_operation.register

@@ -26,7 +26,7 @@ from braket.circuits import gates
 from numpy import float64
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
-from braket.pennylane_plugin.ops import MS, GPi, GPi2
+from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
 
 gates_1q_parametrized = [
     (GPi, gates.GPi),
@@ -42,6 +42,10 @@ gates_2q_parametrized = [
 
 gates_2q_2p_parametrized = [
     (MS, gates.MS),
+]
+
+gates_2q_3p_parametrized = [
+    (AAMS, gates.MS),
 ]
 
 gates_2q_non_parametrized = []  # Empty... For now!
@@ -74,7 +78,10 @@ def test_ops_parametrized_tf(pl_op, braket_gate, angle):
     _assert_decomposition(pl_op, params=[angle])
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", gates_1q_parametrized + gates_2q_2p_parametrized)
+@pytest.mark.parametrize(
+    "pl_op, braket_gate",
+    gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
+)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
@@ -82,7 +89,10 @@ def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle):
     assert np.allclose(pl_op.compute_matrix(*angles), braket_gate(*angles).to_matrix())
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", gates_1q_parametrized + gates_2q_2p_parametrized)
+@pytest.mark.parametrize(
+    "pl_op, braket_gate",
+    gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
+)
 @pytest.mark.parametrize(
     "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
 )
@@ -183,7 +193,11 @@ def _assert_decomposition(pl_op, params=None):
 
 
 @pytest.mark.parametrize(
-    "pl_op, braket_gate", gates_1q_parametrized + gates_2q_parametrized + gates_2q_2p_parametrized
+    "pl_op, braket_gate",
+    gates_1q_parametrized
+    + gates_2q_parametrized
+    + gates_2q_2p_parametrized
+    + gates_2q_3p_parametrized,
 )
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_gate_adjoint_parametrized(pl_op, braket_gate, angle):
