@@ -37,7 +37,7 @@ setup(
         # "amazon-braket-sdk>=1.35.0",
         (
             "amazon-braket-sdk @ "
-            "git+ssh://git@github.com/aws/amazon-braket-sdk-python@arbitrary-angle-ms"
+            "git+https://github.com/aws/amazon-braket-sdk-python@arbitrary-angle-ms"
         ),
         "pennylane==0.30.0",
     ],
