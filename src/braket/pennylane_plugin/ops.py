@@ -95,7 +95,7 @@ class CPhaseShift00(Operation):
     def generator(self):
         return qml.Projector(np.array([0, 0]), wires=self.wires)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
+    def __init__(self, phi, wires, do_queue=None, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
@@ -162,7 +162,7 @@ class CPhaseShift01(Operation):
     def generator(self):
         return qml.Projector(np.array([0, 1]), wires=self.wires)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
+    def __init__(self, phi, wires, do_queue=None, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
@@ -227,7 +227,7 @@ class CPhaseShift10(Operation):
     def generator(self):
         return qml.Projector(np.array([1, 0]), wires=self.wires)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
+    def __init__(self, phi, wires, do_queue=None, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
@@ -288,7 +288,7 @@ class PSWAP(Operation):
     grad_method = "A"
     grad_recipe = ([[0.5, 1, np.pi / 2], [-0.5, 1, -np.pi / 2]],)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
+    def __init__(self, phi, wires, do_queue=None, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
@@ -338,7 +338,7 @@ class GPi(Operation):
     num_wires = 1
     grad_method = "F"
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
+    def __init__(self, phi, wires, do_queue=None, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
@@ -384,7 +384,7 @@ class GPi2(Operation):
     num_wires = 1
     grad_method = "F"
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
+    def __init__(self, phi, wires, do_queue=None, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
@@ -434,7 +434,7 @@ class MS(Operation):
     num_wires = 2
     grad_method = "F"
 
-    def __init__(self, phi_0, phi_1, wires, do_queue=True, id=None):
+    def __init__(self, phi_0, phi_1, wires, do_queue=None, id=None):
         super().__init__(phi_0, phi_1, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
