@@ -182,6 +182,9 @@ class BraketQubitDevice(QubitDevice):
                         braket_circuit.add_result_type(result_type)
                 else:
                     braket_circuit.add_result_type(translated)
+
+        if self._noise_model:
+            braket_circuit = self._noise_model.apply(braket_circuit)
         return braket_circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
@@ -351,8 +354,6 @@ class BraketQubitDevice(QubitDevice):
             trainable_indices=frozenset(trainable.keys()),
             **run_kwargs,
         )
-        if self._noise_model:
-            self._circuit = self._noise_model.apply(self._circuit)
         if not isinstance(circuit.observables[0], MeasurementTransform):
             self._task = self._run_task(
                 self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
