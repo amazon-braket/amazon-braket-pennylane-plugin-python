@@ -183,8 +183,6 @@ class BraketQubitDevice(QubitDevice):
                 else:
                     braket_circuit.add_result_type(translated)
 
-        if self._noise_model:
-            braket_circuit = self._noise_model.apply(braket_circuit)
         return braket_circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
@@ -417,6 +415,9 @@ class BraketQubitDevice(QubitDevice):
         # To ensure the results have the right number of qubits
         for qubit in sorted(unused):
             circuit.i(qubit)
+
+        if self._noise_model:
+            circuit = self._noise_model.apply(circuit)
 
         return circuit
 
