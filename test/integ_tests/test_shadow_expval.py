@@ -14,8 +14,11 @@ class TestShadowExpval:
 
     def test_shadow_expval(self, device, shots):
         dev = device(wires)
-        if(dev.short_name == "braket.aws.qubit"):
-            pytest.skip("SV1 needs batch execution to execute in reasonable time, but parallel shadow_expval is currently broken")
+        if dev.short_name == "braket.aws.qubit":
+            pytest.skip(
+                "SV1 needs batch execution to execute in reasonable time, "
+                "but parallel shadow_expval is currently broken"
+            )
 
         @qml.qnode(dev)
         def shadow_circuit(x):
