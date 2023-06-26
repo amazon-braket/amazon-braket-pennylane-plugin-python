@@ -246,7 +246,7 @@ html_theme_options = {
     # Set your Disqus short name to enable comments
     # "disqus_comments_shortname": "pennylane-1",
     # Set you GA account ID to enable tracking
-    "google_analytics_account": "UA-130507810-2",
+    "google_analytics_account": "314168898",
     # Path to a touch icon
     "touch_icon": "logo_new.png",
     # Specify a base_url used to generate sitemap.xml links. If not
