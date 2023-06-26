@@ -40,7 +40,7 @@ class TestState:
         if supports_sv:
             assert np.allclose(output, expected_sv, **tol)
         else:
-            assert np.allclose(output, np.kron(expected_sv, expected_sv.conj()), **tol)
+            assert np.allclose(output, np.outer(expected_sv, expected_sv.conj()), **tol)
 
     def test_reduced_density_matrix(self, local_device, shots, tol):
         """Tests if the correct reduced density matrix is returned"""

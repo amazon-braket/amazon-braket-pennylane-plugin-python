@@ -59,7 +59,7 @@ devices = sv_devices + dm_devices
 shortname_and_backends = [(d.short_name, backend) for (d, backend) in devices]
 
 # List of local devices
-local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_sv")]
+local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_dm")]
 
 # ==========================================================
 # AWS resources
