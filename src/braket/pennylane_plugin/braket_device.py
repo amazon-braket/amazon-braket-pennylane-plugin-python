@@ -582,9 +582,22 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         for circuit in circuits:
             self.check_validity(circuit.operations, circuit.observables)
-        braket_circuits = [
-            self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
-        ]
+        all_trainable = []
+        braket_circuits = []
+        for circuit in circuits:
+            trainable = (
+                BraketQubitDevice._get_trainable_parameters(circuit)
+                if self._parametrize_differentiable
+                else {}
+            )
+            all_trainable.append(trainable)
+            braket_circuits.append(
+                self._pl_to_braket_circuit(
+                    circuit,
+                    trainable_indices=frozenset(trainable.keys()),
+                    **run_kwargs,
+                )
+            )
 
         batch_shots = 0 if self.analytic else self.shots
 
@@ -596,6 +609,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
+            inputs=[{f"p_{k}": v for k, v in trainable.items()} for trainable in all_trainable]
+            if self._parametrize_differentiable
+            else [],
             **self._run_kwargs,
         )
         # Call results() to retrieve the Braket results in parallel.

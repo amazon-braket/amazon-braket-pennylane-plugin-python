@@ -1036,6 +1036,7 @@ def test_batch_execute_parallel(mock_run_batch):
         max_connections=AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        inputs=[],
         foo="bar",
     )
 
@@ -1126,6 +1127,61 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch):
     assert tracker.totals == totals
 
     callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_parametrize_differentiable(mock_run_batch):
+    """Test batch_execute(parallel=True) correctly calls batch execution methods in Braket SDK"""
+    mock_run_batch.return_value = TASK_BATCH
+    dev = _aws_device(wires=4, foo="bar", parametrize_differentiable=True, parallel=True)
+
+    with QuantumTape() as circuit1:
+        qml.Hadamard(wires=0)
+        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qml.RX(0.432, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.expval(qml.PauliX(1))
+
+    with QuantumTape() as circuit2:
+        qml.Hadamard(wires=0)
+        qml.RX(0.123, wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.sample(qml.PauliZ(3))
+
+    expected_1 = (
+        Circuit()
+        .h(0)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, FreeParameter("p_1"))
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .expectation(observable=Observable.X(), target=1)
+    )
+
+    expected_2 = (
+        Circuit()
+        .h(0)
+        .rx(0, FreeParameter("p_0"))
+        .cnot(0, 1)
+        .i(2)
+        .i(3)
+        .sample(observable=Observable.Z(), target=3)
+    )
+
+    circuits = [circuit1, circuit2]
+    dev.batch_execute(circuits)
+    mock_run_batch.assert_called_with(
+        [expected_1, expected_2],
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        max_parallel=None,
+        max_connections=AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        inputs=[{"p_1": 0.432}, {"p_0": 0.123}],
+        foo="bar",
+    )
 
 
 @pytest.mark.parametrize("old_return_type", [True, False])
