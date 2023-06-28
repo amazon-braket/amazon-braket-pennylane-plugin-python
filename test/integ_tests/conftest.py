@@ -50,6 +50,7 @@ K2 = [np.kron(mat1, mat2) for mat1 in K for mat2 in K]
 # PennyLane devices
 
 # List of all devices.
+on_demand_sv_devices = [(BraketAwsQubitDevice, DEVICE_ARN)]
 sv_devices = [(BraketAwsQubitDevice, DEVICE_ARN), (BraketLocalQubitDevice, "braket_sv")]
 dm_devices = [(BraketLocalQubitDevice, "braket_dm")]
 devices = sv_devices + dm_devices
@@ -58,7 +59,7 @@ devices = sv_devices + dm_devices
 shortname_and_backends = [(d.short_name, backend) for (d, backend) in devices]
 
 # List of local devices
-local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_sv")]
+local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_dm")]
 
 # ==========================================================
 # AWS resources
@@ -114,7 +115,7 @@ def init_state(scope="session"):
     """Fixture to create an n-qubit initial state"""
 
     def _init_state(n):
-        state = np.random.random([2 ** n]) + np.random.random([2 ** n]) * 1j
+        state = np.random.random([2**n]) + np.random.random([2**n]) * 1j
         state /= np.linalg.norm(state)
         return state
 
@@ -134,6 +135,17 @@ def device(request, shots, extra_kwargs):
 
 @pytest.fixture(params=sv_devices)
 def sv_device(request, shots, extra_kwargs):
+    """Fixture to initialize and return a PennyLane device"""
+    device, backend = request.param
+
+    def _device(n):
+        return device(wires=n, shots=shots, **extra_kwargs(device, backend))
+
+    return _device
+
+
+@pytest.fixture(params=on_demand_sv_devices)
+def on_demand_sv_device(request, shots, extra_kwargs):
     """Fixture to initialize and return a PennyLane device"""
     device, backend = request.param
 

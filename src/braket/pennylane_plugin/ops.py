@@ -26,12 +26,13 @@ These operations can be imported via
 .. code-block:: python
 
     from braket.pennylane_plugin import (
-        PSWAP,
-        XY,
-        YY,
         CPhaseShift00,
         CPhaseShift01,
         CPhaseShift10,
+        PSWAP,
+        GPi,
+        GPi2,
+        MS,
     )
 
 Operations
@@ -42,8 +43,9 @@ Operations
     CPhaseShift01
     CPhaseShift10
     PSWAP
-    XY
-    YY
+    GPi
+    GPi2
+    MS
 
 Code details
 ~~~~~~~~~~~~
@@ -52,7 +54,6 @@ Code details
 import numpy as np
 import pennylane as qml
 from pennylane.operation import Operation
-from pennylane.ops.qubit import four_term_grad_recipe
 
 
 class CPhaseShift00(Operation):
@@ -81,14 +82,24 @@ class CPhaseShift00(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool, optional): Indicates whether the operator should be
+            immediately pushed into the Operator queue. Default: None
+        id (str, optional): String representing the operation. Default: None
+
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    def generator(self):
+        return qml.Projector(np.array([0, 0]), wires=self.wires)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.PauliX(wires[0]),
             qml.PauliX(wires[1]),
@@ -101,9 +112,16 @@ class CPhaseShift00(Operation):
             qml.PauliX(wires[0]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        return np.diag(np.array([np.exp(1.0j * params[0]), 1.0, 1.0, 1.0], dtype=complex))
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([qml.math.exp(1j * phi), 1, 1, 1])
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return CPhaseShift00(-phi, wires=self.wires)
 
 
 class CPhaseShift01(Operation):
@@ -132,14 +150,23 @@ class CPhaseShift01(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    def generator(self):
+        return qml.Projector(np.array([0, 1]), wires=self.wires)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.PauliX(wires[0]),
             qml.PhaseShift(phi / 2, wires=[wires[0]]),
@@ -150,9 +177,16 @@ class CPhaseShift01(Operation):
             qml.PauliX(wires[0]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        return np.diag(np.array([1.0, np.exp(1.0j * params[0]), 1.0, 1.0], dtype=complex))
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([1, qml.math.exp(1j * phi), 1, 1])
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return CPhaseShift01(-phi, wires=self.wires)
 
 
 class CPhaseShift10(Operation):
@@ -181,14 +215,23 @@ class CPhaseShift10(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    def generator(self):
+        return qml.Projector(np.array([1, 0]), wires=self.wires)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.PauliX(wires[1]),
             qml.PhaseShift(phi / 2, wires=[wires[0]]),
@@ -199,9 +242,16 @@ class CPhaseShift10(Operation):
             qml.PauliX(wires[1]),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        return np.diag(np.array([1.0, 1.0, np.exp(1.0j * params[0]), 1.0], dtype=complex))
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([1, 1, qml.math.exp(1j * phi), 1])
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return CPhaseShift10(-phi, wires=self.wires)
 
 
 class PSWAP(Operation):
@@ -229,14 +279,20 @@ class PSWAP(Operation):
     Args:
         phi (float): the phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 2
-    par_domain = "R"
     grad_method = "A"
+    grad_recipe = ([[0.5, 1, np.pi / 2], [-0.5, 1, -np.pi / 2]],)
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
+    def compute_decomposition(phi, wires):
         return [
             qml.SWAP(wires=wires),
             qml.CNOT(wires=wires),
@@ -244,131 +300,159 @@ class PSWAP(Operation):
             qml.CNOT(wires=wires),
         ]
 
-    @classmethod
-    def _matrix(cls, *params):
-        phi = params[0]
-        return np.diag(np.array([1, np.exp(1j * phi), np.exp(1j * phi), 1], dtype=complex))[
-            [0, 2, 1, 3]
-        ]
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return qml.math.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return PSWAP(-phi, wires=self.wires)
 
 
-class XY(Operation):
-    r""" XY(phi, wires)
+class GPi(Operation):
+    r""" GPi(phi, wires)
 
-    Parameterized ISWAP gate: https://arxiv.org/abs/1912.04424v1
+    IonQ native GPi gate.
 
-    .. math:: \mathtt{XY}(\phi) = \begin{bmatrix}
-            1 & 0 & 0 & 0 \\
-            0 & \cos(\phi / 2) & i \sin(\phi / 2) & 0 \\
-            0 & i \sin(\phi / 2) & \cos(\phi / 2) & 0 \\
-            0 & 0 & 0 & 1
+    .. math:: \mathtt{GPi}(\phi) = \begin{bmatrix}
+            0 & e^{-i \phi} \\
+            e^{i \phi} & 0
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 1
+    * Number of parameters: 1
+
+    Args:
+        phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 1
+    num_wires = 1
+    grad_method = "F"
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return np.array(
+            [
+                [0, np.exp(-1j * phi)],
+                [np.exp(1j * phi), 0],
+            ]
+        )
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return GPi(phi, wires=self.wires)
+
+
+class GPi2(Operation):
+    r""" GPi2(phi, wires)
+
+    IonQ native GPi2 gate.
+
+    .. math:: \mathtt{GPi2}(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
+            1 & -ie^{-i \phi} \\
+            -ie^{i \phi} & 1
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 1
+    * Number of parameters: 1
+
+    Args:
+        phi (float): the phase angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 1
+    num_wires = 1
+    grad_method = "F"
+
+    def __init__(self, phi, wires, do_queue=True, id=None):
+        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi):
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        return np.array(
+            [
+                [1, -1j * np.exp(-1j * phi)],
+                [-1j * np.exp(1j * phi), 1],
+            ]
+        ) / np.sqrt(2)
+
+    def adjoint(self):
+        (phi,) = self.parameters
+        return GPi2(phi + np.pi, wires=self.wires)
+
+
+class MS(Operation):
+    r""" MS(phi_0, phi_1, wires)
+
+    IonQ native Mølmer-Sørenson gate.
+
+
+    .. math:: \mathtt{MS}(\phi_0, \phi_1) = \begin{bmatrix}
+            1 & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)} \\
+            0 & 1 & -ie^{-i (\phi_0 - \phi_1)} & 0 \\
+            0 & -ie^{i (\phi_0 - \phi_1)} & 1 & 0 \\
+            -ie^{i (\phi_0 + \phi_1)} & 0 & 0 & 1
         \end{bmatrix}.
 
     **Details:**
 
     * Number of wires: 2
-    * Number of parameters: 1
-    * Gradient recipe: The XY operator satisfies a four-term parameter-shift rule
-      (see Appendix F, https://arxiv.org/abs/2104.05695):
-
-      .. math::
-          \frac{d}{d \phi} f(XY(\phi))
-          = c_+ \left[ f(XY(\phi + a)) - f(XY(\phi - a)) \right]
-          - c_- \left[ f(XY(\phi + b)) - f(XY(\phi - b)) \right]
-
-      where :math:`f` is an expectation value depending on :math:`XY(\phi)`, and
-
-      - :math:`a = \pi / 2`
-      - :math:`b = 3 \pi / 2`
-      - :math:`c_{\pm} = (\sqrt{2} \pm 1)/{4 \sqrt{2}}`
+    * Number of parameters: 2
 
     Args:
-        phi (float): the phase angle
+        phi_0 (float): the first phase angle
+        phi_1 (float): the second phase angle
         wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
     """
-    num_params = 1
+    num_params = 2
     num_wires = 2
-    par_domain = "R"
-    grad_method = "A"
-    grad_recipe = four_term_grad_recipe
+    grad_method = "F"
+
+    def __init__(self, phi_0, phi_1, wires, do_queue=True, id=None):
+        super().__init__(phi_0, phi_1, wires=wires, do_queue=do_queue, id=id)
 
     @staticmethod
-    def decomposition(phi, wires):
-        return [
-            qml.Hadamard(wires=[wires[0]]),
-            qml.CY(wires=wires),
-            qml.RY(phi / 2, wires=[wires[0]]),
-            qml.RX(-phi / 2, wires=[wires[1]]),
-            qml.CY(wires=wires),
-            qml.Hadamard(wires=[wires[0]]),
-        ]
+    def compute_matrix(phi_0, phi_1):
+        if qml.math.get_interface(phi_0) == "tensorflow":
+            phi_0 = qml.math.cast_like(phi_0, 1j)
+        if qml.math.get_interface(phi_1) == "tensorflow":
+            phi_1 = qml.math.cast_like(phi_1, 1j)
 
-    @classmethod
-    def _matrix(cls, *params):
-        phi = params[0]
-        cos = np.cos(phi / 2)
-        isin = 1.0j * np.sin(phi / 2)
         return np.array(
             [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, cos, isin, 0.0],
-                [0.0, isin, cos, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            dtype=complex,
-        )
+                [1, 0, 0, -1j * np.exp(-1j * (phi_0 + phi_1))],
+                [0, 1, -1j * np.exp(-1j * (phi_0 - phi_1)), 0],
+                [0, -1j * np.exp(1j * (phi_0 - phi_1)), 1, 0],
+                [-1j * np.exp(1j * (phi_0 + phi_1)), 0, 0, 1],
+            ]
+        ) / np.sqrt(2)
 
-
-class YY(Operation):
-    r""" YY(phi, wires)
-
-    Ising YY coupling gate: https://arxiv.org/abs/1707.06356
-
-    .. math:: \mathtt{YY}(\phi) = \begin{bmatrix}
-            \cos(\phi / 2) & 0 & 0 & i \sin(\phi / 2) \\
-            0 & \cos(\phi / 2) & -i \sin(\phi / 2) & 0 \\
-            0 & -i \sin(\phi / 2) & \cos(\phi / 2) & 0 \\
-            i \sin(\phi / 2) & 0 & 0 & \cos(\phi / 2)
-        \end{bmatrix}.
-
-    **Details:**
-
-    * Number of wires: 2
-    * Number of parameters: 1
-    * Gradient recipe:
-
-    .. math::
-        \frac{d}{d \phi} \mathtt{YY}(\phi)
-        = \frac{1}{2} \left[ \mathtt{YY}(\phi + \pi / 2) - \mathtt{YY}(\phi - \pi / 2) \right]
-
-    Args:
-        phi (float): the phase angle
-        wires (int): the subsystem the gate acts on
-    """
-    num_params = 1
-    num_wires = 2
-    par_domain = "R"
-    grad_method = "A"
-
-    @staticmethod
-    def decomposition(phi, wires):
-        return [
-            qml.CY(wires=wires),
-            qml.RY(phi, wires=[wires[0]]),
-            qml.CY(wires=wires),
-        ]
-
-    @classmethod
-    def _matrix(cls, *params):
-        phi = params[0]
-        cos = np.cos(phi / 2)
-        isin = 1.0j * np.sin(phi / 2)
-        return np.array(
-            [
-                [cos, 0.0, 0.0, isin],
-                [0.0, cos, -isin, 0.0],
-                [0.0, -isin, cos, 0.0],
-                [isin, 0.0, 0.0, cos],
-            ],
-            dtype=complex,
-        )
+    def adjoint(self):
+        (phi_0, phi_1) = self.parameters
+        return MS(phi_0 + np.pi, phi_1, wires=self.wires)

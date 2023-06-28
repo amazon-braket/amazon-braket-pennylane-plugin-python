@@ -20,17 +20,28 @@ away in PennyLane, without the need to import any additional packages.
 Devices
 ~~~~~~~
 
-This plugin provides two Braket devices for use with PennyLane:
+This plugin provides four Braket devices for use with PennyLane - two supporting gate-based computations,
+and two supporting analog Hamiltonian simulation (AHS):
 
-.. devicegalleryitem::
+.. title-card::
     :name: 'braket.aws.qubit'
-    :description: Runs circuits on the remote Amazon Braket service.
+    :description: Runs gate-based circuits on the remote Amazon Braket service.
     :link: devices/braket_remote.html
 
-.. devicegalleryitem::
+.. title-card::
     :name: 'braket.local.qubit'
-    :description: Runs circuits on the Braket SDK's local simulator.
+    :description: Runs gate-based circuits on the Braket SDK's local simulator.
     :link: devices/braket_local.html
+
+.. title-card::
+    :name: 'braket.aws.ahs'
+    :description: Runs AHS on the remote Amazon Braket service.
+    :link: devices/ahs_remote.html
+
+.. title-card::
+    :name: 'braket.local.ahs'
+    :description: Runs AHS on the Braket SDK's local simulator.
+    :link: devices/ahs_local.html
 
 .. raw:: html
 
@@ -69,6 +80,8 @@ and the `Amazon Braket <https://github.com/aws/amazon-braket-examples>`_ example
 
    devices/braket_remote
    devices/braket_local
+   devices/ahs_local
+   devices/ahs_remote
 
 .. toctree::
    :maxdepth: 1

@@ -18,23 +18,36 @@ from unittest.mock import patch
 import numpy as np
 import pennylane as qml
 import pytest
+import scipy
+import tensorflow as tf
 from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
+from numpy import float64
 
-from braket.pennylane_plugin import PSWAP, XY, YY, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin.ops import MS, GPi, GPi2
+
+gates_1q_parametrized = [
+    (GPi, gates.GPi),
+    (GPi2, gates.GPi2),
+]
 
 gates_2q_parametrized = [
     (CPhaseShift00, gates.CPhaseShift00),
     (CPhaseShift01, gates.CPhaseShift01),
     (CPhaseShift10, gates.CPhaseShift10),
     (PSWAP, gates.PSwap),
-    (XY, gates.XY),
-    (YY, gates.YY),
 ]
 
+gates_2q_2p_parametrized = [
+    (MS, gates.MS),
+]
+
+gates_2q_non_parametrized = []  # Empty... For now!
+
 observables_1q = [
-    obs._matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
+    obs.compute_matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
 ]
 observables_2q = [
     np.kron(obs1, obs2) for obs1, obs2 in itertools.product(observables_1q, observables_1q)
@@ -45,8 +58,48 @@ observables_2q = [
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_ops_parametrized(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
-    assert np.allclose(pl_op._matrix(angle), braket_gate(angle).to_matrix())
-    _assert_decomposition(pl_op, [angle])
+    assert np.allclose(pl_op.compute_matrix(angle), braket_gate(angle).to_matrix())
+    _assert_decomposition(pl_op, params=[angle])
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize(
+    "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
+)
+def test_ops_parametrized_tf(pl_op, braket_gate, angle):
+    """Tests that the matrices and decompositions of parametrized custom operations
+    are correct using tensorflow interface.
+    """
+    pl_op.compute_matrix(angle)
+    _assert_decomposition(pl_op, params=[angle])
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_1q_parametrized + gates_2q_2p_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle):
+    """Tests that the matrices and decompositions of parametrized custom operations are correct."""
+    angles = [angle] * pl_op.num_params
+    assert np.allclose(pl_op.compute_matrix(*angles), braket_gate(*angles).to_matrix())
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_1q_parametrized + gates_2q_2p_parametrized)
+@pytest.mark.parametrize(
+    "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
+)
+def test_ops_parametrized_tf_no_decomposition(pl_op, braket_gate, angle):
+    """Tests that the matrices and decompositions of parametrized custom operations
+    are correct using tensorflow interface.
+    """
+    pl_op.compute_matrix(*[angle] * pl_op.num_params)
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
+def test_ops_non_parametrized(pl_op, braket_gate):
+    """Tests that the matrices and decompositions of non-parametrized custom operations are
+    correct.
+    """
+    assert np.allclose(pl_op.compute_matrix(), braket_gate().to_matrix())
+    _assert_decomposition(pl_op)
 
 
 @patch("braket.pennylane_plugin.ops.np", new=anp)
@@ -55,16 +108,25 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
 @pytest.mark.parametrize("observable", observables_2q)
 def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     """Tests that the parameter-shift rules of custom operations yield the correct derivatives."""
+    wires = range(pl_op.num_wires)
+    op = pl_op(angle, wires=wires)
+    if op.grad_recipe[0]:
+        shifts = op.grad_recipe[0]
+    else:
+        orig_shifts = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
+        shifts = [[c, 1, s] for c, s in orig_shifts]
+
     summands = []
-    for shift in pl_op(angle, wires=[0, 1]).get_parameter_shift(0):
-        shifted = pl_op._matrix(angle + shift[2])
+    for shift in shifts:
+        shifted = pl_op.compute_matrix(angle + shift[2])
         summands.append(
             shift[0] * np.matmul(np.matmul(np.transpose(np.conj(shifted)), observable), shifted)
         )
+
     from_shifts = sum(summands)
 
     def conj_obs_gate(angle):
-        mat = pl_op._matrix(angle)
+        mat = pl_op.compute_matrix(angle)
         return anp.matmul(anp.matmul(anp.transpose(anp.conj(mat)), observable), mat)
 
     direct_calculation = deriv(conj_obs_gate)(angle)
@@ -72,9 +134,9 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     assert np.allclose(from_shifts, direct_calculation)
 
 
-def _assert_decomposition(pl_op, params):
+def _assert_decomposition(pl_op, params=None):
     num_wires = pl_op.num_wires
-    dimension = 2 ** num_wires
+    dimension = 2**num_wires
     num_indices = 2 * num_wires
     wires = list(range(num_wires))
 
@@ -84,8 +146,16 @@ def _assert_decomposition(pl_op, params):
     ]
     index_substitutions = {i: i + num_wires for i in range(num_wires)}
     next_index = num_indices
+
+    # get decomposed gates
+    decomposed_op = (
+        pl_op.compute_decomposition(*params, wires=wires)
+        if params
+        else pl_op.compute_decomposition(wires=wires)
+    )
+
     # Heterogeneous matrix chain multiplication using tensor contraction
-    for gate in reversed(pl_op.decomposition(*params, wires=wires)):
+    for gate in reversed(decomposed_op):
         gate_wires = gate.wires.tolist()
 
         # Upper indices, which will be traced out
@@ -95,8 +165,8 @@ def _assert_decomposition(pl_op, params):
         covariant = list(range(next_index, next_index + len(gate_wires)))
 
         indices = contravariant + covariant
-        # `gate.matrix` as type-(len(contravariant), len(covariant)) tensor
-        gate_tensor = np.reshape(gate.matrix, [2] * len(indices))
+        # `qml.matrix(gate)` as type-(len(contravariant), len(covariant)) tensor
+        gate_tensor = np.reshape(qml.matrix(gate), [2] * len(indices))
 
         contraction_parameters += [gate_tensor, indices]
         next_index += len(gate_wires)
@@ -107,4 +177,38 @@ def _assert_decomposition(pl_op, params):
     contraction_parameters.append(new_indices)
 
     actual_matrix = np.reshape(np.einsum(*contraction_parameters), [dimension, dimension])
-    assert np.allclose(actual_matrix, pl_op._matrix(*params))
+    pl_op_matrix = pl_op.compute_matrix(*params) if params else pl_op.compute_matrix()
+
+    assert np.allclose(actual_matrix, pl_op_matrix)
+
+
+@pytest.mark.parametrize(
+    "pl_op, braket_gate", gates_1q_parametrized + gates_2q_parametrized + gates_2q_2p_parametrized
+)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_gate_adjoint_parametrized(pl_op, braket_gate, angle):
+    num_wires = pl_op.num_wires
+    angles = [angle] * pl_op.num_params
+    op = pl_op(*angles, wires=range(num_wires))
+    assert np.allclose(
+        np.dot(pl_op.compute_matrix(*angles), qml.matrix(pl_op.adjoint(op))),
+        np.identity(2**num_wires),
+    )
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
+def test_gate_adjoint_non_parametrized(pl_op, braket_gate):
+    op = pl_op(wires=[0, 1])
+    assert np.allclose(
+        np.dot(pl_op.compute_matrix(), qml.matrix(pl_op.adjoint(op))), np.identity(4)
+    )
+
+
+@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
+def test_gate_generator(pl_op, braket_gate, angle):
+    op = pl_op(angle, wires=[0, 1])
+    if op.name != "PSWAP":
+        assert np.allclose(
+            qml.matrix(op), scipy.linalg.expm(1j * angle * qml.matrix(op.generator()))
+        )

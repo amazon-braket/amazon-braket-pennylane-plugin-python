@@ -1,5 +1,342 @@
 # Changelog
 
+## v1.16.1 (2023-06-08)
+
+### Bug Fixes and Other Changes
+
+ * Lower shot count on shadow_expval integ test so it can finish
+
+## v1.16.0 (2023-05-30)
+
+### Features
+
+ * implement support for classical shadows and computing expectation values with them
+
+### Bug Fixes and Other Changes
+
+ * temporarily disabling integ test.
+ * Update expval validation
+
+## v1.15.3 (2023-05-24)
+
+### Bug Fixes and Other Changes
+
+ * docs: add a linter to check proper rst formatting and fix up incorrect docs
+
+## v1.15.2.post0 (2023-05-22)
+
+### Testing and Release Infrastructure
+
+ * twine check action
+
+## v1.15.2 (2023-05-15)
+
+### Bug Fixes and Other Changes
+
+ * update the project name for coverage runs and clean the tox env
+
+## v1.15.1 (2023-05-09)
+
+### Bug Fixes and Other Changes
+
+ * Adjoint gradient active return compatibility
+
+## v1.15.0.post0 (2023-05-02)
+
+### Documentation Changes
+
+ * Correct README format for PyPI
+
+## v1.15.0 (2023-05-02)
+
+### Features
+
+ * Add AHS devices
+
+### Bug Fixes and Other Changes
+
+ * Tempfix for failing tests
+ * Postprocess jacobian result shape
+
+## v1.14.1 (2023-04-26)
+
+### Bug Fixes and Other Changes
+
+ * test: parallelize test execution for pytest
+
+## v1.14.0 (2023-04-25)
+
+### Features
+
+ * add Python 3.11 support
+
+## v1.13.1 (2023-03-16)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #144 from aws/readme-updates
+ * documenation: Update README support info
+
+### Testing and Release Infrastructure
+
+ * add dependabot updates for GH actions
+
+## v1.13.0 (2023-03-08)
+
+### Features
+
+ * Add support for Pennylane 0.29.1
+
+## v1.12.2 (2023-03-07)
+
+### Bug Fixes and Other Changes
+
+ * Only include trainable parameters in input
+
+### Documentation Changes
+
+ * Correct supported operations
+
+## v1.12.1 (2023-03-06)
+
+### Bug Fixes and Other Changes
+
+ * pin autoray
+
+## v1.12.0 (2023-03-03)
+
+### Deprecations and Removals
+
+ * deprecate python 3.7
+
+### Bug Fixes and Other Changes
+
+ * Add support for new custom measurements
+ * Remove use of in-place inversion. Replace it with `qml.adjoint`.
+
+## v1.11.2.post0 (2023-02-14)
+
+### Testing and Release Infrastructure
+
+ * update github workflows for node12 retirement
+
+## v1.11.2 (2023-02-11)
+
+### Bug Fixes and Other Changes
+
+ * `shots=0` measurements with trainable params
+
+## v1.11.1 (2023-02-09)
+
+### Bug Fixes and Other Changes
+
+ * update: adding build for python 3.10
+ * Merge branch 'main' into test310
+ * testing python 3.10
+
+## v1.11.0 (2023-02-01)
+
+### Features
+
+ * Braket noise model for density matrix simulators
+
+## v1.10.4 (2023-01-03)
+
+### Bug Fixes and Other Changes
+
+ * Cap pennylane version at v0.27
+
+### Testing and Release Infrastructure
+
+ * Use the new Pennylane Sphinx Theme
+
+## v1.10.3 (2022-12-13)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #120 from aws/qaoa_bug_fix
+ * fixing linters
+ * removed qaoa integ test since it won't build on windows
+ * integrated with pl's device.use_grouping to fix a bug with qaoa creating multiple observables
+
+## v1.10.2 (2022-12-08)
+
+### Bug Fixes and Other Changes
+
+ * Only support adjoint gradient if shots=0
+
+## v1.10.1 (2022-12-07)
+
+### Bug Fixes and Other Changes
+
+ * Workaround for np.tensor around observable
+
+## v1.10.0 (2022-12-07)
+
+### Features
+
+ * adjoint gradient
+
+### Bug Fixes and Other Changes
+
+ * remove env variable from integ tests
+
+## v1.9.0 (2022-09-21)
+
+### Features
+
+ * add identity operation
+
+## v1.8.0 (2022-09-16)
+
+### Features
+
+ * IonQ native gates
+
+## v1.7.0 (2022-08-30)
+
+### Features
+
+ * use OpenQASM for device property validation
+
+## v1.6.9 (2022-07-01)
+
+### Bug Fixes and Other Changes
+
+ * Add user agent for Braket interactions
+
+## v1.6.8 (2022-06-22)
+
+### Bug Fixes and Other Changes
+
+ * Update for PennyLane 0.24
+
+### Testing and Release Infrastructure
+
+ * Fix integ test imports
+
+## v1.6.7 (2022-06-09)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #100 from aws/grad_update
+ * Update deprecated imports for version 0.23
+
+## v1.6.6 (2022-04-26)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #97 from aws/obs_types
+ * pinning doc req to the same version as the build.
+ * removing pinning from doc requirement.
+ * updating pennylane req for docs.
+
+## v1.6.5 (2022-04-20)
+
+### Bug Fixes and Other Changes
+
+ * unit test for ECR gate
+
+## v1.6.4 (2022-04-18)
+
+### Bug Fixes and Other Changes
+
+ * update: fix ECR definition
+
+## v1.6.3 (2022-04-06)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #92 from antalszava/remove_qhack
+ * Merge branch 'main' into remove_qhack
+ * Merge branch 'main' into remove_qhack
+ * Merge branch 'main' into remove_qhack
+
+## v1.6.2 (2022-03-28)
+
+### Bug Fixes and Other Changes
+
+ * pennylane 0.22 breaking changes
+
+## v1.6.1 (2022-03-24)
+
+### Bug Fixes and Other Changes
+
+ * integ tests for TF, Torch for PL>0.20
+
+## v1.6.0 (2022-03-17)
+
+### Features
+
+ * add ECR gate
+
+## v1.5.7 (2022-03-14)
+
+### Bug Fixes and Other Changes
+
+ * Pin pennylane version
+
+## v1.5.6 (2022-02-15)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #86 from aws/remove-pl-bucket
+ * make s3_bucket optional
+
+## v1.5.5 (2022-02-09)
+
+### Bug Fixes and Other Changes
+
+ * Fix device tracker integ test for PennyLane 0.21
+ * Merge branch 'main' into braket-tracker
+ * Merge pull request #85 from aws/update-format
+ * fix formatting
+ * Add check for older PL using batches differently
+ * Merge branch 'main' into braket-tracker
+
+## v1.5.4 (2022-01-28)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #79 from aws/braket-tracker
+ * Merge branch 'main' into braket-tracker
+ * Add comment on which devices run tracking test
+ * Remove extra print statements
+
+## v1.5.3 (2021-12-16)
+
+### Bug Fixes and Other Changes
+
+ * integ tests for PL-0.20
+
+## v1.5.2 (2021-09-30)
+
+### Bug Fixes and Other Changes
+
+ * remove minified version of jquery and bootstrap
+
+## v1.5.1 (2021-09-27)
+
+### Bug Fixes and Other Changes
+
+ * Merge pull request #75 from albi3ro/add-tracker
+ * Merge branch 'main' into add-tracker
+ * fix format errors
+ * Update test/unit_tests/test_braket_device.py
+
+## v1.5.0 (2021-09-24)
+
+### Features
+
+ * Support for Hamiltonians
+
+## v1.4.2 (2021-09-03)
+
+### Bug Fixes and Other Changes
+
+ * Remove YY gate import from integ tests
+ * Add IsingYY support
+
 ## v1.4.1 (2021-08-06)
 
 ### Bug Fixes and Other Changes

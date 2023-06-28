@@ -17,14 +17,14 @@ import os
 import re
 import sys
 
+from pennylane_sphinx_theme import templates_dir
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("_ext"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
-
-from directives import CustomDeviceGalleryItemDirective  # noqa: E402
 
 # -- General configuration ------------------------------------------------
 
@@ -54,7 +54,8 @@ automodsumm_inherited_members = True
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates", "xanadu_theme"]
+
+templates_path = [templates_dir()]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -138,7 +139,7 @@ todo_include_todos = True
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "_static/favicon.ico"
+# html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -172,14 +173,6 @@ html_static_path = ["_static"]
 #        'donate.html',
 #    ]
 # }
-html_sidebars = {
-    "**": [
-        "logo-text.html",
-        "searchbox.html",
-        "globaltoc.html",
-        # 'sourcelink.html'
-    ]
-}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -231,7 +224,7 @@ html_sidebars = {
 htmlhelp_basename = "AmazonBraketPennyLanePlugindoc"
 
 # # -- Xanadu theme ---------------------------------------------------------
-html_theme = "xanadu_theme"
+html_theme = "pennylane"
 html_theme_path = ["."]
 
 # Register the theme as an extension to generate a sitemap.xml
@@ -348,7 +341,3 @@ inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
 
 # autodoc_default_flags = ['members']
 autosummary_generate = True
-
-
-def setup(app):
-    app.add_directive("devicegalleryitem", CustomDeviceGalleryItemDirective)

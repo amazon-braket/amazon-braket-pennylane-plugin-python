@@ -1,7 +1,7 @@
 The remote Braket device
 ========================
 
-The remote device of the PennyLane-Braket plugin runs quantum computations on Amazon Braket's remote service.
+The remote qubit device of the PennyLane-Braket plugin runs gate-based quantum computations on Amazon Braket's remote service.
 The remote service provides access to hardware providers and a high-performance simulator backend.
 
 A list of available quantum devices and their features can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
@@ -79,26 +79,32 @@ ARN points to a QPU, analytic mode is not available and an error will be raised.
 Supported operations
 ~~~~~~~~~~~~~~~~~~~~
 
-The device supports all PennyLane `operations and observables <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_.
+The operations supported by this device vary based on the operations supported by the underlying Braket device. To check
+the device's supported operations, run
 
-The PennyLane-Braket plugin provides the following framework-specific operations for PennyLane, which can be imported
+.. code-block:: python
+
+    dev.operations
+
+In addition to those `provided by PennyLane <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_,
+the PennyLane-Braket plugin provides the following framework-specific operations, which can be imported
 from :mod:`braket.pennylane_plugin.ops <.ops>`:
 
 .. autosummary::
-    braket.pennylane_plugin.CPhaseShift
     braket.pennylane_plugin.CPhaseShift00
     braket.pennylane_plugin.CPhaseShift01
     braket.pennylane_plugin.CPhaseShift10
-    braket.pennylane_plugin.ISWAP
     braket.pennylane_plugin.PSWAP
-    braket.pennylane_plugin.XY
-    braket.pennylane_plugin.XX
-    braket.pennylane_plugin.YY
-    braket.pennylane_plugin.ZZ
-    braket.pennylane_plugin.AmplitudeDamping
-    braket.pennylane_plugin.GeneralizedAmplitudeDamping
-    braket.pennylane_plugin.PhaseDamping
-    braket.pennylane_plugin.DepolarizingChannel
-    braket.pennylane_plugin.BitFlip
-    braket.pennylane_plugin.PhaseFlip
-    braket.pennylane_plugin.QubitChannel
+    braket.pennylane_plugin.GPi
+    braket.pennylane_plugin.GPi2
+    braket.pennylane_plugin.MS
+
+
+Gradient computation on Braket with a QAOA Hamiltonian
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Currently, PennyLane will compute grouping indices for QAOA Hamiltonians and use them to split the Hamiltonian into multiple expectation values. If you wish to use `SV1’s adjoint differentiation capability<https://docs.aws.amazon.com/braket/latest/developerguide/hybrid.html>` when running QAOA from PennyLane, you will need reconstruct the cost Hamiltonian to remove the grouping indices from the cost Hamiltonian, like so:
+
+.. code-block:: python
+
+    cost_h, mixer_h = qml.qaoa.max_clique(g, constrained=False)
+    cost_h = qml.Hamiltonian(cost_h.coeffs, cost_h.ops)
