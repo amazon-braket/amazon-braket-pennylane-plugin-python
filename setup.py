@@ -34,11 +34,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        # "amazon-braket-sdk>=1.35.0",
-        (
-            "amazon-braket-sdk @ "
-            "git+https://github.com/aws/amazon-braket-sdk-python@arbitrary-angle-ms"
-        ),
+        "amazon-braket-sdk>=1.47.0",
         "pennylane==0.30.0",
     ],
     entry_points={
