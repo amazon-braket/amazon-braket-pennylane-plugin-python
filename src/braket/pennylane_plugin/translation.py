@@ -435,7 +435,6 @@ def _(op: ParametrizedEvolution, _parameters, device):
     time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
 
     pulse_sequence = PulseSequence().barrier(frames.values())
-    max_amplitude = device._device.properties.pulse.validationParameters["MAX_AMPLITUDE"]
 
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
@@ -446,12 +445,10 @@ def _(op: ParametrizedEvolution, _parameters, device):
             amplitudes = onp.array(
                 [amplitude(t) for t in np.arange(start, end + time_step, time_step)]
             )
-            amplitudes = amplitudes / onp.amax(amplitudes) * max_amplitude
+
             waveform = ArbitraryWaveform(amplitudes)
 
         else:
-            # Normalize amplitude to `max_amplitude` if constant
-            amplitude = max_amplitude
             waveform = ConstantWaveform(pulse_length, amplitude)
 
         # Play pulse for each frame
