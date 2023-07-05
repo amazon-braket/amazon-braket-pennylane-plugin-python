@@ -434,7 +434,7 @@ def _(op: ParametrizedEvolution, _parameters, device):
     frames = {w: device._device.frames[f"q{w}_drive"] for w in mapped_wires}
     time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
 
-    pulse_sequence = PulseSequence().barrier(frames.values())
+    pulse_sequence = PulseSequence().barrier(list(frames.values()))
 
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
@@ -459,8 +459,8 @@ def _(op: ParametrizedEvolution, _parameters, device):
                 .play(frames[w], waveform)
             )
 
-    pulse_sequence = pulse_sequence.barrier(frames.values())
-    return gates.PulseGate(pulse_sequence, num_qubits=len(op_wires))
+    pulse_sequence = pulse_sequence.barrier(list(frames.values()))
+    return gates.PulseGate(pulse_sequence, qubit_count=len(device.wires))
 
 
 def get_adjoint_gradient_result_type(
