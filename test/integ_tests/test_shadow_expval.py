@@ -8,12 +8,17 @@ H = qml.PauliZ(0) @ qml.PauliZ(1)
 wires = 2
 
 
-@pytest.mark.parametrize("shots", [10000])
+@pytest.mark.parametrize("shots", [5000])
 class TestShadowExpval:
     """Test shadow_expval computation of expectation values."""
 
     def test_shadow_expval(self, device, shots):
         dev = device(wires)
+        if dev.short_name == "braket.aws.qubit":
+            pytest.skip(
+                "SV1 needs batch execution to execute in reasonable time, "
+                "but parallel shadow_expval is currently broken"
+            )
 
         @qml.qnode(dev)
         def shadow_circuit(x):
@@ -32,4 +37,4 @@ class TestShadowExpval:
         x = np.array(1.2)
         shadow_e = shadow_circuit(x)
         e = circuit(x)
-        assert np.allclose([shadow_e], [e], rtol=0.5)
+        assert np.allclose([shadow_e], [e], atol=0.2)

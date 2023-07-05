@@ -37,6 +37,7 @@ from pennylane.ops import Adjoint
 from pennylane.pulse import ParametrizedEvolution
 
 from braket.pennylane_plugin.ops import (
+    AAMS,
     MS,
     PSWAP,
     CPhaseShift00,
@@ -89,7 +90,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "ecr": "ECR",
     "gpi": "GPi",
     "gpi2": "GPi2",
-    "ms": "MS",
+    "ms": "AAMS",
 }
 
 
@@ -109,19 +110,21 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
     supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
 
-    op_set = frozenset(
+    translated = frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
         if op.lower() in supported_ops or f"braket_noise_{op.lower()}" in supported_pragmas
     )
+    # both AAMS and MS map to ms
+    if "AAMS" in translated:
+        translated |= {"MS"}
 
     if (
         isinstance(device, AwsDevice)
         and device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy"
     ):
-        op_set = op_set.union({"ParametrizedEvolution"})
-
-    return op_set
+        translated |= {"ParametrizedEvolution"}
+    return translated
 
 
 def translate_operation(
@@ -409,7 +412,7 @@ def _(adjoint: Adjoint, parameters, _device):
     if isinstance(adjoint.base, qml.ISWAP):
         # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
-    base = _translate_operation(adjoint.base, parameters, _device)
+    base = _translate_operation(adjoint.base, parameters)
     if len(base.adjoint()) > 1:
         raise NotImplementedError(
             f"The adjoint of the Braket operation {base} contains more than one operation."

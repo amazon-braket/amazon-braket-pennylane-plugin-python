@@ -1,22 +1,22 @@
 import json
+from typing import Any, Dict, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
-from typing import Any, Dict, Optional
+import braket.ir as ir
 import pennylane as qml
 import pytest
-import braket.ir as ir
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
 from braket.device_schema import DeviceActionType
 from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
-from braket.simulator import BraketSimulator
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
+from braket.simulator import BraketSimulator
 from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
-from pennylane.tape import QuantumScript, QuantumTape
 from pennylane.measurements import MeasurementTransform
+from pennylane.tape import QuantumScript, QuantumTape
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
