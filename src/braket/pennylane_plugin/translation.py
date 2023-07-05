@@ -408,6 +408,12 @@ def _(ms: MS, parameters, _device):
 
 
 @_translate_operation.register
+def _(ms: AAMS, parameters, _device):
+    phi_0, phi_1, theta = parameters[:3]
+    return gates.MS(phi_0, phi_1, theta)
+
+
+@_translate_operation.register
 def _(adjoint: Adjoint, parameters, _device):
     if isinstance(adjoint.base, qml.ISWAP):
         # gates.ISwap.adjoint() returns a different value
