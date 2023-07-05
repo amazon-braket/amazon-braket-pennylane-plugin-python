@@ -762,7 +762,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         }
 
     @property
-    def settings(self):
+    def pulse_settings(self):
         """Dictionary of constants set by the hardware (qubit resonant frequencies,
         inter-qubit connection graph, wires and anharmonicities).
 

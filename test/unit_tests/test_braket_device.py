@@ -2091,7 +2091,7 @@ class TestPulseFunctionality:
 
         dev._device._properties = DummyProperties()
 
-        settings = dev.settings
+        settings = dev.pulse_settings
         assert settings["connections"] == [
             (0, 1),
             (0, 7),
