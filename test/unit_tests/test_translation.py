@@ -39,7 +39,13 @@ from pennylane.measurements import ObservableReturnTypes
 from pennylane.pulse import ParametrizedEvolution, transmon_drive
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import BraketAwsQubitDevice, PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
+from braket.pennylane_plugin import (
+    PSWAP,
+    BraketAwsQubitDevice,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+)
 from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
