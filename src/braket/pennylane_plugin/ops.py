@@ -410,7 +410,7 @@ class MS(Operation):
     IonQ native Mølmer-Sørenson gate.
 
 
-    .. math:: \mathtt{MS}(\phi_0, \phi_1) = \begin{bmatrix}
+    .. math:: \mathtt{MS}(\phi_0, \phi_1) = \frac{1}{\sqrt{2}}\begin{bmatrix}
             1 & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)} \\
             0 & 1 & -ie^{-i (\phi_0 - \phi_1)} & 0 \\
             0 & -ie^{i (\phi_0 - \phi_1)} & 1 & 0 \\
@@ -456,3 +456,60 @@ class MS(Operation):
     def adjoint(self):
         (phi_0, phi_1) = self.parameters
         return MS(phi_0 + np.pi, phi_1, wires=self.wires)
+
+
+class AAMS(Operation):
+    r""" AAMS(phi_0, phi_1, theta, wires)
+
+    IonQ native Arbitrary-Angle Mølmer-Sørenson gate.
+
+
+    .. math:: \mathtt{MS}(\phi_0, \phi_1, \theta) = \begin{bmatrix}
+            \cos{\frac{\theta}{2}} & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)}\sin{\frac{\theta}{2}} \\
+            0 & \cos{\frac{\theta}{2}} & -ie^{-i (\phi_0 - \phi_1)}\sin{\frac{\theta}{2}} & 0 \\
+            0 & -ie^{i (\phi_0 - \phi_1)}\sin{\frac{\theta}{2}} & \cos{\frac{\theta}{2}} & 0 \\
+            -ie^{i (\phi_0 + \phi_1)}\sin{\frac{\theta}{2}} & 0 & 0 & \cos{\frac{\theta}{2}}
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 2
+    * Number of parameters: 2
+
+    Args:
+        phi_0 (float): the first phase angle
+        phi_1 (float): the second phase angle
+        theta (float): the entangling angle
+        wires (int): the subsystem the gate acts on
+        do_queue (bool): Indicates whether the operator should be
+            immediately pushed into the Operator queue (optional)
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 3
+    num_wires = 2
+    grad_method = "F"
+
+    def __init__(self, phi_0, phi_1, theta, wires, do_queue=True, id=None):
+        super().__init__(phi_0, phi_1, theta, wires=wires, do_queue=do_queue, id=id)
+
+    @staticmethod
+    def compute_matrix(phi_0, phi_1, theta):
+        if qml.math.get_interface(phi_0) == "tensorflow":
+            phi_0 = qml.math.cast_like(phi_0, 1j)
+        if qml.math.get_interface(phi_1) == "tensorflow":
+            phi_1 = qml.math.cast_like(phi_1, 1j)
+        if qml.math.get_interface(theta) == "tensorflow":
+            theta = qml.math.cast_like(theta, 1j)
+
+        return np.array(
+            [
+                [np.cos(theta / 2), 0, 0, -1j * np.exp(-1j * (phi_0 + phi_1)) * np.sin(theta / 2)],
+                [0, np.cos(theta / 2), -1j * np.exp(-1j * (phi_0 - phi_1)) * np.sin(theta / 2), 0],
+                [0, -1j * np.exp(1j * (phi_0 - phi_1)) * np.sin(theta / 2), np.cos(theta / 2), 0],
+                [-1j * np.exp(1j * (phi_0 + phi_1)) * np.sin(theta / 2), 0, 0, np.cos(theta / 2)],
+            ]
+        )
+
+    def adjoint(self):
+        (phi_0, phi_1, theta) = self.parameters
+        return AAMS(phi_0 + np.pi, phi_1, theta, wires=self.wires)
