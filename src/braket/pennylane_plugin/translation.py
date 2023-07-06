@@ -408,6 +408,12 @@ def _(ms: MS, parameters, _device):
 
 
 @_translate_operation.register
+def _(ms: AAMS, parameters, _device):
+    phi_0, phi_1, theta = parameters[:3]
+    return gates.MS(phi_0, phi_1, theta)
+
+
+@_translate_operation.register
 def _(adjoint: Adjoint, parameters, _device):
     if isinstance(adjoint.base, qml.ISWAP):
         # gates.ISwap.adjoint() returns a different value
@@ -434,7 +440,7 @@ def _(op: ParametrizedEvolution, _parameters, device):
     frames = {w: device._device.frames[f"q{w}_drive"] for w in mapped_wires}
     time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
 
-    pulse_sequence = PulseSequence().barrier(frames.values())
+    pulse_sequence = PulseSequence().barrier(list(frames.values()))
 
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
@@ -459,8 +465,8 @@ def _(op: ParametrizedEvolution, _parameters, device):
                 .play(frames[w], waveform)
             )
 
-    pulse_sequence = pulse_sequence.barrier(frames.values())
-    return gates.PulseGate(pulse_sequence, num_qubits=len(op_wires))
+    pulse_sequence = pulse_sequence.barrier(list(frames.values()))
+    return gates.PulseGate(pulse_sequence, qubit_count=len(device.wires))
 
 
 def get_adjoint_gradient_result_type(
