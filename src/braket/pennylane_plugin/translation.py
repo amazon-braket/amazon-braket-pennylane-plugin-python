@@ -15,6 +15,7 @@ from functools import reduce, singledispatch
 from typing import Any, FrozenSet, List, Optional, Tuple, Union
 
 import pennylane as qml
+from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
     AdjointGradient,
@@ -105,6 +106,7 @@ def supported_operations(device: Device) -> FrozenSet[str]:
         raise AttributeError("Device needs to have properties defined.")
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
     supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
+
     translated = frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
@@ -113,6 +115,12 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     # both AAMS and MS map to ms
     if "AAMS" in translated:
         translated |= {"MS"}
+
+    if (
+        isinstance(device, AwsDevice)
+        and device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy"
+    ):
+        translated |= {"ParametrizedEvolution"}
     return translated
 
 

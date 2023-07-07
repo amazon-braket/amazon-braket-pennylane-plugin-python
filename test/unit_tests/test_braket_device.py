@@ -643,11 +643,11 @@ def test_execute_tracker(mock_run):
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
-def _noop(*args, **kwargs):
-    return None
+def _aws_device_mock_init(self, arn, aws_session):
+    self._arn = arn
 
 
-@patch.object(AwsDevice, "__init__", _noop)
+@patch.object(AwsDevice, "__init__", _aws_device_mock_init)
 @patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties")
@@ -936,6 +936,11 @@ def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
     braket_circuit = dev._pl_to_braket_circuit(tape)
 
     assert braket_circuit_true == braket_circuit
+
+
+def test_parametrized_evolution_in_oqc_lucy_supported_ops():
+    dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+    assert "ParametrizedEvolution" in dev.operations
 
 
 def test_bad_statistics():
@@ -1761,7 +1766,7 @@ class DummyCircuitSimulator(BraketSimulator):
         return GateModelSimulatorDeviceCapabilities.parse_obj(input_json)
 
 
-@patch.object(AwsDevice, "__init__", _noop)
+@patch.object(AwsDevice, "__init__", _aws_device_mock_init)
 @patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties")
@@ -1790,11 +1795,11 @@ def _aws_device(
         **kwargs,
     )
     # needed by the BraketAwsQubitDevice.capabilities function
-    dev._device._arn = device_arn
+    # dev._device._arn = device_arn
     return dev
 
 
-@patch.object(AwsDevice, "__init__", _noop)
+@patch.object(AwsDevice, "__init__", _aws_device_mock_init)
 @patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties")
 def _bad_aws_device(properties_mock, session_mock, wires, **kwargs):
