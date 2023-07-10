@@ -32,6 +32,10 @@ from braket.circuits.result_types import (
 )
 from braket.circuits.serialization import IRType
 from braket.device_schema import DeviceActionType, OpenQASMDeviceActionProperties
+from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
+    GateModelQpuParadigmProperties,
+)
+from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
 from braket.pulse import ArbitraryWaveform, ConstantWaveform
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as pnp
@@ -59,6 +63,8 @@ from braket.pennylane_plugin.translation import (
 
 def mock_aws_init(self, arn, aws_session):
     self._arn = arn
+    self._frames = None
+    self._ports = None
 
 
 ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
@@ -384,45 +390,155 @@ def test_translate_operation_with_unique_params(
         )
 
 
-def test_translate_operation_parametrized_evolution():
-    """Test that a ParametrizedEvolution is translated to a PulseGate correctly."""
+OQC_PULSE_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.pulse.pulse_device_action_properties",
+            "version": "1",
+        },
+        "supportedQhpTemplateWaveforms": {},
+        "ports": {
+            "channel_15": {
+                "portId": "channel_15",
+                "direction": "tx",
+                "portType": "port_type_1",
+                "dt": 5e-10,
+            },
+        },
+        "supportedFunctions": {},
+        "frames": {
+            "q0_drive": {
+                "frameId": "q0_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q0_second_state": {
+                "frameId": "q0_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+        },
+        "supportsLocalPulseElements": False,
+        "supportsDynamicFrames": True,
+        "supportsNonNativeGatesWithPulses": True,
+        "validationParameters": {
+            "MAX_SCALE": 1.0,
+            "MAX_AMPLITUDE": 1.0,
+            "PERMITTED_FREQUENCY_DIFFERENCE": 1.0,
+            "MIN_PULSE_LENGTH": 8e-09,
+            "MAX_PULSE_LENGTH": 0.00012,
+        },
+    }
+)
+
+OQC_PARADIGM_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.gate_model_qpu_paradigm_properties",
+            "version": "1",
+        },
+        "connectivity": {
+            "fullyConnected": False,
+            "connectivityGraph": {
+                "0": ["1", "7"],
+                "1": ["2"],
+                "2": ["3"],
+                "4": ["3", "5"],
+                "6": ["5"],
+                "7": ["6"],
+            },
+        },
+        "qubitCount": 8,
+        "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
+    }
+)
+
+
+def test_translate_parametrized_evolution_constant():
+    """Test that a ParametrizedEvolution with constant amplitude is translated to a PulseGate
+    correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+    class DummyProperties:
+        def __init__(self):
+            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
+
+    dev._device._properties = DummyProperties()
+
+    H = transmon_drive(0.02, np.pi, 0.5, [0])
+    op = ParametrizedEvolution(H, [], t=50)
+
+    braket_gate = translate_operation(op, device=dev)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == n_wires
+
+    ps = braket_gate.pulse_sequence
+    expected_frame = dev._device.frames["q0_drive"]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.02)
+
+
+def test_translate_parametrized_evolution_variable():
+    """Test that a ParametrizedEvolution with variable amplitude is translated to a PulseGate
+    correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+    class DummyProperties:
+        def __init__(self):
+            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
+
+    dev._device._properties = DummyProperties()
 
     def amplitude(p, t):
         return p * (np.sin(t) + 1)
 
-    H = transmon_drive(0.02, np.pi, 0.5, [0, 1])
-    H += transmon_drive(amplitude, -np.pi / 2, 0.75, [2, 3])
+    H = transmon_drive(amplitude, np.pi, 0.5, [0])
 
     amplitude_param = 0.1
     op = ParametrizedEvolution(H, [amplitude_param], t=50)
 
-    dev = _aws_device(wires=4, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
     braket_gate = translate_operation(op, device=dev)
 
     assert isinstance(braket_gate, gates.PulseGate)
-    assert braket_gate.qubit_count == 4
+    assert braket_gate.qubit_count == n_wires
 
     ps = braket_gate.pulse_sequence
-    expected_frames = set(dev._device.frames[f"q{w}_drive"] for w in range(4))
+    expected_frame = dev._device.frames["q0_drive"]
 
-    assert set(ps.frames.values()) == expected_frames
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
 
-    max_amplitude = dev._device.properties.pulse.validationParameters["MAX_AMPLITUDE"]
-    dt = expected_frames[0].port.dt * 1e9
+    dt = expected_frame.port.dt * 1e9
+    amplitudes = [amplitude(amplitude_param, t) for t in np.arange(0, 50 + dt, dt)]
 
-    waveform_01 = ConstantWaveform(50e-9, 0.02)
-    amplitudes = (
-        np.array([amplitude(amplitude_param, t) for t in range(50 + dt)])
-        * amplitude_param
-        / max_amplitude
-    )
-    waveform_23 = ArbitraryWaveform(amplitudes)
-
-    c_waveforms = [wf for wf in ps.waveforms.values() if isinstance(wf, ConstantWaveform)]
-    a_waveforms = [wf for wf in ps.waveforms.values() if isinstance(wf, ArbitraryWaveform)]
-
-    assert all(wf == waveform_01 for wf in c_waveforms)
-    assert all(wf == waveform_23 for wf in a_waveforms)
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ArbitraryWaveform)
+    assert np.allclose(waveforms[0].amplitudes, amplitudes)
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params, inv_params", testdata_inverses)
