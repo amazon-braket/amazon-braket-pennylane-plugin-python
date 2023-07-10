@@ -466,7 +466,7 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
             )
 
     pulse_sequence = pulse_sequence.barrier(list(frames.values()))
-    return gates.PulseGate(pulse_sequence, qubit_count=len(device.wires))
+    return gates.PulseGate(pulse_sequence, qubit_count=len(op.wires))
 
 
 def get_adjoint_gradient_result_type(
