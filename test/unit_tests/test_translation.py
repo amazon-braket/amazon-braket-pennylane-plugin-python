@@ -486,7 +486,7 @@ def test_translate_parametrized_evolution_constant():
     assert braket_gate.qubit_count == n_wires
 
     ps = braket_gate.pulse_sequence
-    expected_frame = dev._device.frames[f"q0_drive"]
+    expected_frame = dev._device.frames["q0_drive"]
 
     frames = list(ps._frames.values())
     assert len(frames) == 1
@@ -526,7 +526,7 @@ def test_translate_parametrized_evolution_variable():
     assert braket_gate.qubit_count == n_wires
 
     ps = braket_gate.pulse_sequence
-    expected_frame = dev._device.frames[f"q0_drive"]
+    expected_frame = dev._device.frames["q0_drive"]
 
     frames = list(ps._frames.values())
     assert len(frames) == 1
