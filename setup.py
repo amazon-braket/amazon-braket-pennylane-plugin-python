@@ -22,9 +22,9 @@ with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 if platform.system() == "Darwin" and platform.machine() == "arm64":
-    TF_VERSION = "tensorflow-macos>=2.12.0"
+    TF_VERSION = "tensorflow-macos>=2.12.0,<2.13.0"
 else:
-    TF_VERSION = "tensorflow>=2.12.0"
+    TF_VERSION = "tensorflow>=2.12.0,<2.13.0"
 
 setup(
     name="amazon-braket-pennylane-plugin",
@@ -34,7 +34,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk>=1.35.0",
+        "amazon-braket-sdk>=1.47.0",
         "pennylane==0.30.0",
     ],
     entry_points={

@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.17.1 (2023-07-06)
+
+### Bug Fixes and Other Changes
+
+ * constrain tensorflow version
+
+## v1.17.0 (2023-06-30)
+
+### Features
+
+ * arbitrary angle MS gate
+
 ## v1.16.1 (2023-06-08)
 
 ### Bug Fixes and Other Changes

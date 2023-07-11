@@ -26,7 +26,7 @@ from braket.circuits import gates
 from numpy import float64
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
-from braket.pennylane_plugin.ops import MS, GPi, GPi2
+from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
 
 gates_1q_parametrized = [
     (GPi, gates.GPi),
@@ -42,6 +42,10 @@ gates_2q_parametrized = [
 
 gates_2q_2p_parametrized = [
     (MS, gates.MS),
+]
+
+gates_2q_3p_parametrized = [
+    (AAMS, gates.MS),
 ]
 
 gates_2q_non_parametrized = []  # Empty... For now!
@@ -62,7 +66,10 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
     _assert_decomposition(pl_op, params=[angle])
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize(
+    "pl_op, braket_gate",
+    gates_2q_parametrized,
+)
 @pytest.mark.parametrize(
     "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
 )
@@ -70,27 +77,43 @@ def test_ops_parametrized_tf(pl_op, braket_gate, angle):
     """Tests that the matrices and decompositions of parametrized custom operations
     are correct using tensorflow interface.
     """
-    pl_op.compute_matrix(angle)
-    _assert_decomposition(pl_op, params=[angle])
-
-
-@pytest.mark.parametrize("pl_op, braket_gate", gates_1q_parametrized + gates_2q_2p_parametrized)
-@pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
-def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle):
-    """Tests that the matrices and decompositions of parametrized custom operations are correct."""
     angles = [angle] * pl_op.num_params
+    pl_op.compute_matrix(*angles)
+    _assert_decomposition(pl_op, params=angles)
+
+
+@pytest.mark.parametrize(
+    "pl_op, braket_gate",
+    gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
+)
+@pytest.mark.parametrize("angle_1", [(i + 1) * math.pi / 12 for i in range(12)])
+@pytest.mark.parametrize("angle_2", [(i + 1) * math.pi / 12 for i in range(12)])
+@pytest.mark.parametrize("angle_3", [(i + 1) * math.pi / 12 for i in range(6)])
+def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle_1, angle_2, angle_3):
+    """Tests that the matrices and decompositions of parametrized custom operations are correct."""
+    angles = [angle_1, angle_2, angle_3][: pl_op.num_params]
     assert np.allclose(pl_op.compute_matrix(*angles), braket_gate(*angles).to_matrix())
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", gates_1q_parametrized + gates_2q_2p_parametrized)
 @pytest.mark.parametrize(
-    "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
+    "pl_op, braket_gate",
+    gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
 )
-def test_ops_parametrized_tf_no_decomposition(pl_op, braket_gate, angle):
+@pytest.mark.parametrize(
+    "angle_1", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
+)
+@pytest.mark.parametrize(
+    "angle_2", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
+)
+@pytest.mark.parametrize(
+    "angle_3", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(6)]
+)
+def test_ops_parametrized_tf_no_decomposition(pl_op, braket_gate, angle_1, angle_2, angle_3):
     """Tests that the matrices and decompositions of parametrized custom operations
     are correct using tensorflow interface.
     """
-    pl_op.compute_matrix(*[angle] * pl_op.num_params)
+    angles = [angle_1, angle_2, angle_3][: pl_op.num_params]
+    pl_op.compute_matrix(*angles)
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
@@ -103,7 +126,10 @@ def test_ops_non_parametrized(pl_op, braket_gate):
 
 
 @patch("braket.pennylane_plugin.ops.np", new=anp)
-@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize(
+    "pl_op, braket_gate",
+    gates_2q_parametrized,
+)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 @pytest.mark.parametrize("observable", observables_2q)
 def test_param_shift_2q(pl_op, braket_gate, angle, observable):
@@ -183,7 +209,11 @@ def _assert_decomposition(pl_op, params=None):
 
 
 @pytest.mark.parametrize(
-    "pl_op, braket_gate", gates_1q_parametrized + gates_2q_parametrized + gates_2q_2p_parametrized
+    "pl_op, braket_gate",
+    gates_1q_parametrized
+    + gates_2q_parametrized
+    + gates_2q_2p_parametrized
+    + gates_2q_3p_parametrized,
 )
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_gate_adjoint_parametrized(pl_op, braket_gate, angle):
@@ -204,7 +234,10 @@ def test_gate_adjoint_non_parametrized(pl_op, braket_gate):
     )
 
 
-@pytest.mark.parametrize("pl_op, braket_gate", gates_2q_parametrized)
+@pytest.mark.parametrize(
+    "pl_op, braket_gate",
+    gates_2q_parametrized,
+)
 @pytest.mark.parametrize("angle", [(i + 1) * math.pi / 12 for i in range(12)])
 def test_gate_generator(pl_op, braket_gate, angle):
     op = pl_op(angle, wires=[0, 1])
