@@ -434,7 +434,7 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
 
     # The driven wires aren't the same as `op.wires` as `op.wires` contains
     # all device wires due to interaction term.
-    op_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
+    pulse_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
     mapped_wires = op_wires.map(device.wire_map)
 
     frames = {w: device._device.frames[f"q{w}_drive"] for w in mapped_wires}
@@ -466,7 +466,7 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
             )
 
     pulse_sequence = pulse_sequence.barrier(list(frames.values()))
-    return gates.PulseGate(pulse_sequence, qubit_count=len(device.wires))
+    return gates.PulseGate(pulse_sequence, qubit_count=len(op.wires))
 
 
 def get_adjoint_gradient_result_type(
