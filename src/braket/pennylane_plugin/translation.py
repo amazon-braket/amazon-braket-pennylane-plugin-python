@@ -441,11 +441,13 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
     time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
 
     pulse_sequence = PulseSequence().barrier(list(frames.values()))
+    callable_index = 0
 
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
         if callable(pulse.amplitude):
-            amplitude = partial(pulse.amplitude, op.parameters[0])
+            amplitude = partial(pulse.amplitude, op.parameters[callable_index])
+            callable_index += 1
 
             # Calculate amplitude for each time step and normalize
             amplitudes = onp.array(
