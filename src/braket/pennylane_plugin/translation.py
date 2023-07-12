@@ -435,7 +435,7 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
     # The driven wires aren't the same as `op.wires` as `op.wires` contains
     # all device wires due to interaction term.
     pulse_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
-    mapped_wires = op_wires.map(device.wire_map)
+    mapped_wires = pulse_wires.map(device.wire_map)
 
     frames = {w: device._device.frames[f"q{w}_drive"] for w in mapped_wires}
     time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
