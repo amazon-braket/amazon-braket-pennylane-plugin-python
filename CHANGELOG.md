@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.17.3 (2023-07-13)
+
+### Bug Fixes and Other Changes
+
+ * set do_queue default to None
+
+## v1.17.2 (2023-07-12)
+
+### Bug Fixes and Other Changes
+
+ * Update pennylane version constraint
+
 ## v1.17.1 (2023-07-06)
 
 ### Bug Fixes and Other Changes
