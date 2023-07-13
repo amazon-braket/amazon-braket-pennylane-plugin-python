@@ -675,6 +675,69 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         return outcomes
 
+    def _validate_parametrized_evolution(self, ev):
+        """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
+
+        # note: the pulse upload on the braket side immediately checks that the max amplitude is not exceeded,
+        # so that check has not been included here
+
+        # confirm all frequency and phase values are constant for the duration of a pulse
+        callable_freqs = [pulse.frequency for pulse in ev.H.pulses if callable(pulse.frequency)]
+        callable_phase = [pulse.phase for pulse in ev.H.pulses if callable(pulse.phase)]
+
+        if callable_freqs:
+            raise RuntimeError(f"Expected all frequencies to be constants but recieved callable(s)")
+        if callable_phase:
+            raise RuntimeError(f"Expected all phases to be constants but recieved callable(s)")
+
+        # confirm all frequencies are within permitted difference from center frequency
+        #ToDo: why does 'PERMITTED_FREQUENCY_DIFFERENCE' return 1.0 for OQC device?
+        # Rigetti returns a reasonable 400MHz - will use this for now
+        #freq_diff = self._device.properties.pulse.validationParameters['PERMITTED_FREQUENCY_DIFFERENCE']
+        freq_diff = 400000000.0
+
+        for pulse in ev.H.pulses:
+            freq = pulse.frequency
+            wires = self.map_wires(pulse.wires).tolist()
+
+            for wire in wires:
+                frame_key = f"q{wire}_drive"
+                frame = self._device._frames[frame_key]
+                freq_range = [frame.properties['centerFrequency']-freq_diff,
+                              frame.properties['centerFrequency']+freq_diff]
+                if not (freq_range[0] <= freq*1e9 <= freq_range[1]):
+                    raise RuntimeError(f"Frequency range for wire {wire} is between {freq_range[0]*1e-9} "
+                                       f"and {freq_range[1]*1e-9}, but recieved {freq}")
+
+        # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
+        wires_used = []
+        for pulse in ev.H.pulses:
+            for wire in pulse.wires:
+                if wire in wires_used:
+                    raise RuntimeError(f"Multiple waveforms assigned to wire {wire} in the same "
+                                       f"ParametrizedEvolution gate")
+                wires_used.append(wire)
+
+    def _validate_physical_parameters(self, ev):
+
+        ev_settings = {'connections': ev.H.settings.connections,
+                       'qubit_freq': ev.H.settings.qubit_freq,
+                       'wires': ev.wires}
+
+        # requires settings PR merged first
+        # if not [ev_settings[key] == self.settings[key] for key in ev_settings.keys()]:
+        #     warnings.warn("The physical parameters specified on the interaction term of the hamiltonian for "
+        #                   "the ParametrizedEvolution do not match the hardware")
+
+    def check_validity(self, queue, observables):
+
+        for op in queue:
+            if isinstance(op, qml.pulse.ParametrizedEvolution):
+                self._validate_parametrized_evolution(op)
+                self._validate_physical_parameters(op)
+
+        super().check_validity(queue, observables)
+
     def capabilities(self=None):
         """Add support for AG on sv1"""
         # normally, we'd just call super().capabilities() here, but super()
