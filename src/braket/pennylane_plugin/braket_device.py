@@ -402,12 +402,15 @@ class BraketQubitDevice(QubitDevice):
                 else:
                     param_names.append(None)
                 param_index += 1
+
+            dev_wires = self.map_wires(operation.wires).tolist()
             gate = translate_operation(
                 operation,
                 use_unique_params=bool(trainable_indices) or use_unique_params,
                 param_names=param_names,
+                device=self,
             )
-            dev_wires = self.map_wires(operation.wires).tolist()
+
             ins = Instruction(gate, dev_wires)
             circuit.add_instruction(ins)
 
