@@ -1413,8 +1413,8 @@ def test_projection():
         assert np.allclose(expval, exp)
 
         var = qnode(thetas, qml.var, proj)
-        assert np.allclose(var, exp - exp ** 2)
-        
+        assert np.allclose(var, exp - exp**2)
+
         samples = qnode(thetas, qml.sample, proj, shots=100).tolist()
         assert set(samples) == {0, 1}
 
