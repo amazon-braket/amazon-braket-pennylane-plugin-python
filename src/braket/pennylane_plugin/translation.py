@@ -532,12 +532,12 @@ _one = np.array([[0, 0], [0, 1]])
 @_translate_observable.register
 def _(p: qml.Projector):
     state, wires = p.parameters[0], p.wires
-    if len(state) == len(wires):  # Basis state
+    if len(state) == len(wires):  # state is a basis state
         products = [_one if b else _zero for b in state]
         hermitians = [observables.Hermitian(p) for p in products]
         return observables.TensorProduct(hermitians)
 
-    # State vector
+    # state is a state vector
     return observables.Hermitian(p.matrix())
 
 
