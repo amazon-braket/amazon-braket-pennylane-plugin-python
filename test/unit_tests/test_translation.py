@@ -13,7 +13,7 @@
 
 import json
 import re
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock, MagicMock
 
 import numpy as np
 import pennylane as qml
@@ -42,7 +42,7 @@ from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
     translate_operation,
     translate_result,
-    translate_result_type,
+    translate_result_type, supported_operations,
 )
 
 testdata = [
@@ -610,3 +610,14 @@ def test_translate_hamiltonian_observable(expected_braket_H, pl_H):
 
 def test_translate_result_type_adjoint_gradient():
     print("not implemented yet")
+
+
+def test_translation_no_properties():
+    class MockDevice:
+        @property
+        def properties(self):
+            raise AttributeError()
+
+    needs_props = "Device needs to have properties defined."
+    with pytest.raises(AttributeError, match=needs_props):
+        supported_operations(MockDevice())
