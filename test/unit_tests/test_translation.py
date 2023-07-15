@@ -13,7 +13,7 @@
 
 import json
 import re
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pennylane as qml
@@ -40,9 +40,10 @@ from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     _translate_observable,
     get_adjoint_gradient_result_type,
+    supported_operations,
     translate_operation,
     translate_result,
-    translate_result_type, supported_operations,
+    translate_result_type,
 )
 
 testdata = [
