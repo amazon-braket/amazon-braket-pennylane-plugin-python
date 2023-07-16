@@ -615,9 +615,7 @@ def test_translate_result_type_adjoint_gradient():
 
 def test_translation_no_properties():
     class MockDevice:
-        @property
-        def properties(self):
-            raise AttributeError()
+        pass
 
     needs_props = "Device needs to have properties defined."
     with pytest.raises(AttributeError, match=needs_props):
