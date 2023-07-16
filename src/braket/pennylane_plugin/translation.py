@@ -600,11 +600,14 @@ _one = np.array([[0, 0], [0, 1]])
 
 @_translate_observable.register
 def _(p: qml.Projector):
-    bitstring = p.parameters[0]
+    state, wires = p.parameters[0], p.wires
+    if len(state) == len(wires):  # state is a basis state
+        products = [_one if b else _zero for b in state]
+        hermitians = [observables.Hermitian(p) for p in products]
+        return observables.TensorProduct(hermitians)
 
-    products = [_one if b else _zero for b in bitstring]
-    hermitians = [observables.Hermitian(p) for p in products]
-    return observables.TensorProduct(hermitians)
+    # state is a state vector
+    return observables.Hermitian(p.matrix())
 
 
 @_translate_observable.register

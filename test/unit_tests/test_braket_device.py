@@ -1407,38 +1407,28 @@ def test_projection():
     def f(thetas, **kwargs):
         [qml.RY(thetas[i], wires=i) for i in range(wires)]
 
-    projector_01 = qml.Projector([0, 1], wires=range(wires))
-    projector_10 = qml.Projector([1, 0], wires=range(wires))
+    projector_01_bs = qml.Projector([0, 1], wires=range(wires))
+    projector_01_sv = qml.Projector([0, 1, 0, 0], wires=range(wires))
+    projector_10_bs = qml.Projector([1, 0], wires=range(wires))
+    projector_10_sv = qml.Projector([0, 0, 1, 0], wires=range(wires))
 
-    # 01 case
+    projectors = [projector_01_bs, projector_01_sv, projector_10_bs, projector_10_sv]
+    expected = [p_01, p_01, p_10, p_10]
+
     @qml.qnode(dev)
-    def f_01(thetas, measure_type):
+    def qnode(thetas, measure_type, observable):
         f(thetas)
-        return measure_type(projector_01)
+        return measure_type(observable)
 
-    expval_01 = f_01(thetas, qml.expval)
-    assert np.allclose(expval_01, p_01)
+    for proj, exp in zip(projectors, expected):
+        expval = qnode(thetas, qml.expval, proj)
+        assert np.allclose(expval, exp)
 
-    var_01 = f_01(thetas, qml.var)
-    assert np.allclose(var_01, p_01 - p_01**2)
+        var = qnode(thetas, qml.var, proj)
+        assert np.allclose(var, exp - exp**2)
 
-    samples = f_01(thetas, qml.sample, shots=100).tolist()
-    assert set(samples) == {0, 1}
-
-    # 10 case
-    @qml.qnode(dev)
-    def f_10(thetas, measure_type):
-        f(thetas)
-        return measure_type(projector_10)
-
-    exp_10 = f_10(thetas, qml.expval)
-    assert np.allclose(exp_10, p_10)
-
-    var_10 = f_10(thetas, qml.var)
-    assert np.allclose(var_10, p_10 - p_10**2)
-
-    samples = f_10(thetas, qml.sample, shots=100).tolist()
-    assert set(samples) == {0, 1}
+        samples = qnode(thetas, qml.sample, proj, shots=100).tolist()
+        assert set(samples) == {0, 1}
 
 
 @pytest.mark.xfail(raises=AttributeError)
