@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.17.4 (2023-07-17)
+
+### Bug Fixes and Other Changes
+
+ * Fix compatibility with the new Projector class
+
 ## v1.17.3 (2023-07-13)
 
 ### Bug Fixes and Other Changes
