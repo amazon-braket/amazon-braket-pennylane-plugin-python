@@ -941,7 +941,7 @@ def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
-    observable = qml.Identity(wires=0, do_queue=False)
+    observable = qml.Identity(wires=0)
     observable.return_type = None
 
     with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
