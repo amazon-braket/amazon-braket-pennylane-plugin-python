@@ -653,6 +653,7 @@ def _aws_device_mock_init(self, arn, aws_session):
     self._ports = None
 
 
+
 @patch.object(AwsDevice, "__init__", _aws_device_mock_init)
 @patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
