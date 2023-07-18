@@ -110,7 +110,6 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
     supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
 
-
     translated = frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
@@ -126,14 +125,6 @@ def supported_operations(device: Device) -> FrozenSet[str]:
     ):
         translated |= {"ParametrizedEvolution"}
     return translated
-
-    if (
-        isinstance(device, AwsDevice)
-        and device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy"
-    ):
-        op_set = op_set.union({"ParametrizedEvolution"})
-
-    return op_set
 
 
 def translate_operation(
@@ -427,7 +418,7 @@ def _(adjoint: Adjoint, parameters, device=None):
     if isinstance(adjoint.base, qml.ISWAP):
         # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
-    base = _translate_operation(adjoint.base, parameters, _device)
+    base = _translate_operation(adjoint.base, parameters)
     if len(base.adjoint()) > 1:
         raise NotImplementedError(
             f"The adjoint of the Braket operation {base} contains more than one operation."
@@ -458,11 +449,11 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
             amplitude = partial(pulse.amplitude, op.parameters[callable_index])
             callable_index += 1
 
-            # Calculate amplitude for each time step
+            # Calculate amplitude for each time step and normalize
             amplitudes = onp.array(
                 [amplitude(t) for t in np.arange(start, end + time_step, time_step)]
             )
-            
+
             waveform = ArbitraryWaveform(amplitudes)
 
         else:
