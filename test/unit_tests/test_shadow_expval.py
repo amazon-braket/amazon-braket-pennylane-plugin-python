@@ -1,4 +1,4 @@
-cimport json
+import json
 from typing import Any, Dict, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
