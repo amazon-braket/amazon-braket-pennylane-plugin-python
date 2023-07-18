@@ -2042,6 +2042,8 @@ class TestPulseFunctionality:
         "frameId, expected_result", [("q0_second_state", False), ("q0_drive", True)]
     )
     def test_single_frame_filter_oqc_lucy(self, frameId, expected_result):
+        """Test that _is_single_qubit_01_frame successfuly identifies whether a string matches
+        the pattern for a 01 drive frame"""
         dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
         assert dev._is_single_qubit_01_frame(frameId) == expected_result
 
@@ -2049,23 +2051,33 @@ class TestPulseFunctionality:
         "frameId, expected_result", [("q0_second_state", True), ("q0_drive", False)]
     )
     def test_single_frame_filter_oqc_lucy_12(self, frameId, expected_result):
+        """Test that _is_single_qubit_12_frame successfuly identifies whether a string matches
+        the pattern for a 12 drive frame"""
         dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
         assert dev._is_single_qubit_12_frame(frameId) == expected_result
 
     def test_frame_filters_raise_error_if_not_oqc_lucy(self):
+        """Test that the functions used to access the pulse frames raise a clear error for devices
+        where frame access is not available through the plugin"""
         dev = _aws_device(wires=2, device_arn="baz")
 
         with pytest.raises(
-            RuntimeError, match="Single-qubit drive frame for pulse control not defined for device"
+            NotImplementedError,
+            match="Single-qubit drive frame for pulse control not defined for device",
         ):
             dev._is_single_qubit_01_frame("q0_drive")
 
         with pytest.raises(
-            RuntimeError, match="Single-qubit drive frame for pulse control not defined for device"
+            NotImplementedError,
+            match="Single-qubit drive frame for pulse control not defined for device",
         ):
             dev._is_single_qubit_12_frame("q0_second_state")
 
+        with pytest.raises(NotImplementedError, match=""):
+            dev._get_frames(filter=None)
+
     def test_get_frames(self):
+        """Test that the dev._get_frames method returns the expected results"""
         dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
 
         class DummyProperties:
@@ -2081,7 +2093,19 @@ class TestPulseFunctionality:
         assert "q0_drive" in frames_01.keys()
         assert "q0_second_state" in frames_12.keys()
 
+    def test_settings_for_unsupported_device_raises_error(self):
+        """Test that accessing dev.pulse_settings for a device where this is not defined raises an error"""
+        dev = _aws_device(wires=2, device_arn="baz")
+
+        with pytest.raises(
+            NotImplementedError,
+            match="The pulse_settings property for pulse control is not defined for",
+        ):
+            dev.pulse_settings
+
     def test_settings(self):
+        """Test that the pulse_settings property retrieves the relevant data from the device
+        pulse and paradigm properties"""
         dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
 
         class DummyProperties:
