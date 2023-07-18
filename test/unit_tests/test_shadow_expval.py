@@ -1,4 +1,4 @@
-import json
+cimport json
 from typing import Any, Dict, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
@@ -340,7 +340,8 @@ def _aws_device(
         shots=shots,
         **kwargs,
     )
-
+    # needed by the BraketAwsQubitDevice.capabilities function
+    dev._device._arn = device_arn
     return dev
 
 
