@@ -75,17 +75,10 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
                 {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
-                {
-                    "name": "AdjointGradient",
-                    "observables": ["x", "y", "z", "h", "i"],
-                    "minShots": 0,
-                    "maxShots": 0,
-                },
             ],
         }
     )
 )
-
 
 OQC_PULSE_PROPERTIES = json.dumps(
     {
@@ -203,7 +196,6 @@ def _aws_device(
     )
 
     dev._device._properties = DummyProperties()
-
     return dev
 
 
@@ -475,7 +467,6 @@ def test_translate_operation_with_unique_params(
             _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
             == pl_op.name
         )
-
 
 
 def amplitude(p, t):
