@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.17.3 (2023-07-13)
+
+### Bug Fixes and Other Changes
+
+ * set do_queue default to None
+
+## v1.17.2 (2023-07-12)
+
+### Bug Fixes and Other Changes
+
+ * Update pennylane version constraint
+
+## v1.17.1 (2023-07-06)
+
+### Bug Fixes and Other Changes
+
+ * constrain tensorflow version
+
+## v1.17.0 (2023-06-30)
+
+### Features
+
+ * arbitrary angle MS gate
+
+## v1.16.1 (2023-06-08)
+
+### Bug Fixes and Other Changes
+
+ * Lower shot count on shadow_expval integ test so it can finish
+
+## v1.16.0 (2023-05-30)
+
+### Features
+
+ * implement support for classical shadows and computing expectation values with them
+
+### Bug Fixes and Other Changes
+
+ * temporarily disabling integ test.
+ * Update expval validation
+
 ## v1.15.3 (2023-05-24)
 
 ### Bug Fixes and Other Changes

@@ -32,6 +32,10 @@ from braket.circuits.result_types import (
 )
 from braket.circuits.serialization import IRType
 from braket.device_schema import DeviceActionType, OpenQASMDeviceActionProperties
+from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
+    GateModelQpuParadigmProperties,
+)
+from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
 from braket.pulse import ArbitraryWaveform, ConstantWaveform
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as pnp
@@ -46,7 +50,7 @@ from braket.pennylane_plugin import (
     CPhaseShift01,
     CPhaseShift10,
 )
-from braket.pennylane_plugin.ops import MS, GPi, GPi2
+from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     _translate_observable,
@@ -59,6 +63,8 @@ from braket.pennylane_plugin.translation import (
 
 def mock_aws_init(self, arn, aws_session):
     self._arn = arn
+    self._frames = None
+    self._ports = None
 
 
 ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
@@ -81,6 +87,92 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
 )
 
 
+OQC_PULSE_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.pulse.pulse_device_action_properties",
+            "version": "1",
+        },
+        "supportedQhpTemplateWaveforms": {},
+        "ports": {
+            "channel_15": {
+                "portId": "channel_15",
+                "direction": "tx",
+                "portType": "port_type_1",
+                "dt": 5e-10,
+            },
+            "channel_13": {
+                "portId": "channel_13",
+                "direction": "tx",
+                "portType": "port_type_1",
+                "dt": 5e-10,
+            },
+        },
+        "supportedFunctions": {},
+        "frames": {
+            "q0_drive": {
+                "frameId": "q0_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q1_drive": {
+                "frameId": "q1_drive",
+                "portId": "channel_13",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+        },
+        "supportsLocalPulseElements": False,
+        "supportsDynamicFrames": True,
+        "supportsNonNativeGatesWithPulses": True,
+        "validationParameters": {
+            "MAX_SCALE": 1.0,
+            "MAX_AMPLITUDE": 1.0,
+            "PERMITTED_FREQUENCY_DIFFERENCE": 1.0,
+            "MIN_PULSE_LENGTH": 8e-09,
+            "MAX_PULSE_LENGTH": 0.00012,
+        },
+    }
+)
+
+OQC_PARADIGM_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.gate_model_qpu_paradigm_properties",
+            "version": "1",
+        },
+        "connectivity": {
+            "fullyConnected": False,
+            "connectivityGraph": {
+                "0": ["1", "7"],
+                "1": ["2"],
+                "2": ["3"],
+                "4": ["3", "5"],
+                "6": ["5"],
+                "7": ["6"],
+            },
+        },
+        "qubitCount": 8,
+        "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
+    }
+)
+
+
+class DummyProperties:
+    def __init__(self):
+        self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+        self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
+
+
 @patch.object(AwsDevice, "__init__", mock_aws_init)
 @patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
@@ -92,7 +184,7 @@ def _aws_device(
     wires,
     device_type=AwsDeviceType.QPU,
     shots=10000,
-    device_arn="baz",
+    device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy",
     action_properties=ACTION_PROPERTIES,
     **kwargs,
 ):
@@ -109,6 +201,8 @@ def _aws_device(
         shots=shots,
         **kwargs,
     )
+
+    dev._device._properties = DummyProperties()
 
     return dev
 
@@ -140,6 +234,7 @@ testdata = [
     (GPi, gates.GPi, [0], [2]),
     (GPi2, gates.GPi2, [0], [2]),
     (MS, gates.MS, [0, 1], [2, 3]),
+    (AAMS, gates.MS, [0, 1], [2, 3, 0.5]),
     (qml.ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
@@ -205,6 +300,7 @@ testdata_inverses = [
     (GPi, gates.GPi, [0], [2], [2]),
     (GPi2, gates.GPi2, [0], [2], [2 + np.pi]),
     (MS, gates.MS, [0, 1], [2, 3], [2 + np.pi, 3]),
+    (AAMS, gates.MS, [0, 1], [2, 3, 0.5], [2 + np.pi, 3, 0.5]),
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (qml.IsingXY, gates.XY, [0, 1], [0.15], [-0.15]),
@@ -246,6 +342,14 @@ testdata_with_params = [
     (GPi, gates.GPi, [0], [2], ["a"], [FreeParameter("a")]),
     (GPi2, gates.GPi2, [0], [2], ["a"], [FreeParameter("a")]),
     (MS, gates.MS, [0, 1], [2, 3], ["a", "b"], [FreeParameter("a"), FreeParameter("b")]),
+    (
+        AAMS,
+        gates.MS,
+        [0, 1],
+        [2, 3, 0.5],
+        ["a", "b", "c"],
+        [FreeParameter("a"), FreeParameter("b"), FreeParameter("c")],
+    ),
     (PSWAP, gates.PSwap, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
     (qml.ECR, gates.ECR, [0, 1], [], [], []),
     (qml.ISWAP, gates.ISwap, [0, 1], [], [], []),
@@ -323,12 +427,16 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi, GPi2, MS)):
+    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+        translated_back = _braket_to_pl[
+            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+        ]
         assert (
-            _braket_to_pl[
-                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
-            ]
-            == pl_op.name
+            translated_back == pl_op.name
+            if pl_op.name != "MS"
+            # PL MS and AAMS both get translated to Braket MS.
+            # Braket MS gets translated to PL AAMS.
+            else translated_back == "AAMS"
         )
     else:
         assert (
@@ -351,12 +459,16 @@ def test_translate_operation_with_unique_params(
         translate_operation(pl_op, use_unique_params=True, param_names=pl_param_names)
         == braket_gate
     )
-    if isinstance(pl_op, (GPi, GPi2, MS)):
+    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+        translated_back = _braket_to_pl[
+            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+        ]
         assert (
-            _braket_to_pl[
-                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
-            ]
-            == pl_op.name
+            translated_back == pl_op.name
+            if pl_op.name != "MS"
+            # PL MS and AAMS both get translated to Braket MS.
+            # Braket MS gets translated to PL AAMS.
+            else translated_back == "AAMS"
         )
     else:
         assert (
@@ -365,45 +477,144 @@ def test_translate_operation_with_unique_params(
         )
 
 
-def test_translate_operation_parametrized_evolution():
-    """Test that a ParametrizedEvolution is translated to a PulseGate correctly."""
 
-    def amplitude(p, t):
-        return p * (np.sin(t) + 1)
+def amplitude(p, t):
+    return p * (np.sin(t) + 1)
 
-    H = transmon_drive(0.02, np.pi, 0.5, [0, 1])
-    H += transmon_drive(amplitude, -np.pi / 2, 0.75, [2, 3])
+
+def test_translate_parametrized_evolution_constant():
+    """Test that a ParametrizedEvolution with constant amplitude is translated to a PulseGate
+    correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(0.02, np.pi, 0.5, [0])
+    op = ParametrizedEvolution(H, [], t=50)
+
+    braket_gate = translate_operation(op, device=dev)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 1
+
+    ps = braket_gate.pulse_sequence
+    expected_frame = dev._device.frames["q0_drive"]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.02)
+
+
+def test_translate_parametrized_evolution_callable():
+    """Test that a ParametrizedEvolution with callable amplitude is translated to a PulseGate
+    correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(amplitude, np.pi, 0.5, [0])
 
     amplitude_param = 0.1
     op = ParametrizedEvolution(H, [amplitude_param], t=50)
 
-    dev = _aws_device(wires=4, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
     braket_gate = translate_operation(op, device=dev)
 
     assert isinstance(braket_gate, gates.PulseGate)
-    assert braket_gate.qubit_count == 4
+    assert braket_gate.qubit_count == 1
 
     ps = braket_gate.pulse_sequence
-    expected_frames = set(dev._device.frames[f"q{w}_drive"] for w in range(4))
+    expected_frame = dev._device.frames["q0_drive"]
 
-    assert set(ps.frames.values()) == expected_frames
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
 
-    max_amplitude = dev._device.properties.pulse.validationParameters["MAX_AMPLITUDE"]
+    dt = expected_frame.port.dt * 1e9
+    amplitudes = [amplitude(amplitude_param, t) for t in np.arange(0, 50 + dt, dt)]
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ArbitraryWaveform)
+    assert np.allclose(waveforms[0].amplitudes, amplitudes)
+
+
+def test_translate_parametrized_evolution_mixed():
+    """Test that a ParametrizedEvolution with one constant and one callable amplitude pulse
+    is translated to a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(0.02, np.pi, 0.5, [0])
+    H += transmon_drive(amplitude, -np.pi / 2, 0.75, [1])
+
+    amplitude_param = 0.1
+    op = ParametrizedEvolution(H, [amplitude_param], t=50)
+
+    braket_gate = translate_operation(op, device=dev)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 2
+
+    ps = braket_gate.pulse_sequence
+    expected_frames = [dev._device.frames[f"q{w}_drive"] for w in range(2)]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 2
+    assert all(actual == expected for actual, expected in zip(frames, expected_frames))
+
     dt = expected_frames[0].port.dt * 1e9
+    amplitudes = [amplitude(amplitude_param, t) for t in np.arange(0, 50 + dt, dt)]
 
-    waveform_01 = ConstantWaveform(50e-9, 0.02)
-    amplitudes = (
-        np.array([amplitude(amplitude_param, t) for t in range(50 + dt)])
-        * amplitude_param
-        / max_amplitude
-    )
-    waveform_23 = ArbitraryWaveform(amplitudes)
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 2
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.02)
 
-    c_waveforms = [wf for wf in ps.waveforms.values() if isinstance(wf, ConstantWaveform)]
-    a_waveforms = [wf for wf in ps.waveforms.values() if isinstance(wf, ArbitraryWaveform)]
+    assert isinstance(waveforms[1], ArbitraryWaveform)
+    assert np.allclose(waveforms[1].amplitudes, amplitudes)
 
-    assert all(wf == waveform_01 for wf in c_waveforms)
-    assert all(wf == waveform_23 for wf in a_waveforms)
+
+def test_translate_parametrized_evolution_multi_callable():
+    """Test that a ParametrizedEvolution with multiple callable amplitude pulses is translated to
+    a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    def second_amplitude(p, t):
+        return p[0] * np.sin(p[1] * t) ** p[2] + p[0] * 1.1
+
+    H = transmon_drive(amplitude, np.pi, 0.5, [0])
+    H += transmon_drive(second_amplitude, -np.pi / 2, 0.42, [1])
+
+    first_param = 0.1
+    second_param = [0.5, np.pi, 3]
+    op = ParametrizedEvolution(H, [first_param, second_param], t=50)
+
+    braket_gate = translate_operation(op, device=dev)
+    assert braket_gate.qubit_count == 2
+
+    ps = braket_gate.pulse_sequence
+    expected_frames = [dev._device.frames[f"q{w}_drive"] for w in range(2)]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 2
+    assert all(actual == expected for actual, expected in zip(frames, expected_frames))
+
+    dt = expected_frames[0].port.dt * 1e9
+    amplitudes = [
+        [amplitude(first_param, t) for t in np.arange(0, 50 + dt, dt)],
+        [second_amplitude(second_param, t) for t in np.arange(0, 50 + dt, dt)],
+    ]
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 2
+    assert all(isinstance(w, ArbitraryWaveform) for w in waveforms)
+    assert all(np.allclose(w.amplitudes, a) for w, a in zip(waveforms, amplitudes))
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params, inv_params", testdata_inverses)
@@ -412,7 +623,7 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
     pl_op = qml.adjoint(pl_cls(*params, wires=qubits))
     braket_gate = braket_cls(*inv_params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op.base, (GPi, GPi2, MS)):
+    if isinstance(pl_op.base, (GPi, GPi2, MS, AAMS)):
         op_name = _braket_to_pl[
             re.match(
                 "^[a-z0-2]+",
@@ -424,7 +635,14 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
             braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")
         ]
 
-    assert f"Adjoint({op_name})" == pl_op.name
+    assert (
+        f"Adjoint({op_name})" == pl_op.name
+        if pl_op.name != "Adjoint(MS)"
+        # PL MS and AAMS both get translated to Braket MS.
+        # Braket MS gets translated to PL AAMS.
+        else f"Adjoint({op_name})" == "Adjoint(AAMS)"
+    )
+    # assert f"Adjoint({op_name})" == pl_op.name
 
 
 @patch("braket.circuits.gates.X.adjoint")
