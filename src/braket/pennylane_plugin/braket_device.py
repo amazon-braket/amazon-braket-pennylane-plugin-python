@@ -730,7 +730,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             return "drive" in f
         else:
-            raise RuntimeError(
+            raise NotImplementedError(
                 f"Single-qubit drive frame for pulse control not defined for "
                 f"device {self._device.arn}"
             )
@@ -741,7 +741,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             return "second_state" in f
         else:
-            raise RuntimeError(
+            raise NotImplementedError(
                 f"Single-qubit drive frame for pulse control not defined for "
                 f"device {self._device.arn}"
             )
@@ -755,6 +755,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         would return all the frames with "excited" in the frame name.
         """
+        if not self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+            raise NotImplementedError(
+                f"Accessing drive frame for pulse control is not defined for "
+                f"device {self._device.arn}"
+            )
         return {
             f: info
             for f, info in self._device.properties.pulse.dict()["frames"].items()
@@ -782,6 +787,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         Note that the user must supply coupling coefficients, as these are not available from the
         hardware backend.
         """
+        if not self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+            raise NotImplementedError(
+                f"The pulse_settings property for pulse control is not defined for "
+                f"device {self._device.arn}"
+            )
         drive_frames_01 = self._get_frames(filter=self._is_single_qubit_01_frame)
         drive_frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
 
