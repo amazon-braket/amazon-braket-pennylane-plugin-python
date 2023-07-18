@@ -779,7 +779,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
         This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
 
-        Note that the user must supply coupling coefficients, as these are not available from the hardware backend.
+        Note that the user must supply coupling coefficients, as these are not available from the
+        hardware backend.
         """
         drive_frames_01 = self._get_frames(filter=self._is_single_qubit_01_frame)
         drive_frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
