@@ -35,6 +35,7 @@ Code details
 
 import collections
 import numbers
+import warnings
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
@@ -691,10 +692,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             raise RuntimeError(f"Expected all phases to be constants but recieved callable(s)")
 
         # confirm all frequencies are within permitted difference from center frequency
-        #ToDo: why does 'PERMITTED_FREQUENCY_DIFFERENCE' return 1.0 for OQC device?
-        # Rigetti returns a reasonable 400MHz - will use this for now
-        #freq_diff = self._device.properties.pulse.validationParameters['PERMITTED_FREQUENCY_DIFFERENCE']
-        freq_diff = 400000000.0
+        freq_diff = self._device.properties.pulse.validationParameters['PERMITTED_FREQUENCY_DIFFERENCE']*1e9
 
         for pulse in ev.H.pulses:
             freq = pulse.frequency
@@ -702,10 +700,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
             for wire in wires:
                 frame_key = f"q{wire}_drive"
-                frame = self._device._frames[frame_key]
+                frame = self._device.frames[frame_key]
                 freq_range = [frame.properties['centerFrequency']-freq_diff,
                               frame.properties['centerFrequency']+freq_diff]
-                if not (freq_range[0] <= freq*1e9 <= freq_range[1]):
+                if not (freq_range[0] < freq*1e9 < freq_range[1]):
                     raise RuntimeError(f"Frequency range for wire {wire} is between {freq_range[0]*1e-9} "
                                        f"and {freq_range[1]*1e-9}, but recieved {freq}")
 
@@ -724,10 +722,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                        'qubit_freq': ev.H.settings.qubit_freq,
                        'wires': ev.wires}
 
-        # requires settings PR merged first
-        # if not [ev_settings[key] == self.settings[key] for key in ev_settings.keys()]:
-        #     warnings.warn("The physical parameters specified on the interaction term of the hamiltonian for "
-        #                   "the ParametrizedEvolution do not match the hardware")
+        if not np.all([ev_settings[key] == self.pulse_settings[key] for key in ev_settings.keys()]):
+            warnings.warn("The physical parameters specified on the interaction term of the hamiltonian "
+                          "for the ParametrizedEvolution do not match the hardware")
 
     def check_validity(self, queue, observables):
 
