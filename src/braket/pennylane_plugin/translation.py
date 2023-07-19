@@ -90,12 +90,13 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
 }
 
 
-def supported_operations(device: Device, native: bool = False) -> FrozenSet[str]:
+def supported_operations(device: Device, verbatim: bool = False) -> FrozenSet[str]:
     """Returns the operations supported by the plugin based upon the device.
 
     Args:
         device (Device): The device to obtain the supported operations for
-        native (bool): Whether to return the native gate set of the device. Default False
+        verbatim (bool): Whether to return the operations supported in verbatim mode,
+            the native gate set of the device. Default False
 
     Returns:
         FrozenSet[str]: The names of the supported operations
@@ -103,13 +104,13 @@ def supported_operations(device: Device, native: bool = False) -> FrozenSet[str]
     try:
         properties = (
             device.properties.paradigm
-            if native
+            if verbatim
             else device.properties.action["braket.ir.openqasm.program"]
         )
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
 
-    if native:
+    if verbatim:
         supported_ops = frozenset(op.lower() for op in properties.nativeGateSet)
         supported_pragmas = []
     else:

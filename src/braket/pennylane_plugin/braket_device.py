@@ -134,7 +134,7 @@ class BraketQubitDevice(QubitDevice):
         self._task = None
         self._noise_model = noise_model
         self._run_kwargs = run_kwargs
-        self._supported_ops = supported_operations(self._device, native=verbatim)
+        self._supported_ops = supported_operations(self._device, verbatim=verbatim)
         self._check_supported_result_types()
         self._verbatim = verbatim
 

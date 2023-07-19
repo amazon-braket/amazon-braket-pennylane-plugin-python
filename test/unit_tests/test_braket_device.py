@@ -1415,7 +1415,7 @@ def test_supported_ops_set(monkeypatch):
         m.setattr(
             braket.pennylane_plugin.braket_device,
             "supported_operations",
-            lambda x, native=False: test_ops,
+            lambda x, verbatim=False: test_ops,
         )
         dev = _aws_device(wires=2)
         assert dev.operations == test_ops
