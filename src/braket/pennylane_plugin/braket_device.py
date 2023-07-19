@@ -99,6 +99,8 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
+        verbatim (bool): Whether to run tasks in verbatim mode. Note that verbatim mode only
+            supports the native gate set of the device. Default False.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket PennyLane plugin"
@@ -113,16 +115,28 @@ class BraketQubitDevice(QubitDevice):
         *,
         shots: Union[int, None],
         noise_model: Optional[NoiseModel] = None,
+        verbatim: bool = False,
         **run_kwargs,
     ):
+        if DeviceActionType.OPENQASM not in device.properties.action:
+            raise ValueError(f"Device {device.name} does not support quantum circuits")
+
+        if (
+            verbatim
+            and "verbatim"
+            not in device.properties.action[DeviceActionType.OPENQASM].supportedPragmas
+        ):
+            raise ValueError(f"Device {device.name} does not support verbatim circuits")
+
         super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
         self._task = None
         self._noise_model = noise_model
         self._run_kwargs = run_kwargs
-        self._supported_ops = supported_operations(self._device)
+        self._supported_ops = supported_operations(self._device, verbatim=verbatim)
         self._check_supported_result_types()
+        self._verbatim = verbatim
 
         if noise_model:
             self._validate_noise_model_support()
@@ -171,6 +185,8 @@ class BraketQubitDevice(QubitDevice):
             trainable_indices=trainable_indices,
             **run_kwargs,
         )
+        if self._verbatim:
+            braket_circuit = Circuit().add_verbatim_box(braket_circuit)
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
         elif not isinstance(circuit.observables[0], MeasurementTransform):
@@ -504,6 +520,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_retries (int): The maximum number of retries to use for batch execution.
             When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
             times. Ignored if ``parallel=False``.
+        verbatim (bool): Whether to verbatim mode for the device. Note that verbatim mode only
+            supports the native gate set of the device. Default False.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket AwsDevice for PennyLane"
@@ -528,9 +546,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
         device.aws_session.add_braket_user_agent(user_agent)
-        if DeviceActionType.OPENQASM not in device.properties.action:
-            raise ValueError(f"Device {device.name} does not support quantum circuits")
-
         device_type = device.type
         if device_type not in (AwsDeviceType.SIMULATOR, AwsDeviceType.QPU):
             raise ValueError(f"Invalid device type: {device_type}")
