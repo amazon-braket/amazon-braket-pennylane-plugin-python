@@ -99,7 +99,7 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
-        verbatim (bool): Whether to run tasks in verbaim mode. Note that verbatim mode only
+        verbatim (bool): Whether to run tasks in verbatim mode. Note that verbatim mode only
             supports the native gate set of the device. Default False.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
