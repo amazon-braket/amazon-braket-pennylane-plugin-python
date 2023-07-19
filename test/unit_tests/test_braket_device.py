@@ -24,7 +24,11 @@ from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskB
 from braket.circuits import Circuit, FreeParameter, Gate, Noise, Observable, result_types
 from braket.circuits.noise_model import GateCriteria, NoiseModel, NoiseModelInstruction
 from braket.device_schema import DeviceActionType
+from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
+    GateModelQpuParadigmProperties,
+)
 from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
+from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.simulator import BraketSimulator
@@ -645,6 +649,8 @@ def test_execute_tracker(mock_run):
 
 def _aws_device_mock_init(self, arn, aws_session):
     self._arn = arn
+    self._properties = None
+    self._ports = None
 
 
 @patch.object(AwsDevice, "__init__", _aws_device_mock_init)
@@ -1794,8 +1800,6 @@ def _aws_device(
         shots=shots,
         **kwargs,
     )
-    # needed by the BraketAwsQubitDevice.capabilities function
-    # dev._device._arn = device_arn
     return dev
 
 
@@ -1962,3 +1966,166 @@ def test_execute_with_noise_model(mock_name, mock_run, noise_model):
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         inputs={},
     )
+
+
+OQC_PULSE_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.pulse.pulse_device_action_properties",
+            "version": "1",
+        },
+        "supportedQhpTemplateWaveforms": {},
+        "ports": {},
+        "supportedFunctions": {},
+        "frames": {
+            "q0_drive": {
+                "frameId": "q0_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q0_second_state": {
+                "frameId": "q0_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+        },
+        "supportsLocalPulseElements": False,
+        "supportsDynamicFrames": True,
+        "supportsNonNativeGatesWithPulses": True,
+        "validationParameters": {
+            "MAX_SCALE": 1.0,
+            "MAX_AMPLITUDE": 1.0,
+            "PERMITTED_FREQUENCY_DIFFERENCE": 1.0,
+            "MIN_PULSE_LENGTH": 8e-09,
+            "MAX_PULSE_LENGTH": 0.00012,
+        },
+    }
+)
+
+OQC_PARADIGM_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.gate_model_qpu_paradigm_properties",
+            "version": "1",
+        },
+        "connectivity": {
+            "fullyConnected": False,
+            "connectivityGraph": {
+                "0": ["1", "7"],
+                "1": ["2"],
+                "2": ["3"],
+                "4": ["3", "5"],
+                "6": ["5"],
+                "7": ["6"],
+            },
+        },
+        "qubitCount": 8,
+        "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
+    }
+)
+
+
+class TestPulseFunctionality:
+    """Test the functions specific to supporting pulse programming via Pennylane"""
+
+    @pytest.mark.parametrize(
+        "frameId, expected_result", [("q0_second_state", False), ("q0_drive", True)]
+    )
+    def test_single_frame_filter_oqc_lucy(self, frameId, expected_result):
+        """Test that _is_single_qubit_01_frame successfuly identifies whether a string matches
+        the pattern for a 01 drive frame"""
+        dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+        assert dev._is_single_qubit_01_frame(frameId) == expected_result
+
+    @pytest.mark.parametrize(
+        "frameId, expected_result", [("q0_second_state", True), ("q0_drive", False)]
+    )
+    def test_single_frame_filter_oqc_lucy_12(self, frameId, expected_result):
+        """Test that _is_single_qubit_12_frame successfuly identifies whether a string matches
+        the pattern for a 12 drive frame"""
+        dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+        assert dev._is_single_qubit_12_frame(frameId) == expected_result
+
+    def test_frame_filters_raise_error_if_not_oqc_lucy(self):
+        """Test that the functions used to access the pulse frames raise a clear error for devices
+        where frame access is not available through the plugin"""
+        dev = _aws_device(wires=2, device_arn="baz")
+
+        with pytest.raises(
+            NotImplementedError,
+            match="Single-qubit drive frame for pulse control not defined for device",
+        ):
+            dev._is_single_qubit_01_frame("q0_drive")
+
+        with pytest.raises(
+            NotImplementedError,
+            match="Single-qubit drive frame for pulse control not defined for device",
+        ):
+            dev._is_single_qubit_12_frame("q0_second_state")
+
+        with pytest.raises(NotImplementedError, match=""):
+            dev._get_frames(filter=None)
+
+    def test_get_frames(self):
+        """Test that the dev._get_frames method returns the expected results"""
+        dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+        class DummyProperties:
+            def __init__(self):
+                self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+
+        dev._device._properties = DummyProperties()
+
+        frames_01 = dev._get_frames(filter=dev._is_single_qubit_01_frame)
+        frames_12 = dev._get_frames(filter=dev._is_single_qubit_12_frame)
+
+        assert len(frames_01) == len(frames_12) == 1
+        assert "q0_drive" in frames_01.keys()
+        assert "q0_second_state" in frames_12.keys()
+
+    def test_settings_for_unsupported_device_raises_error(self):
+        """Test that accessing dev.pulse_settings for a device where this is not defined raises an error"""
+        dev = _aws_device(wires=2, device_arn="baz")
+
+        with pytest.raises(
+            NotImplementedError,
+            match="The pulse_settings property for pulse control is not defined for",
+        ):
+            dev.pulse_settings
+
+    def test_settings(self):
+        """Test that the pulse_settings property retrieves the relevant data from the device
+        pulse and paradigm properties"""
+        dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+        class DummyProperties:
+            def __init__(self):
+                self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+                self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
+
+        dev._device._properties = DummyProperties()
+
+        settings = dev.pulse_settings
+        assert settings["connections"] == [
+            (0, 1),
+            (0, 7),
+            (1, 2),
+            (2, 3),
+            (4, 3),
+            (4, 5),
+            (6, 5),
+            (7, 6),
+        ]
+        assert settings["wires"] == [0, 1, 2, 3, 4, 5, 6, 7]
+        assert np.allclose(settings["qubit_freq"], 4.6)
+        assert np.allclose(settings["anharmonicity"], 0.1)
