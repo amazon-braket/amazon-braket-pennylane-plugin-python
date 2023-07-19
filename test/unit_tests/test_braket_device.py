@@ -2002,7 +2002,7 @@ def test_verbatim_unsupported(device_type):
             wires=2,
             device_arn="foo",
             device_type=device_type,
-            native=True,
+            verbatim=True,
         )
 
 
@@ -2014,7 +2014,7 @@ def test_native(mock_run, device_type):
         device_arn="foo",
         device_type=device_type,
         action_properties=ACTION_PROPERTIES_NATIVE,
-        native=True,
+        verbatim=True,
         native_gate_set=["GPI", "GPI2", "MS"],
     )
 
