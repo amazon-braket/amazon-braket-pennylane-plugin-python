@@ -2094,7 +2094,8 @@ class TestPulseFunctionality:
         assert "q0_second_state" in frames_12.keys()
 
     def test_settings_for_unsupported_device_raises_error(self):
-        """Test that accessing dev.pulse_settings for a device where this is not defined raises an error"""
+        """Test that accessing dev.pulse_settings for a device where this is not defined
+        raises an error"""
         dev = _aws_device(wires=2, device_arn="baz")
 
         with pytest.raises(
