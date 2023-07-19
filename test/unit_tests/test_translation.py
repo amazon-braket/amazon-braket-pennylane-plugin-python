@@ -55,6 +55,7 @@ from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     _translate_observable,
     get_adjoint_gradient_result_type,
+    supported_operations,
     translate_operation,
     translate_result,
     translate_result_type,
@@ -908,3 +909,12 @@ def test_translate_hamiltonian_observable(expected_braket_H, pl_H):
 
 def test_translate_result_type_adjoint_gradient():
     print("not implemented yet")
+
+
+def test_translation_no_properties():
+    class MockDevice:
+        pass
+
+    needs_props = "Device needs to have properties defined."
+    with pytest.raises(AttributeError, match=needs_props):
+        supported_operations(MockDevice())
