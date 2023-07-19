@@ -787,6 +787,102 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         res = res[0] if len(res) == 1 and active_jac else res
         return res, jacs
 
+    def _is_single_qubit_01_frame(self, f):
+        """Defines the condition for selecting frames addressing the qubit (01)
+        drive based on frame name"""
+        if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+            return "drive" in f
+        else:
+            raise NotImplementedError(
+                f"Single-qubit drive frame for pulse control not defined for "
+                f"device {self._device.arn}"
+            )
+
+    def _is_single_qubit_12_frame(self, f):
+        """Defines the condition for selecting frames addressing excitation to
+        the second excited state based on frame name"""
+        if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+            return "second_state" in f
+        else:
+            raise NotImplementedError(
+                f"Single-qubit drive frame for pulse control not defined for "
+                f"device {self._device.arn}"
+            )
+
+    def _get_frames(self, filter):
+        """Takes a filter defining how the relevant frames are labelled, and returns all the frames
+        that fit, i.e.:
+
+        cond = lambda f: "excited" in f
+        frames = _get_frames(cond)
+
+        would return all the frames with "excited" in the frame name.
+        """
+        if not self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+            raise NotImplementedError(
+                f"Accessing drive frame for pulse control is not defined for "
+                f"device {self._device.arn}"
+            )
+        return {
+            f: info
+            for f, info in self._device.properties.pulse.dict()["frames"].items()
+            if filter(f)
+        }
+
+    @property
+    def pulse_settings(self):
+        """Dictionary of constants set by the hardware (qubit resonant frequencies,
+        inter-qubit connection graph, wires and anharmonicities).
+
+        Used to enable initializing hardware-consistent Hamiltonians by returning
+        values that would need to be passed, i.e.:
+
+            >>> dev_remote = qml.device('braket.aws.qubit',
+            >>>                          wires=8,
+            >>>                          arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy')
+            >>> settings = dev_remote.settings
+            >>> H_int = qml.pulse.transmon_interaction(**settings, coupling=0.02)
+
+        By passing the ``settings`` from the remote device to ``transmon_interaction``, an
+        ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
+        This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
+
+        Note that the user must supply coupling coefficients, as these are not available from the
+        hardware backend.
+        """
+        if not self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
+            raise NotImplementedError(
+                f"The pulse_settings property for pulse control is not defined for "
+                f"device {self._device.arn}"
+            )
+        drive_frames_01 = self._get_frames(filter=self._is_single_qubit_01_frame)
+        drive_frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
+
+        qubit_freq = [drive_frames_01[f]["frequency"] * 1e-9 for f in drive_frames_01]  # Hz to GHz
+        device_info = self._device.properties.paradigm
+
+        connections = []
+
+        for q1, connected_qubits in device_info.connectivity.connectivityGraph.items():
+            for q2 in connected_qubits:
+                connection = (int(q1), int(q2))
+                connections.append(connection)
+
+        # need to decide how to deal with non-chronological wiring order on rigetti if using
+        wires = [i for i in range(device_info.qubitCount)]
+
+        second_excitation_freq = [
+            drive_frames_12[f]["frequency"] * 1e-9 for f in drive_frames_12
+        ]  # Hz to GHz
+        anharmonicity = [f01 - f12 for f01, f12 in zip(qubit_freq, second_excitation_freq)]
+
+        return {
+            "qubit_freq": qubit_freq,
+            "connections": connections,
+            "wires": wires,
+            "anharmonicity": anharmonicity,
+        }
+
 
 class BraketLocalQubitDevice(BraketQubitDevice):
     r"""Amazon Braket LocalSimulator qubit device for PennyLane.

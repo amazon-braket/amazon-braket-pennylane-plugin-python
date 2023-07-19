@@ -75,16 +75,95 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
                 {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
-                {
-                    "name": "AdjointGradient",
-                    "observables": ["x", "y", "z", "h", "i"],
-                    "minShots": 0,
-                    "maxShots": 0,
-                },
             ],
         }
     )
 )
+
+OQC_PULSE_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.pulse.pulse_device_action_properties",
+            "version": "1",
+        },
+        "supportedQhpTemplateWaveforms": {},
+        "ports": {
+            "channel_15": {
+                "portId": "channel_15",
+                "direction": "tx",
+                "portType": "port_type_1",
+                "dt": 5e-10,
+            },
+            "channel_13": {
+                "portId": "channel_13",
+                "direction": "tx",
+                "portType": "port_type_1",
+                "dt": 5e-10,
+            },
+        },
+        "supportedFunctions": {},
+        "frames": {
+            "q0_drive": {
+                "frameId": "q0_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q1_drive": {
+                "frameId": "q1_drive",
+                "portId": "channel_13",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+        },
+        "supportsLocalPulseElements": False,
+        "supportsDynamicFrames": True,
+        "supportsNonNativeGatesWithPulses": True,
+        "validationParameters": {
+            "MAX_SCALE": 1.0,
+            "MAX_AMPLITUDE": 1.0,
+            "PERMITTED_FREQUENCY_DIFFERENCE": 1.0,
+            "MIN_PULSE_LENGTH": 8e-09,
+            "MAX_PULSE_LENGTH": 0.00012,
+        },
+    }
+)
+
+OQC_PARADIGM_PROPERTIES = json.dumps(
+    {
+        "braketSchemaHeader": {
+            "name": "braket.device_schema.gate_model_qpu_paradigm_properties",
+            "version": "1",
+        },
+        "connectivity": {
+            "fullyConnected": False,
+            "connectivityGraph": {
+                "0": ["1", "7"],
+                "1": ["2"],
+                "2": ["3"],
+                "4": ["3", "5"],
+                "6": ["5"],
+                "7": ["6"],
+            },
+        },
+        "qubitCount": 8,
+        "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
+    }
+)
+
+
+class DummyProperties:
+    def __init__(self):
+        self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+        self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
 
 
 @patch.object(AwsDevice, "__init__", mock_aws_init)
@@ -98,7 +177,7 @@ def _aws_device(
     wires,
     device_type=AwsDeviceType.QPU,
     shots=10000,
-    device_arn="baz",
+    device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy",
     action_properties=ACTION_PROPERTIES,
     **kwargs,
 ):
@@ -115,8 +194,8 @@ def _aws_device(
         shots=shots,
         **kwargs,
     )
-    # needed by the BraketAwsQubitDevice.capabilities function
-    # dev._device._arn = device_arn
+
+    dev._device._properties = DummyProperties()
     return dev
 
 
@@ -490,6 +569,7 @@ OQC_PARADIGM_PROPERTIES = json.dumps(
 )
 
 
+
 def amplitude(p, t):
     return p * (np.sin(t) + 1)
 
@@ -498,14 +578,7 @@ def test_translate_parametrized_evolution_constant():
     """Test that a ParametrizedEvolution with constant amplitude is translated to a PulseGate
     correctly."""
     n_wires = 4
-    dev = _aws_device(wires=n_wires, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
-
-    class DummyProperties:
-        def __init__(self):
-            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
-            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
-
-    dev._device._properties = DummyProperties()
+    dev = _aws_device(wires=n_wires)
 
     H = transmon_drive(0.02, np.pi, 0.5, [0])
     op = ParametrizedEvolution(H, [], t=50)
@@ -533,14 +606,7 @@ def test_translate_parametrized_evolution_callable():
     """Test that a ParametrizedEvolution with callable amplitude is translated to a PulseGate
     correctly."""
     n_wires = 4
-    dev = _aws_device(wires=n_wires, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
-
-    class DummyProperties:
-        def __init__(self):
-            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
-            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
-
-    dev._device._properties = DummyProperties()
+    dev = _aws_device(wires=n_wires)
 
     H = transmon_drive(amplitude, np.pi, 0.5, [0])
 
@@ -572,14 +638,7 @@ def test_translate_parametrized_evolution_mixed():
     """Test that a ParametrizedEvolution with one constant and one callable amplitude pulse
     is translated to a PulseGate correctly."""
     n_wires = 4
-    dev = _aws_device(wires=n_wires, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
-
-    class DummyProperties:
-        def __init__(self):
-            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
-            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
-
-    dev._device._properties = DummyProperties()
+    dev = _aws_device(wires=n_wires)
 
     H = transmon_drive(0.02, np.pi, 0.5, [0])
     H += transmon_drive(amplitude, -np.pi / 2, 0.75, [1])
@@ -616,14 +675,7 @@ def test_translate_parametrized_evolution_multi_callable():
     """Test that a ParametrizedEvolution with multiple callable amplitude pulses is translated to
     a PulseGate correctly."""
     n_wires = 4
-    dev = _aws_device(wires=n_wires, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
-
-    class DummyProperties:
-        def __init__(self):
-            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
-            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
-
-    dev._device._properties = DummyProperties()
+    dev = _aws_device(wires=n_wires)
 
     def second_amplitude(p, t):
         return p[0] * np.sin(p[1] * t) ** p[2] + p[0] * 1.1
