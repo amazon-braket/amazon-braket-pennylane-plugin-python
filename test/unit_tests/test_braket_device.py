@@ -2147,7 +2147,7 @@ def get_device():
 
 
 class TestPulseValidation:
-    def test_validate_hamiltonian_settings_raises_a_warning(self):
+    def test_op_with_interaction_term_raises_a_warning(self):
         """Check that a warning is raised if the settings from the interaction term
         on the ParametrizedEvolution don't match the device constants"""
 
@@ -2165,35 +2165,34 @@ class TestPulseValidation:
 
         op = ParametrizedEvolution(H, [], t=10)
 
-        with pytest.warns(UserWarning) as record:
-            dev._validate_hamiltonian_settings(op)
+        with pytest.warns(
+            UserWarning,
+            match="The ParametrizedEvolution contains settings from an interaction term",
+        ):
+            dev._validate_pulse_parameters(op)
 
-        # check that only one warning was raised
-        assert len(record) == 1
-        # check that the message matches
-        assert record[0].message.args[0][-25:] == "do not match the hardware"
+    def test_that_check_validity_calls_pulse_validation_function(self, mocker):
+        """Test that check_validity calls _validate_pulse_parameters if the
+        queue contains a ParametrizedEvolution"""
 
-    def test_that_check_validity_calls_pulse_validation_functions(self, mocker):
         dev = get_device()
 
-        spy1 = mocker.spy(dev, "_validate_hamiltonian_settings")
-        spy2 = mocker.spy(dev, "_validate_pulse_parameters")
+        spy = mocker.spy(dev, "_validate_pulse_parameters")
 
         H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
 
+        # one call
         dev.check_validity([op], [])
-
-        spy1.assert_called_once_with(op)
-        spy2.assert_called_once_with(op)
+        spy.assert_called_once_with(op)
 
     def test_callable_phase_raises_error(self):
+        """Test that a callable phase (other than qml.pulse.constant) raises an error"""
         dev = get_device()
 
         def f1(p, t):
             return p * t
 
-        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
         H = qml.pulse.transmon_drive(0.2, f1, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [3], t=10)
 
@@ -2201,32 +2200,80 @@ class TestPulseValidation:
             dev._validate_pulse_parameters(op)
 
     def test_callable_frequency_raises_error(self):
+        """Test that a callable frequency (other than qml.pulse.constant) raises an error"""
+
         dev = get_device()
 
         def f1(p, t):
             return p * t
 
-        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
         H = qml.pulse.transmon_drive(0.2, 0, f1, wires=[0])
         op = ParametrizedEvolution(H, [3], t=10)
 
         with pytest.raises(RuntimeError, match="Expected all frequencies to be constants"):
-            dev._validate_pulse_parameters(op)
+            dev._check_pulse_frequency_validity(op)
 
-    def test_frequecy_out_of_range_raises_error(self):
+    def test_constant_callable_phase_passes_validation(self):
+        """Test that the qml.pulse.constant function is an acceptable value for phase,
+        i.e. that no error is raised in validation"""
+
         dev = get_device()
 
-        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
+        def f1(p, t):
+            return p[0] * t + p[1]
+
+        H = qml.pulse.transmon_drive(f1, qml.pulse.constant, 4.3, wires=[0])
+        op = ParametrizedEvolution(H, [[1.2, 2.2], 3], t=10)
+
+        dev._validate_pulse_parameters(op)
+
+    def test_constant_callable_frequency_passes_validation(self):
+        """Test that the qml.pulse.constant function is an acceptable value for frequency,
+        i.e. no error is raised in validation"""
+
+        dev = get_device()
+
+        def f1(p, t):
+            return p[0] * t + p[1]
+
+        H = qml.pulse.transmon_drive(f1, 0, qml.pulse.constant, wires=[0])
+        op = ParametrizedEvolution(H, [[0, 1], 4.5], t=10)
+
+        dev._check_pulse_frequency_validity(op)
+        dev._validate_pulse_parameters(op)
+
+    def test_frequecy_out_of_range_raises_error(self):
+        """Test that a frequency outside the acceptable frequency range of the channel
+        raises an error when the frequency is defined as a number"""
+
+        dev = get_device()
+
         H = qml.pulse.transmon_drive(0.2, 0, 6, wires=[0])
-        op = ParametrizedEvolution(H, [3], t=10)
+        op = ParametrizedEvolution(H, [], t=10)
 
         with pytest.raises(RuntimeError, match="Frequency range for wire"):
             dev._validate_pulse_parameters(op)
 
-    def test_multiple_simultaneous_pulses_on_a_wire_raises_error(self):
+        with pytest.raises(RuntimeError, match="Frequency range for wire"):
+            dev._check_pulse_frequency_validity(op)
+
+    def test_constant_callable_frequency_out_of_range_raises_error(self):
+        """Test that a frequency outside the acceptable frequency range of the channel
+        raises an error when the frequency is defined via qml.pulse.constant and a passed
+        parameter"""
         dev = get_device()
 
-        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
+        H = qml.pulse.transmon_drive(0.2, 0, qml.pulse.constant, wires=[0])
+        op = ParametrizedEvolution(H, [6], t=10)
+
+        with pytest.raises(RuntimeError, match="Frequency range for wire"):
+            dev._check_pulse_frequency_validity(op)
+
+    def test_multiple_simultaneous_pulses_on_a_wire_raises_error(self):
+        """Test that a ParameterizedEvolution operator that tries to put multiple
+        pulses on a single qubit simultaneously raises an error"""
+        dev = get_device()
+
         H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
         H += qml.pulse.transmon_drive(0.5, 0, 4.1, wires=[0])
         op = ParametrizedEvolution(H, [3], t=10)
