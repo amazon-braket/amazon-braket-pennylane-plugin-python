@@ -676,10 +676,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         return outcomes
 
-    def _validate_parametrized_evolution(self, ev):
+    def _validate_pulse_parameters(self, ev):
         """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
 
-        # note: the pulse upload on the braket side immediately checks that the max amplitude is not exceeded,
+        # note: the pulse upload on the other side immediately checks that the max amplitude is not exceeded,
         # so that check has not been included here
 
         # confirm all frequency and phase values are constant for the duration of a pulse
@@ -716,22 +716,27 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                                        f"ParametrizedEvolution gate")
                 wires_used.append(wire)
 
-    def _validate_physical_parameters(self, ev):
+    def _validate_hamiltonian_settings(self, ev):
+        """If a ParametrizedEvolution includes an interaction term, and it doesn't match
+        the settings from the interaction term on the ParametrizedEvolution Hamiltonian"""
 
-        ev_settings = {'connections': ev.H.settings.connections,
-                       'qubit_freq': ev.H.settings.qubit_freq,
-                       'wires': ev.wires}
+        if ev.H.settings:
 
-        if not np.all([ev_settings[key] == self.pulse_settings[key] for key in ev_settings.keys()]):
-            warnings.warn("The physical parameters specified on the interaction term of the hamiltonian "
-                          "for the ParametrizedEvolution do not match the hardware")
+            ev_settings = {'connections': ev.H.settings.connections,
+                           'qubit_freq': ev.H.settings.qubit_freq,
+                           'wires': ev.wires}
+
+            if not np.all([ev_settings[key] == self.pulse_settings[key] for key in ev_settings.keys()]):
+                warnings.warn("The physical parameters specified on the interaction term of the "
+                              "the ParametrizedEvolution do not match the hardware")
 
     def check_validity(self, queue, observables):
+        """Check validity of pulse operations before running the standard check_validity function"""
 
         for op in queue:
             if isinstance(op, qml.pulse.ParametrizedEvolution):
-                self._validate_parametrized_evolution(op)
-                self._validate_physical_parameters(op)
+                self._validate_pulse_parameters(op)
+                self._validate_hamiltonian_settings(op)
 
         super().check_validity(queue, observables)
 
