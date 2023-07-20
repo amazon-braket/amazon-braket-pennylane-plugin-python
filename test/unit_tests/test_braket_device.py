@@ -2165,8 +2165,14 @@ class TestPulseValidation:
 
         op = ParametrizedEvolution(H, [], t=10)
 
-        with pytest.warns(UserWarning, match="do not match the hardware"):
+        with pytest.warns(UserWarning) as record:
             dev._validate_hamiltonian_settings(op)
+
+        # check that only one warning was raised
+        assert len(record) == 1
+        # check that the message matches
+        assert record[0].message.args[0][-25:] == "do not match the hardware"
+
 
     def test_that_check_validity_calls_pulse_validation_functions(self, mocker):
 
@@ -2211,16 +2217,16 @@ class TestPulseValidation:
         with pytest.raises(RuntimeError, match="Expected all frequencies to be constants"):
             dev._validate_pulse_parameters(op)
 
-    # def test_frequecy_out_of_range_raises_error(self):
-    #
-    #     dev = get_device()
-    #
-    #     # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
-    #     H = qml.pulse.transmon_drive(0.2, 0, 6, wires=[0])
-    #     op = ParametrizedEvolution(H, [3], t=10)
-    #
-    #     with pytest.raises(RuntimeError, match="Expected all frequencies to be constants"):
-    #         dev._validate_pulse_parameters(op)
+    def test_frequecy_out_of_range_raises_error(self):
+
+        dev = get_device()
+
+        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
+        H = qml.pulse.transmon_drive(0.2, 0, 6, wires=[0])
+        op = ParametrizedEvolution(H, [3], t=10)
+
+        with pytest.raises(RuntimeError, match="Frequency range for wire"):
+            dev._validate_pulse_parameters(op)
 
     def test_multiple_simultaneous_pulses_on_a_wire_raises_error(self):
 

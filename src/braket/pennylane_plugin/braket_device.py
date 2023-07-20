@@ -700,12 +700,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
             for wire in wires:
                 frame_key = f"q{wire}_drive"
-                frame = self._device.frames[frame_key]
-                freq_range = [frame.properties['centerFrequency']-freq_diff,
-                              frame.properties['centerFrequency']+freq_diff]
-                if not (freq_range[0] < freq*1e9 < freq_range[1]):
-                    raise RuntimeError(f"Frequency range for wire {wire} is between {freq_range[0]*1e-9} "
-                                       f"and {freq_range[1]*1e-9}, but recieved {freq}")
+                center_freq = self._device.properties.pulse.dict()["frames"][frame_key]['centerFrequency']
+                freq_min = center_freq-freq_diff
+                freq_max = center_freq+freq_diff
+                if not (freq_min < freq*1e9 < freq_max):
+                    raise RuntimeError(f"Frequency range for wire {wire} is between {freq_min} "
+                                       f"and {freq_max*1e-9}, but recieved {freq}")
 
         # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
         wires_used = []
