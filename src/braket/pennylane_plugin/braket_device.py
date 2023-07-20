@@ -679,20 +679,23 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _validate_pulse_parameters(self, ev):
         """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
 
-        # note: the pulse upload on the other side immediately checks that the max amplitude is not exceeded,
-        # so that check has not been included here
+        # note: the pulse upload on the other side immediately checks that the max amplitude
+        # is not exceeded, so that check has not been included here
 
         # confirm all frequency and phase values are constant for the duration of a pulse
         callable_freqs = [pulse.frequency for pulse in ev.H.pulses if callable(pulse.frequency)]
         callable_phase = [pulse.phase for pulse in ev.H.pulses if callable(pulse.phase)]
 
         if callable_freqs:
-            raise RuntimeError(f"Expected all frequencies to be constants but recieved callable(s)")
+            raise RuntimeError("Expected all frequencies to be constants but recieved callable(s)")
         if callable_phase:
-            raise RuntimeError(f"Expected all phases to be constants but recieved callable(s)")
+            raise RuntimeError("Expected all phases to be constants but recieved callable(s)")
 
         # confirm all frequencies are within permitted difference from center frequency
-        freq_diff = self._device.properties.pulse.validationParameters['PERMITTED_FREQUENCY_DIFFERENCE']*1e9
+        freq_diff = (
+            self._device.properties.pulse.validationParameters["PERMITTED_FREQUENCY_DIFFERENCE"]
+            * 1e9
+        )
 
         for pulse in ev.H.pulses:
             freq = pulse.frequency
@@ -700,20 +703,26 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
             for wire in wires:
                 frame_key = f"q{wire}_drive"
-                center_freq = self._device.properties.pulse.dict()["frames"][frame_key]['centerFrequency']
-                freq_min = center_freq-freq_diff
-                freq_max = center_freq+freq_diff
-                if not (freq_min < freq*1e9 < freq_max):
-                    raise RuntimeError(f"Frequency range for wire {wire} is between {freq_min} "
-                                       f"and {freq_max*1e-9}, but recieved {freq}")
+                center_freq = self._device.properties.pulse.dict()["frames"][frame_key][
+                    "centerFrequency"
+                ]
+                freq_min = center_freq - freq_diff
+                freq_max = center_freq + freq_diff
+                if not (freq_min < freq * 1e9 < freq_max):
+                    raise RuntimeError(
+                        f"Frequency range for wire {wire} is between {freq_min} "
+                        f"and {freq_max*1e-9}, but recieved {freq}"
+                    )
 
         # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
         wires_used = []
         for pulse in ev.H.pulses:
             for wire in pulse.wires:
                 if wire in wires_used:
-                    raise RuntimeError(f"Multiple waveforms assigned to wire {wire} in the same "
-                                       f"ParametrizedEvolution gate")
+                    raise RuntimeError(
+                        f"Multiple waveforms assigned to wire {wire} in the same "
+                        f"ParametrizedEvolution gate"
+                    )
                 wires_used.append(wire)
 
     def _validate_hamiltonian_settings(self, ev):
@@ -721,14 +730,19 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         the settings from the interaction term on the ParametrizedEvolution Hamiltonian"""
 
         if ev.H.settings:
+            ev_settings = {
+                "connections": ev.H.settings.connections,
+                "qubit_freq": ev.H.settings.qubit_freq,
+                "wires": ev.wires,
+            }
 
-            ev_settings = {'connections': ev.H.settings.connections,
-                           'qubit_freq': ev.H.settings.qubit_freq,
-                           'wires': ev.wires}
-
-            if not np.all([ev_settings[key] == self.pulse_settings[key] for key in ev_settings.keys()]):
-                warnings.warn("The physical parameters specified on the interaction term of the "
-                              "the ParametrizedEvolution do not match the hardware")
+            if not np.all(
+                [ev_settings[key] == self.pulse_settings[key] for key in ev_settings.keys()]
+            ):
+                warnings.warn(
+                    "The physical parameters specified on the interaction term of the "
+                    "the ParametrizedEvolution do not match the hardware"
+                )
 
     def check_validity(self, queue, observables):
         """Check validity of pulse operations before running the standard check_validity function"""

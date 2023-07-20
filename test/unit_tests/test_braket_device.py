@@ -12,7 +12,6 @@
 # language governing permissions and limitations under the License.
 
 import json
-import warnings
 from typing import Any, Dict, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
@@ -37,8 +36,8 @@ from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
+from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
-from pennylane.pulse import ParametrizedEvolution, transmon_drive, transmon_interaction
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
@@ -2148,7 +2147,6 @@ def get_device():
 
 
 class TestPulseValidation:
-
     def test_validate_hamiltonian_settings_raises_a_warning(self):
         """Check that a warning is raised if the settings from the interaction term
         on the ParametrizedEvolution don't match the device constants"""
@@ -2156,10 +2154,12 @@ class TestPulseValidation:
         dev = get_device()
 
         # some 3 qubit device
-        H = transmon_interaction(qubit_freq=[4.3, 4.6, 4.8],
-                                 connections=[(1, 2), (1, 3)],
-                                 coupling=[0.02, 0.03],
-                                 wires=[0, 1, 2])
+        H = qml.pulse.transmon_interaction(
+            qubit_freq=[4.3, 4.6, 4.8],
+            connections=[(1, 2), (1, 3)],
+            coupling=[0.02, 0.03],
+            wires=[0, 1, 2],
+        )
         # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
         H += qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
 
@@ -2173,13 +2173,11 @@ class TestPulseValidation:
         # check that the message matches
         assert record[0].message.args[0][-25:] == "do not match the hardware"
 
-
     def test_that_check_validity_calls_pulse_validation_functions(self, mocker):
-
         dev = get_device()
 
-        spy1 = mocker.spy(dev, '_validate_hamiltonian_settings')
-        spy2 = mocker.spy(dev, '_validate_pulse_parameters')
+        spy1 = mocker.spy(dev, "_validate_hamiltonian_settings")
+        spy2 = mocker.spy(dev, "_validate_pulse_parameters")
 
         H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
@@ -2190,11 +2188,10 @@ class TestPulseValidation:
         spy2.assert_called_once_with(op)
 
     def test_callable_phase_raises_error(self):
-
         dev = get_device()
 
         def f1(p, t):
-            return p*t
+            return p * t
 
         # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
         H = qml.pulse.transmon_drive(0.2, f1, 4.3, wires=[0])
@@ -2204,11 +2201,10 @@ class TestPulseValidation:
             dev._validate_pulse_parameters(op)
 
     def test_callable_frequency_raises_error(self):
-
         dev = get_device()
 
         def f1(p, t):
-            return p*t
+            return p * t
 
         # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
         H = qml.pulse.transmon_drive(0.2, 0, f1, wires=[0])
@@ -2218,7 +2214,6 @@ class TestPulseValidation:
             dev._validate_pulse_parameters(op)
 
     def test_frequecy_out_of_range_raises_error(self):
-
         dev = get_device()
 
         # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
@@ -2229,7 +2224,6 @@ class TestPulseValidation:
             dev._validate_pulse_parameters(op)
 
     def test_multiple_simultaneous_pulses_on_a_wire_raises_error(self):
-
         dev = get_device()
 
         # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
