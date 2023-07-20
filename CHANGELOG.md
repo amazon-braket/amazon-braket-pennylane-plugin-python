@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.0 (2023-07-20)
+
+### Features
+
+ * native mode
+
 ## v1.17.4 (2023-07-17)
 
 ### Bug Fixes and Other Changes
