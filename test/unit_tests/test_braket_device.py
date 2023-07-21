@@ -39,7 +39,15 @@ from pennylane import numpy as np
 from pennylane.tape import QuantumScript, QuantumTape
 
 import braket.pennylane_plugin.braket_device
-from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice, __version__
+from braket.pennylane_plugin import (
+    AAMS,
+    MS,
+    BraketAwsQubitDevice,
+    BraketLocalQubitDevice,
+    GPi,
+    GPi2,
+    __version__,
+)
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
 
 SHOTS = 10000
@@ -90,6 +98,26 @@ ACTION_PROPERTIES_DM_DEVICE = OpenQASMDeviceActionProperties.parse_raw(
                 "braket_result_type_probability",
                 "braket_result_type_density_matrix",
             ],
+        }
+    )
+)
+
+ACTION_PROPERTIES_NATIVE = OpenQASMDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.openqasm.program",
+            "version": ["1"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "AdjointGradient",
+                    "observables": ["x", "y", "z", "h", "i"],
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
+            ],
+            "supportedPragmas": ["verbatim"],
         }
     )
 )
@@ -647,10 +675,12 @@ def test_execute_tracker(mock_run):
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
 
-def _aws_device_mock_init(self, arn, aws_session):
-    self._arn = arn
+def _aws_device_mock_init(self, *args, **kwargs):
+    self._arn = args[0]
     self._properties = None
     self._ports = None
+    self._name = "name"
+    return None
 
 
 @patch.object(AwsDevice, "__init__", _aws_device_mock_init)
@@ -1276,11 +1306,16 @@ def test_execute_some_samples(mock_run, old_return_type):
     assert results[1] == 0.0
 
 
-@pytest.mark.xfail(raises=ValueError)
+@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
-def test_non_circuit_device(name_mock):
+def test_non_circuit_device(name_mock, type_mock):
     """Tests that BraketDevice cannot be instantiated with a non-circuit AwsDevice"""
-    _bad_aws_device(wires=2)
+    device_name = "name"
+    name_mock.return_value = device_name
+    type_mock.return_value = AwsDeviceType.SIMULATOR
+    does_not_support_circuits = f"Device {device_name} does not support quantum circuits"
+    with pytest.raises(ValueError, match=does_not_support_circuits):
+        _bad_aws_device(wires=2)
 
 
 def test_simulator_default_shots():
@@ -1389,7 +1424,11 @@ def test_supported_ops_set(monkeypatch):
 
     test_ops = ["TestOperation"]
     with monkeypatch.context() as m:
-        m.setattr(braket.pennylane_plugin.braket_device, "supported_operations", lambda x: test_ops)
+        m.setattr(
+            braket.pennylane_plugin.braket_device,
+            "supported_operations",
+            lambda x, verbatim=False: test_ops,
+        )
         dev = _aws_device(wires=2)
         assert dev.operations == test_ops
 
@@ -1406,38 +1445,28 @@ def test_projection():
     def f(thetas, **kwargs):
         [qml.RY(thetas[i], wires=i) for i in range(wires)]
 
-    projector_01 = qml.Projector([0, 1], wires=range(wires))
-    projector_10 = qml.Projector([1, 0], wires=range(wires))
+    projector_01_bs = qml.Projector([0, 1], wires=range(wires))
+    projector_01_sv = qml.Projector([0, 1, 0, 0], wires=range(wires))
+    projector_10_bs = qml.Projector([1, 0], wires=range(wires))
+    projector_10_sv = qml.Projector([0, 0, 1, 0], wires=range(wires))
 
-    # 01 case
+    projectors = [projector_01_bs, projector_01_sv, projector_10_bs, projector_10_sv]
+    expected = [p_01, p_01, p_10, p_10]
+
     @qml.qnode(dev)
-    def f_01(thetas, measure_type):
+    def qnode(thetas, measure_type, observable):
         f(thetas)
-        return measure_type(projector_01)
+        return measure_type(observable)
 
-    expval_01 = f_01(thetas, qml.expval)
-    assert np.allclose(expval_01, p_01)
+    for proj, exp in zip(projectors, expected):
+        expval = qnode(thetas, qml.expval, proj)
+        assert np.allclose(expval, exp)
 
-    var_01 = f_01(thetas, qml.var)
-    assert np.allclose(var_01, p_01 - p_01**2)
+        var = qnode(thetas, qml.var, proj)
+        assert np.allclose(var, exp - exp**2)
 
-    samples = f_01(thetas, qml.sample, shots=100).tolist()
-    assert set(samples) == {0, 1}
-
-    # 10 case
-    @qml.qnode(dev)
-    def f_10(thetas, measure_type):
-        f(thetas)
-        return measure_type(projector_10)
-
-    exp_10 = f_10(thetas, qml.expval)
-    assert np.allclose(exp_10, p_10)
-
-    var_10 = f_10(thetas, qml.var)
-    assert np.allclose(var_10, p_10 - p_10**2)
-
-    samples = f_10(thetas, qml.sample, shots=100).tolist()
-    assert set(samples) == {0, 1}
+        samples = qnode(thetas, qml.sample, proj, shots=100).tolist()
+        assert set(samples) == {0, 1}
 
 
 @pytest.mark.xfail(raises=AttributeError)
@@ -1785,18 +1814,24 @@ def _aws_device(
     shots=SHOTS,
     device_arn="baz",
     action_properties=ACTION_PROPERTIES,
+    native_gate_set=None,
     **kwargs,
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     properties_mock.return_value.action.return_value = {
         DeviceActionType.OPENQASM: action_properties
     }
+    properties_mock.paradigm.nativeGateSet = native_gate_set
+    if native_gate_set is None:
+        type(properties_mock).paradigm = PropertyMock(side_effect=AttributeError("paradigm"))
     type_mock.return_value = device_type
+    aws_session_mock = Mock()
+    aws_session_mock.get_device.return_value = {"deviceName": f"{device_arn}-name"}
     dev = BraketAwsQubitDevice(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn=device_arn,
-        aws_session=Mock(),
+        aws_session=aws_session_mock,
         shots=shots,
         **kwargs,
     )
@@ -1887,7 +1922,7 @@ def test_invalid_local_device_for_noise_model(backend, device_name, noise_model)
 
 @pytest.mark.parametrize("device_name", ["dm1"])
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
-def test_valide_aws_device_for_noise_model(name_mock, device_name, noise_model):
+def test_valid_aws_device_for_noise_model(name_mock, device_name, noise_model):
     name_mock.return_value = device_name
     dev = _aws_device(
         wires=2,
@@ -2130,3 +2165,56 @@ class TestPulseFunctionality:
         assert settings["wires"] == [0, 1, 2, 3, 4, 5, 6, 7]
         assert np.allclose(settings["qubit_freq"], 4.6)
         assert np.allclose(settings["anharmonicity"], 0.1)
+
+
+@pytest.mark.parametrize("device_type", (AwsDeviceType.QPU, AwsDeviceType.SIMULATOR))
+def test_verbatim_unsupported(device_type):
+    device_name = "name"
+    no_verbatim = f"Device {device_name} does not support verbatim circuits"
+    with pytest.raises(ValueError, match=no_verbatim):
+        _aws_device(
+            wires=2,
+            device_arn="foo",
+            device_type=device_type,
+            verbatim=True,
+        )
+
+
+@pytest.mark.parametrize("device_type", (AwsDeviceType.QPU, AwsDeviceType.SIMULATOR))
+@patch.object(AwsDevice, "run")
+def test_native(mock_run, device_type):
+    dev = _aws_device(
+        wires=2,
+        device_arn="foo",
+        device_type=device_type,
+        action_properties=ACTION_PROPERTIES_NATIVE,
+        verbatim=True,
+        native_gate_set=["GPI", "GPI2", "MS"],
+    )
+
+    @qml.qnode(dev)
+    def circuit(a):
+        GPi(a[0], 0)
+        GPi2(a[0], 0)
+        MS(a[0], a[1], (0, 1))
+        AAMS(a[0], a[1], a[2], (0, 1))
+        return qml.expval(qml.PauliZ(wires=1))
+
+    x = np.array([0.76, 0.45, 1.5707963267948966], requires_grad=True)
+    circuit(x)
+
+    expected_circuit = (
+        Circuit()
+        .add_verbatim_box(
+            Circuit().gpi(0, x[0]).gpi2(0, x[0]).ms(0, 1, x[0], x[1]).ms(0, 1, x[0], x[1], x[2])
+        )
+        .expectation(observable=Observable.Z(), target=1)
+    )
+    mock_run.assert_called_with(
+        expected_circuit,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        inputs={},
+    )
