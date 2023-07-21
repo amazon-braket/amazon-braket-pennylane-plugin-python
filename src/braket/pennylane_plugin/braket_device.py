@@ -723,8 +723,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 freq_max = center_freq + freq_diff
                 if not (freq_min < freq * 1e9 < freq_max):
                     raise RuntimeError(
-                        f"Frequency range for wire {wire} is between {freq_min} "
-                        f"and {freq_max*1e-9}, but recieved {freq}"
+                        f"Frequency range for wire {wire} is between {freq_min * 1e-9} "
+                        f"and {freq_max * 1e-9} GHz, but recieved {freq} GHz."
                     )
 
     def _validate_pulse_parameters(self, ev):

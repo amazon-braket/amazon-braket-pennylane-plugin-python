@@ -2133,7 +2133,7 @@ class TestPulseFunctionality:
         assert np.allclose(settings["anharmonicity"], 0.1)
 
 
-def get_device():
+def get_oqc_device():
     dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
 
     class DummyProperties:
@@ -2151,7 +2151,7 @@ class TestPulseValidation:
         """Check that a warning is raised if the settings from the interaction term
         on the ParametrizedEvolution don't match the device constants"""
 
-        dev = get_device()
+        dev = get_oqc_device()
 
         # some 3 qubit device
         H = qml.pulse.transmon_interaction(
@@ -2175,7 +2175,7 @@ class TestPulseValidation:
         """Test that check_validity calls _validate_pulse_parameters if the
         queue contains a ParametrizedEvolution"""
 
-        dev = get_device()
+        dev = get_oqc_device()
 
         spy = mocker.spy(dev, "_validate_pulse_parameters")
 
@@ -2188,7 +2188,7 @@ class TestPulseValidation:
 
     def test_callable_phase_raises_error(self):
         """Test that a callable phase (other than qml.pulse.constant) raises an error"""
-        dev = get_device()
+        dev = get_oqc_device()
 
         def f1(p, t):
             return p * t
@@ -2202,7 +2202,7 @@ class TestPulseValidation:
     def test_callable_frequency_raises_error(self):
         """Test that a callable frequency (other than qml.pulse.constant) raises an error"""
 
-        dev = get_device()
+        dev = get_oqc_device()
 
         def f1(p, t):
             return p * t
@@ -2217,7 +2217,7 @@ class TestPulseValidation:
         """Test that the qml.pulse.constant function is an acceptable value for phase,
         i.e. that no error is raised in validation"""
 
-        dev = get_device()
+        dev = get_oqc_device()
 
         def f1(p, t):
             return p[0] * t + p[1]
@@ -2231,7 +2231,7 @@ class TestPulseValidation:
         """Test that the qml.pulse.constant function is an acceptable value for frequency,
         i.e. no error is raised in validation"""
 
-        dev = get_device()
+        dev = get_oqc_device()
 
         def f1(p, t):
             return p[0] * t + p[1]
@@ -2246,7 +2246,7 @@ class TestPulseValidation:
         """Test that a frequency outside the acceptable frequency range of the channel
         raises an error when the frequency is defined as a number"""
 
-        dev = get_device()
+        dev = get_oqc_device()
 
         H = qml.pulse.transmon_drive(0.2, 0, 6, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
@@ -2261,7 +2261,7 @@ class TestPulseValidation:
         """Test that a frequency outside the acceptable frequency range of the channel
         raises an error when the frequency is defined via qml.pulse.constant and a passed
         parameter"""
-        dev = get_device()
+        dev = get_oqc_device()
 
         H = qml.pulse.transmon_drive(0.2, 0, qml.pulse.constant, wires=[0])
         op = ParametrizedEvolution(H, [6], t=10)
@@ -2272,7 +2272,7 @@ class TestPulseValidation:
     def test_multiple_simultaneous_pulses_on_a_wire_raises_error(self):
         """Test that a ParameterizedEvolution operator that tries to put multiple
         pulses on a single qubit simultaneously raises an error"""
-        dev = get_device()
+        dev = get_oqc_device()
 
         H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
         H += qml.pulse.transmon_drive(0.5, 0, 4.1, wires=[0])
