@@ -473,9 +473,9 @@ def amplitude(p, t):
     return p * (np.sin(t) + 1)
 
 
-def test_translate_parametrized_evolution_constant():
-    """Test that a ParametrizedEvolution with constant amplitude is translated to a PulseGate
-    correctly."""
+def test_translate_parametrized_evolution_constant_amplitude():
+    """Test that a ParametrizedEvolution with constant amplitude, phase, and frequency
+    is translated to a PulseGate correctly."""
     n_wires = 4
     dev = _aws_device(wires=n_wires)
 
@@ -502,15 +502,17 @@ def test_translate_parametrized_evolution_constant():
 
 
 def test_translate_parametrized_evolution_callable():
-    """Test that a ParametrizedEvolution with callable amplitude is translated to a PulseGate
-    correctly."""
+    """Test that a ParametrizedEvolution with callable amplitude, phase, and frequency
+    is translated to a PulseGate correctly."""
     n_wires = 4
     dev = _aws_device(wires=n_wires)
 
-    H = transmon_drive(amplitude, np.pi, 0.5, [0])
+    H = transmon_drive(amplitude, qml.pulse.constant, qml.pulse.constant, [0])
 
     amplitude_param = 0.1
-    op = ParametrizedEvolution(H, [amplitude_param], t=50)
+    phase_param = np.pi
+    frequency_param = 3.5
+    op = ParametrizedEvolution(H, [amplitude_param, phase_param, frequency_param], t=50)
 
     braket_gate = translate_operation(op, device=dev)
 
@@ -535,15 +537,18 @@ def test_translate_parametrized_evolution_callable():
 
 def test_translate_parametrized_evolution_mixed():
     """Test that a ParametrizedEvolution with one constant and one callable amplitude pulse
-    is translated to a PulseGate correctly."""
+    along with mixed constant and qml.pulse.constant phase and frequenciesis translated to
+    a PulseGate correctly."""
     n_wires = 4
     dev = _aws_device(wires=n_wires)
 
-    H = transmon_drive(0.02, np.pi, 0.5, [0])
-    H += transmon_drive(amplitude, -np.pi / 2, 0.75, [1])
+    H = transmon_drive(0.02, qml.pulse.constant, 0.5, [0])
+    H += transmon_drive(amplitude, -np.pi / 2, qml.pulse.constant, [1])
 
+    phase_param = 1.5
     amplitude_param = 0.1
-    op = ParametrizedEvolution(H, [amplitude_param], t=50)
+    frequency_param = 4.0
+    op = ParametrizedEvolution(H, [phase_param, amplitude_param, frequency_param], t=50)
 
     braket_gate = translate_operation(op, device=dev)
 
@@ -570,7 +575,7 @@ def test_translate_parametrized_evolution_mixed():
     assert np.allclose(waveforms[1].amplitudes, amplitudes)
 
 
-def test_translate_parametrized_evolution_multi_callable():
+def test_translate_parametrized_evolution_multi_callable_amplitudes():
     """Test that a ParametrizedEvolution with multiple callable amplitude pulses is translated to
     a PulseGate correctly."""
     n_wires = 4
@@ -579,12 +584,12 @@ def test_translate_parametrized_evolution_multi_callable():
     def second_amplitude(p, t):
         return p[0] * np.sin(p[1] * t) ** p[2] + p[0] * 1.1
 
-    H = transmon_drive(amplitude, np.pi, 0.5, [0])
+    H = transmon_drive(amplitude, np.pi, qml.pulse.constant, [0])
     H += transmon_drive(second_amplitude, -np.pi / 2, 0.42, [1])
 
-    first_param = 0.1
-    second_param = [0.5, np.pi, 3]
-    op = ParametrizedEvolution(H, [first_param, second_param], t=50)
+    first_amp_param = 0.1
+    second_amp_param = [0.5, np.pi, 3]
+    op = ParametrizedEvolution(H, [first_amp_param, 3.5, second_amp_param], t=50)
 
     braket_gate = translate_operation(op, device=dev)
     assert braket_gate.qubit_count == 2
@@ -598,8 +603,8 @@ def test_translate_parametrized_evolution_multi_callable():
 
     dt = expected_frames[0].port.dt * 1e9
     amplitudes = [
-        [amplitude(first_param, t) for t in np.arange(0, 50 + dt, dt)],
-        [second_amplitude(second_param, t) for t in np.arange(0, 50 + dt, dt)],
+        [amplitude(first_amp_param, t) for t in np.arange(0, 50 + dt, dt)],
+        [second_amplitude(second_amp_param, t) for t in np.arange(0, 50 + dt, dt)],
     ]
 
     waveforms = list(ps._waveforms.values())
