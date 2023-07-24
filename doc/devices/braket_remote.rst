@@ -100,6 +100,28 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.MS
 
 
+Pulse Programming
+~~~~~~~~~~~~~~~~~
+
+The PennyLane-Braket plugin provides pulse-level control for the OQC Lucy QPU through PennyLane's :class:`pennylane.pulse.ParametrizedEvolution`
+operation. Compatible pulse Hamiltonians can be defined using the :class:`pennylane.pulse.transmon_drive` function and used to create
+``ParametrizedEvolution``'s using `pennylane.evolve`:
+
+.. code-block:: python
+
+    duration = 15
+    def amp(p, t):
+        return qml.pulse.pwc(duration)(p, t)
+
+    dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+    drive = qml.pulse.transmon.transmon_drive(amplitude=amp, phase=0, freq=4.8, wires=[0])
+
+    @qml.qnode(dev)
+    def circuit(params, t):
+        qml.evolve(drive)(params, t)
+        return qml.expval(qml.PauliZ(wires=0))
+
 Gradient computation on Braket with a QAOA Hamiltonian
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Currently, PennyLane will compute grouping indices for QAOA Hamiltonians and use them to split the Hamiltonian into multiple expectation values. If you wish to use `SV1’s adjoint differentiation capability<https://docs.aws.amazon.com/braket/latest/developerguide/hybrid.html>` when running QAOA from PennyLane, you will need reconstruct the cost Hamiltonian to remove the grouping indices from the cost Hamiltonian, like so:
