@@ -104,8 +104,8 @@ Pulse Programming
 ~~~~~~~~~~~~~~~~~
 
 The PennyLane-Braket plugin provides pulse-level control for the OQC Lucy QPU through PennyLane's :class:`pennylane.pulse.ParametrizedEvolution`
-operation. Compatible pulse Hamiltonians can be defined using the :class:`pennylane.pulse.transmon_drive` function and used to create
-``ParametrizedEvolution``'s using `pennylane.evolve`:
+operation. Compatible pulse Hamiltonians can be defined using the :func:`pennylane.pulse.transmon_drive` function and used to create
+``ParametrizedEvolution``'s using :func:`pennylane.evolve`:
 
 .. code-block:: python
 
@@ -121,6 +121,22 @@ operation. Compatible pulse Hamiltonians can be defined using the :class:`pennyl
     def circuit(params, t):
         qml.evolve(drive)(params, t)
         return qml.expval(qml.PauliZ(wires=0))
+
+Note that the ``amplitude`` and ``freq`` arguments of ``qml.pulse.transmon_drive`` must be specified in :math:`\text{GHz}`. This will be internally
+converted into :math:`\text{rad/s}` for use with the Braket API. The ``phase`` must be specified in radians.
+
+The pulse settings for the device can be obtained using the ``pulse_settings`` property. These settings can be used to describe the transmon
+interaction Hamiltonian using :func:`pennylane.pulse.transmon_interaction`:
+
+    .. code-block:: python
+        dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+        pulse_settings = dev.pulse_settings
+        H = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
+
+By passing ``pulse_settings`` from the remote device to :func:`pennylane.pulse.transmon_interaction`, an ``H`` Hamiltonian term is created using
+the constants specific to the hardware. This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
+
+Note that the user must supply coupling coefficients, as these are not available from the hardware backend.
 
 Gradient computation on Braket with a QAOA Hamiltonian
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -894,10 +894,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             >>> dev_remote = qml.device('braket.aws.qubit',
             >>>                          wires=8,
             >>>                          arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy')
-            >>> settings = dev_remote.settings
-            >>> H_int = qml.pulse.transmon_interaction(**settings, coupling=0.02)
+            >>> pulse_settings = dev_remote.pulse_settings
+            >>> H_int = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
 
-        By passing the ``settings`` from the remote device to ``transmon_interaction``, an
+        By passing the ``pulse_settings`` from the remote device to ``transmon_interaction``, an
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
         This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
 
