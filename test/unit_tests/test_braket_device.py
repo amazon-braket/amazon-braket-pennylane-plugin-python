@@ -36,6 +36,7 @@ from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
+from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
 
 import braket.pennylane_plugin.braket_device
@@ -2165,6 +2166,155 @@ class TestPulseFunctionality:
         assert settings["wires"] == [0, 1, 2, 3, 4, 5, 6, 7]
         assert np.allclose(settings["qubit_freq"], 4.6)
         assert np.allclose(settings["anharmonicity"], 0.1)
+
+
+def get_oqc_device():
+    dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+    class DummyProperties:
+        def __init__(self):
+            self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+            self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
+
+    dev._device._properties = DummyProperties()
+
+    return dev
+
+
+class TestPulseValidation:
+    def test_op_with_interaction_term_raises_a_warning(self):
+        """Check that a warning is raised if the settings from the interaction term
+        on the ParametrizedEvolution don't match the device constants"""
+
+        dev = get_oqc_device()
+
+        # some 3 qubit device
+        H = qml.pulse.transmon_interaction(
+            qubit_freq=[4.3, 4.6, 4.8],
+            connections=[(1, 2), (1, 3)],
+            coupling=[0.02, 0.03],
+            wires=[0, 1, 2],
+        )
+        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
+        H += qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
+
+        op = ParametrizedEvolution(H, [], t=10)
+
+        with pytest.warns(
+            UserWarning,
+            match="The ParametrizedEvolution contains settings from an interaction term",
+        ):
+            dev._validate_pulse_parameters(op)
+
+    def test_that_check_validity_calls_pulse_validation_function(self, mocker):
+        """Test that check_validity calls _validate_pulse_parameters if the
+        queue contains a ParametrizedEvolution"""
+
+        dev = get_oqc_device()
+
+        spy = mocker.spy(dev, "_validate_pulse_parameters")
+
+        H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
+        op = ParametrizedEvolution(H, [], t=10)
+
+        # one call
+        dev.check_validity([op], [])
+        spy.assert_called_once_with(op)
+
+    def test_callable_phase_raises_error(self):
+        """Test that a callable phase (other than qml.pulse.constant) raises an error"""
+        dev = get_oqc_device()
+
+        def f1(p, t):
+            return p * t
+
+        H = qml.pulse.transmon_drive(0.2, f1, 4.3, wires=[0])
+        op = ParametrizedEvolution(H, [3], t=10)
+
+        with pytest.raises(RuntimeError, match="Expected all phases to be constants"):
+            dev._validate_pulse_parameters(op)
+
+    def test_callable_frequency_raises_error(self):
+        """Test that a callable frequency (other than qml.pulse.constant) raises an error"""
+
+        dev = get_oqc_device()
+
+        def f1(p, t):
+            return p * t
+
+        H = qml.pulse.transmon_drive(0.2, 0, f1, wires=[0])
+        op = ParametrizedEvolution(H, [3], t=10)
+
+        with pytest.raises(RuntimeError, match="Expected all frequencies to be constants"):
+            dev._check_pulse_frequency_validity(op)
+
+    def test_constant_callable_phase_passes_validation(self):
+        """Test that the qml.pulse.constant function is an acceptable value for phase,
+        i.e. that no error is raised in validation"""
+
+        dev = get_oqc_device()
+
+        def f1(p, t):
+            return p[0] * t + p[1]
+
+        H = qml.pulse.transmon_drive(f1, qml.pulse.constant, 4.3, wires=[0])
+        op = ParametrizedEvolution(H, [[1.2, 2.2], 3], t=10)
+
+        dev._validate_pulse_parameters(op)
+
+    def test_constant_callable_frequency_passes_validation(self):
+        """Test that the qml.pulse.constant function is an acceptable value for frequency,
+        i.e. no error is raised in validation"""
+
+        dev = get_oqc_device()
+
+        def f1(p, t):
+            return p[0] * t + p[1]
+
+        H = qml.pulse.transmon_drive(f1, 0, qml.pulse.constant, wires=[0])
+        op = ParametrizedEvolution(H, [[0, 1], 4.5], t=10)
+
+        dev._check_pulse_frequency_validity(op)
+        dev._validate_pulse_parameters(op)
+
+    def test_frequecy_out_of_range_raises_error(self):
+        """Test that a frequency outside the acceptable frequency range of the channel
+        raises an error when the frequency is defined as a number"""
+
+        dev = get_oqc_device()
+
+        H = qml.pulse.transmon_drive(0.2, 0, 6, wires=[0])
+        op = ParametrizedEvolution(H, [], t=10)
+
+        with pytest.raises(RuntimeError, match="Frequency range for wire"):
+            dev._validate_pulse_parameters(op)
+
+        with pytest.raises(RuntimeError, match="Frequency range for wire"):
+            dev._check_pulse_frequency_validity(op)
+
+    def test_constant_callable_frequency_out_of_range_raises_error(self):
+        """Test that a frequency outside the acceptable frequency range of the channel
+        raises an error when the frequency is defined via qml.pulse.constant and a passed
+        parameter"""
+        dev = get_oqc_device()
+
+        H = qml.pulse.transmon_drive(0.2, 0, qml.pulse.constant, wires=[0])
+        op = ParametrizedEvolution(H, [6], t=10)
+
+        with pytest.raises(RuntimeError, match="Frequency range for wire"):
+            dev._check_pulse_frequency_validity(op)
+
+    def test_multiple_simultaneous_pulses_on_a_wire_raises_error(self):
+        """Test that a ParameterizedEvolution operator that tries to put multiple
+        pulses on a single qubit simultaneously raises an error"""
+        dev = get_oqc_device()
+
+        H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
+        H += qml.pulse.transmon_drive(0.5, 0, 4.1, wires=[0])
+        op = ParametrizedEvolution(H, [3], t=10)
+
+        with pytest.raises(RuntimeError, match="Multiple waveforms assigned to wire"):
+            dev._validate_pulse_parameters(op)
 
 
 @pytest.mark.parametrize("device_type", (AwsDeviceType.QPU, AwsDeviceType.SIMULATOR))

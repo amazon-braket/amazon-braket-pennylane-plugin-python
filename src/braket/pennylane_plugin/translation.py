@@ -469,11 +469,23 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
         else:
             waveform = ConstantWaveform(pulse_length, pulse.amplitude)
 
+        if callable(pulse.phase):
+            phase = op.parameters[callable_index]
+            callable_index += 1
+        else:
+            phase = pulse.phase
+
+        if callable(pulse.frequency):
+            frequency = op.parameters[callable_index]
+            callable_index += 1
+        else:
+            frequency = pulse.frequency
+
         # Play pulse for each frame
         for w in pulse.wires.map(device.wire_map):
             pulse_sequence = (
-                pulse_sequence.set_frequency(frames[w], pulse.frequency * 1e9)  # GHz to Hz
-                .set_phase(frames[w], pulse.phase)
+                pulse_sequence.set_frequency(frames[w], frequency * 1e9)  # GHz to Hz
+                .set_phase(frames[w], phase)
                 .play(frames[w], waveform)
             )
 

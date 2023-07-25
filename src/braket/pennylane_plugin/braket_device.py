@@ -35,6 +35,7 @@ Code details
 
 import collections
 import numbers
+import warnings
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
@@ -689,6 +690,107 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 outcomes[t] = np.array(res.measurements[0])[mapped_wires]
 
         return outcomes
+
+    def _check_pulse_frequency_validity(self, ev):
+        """Confirm that, for each waveform on the ParametrizedEvolution operator, the frequency
+        setting is a constant, and the value is within the frequency range for the relevant frame;
+        if not, raise an error"""
+
+        # confirm all frequency values are constant (or the qml.pulse.constant function)
+        callable_freqs = [
+            pulse.frequency
+            for pulse in ev.H.pulses
+            if (callable(pulse.frequency) and pulse.frequency != qml.pulse.constant)
+        ]
+
+        if callable_freqs:
+            raise RuntimeError(
+                "Expected all frequencies to be constants or qml.pulse.constant, "
+                "but recieved callable(s)"
+            )
+
+        # confirm all frequencies are within permitted difference from center frequency
+        freq_diff = (
+            self._device.properties.pulse.validationParameters["PERMITTED_FREQUENCY_DIFFERENCE"]
+            * 1e9
+        )
+        param_idx = 0
+        for pulse in ev.H.pulses:
+            freq = pulse.frequency
+            # track the index for parameters in case we need to evaluate qml.pulse.constant
+            if callable(pulse.amplitude):
+                param_idx += 1
+            if callable(pulse.phase):
+                param_idx += 1
+            if callable(pulse.frequency):
+                # if frequency is callable, its qml.pulse.constant and equal to its parameter
+                freq = ev.parameters[param_idx]
+                param_idx += 1
+
+            wires = self.map_wires(pulse.wires).tolist()
+
+            for wire in wires:
+                frame_key = f"q{wire}_drive"
+                center_freq = self._device.properties.pulse.dict()["frames"][frame_key][
+                    "centerFrequency"
+                ]
+                freq_min = center_freq - freq_diff
+                freq_max = center_freq + freq_diff
+                if not (freq_min < freq * 1e9 < freq_max):
+                    raise RuntimeError(
+                        f"Frequency range for wire {wire} is between {freq_min * 1e-9} "
+                        f"and {freq_max * 1e-9} GHz, but recieved {freq} GHz."
+                    )
+
+    def _validate_pulse_parameters(self, ev):
+        """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
+
+        # note: the pulse upload on the other side immediately checks that the max amplitude
+        # is not exceeded, so that check has not been included here
+
+        # confirm frequencies are constant and within the permitted frequency range for the channel
+        self._check_pulse_frequency_validity(ev)
+
+        # confirm all phase values are constant (or the qml.pulse.constant function)
+        callable_phase = [
+            pulse.phase
+            for pulse in ev.H.pulses
+            if (callable(pulse.phase) and pulse.phase != qml.pulse.constant)
+        ]
+
+        if callable_phase:
+            raise RuntimeError(
+                "Expected all phases to be constants or qml.pulse.constant, "
+                "but recieved callable(s)"
+            )
+
+        # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
+        wires_used = []
+        for pulse in ev.H.pulses:
+            for wire in pulse.wires:
+                if wire in wires_used:
+                    raise RuntimeError(
+                        f"Multiple waveforms assigned to wire {wire} in the same "
+                        f"ParametrizedEvolution gate"
+                    )
+                wires_used.append(wire)
+
+        if ev.H.settings:
+            warnings.warn(
+                "The ParametrizedEvolution contains settings from an interaction term "
+                "`qml.pulse.transmon_interaction`. Please note that the settings passed to the "
+                "interaction term are not used for hardware upload. All parameters used in the "
+                "interaction term are set by the physical device."
+            )
+
+    def check_validity(self, queue, observables):
+        """Check validity of pulse operations before running the standard check_validity function"""
+
+        for op in queue:
+            if isinstance(op, qml.pulse.ParametrizedEvolution):
+                self._validate_pulse_parameters(op)
+
+        super().check_validity(queue, observables)
 
     def capabilities(self=None):
         """Add support for AG on sv1"""
