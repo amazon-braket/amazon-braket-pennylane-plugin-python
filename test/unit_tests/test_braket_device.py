@@ -983,7 +983,7 @@ def test_parametrized_evolution_in_oqc_lucy_supported_ops():
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
-    observable = qml.Identity(wires=0, do_queue=False)
+    observable = qml.Identity(wires=0)
     observable.return_type = None
 
     with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
@@ -1952,19 +1952,9 @@ def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model
         _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, noise_model=noise_model)
 
 
-@patch.object(AwsDevice, "run")
-@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
-def test_execute_with_noise_model(mock_name, mock_run, noise_model):
-    mock_run.return_value = TASK
-    mock_name.return_value = "dm1"
-    dev = _aws_device(
-        wires=4,
-        device_type=AwsDeviceType.SIMULATOR,
-        noise_model=noise_model,
-        action_properties=ACTION_PROPERTIES_DM_DEVICE,
-    )
-
-    with QuantumTape() as circuit:
+@pytest.fixture
+def pennylane_quantum_tape():
+    with QuantumTape() as tape:
         qml.Hadamard(wires=0)
         qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
         qml.RX(0.432, wires=0)
@@ -1973,13 +1963,12 @@ def test_execute_with_noise_model(mock_name, mock_run, noise_model):
         qml.expval(qml.PauliX(1))
         qml.var(qml.PauliY(2))
         qml.sample(qml.PauliZ(3))
-    circuit.trainable_params = []
+    return tape
 
-    _ = dev.execute(circuit)
 
-    assert dev.task == TASK
-
-    EXPECTED_CIRC = (
+@pytest.fixture
+def expected_braket_circuit_with_noise():
+    return (
         Circuit()
         .h(0)
         .bit_flip(0, 0.05)
@@ -1994,8 +1983,27 @@ def test_execute_with_noise_model(mock_name, mock_run, noise_model):
         .variance(observable=Observable.Y(), target=2)
         .sample(observable=Observable.Z(), target=3)
     )
+
+
+@patch.object(AwsDevice, "run")
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+def test_execute_with_noise_model(
+    mock_name, mock_run, noise_model, pennylane_quantum_tape, expected_braket_circuit_with_noise
+):
+    mock_run.return_value = TASK
+    mock_name.return_value = "dm1"
+    dev = _aws_device(
+        wires=4,
+        device_type=AwsDeviceType.SIMULATOR,
+        noise_model=noise_model,
+        action_properties=ACTION_PROPERTIES_DM_DEVICE,
+    )
+    _ = dev.execute(pennylane_quantum_tape)
+
+    assert dev.task == TASK
+
     mock_run.assert_called_with(
-        EXPECTED_CIRC,
+        expected_braket_circuit_with_noise,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -2315,6 +2323,40 @@ class TestPulseValidation:
 
         with pytest.raises(RuntimeError, match="Multiple waveforms assigned to wire"):
             dev._validate_pulse_parameters(op)
+
+
+@patch.object(AwsDevice, "run_batch")
+@patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
+@patch.object(BraketAwsQubitDevice, "_braket_to_pl_result")
+def test_batch_execute_with_noise_model(
+    mock_to_result,
+    mock_name,
+    mock_run_batch,
+    noise_model,
+    pennylane_quantum_tape,
+    expected_braket_circuit_with_noise,
+):
+    NUM_CIRCUITS = 5
+    mock_name.return_value = "dm1"
+    dev = _aws_device(
+        wires=4,
+        device_type=AwsDeviceType.SIMULATOR,
+        noise_model=noise_model,
+        action_properties=ACTION_PROPERTIES_DM_DEVICE,
+        parallel=True,
+    )
+
+    _ = dev.batch_execute([pennylane_quantum_tape] * NUM_CIRCUITS)
+
+    mock_run_batch.assert_called_with(
+        [expected_braket_circuit_with_noise] * NUM_CIRCUITS,
+        s3_destination_folder=("foo", "bar"),
+        shots=SHOTS,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        max_connections=100,
+        max_parallel=None,
+    )
 
 
 @pytest.mark.parametrize("device_type", (AwsDeviceType.QPU, AwsDeviceType.SIMULATOR))
