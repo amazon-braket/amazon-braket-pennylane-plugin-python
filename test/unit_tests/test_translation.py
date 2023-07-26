@@ -35,11 +35,12 @@ from pennylane.measurements import ObservableReturnTypes
 from pennylane.wires import Wires
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
-from braket.pennylane_plugin.ops import MS, GPi, GPi2
+from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     _translate_observable,
     get_adjoint_gradient_result_type,
+    supported_operations,
     translate_operation,
     translate_result,
     translate_result_type,
@@ -72,6 +73,7 @@ testdata = [
     (GPi, gates.GPi, [0], [2]),
     (GPi2, gates.GPi2, [0], [2]),
     (MS, gates.MS, [0, 1], [2, 3]),
+    (AAMS, gates.MS, [0, 1], [2, 3, 0.5]),
     (qml.ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
     (PSWAP, gates.PSwap, [0, 1], [np.pi]),
@@ -137,6 +139,7 @@ testdata_inverses = [
     (GPi, gates.GPi, [0], [2], [2]),
     (GPi2, gates.GPi2, [0], [2], [2 + np.pi]),
     (MS, gates.MS, [0, 1], [2, 3], [2 + np.pi, 3]),
+    (AAMS, gates.MS, [0, 1], [2, 3, 0.5], [2 + np.pi, 3, 0.5]),
     (PSWAP, gates.PSwap, [0, 1], [0.15], [-0.15]),
     (qml.IsingXX, gates.XX, [0, 1], [0.15], [-0.15]),
     (qml.IsingXY, gates.XY, [0, 1], [0.15], [-0.15]),
@@ -178,6 +181,14 @@ testdata_with_params = [
     (GPi, gates.GPi, [0], [2], ["a"], [FreeParameter("a")]),
     (GPi2, gates.GPi2, [0], [2], ["a"], [FreeParameter("a")]),
     (MS, gates.MS, [0, 1], [2, 3], ["a", "b"], [FreeParameter("a"), FreeParameter("b")]),
+    (
+        AAMS,
+        gates.MS,
+        [0, 1],
+        [2, 3, 0.5],
+        ["a", "b", "c"],
+        [FreeParameter("a"), FreeParameter("b"), FreeParameter("c")],
+    ),
     (PSWAP, gates.PSwap, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
     (qml.ECR, gates.ECR, [0, 1], [], [], []),
     (qml.ISWAP, gates.ISwap, [0, 1], [], [], []),
@@ -255,12 +266,16 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi, GPi2, MS)):
+    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+        translated_back = _braket_to_pl[
+            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+        ]
         assert (
-            _braket_to_pl[
-                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
-            ]
-            == pl_op.name
+            translated_back == pl_op.name
+            if pl_op.name != "MS"
+            # PL MS and AAMS both get translated to Braket MS.
+            # Braket MS gets translated to PL AAMS.
+            else translated_back == "AAMS"
         )
     else:
         assert (
@@ -283,12 +298,16 @@ def test_translate_operation_with_unique_params(
         translate_operation(pl_op, use_unique_params=True, param_names=pl_param_names)
         == braket_gate
     )
-    if isinstance(pl_op, (GPi, GPi2, MS)):
+    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+        translated_back = _braket_to_pl[
+            re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
+        ]
         assert (
-            _braket_to_pl[
-                re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
-            ]
-            == pl_op.name
+            translated_back == pl_op.name
+            if pl_op.name != "MS"
+            # PL MS and AAMS both get translated to Braket MS.
+            # Braket MS gets translated to PL AAMS.
+            else translated_back == "AAMS"
         )
     else:
         assert (
@@ -303,7 +322,7 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
     pl_op = qml.adjoint(pl_cls(*params, wires=qubits))
     braket_gate = braket_cls(*inv_params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op.base, (GPi, GPi2, MS)):
+    if isinstance(pl_op.base, (GPi, GPi2, MS, AAMS)):
         op_name = _braket_to_pl[
             re.match(
                 "^[a-z0-2]+",
@@ -315,7 +334,14 @@ def test_translate_operation_inverse(pl_cls, braket_cls, qubits, params, inv_par
             braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")
         ]
 
-    assert f"Adjoint({op_name})" == pl_op.name
+    assert (
+        f"Adjoint({op_name})" == pl_op.name
+        if pl_op.name != "Adjoint(MS)"
+        # PL MS and AAMS both get translated to Braket MS.
+        # Braket MS gets translated to PL AAMS.
+        else f"Adjoint({op_name})" == "Adjoint(AAMS)"
+    )
+    # assert f"Adjoint({op_name})" == pl_op.name
 
 
 @patch("braket.circuits.gates.X.adjoint")
@@ -585,3 +611,12 @@ def test_translate_hamiltonian_observable(expected_braket_H, pl_H):
 
 def test_translate_result_type_adjoint_gradient():
     print("not implemented yet")
+
+
+def test_translation_no_properties():
+    class MockDevice:
+        pass
+
+    needs_props = "Device needs to have properties defined."
+    with pytest.raises(AttributeError, match=needs_props):
+        supported_operations(MockDevice())

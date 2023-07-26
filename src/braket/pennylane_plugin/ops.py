@@ -82,8 +82,6 @@ class CPhaseShift00(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool, optional): Indicates whether the operator should be
-            immediately pushed into the Operator queue. Default: None
         id (str, optional): String representing the operation. Default: None
 
     """
@@ -95,8 +93,8 @@ class CPhaseShift00(Operation):
     def generator(self):
         return qml.Projector(np.array([0, 0]), wires=self.wires)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_decomposition(phi, wires):
@@ -150,8 +148,6 @@ class CPhaseShift01(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
     num_params = 1
@@ -162,8 +158,8 @@ class CPhaseShift01(Operation):
     def generator(self):
         return qml.Projector(np.array([0, 1]), wires=self.wires)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_decomposition(phi, wires):
@@ -215,8 +211,6 @@ class CPhaseShift10(Operation):
     Args:
         phi (float): the controlled phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
     num_params = 1
@@ -227,8 +221,8 @@ class CPhaseShift10(Operation):
     def generator(self):
         return qml.Projector(np.array([1, 0]), wires=self.wires)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_decomposition(phi, wires):
@@ -279,8 +273,6 @@ class PSWAP(Operation):
     Args:
         phi (float): the phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
     num_params = 1
@@ -288,8 +280,8 @@ class PSWAP(Operation):
     grad_method = "A"
     grad_recipe = ([[0.5, 1, np.pi / 2], [-0.5, 1, -np.pi / 2]],)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_decomposition(phi, wires):
@@ -330,16 +322,14 @@ class GPi(Operation):
     Args:
         phi (float): the phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 1
     grad_method = "F"
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_matrix(phi):
@@ -376,16 +366,14 @@ class GPi2(Operation):
     Args:
         phi (float): the phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
     num_params = 1
     num_wires = 1
     grad_method = "F"
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_matrix(phi):
@@ -410,7 +398,7 @@ class MS(Operation):
     IonQ native Mølmer-Sørenson gate.
 
 
-    .. math:: \mathtt{MS}(\phi_0, \phi_1) = \begin{bmatrix}
+    .. math:: \mathtt{MS}(\phi_0, \phi_1) = \frac{1}{\sqrt{2}}\begin{bmatrix}
             1 & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)} \\
             0 & 1 & -ie^{-i (\phi_0 - \phi_1)} & 0 \\
             0 & -ie^{i (\phi_0 - \phi_1)} & 1 & 0 \\
@@ -426,16 +414,14 @@ class MS(Operation):
         phi_0 (float): the first phase angle
         phi_1 (float): the second phase angle
         wires (int): the subsystem the gate acts on
-        do_queue (bool): Indicates whether the operator should be
-            immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
     num_params = 2
     num_wires = 2
     grad_method = "F"
 
-    def __init__(self, phi_0, phi_1, wires, do_queue=True, id=None):
-        super().__init__(phi_0, phi_1, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi_0, phi_1, wires, id=None):
+        super().__init__(phi_0, phi_1, wires=wires, id=id)
 
     @staticmethod
     def compute_matrix(phi_0, phi_1):
@@ -456,3 +442,58 @@ class MS(Operation):
     def adjoint(self):
         (phi_0, phi_1) = self.parameters
         return MS(phi_0 + np.pi, phi_1, wires=self.wires)
+
+
+class AAMS(Operation):
+    r""" AAMS(phi_0, phi_1, theta, wires)
+
+    IonQ native Arbitrary-Angle Mølmer-Sørenson gate.
+
+
+    .. math:: \mathtt{MS}(\phi_0, \phi_1, \theta) = \begin{bmatrix}
+            \cos{\frac{\theta}{2}} & 0 & 0 & -ie^{-i (\phi_0 + \phi_1)}\sin{\frac{\theta}{2}} \\
+            0 & \cos{\frac{\theta}{2}} & -ie^{-i (\phi_0 - \phi_1)}\sin{\frac{\theta}{2}} & 0 \\
+            0 & -ie^{i (\phi_0 - \phi_1)}\sin{\frac{\theta}{2}} & \cos{\frac{\theta}{2}} & 0 \\
+            -ie^{i (\phi_0 + \phi_1)}\sin{\frac{\theta}{2}} & 0 & 0 & \cos{\frac{\theta}{2}}
+        \end{bmatrix}.
+
+    **Details:**
+
+    * Number of wires: 2
+    * Number of parameters: 2
+
+    Args:
+        phi_0 (float): the first phase angle
+        phi_1 (float): the second phase angle
+        theta (float): the entangling angle
+        wires (int): the subsystem the gate acts on
+        id (str or None): String representing the operation (optional)
+    """
+    num_params = 3
+    num_wires = 2
+    grad_method = "F"
+
+    def __init__(self, phi_0, phi_1, theta, wires, id=None):
+        super().__init__(phi_0, phi_1, theta, wires=wires, id=id)
+
+    @staticmethod
+    def compute_matrix(phi_0, phi_1, theta):
+        if qml.math.get_interface(phi_0) == "tensorflow":
+            phi_0 = qml.math.cast_like(phi_0, 1j)
+        if qml.math.get_interface(phi_1) == "tensorflow":
+            phi_1 = qml.math.cast_like(phi_1, 1j)
+        if qml.math.get_interface(theta) == "tensorflow":
+            theta = qml.math.cast_like(theta, 1j)
+
+        return np.array(
+            [
+                [np.cos(theta / 2), 0, 0, -1j * np.exp(-1j * (phi_0 + phi_1)) * np.sin(theta / 2)],
+                [0, np.cos(theta / 2), -1j * np.exp(-1j * (phi_0 - phi_1)) * np.sin(theta / 2), 0],
+                [0, -1j * np.exp(1j * (phi_0 - phi_1)) * np.sin(theta / 2), np.cos(theta / 2), 0],
+                [-1j * np.exp(1j * (phi_0 + phi_1)) * np.sin(theta / 2), 0, 0, np.cos(theta / 2)],
+            ]
+        )
+
+    def adjoint(self):
+        (phi_0, phi_1, theta) = self.parameters
+        return AAMS(phi_0 + np.pi, phi_1, theta, wires=self.wires)
