@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.19.0 (2023-07-26)
+
+### Features
+
+ * Remove `do_queue` kwarg
+
+### Bug Fixes and Other Changes
+
+ * Replace Universal Analytics tag with GA4 tag in the docs
+ * support noise model in batch_execute
+
 ## v1.18.0 (2023-07-20)
 
 ### Features
