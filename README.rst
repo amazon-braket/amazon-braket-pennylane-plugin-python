@@ -74,7 +74,7 @@ Before you begin working with the Amazon Braket PennyLane Plugin, make sure
 that you installed or configured the following prerequisites:
 
 
-* Download and install `Python 3.7.2 <https://www.python.org/downloads/>`__ or greater.
+* Download and install `Python 3.8 <https://www.python.org/downloads/>`__ or greater.
   If you are using Windows, choose the option *Add Python to environment variables* before you begin the installation.
 * Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions
   `here <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`__.
