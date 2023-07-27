@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.19.1 (2023-07-27)
+
+### Bug Fixes and Other Changes
+
+ * docs: update README to recommend using Python 3.8
+
 ## v1.19.0 (2023-07-26)
 
 ### Features
