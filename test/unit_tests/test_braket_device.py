@@ -2088,6 +2088,7 @@ def test_batch_execute_with_noise_model(
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         max_connections=100,
         max_parallel=None,
+        inputs=[],
     )
 
 
