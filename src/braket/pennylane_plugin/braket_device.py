@@ -424,7 +424,7 @@ class BraketQubitDevice(QubitDevice):
                 operation,
                 use_unique_params=bool(trainable_indices) or use_unique_params,
                 param_names=param_names,
-                device=self,
+                device=self._device,
             )
 
             ins = Instruction(gate, dev_wires)

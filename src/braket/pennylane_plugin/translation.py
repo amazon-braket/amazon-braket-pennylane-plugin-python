@@ -182,6 +182,7 @@ def translate_operation(
             p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
         ]
     device = kwargs.get("device", None)
+    print(type(device))
     return _translate_operation(operation, parameters, device)
 
 
@@ -445,7 +446,7 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
     # The driven wires aren't the same as `op.wires` as `op.wires` contains
     # all device wires due to interaction term.
     pulse_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
-    frames = {w: device._device.frames[f"q{w}_drive"] for w in pulse_wires}
+    frames = {w: device.frames[f"q{w}_drive"] for w in pulse_wires}
 
     # take dt from first frame (all frames have identical dt)
     time_step = list(frames.values())[0].port.dt * 1e9  # seconds to nanoseconds
