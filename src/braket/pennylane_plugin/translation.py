@@ -182,7 +182,6 @@ def translate_operation(
             p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
         ]
     device = kwargs.get("device", None)
-    print(type(device))
     return _translate_operation(operation, parameters, device)
 
 
