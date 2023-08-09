@@ -525,6 +525,7 @@ class TestBraketAhsDevice:
             (qml.PauliX(0), True),
             (qml.PauliZ(0), False),
             (qml.Projector([0], wires=[0]), False),
+            (qml.Projector(np.array([1.0, 1.0]) / np.sqrt(2), wires=[0]), True),
             (qml.sum(qml.PauliZ(0), qml.PauliZ(0)), False),  # sum
             (qml.sum(qml.PauliZ(0), qml.PauliY(0)), True),
             (qml.s_prod(3, qml.PauliY(0)), True),  # scalar prod

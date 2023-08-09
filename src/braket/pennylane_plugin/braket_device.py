@@ -35,6 +35,7 @@ Code details
 
 import collections
 import numbers
+import warnings
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
@@ -99,6 +100,8 @@ class BraketQubitDevice(QubitDevice):
             ``0``, the device runs in analytic mode (calculations will be exact).
         noise_model (NoiseModel or None): The Braket noise model to apply to the circuit before
             execution.
+        verbatim (bool): Whether to run tasks in verbatim mode. Note that verbatim mode only
+            supports the native gate set of the device. Default False.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket PennyLane plugin"
@@ -113,16 +116,28 @@ class BraketQubitDevice(QubitDevice):
         *,
         shots: Union[int, None],
         noise_model: Optional[NoiseModel] = None,
+        verbatim: bool = False,
         **run_kwargs,
     ):
+        if DeviceActionType.OPENQASM not in device.properties.action:
+            raise ValueError(f"Device {device.name} does not support quantum circuits")
+
+        if (
+            verbatim
+            and "verbatim"
+            not in device.properties.action[DeviceActionType.OPENQASM].supportedPragmas
+        ):
+            raise ValueError(f"Device {device.name} does not support verbatim circuits")
+
         super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
         self._task = None
         self._noise_model = noise_model
         self._run_kwargs = run_kwargs
-        self._supported_ops = supported_operations(self._device)
+        self._supported_ops = supported_operations(self._device, verbatim=verbatim)
         self._check_supported_result_types()
+        self._verbatim = verbatim
 
         if noise_model:
             self._validate_noise_model_support()
@@ -171,6 +186,8 @@ class BraketQubitDevice(QubitDevice):
             trainable_indices=trainable_indices,
             **run_kwargs,
         )
+        if self._verbatim:
+            braket_circuit = Circuit().add_verbatim_box(braket_circuit)
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
         elif not isinstance(circuit.observables[0], MeasurementTransform):
@@ -182,6 +199,7 @@ class BraketQubitDevice(QubitDevice):
                         braket_circuit.add_result_type(result_type)
                 else:
                     braket_circuit.add_result_type(translated)
+
         return braket_circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
@@ -351,8 +369,6 @@ class BraketQubitDevice(QubitDevice):
             trainable_indices=frozenset(trainable.keys()),
             **run_kwargs,
         )
-        if self._noise_model:
-            self._circuit = self._noise_model.apply(self._circuit)
         if not isinstance(circuit.observables[0], MeasurementTransform):
             self._task = self._run_task(
                 self._circuit, inputs={f"p_{k}": v for k, v in trainable.items()}
@@ -419,6 +435,9 @@ class BraketQubitDevice(QubitDevice):
         # To ensure the results have the right number of qubits
         for qubit in sorted(unused):
             circuit.i(qubit)
+
+        if self._noise_model:
+            circuit = self._noise_model.apply(circuit)
 
         return circuit
 
@@ -507,6 +526,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         max_retries (int): The maximum number of retries to use for batch execution.
             When executing tasks in parallel, failed tasks will be retried up to ``max_retries``
             times. Ignored if ``parallel=False``.
+        verbatim (bool): Whether to verbatim mode for the device. Note that verbatim mode only
+            supports the native gate set of the device. Default False.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket AwsDevice for PennyLane"
@@ -531,9 +552,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
         device.aws_session.add_braket_user_agent(user_agent)
-        if DeviceActionType.OPENQASM not in device.properties.action:
-            raise ValueError(f"Device {device.name} does not support quantum circuits")
-
         device_type = device.type
         if device_type not in (AwsDeviceType.SIMULATOR, AwsDeviceType.QPU):
             raise ValueError(f"Invalid device type: {device_type}")
@@ -675,6 +693,107 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         return outcomes
 
+    def _check_pulse_frequency_validity(self, ev):
+        """Confirm that, for each waveform on the ParametrizedEvolution operator, the frequency
+        setting is a constant, and the value is within the frequency range for the relevant frame;
+        if not, raise an error"""
+
+        # confirm all frequency values are constant (or the qml.pulse.constant function)
+        callable_freqs = [
+            pulse.frequency
+            for pulse in ev.H.pulses
+            if (callable(pulse.frequency) and pulse.frequency != qml.pulse.constant)
+        ]
+
+        if callable_freqs:
+            raise RuntimeError(
+                "Expected all frequencies to be constants or qml.pulse.constant, "
+                "but recieved callable(s)"
+            )
+
+        # confirm all frequencies are within permitted difference from center frequency
+        freq_diff = (
+            self._device.properties.pulse.validationParameters["PERMITTED_FREQUENCY_DIFFERENCE"]
+            * 1e9
+        )
+        param_idx = 0
+        for pulse in ev.H.pulses:
+            freq = pulse.frequency
+            # track the index for parameters in case we need to evaluate qml.pulse.constant
+            if callable(pulse.amplitude):
+                param_idx += 1
+            if callable(pulse.phase):
+                param_idx += 1
+            if callable(pulse.frequency):
+                # if frequency is callable, its qml.pulse.constant and equal to its parameter
+                freq = ev.parameters[param_idx]
+                param_idx += 1
+
+            wires = self.map_wires(pulse.wires).tolist()
+
+            for wire in wires:
+                frame_key = f"q{wire}_drive"
+                center_freq = self._device.properties.pulse.dict()["frames"][frame_key][
+                    "centerFrequency"
+                ]
+                freq_min = center_freq - freq_diff
+                freq_max = center_freq + freq_diff
+                if not (freq_min < freq * 1e9 < freq_max):
+                    raise RuntimeError(
+                        f"Frequency range for wire {wire} is between {freq_min * 1e-9} "
+                        f"and {freq_max * 1e-9} GHz, but recieved {freq} GHz."
+                    )
+
+    def _validate_pulse_parameters(self, ev):
+        """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
+
+        # note: the pulse upload on the other side immediately checks that the max amplitude
+        # is not exceeded, so that check has not been included here
+
+        # confirm frequencies are constant and within the permitted frequency range for the channel
+        self._check_pulse_frequency_validity(ev)
+
+        # confirm all phase values are constant (or the qml.pulse.constant function)
+        callable_phase = [
+            pulse.phase
+            for pulse in ev.H.pulses
+            if (callable(pulse.phase) and pulse.phase != qml.pulse.constant)
+        ]
+
+        if callable_phase:
+            raise RuntimeError(
+                "Expected all phases to be constants or qml.pulse.constant, "
+                "but recieved callable(s)"
+            )
+
+        # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
+        wires_used = []
+        for pulse in ev.H.pulses:
+            for wire in pulse.wires:
+                if wire in wires_used:
+                    raise RuntimeError(
+                        f"Multiple waveforms assigned to wire {wire} in the same "
+                        f"ParametrizedEvolution gate"
+                    )
+                wires_used.append(wire)
+
+        if ev.H.settings:
+            warnings.warn(
+                "The ParametrizedEvolution contains settings from an interaction term "
+                "`qml.pulse.transmon_interaction`. Please note that the settings passed to the "
+                "interaction term are not used for hardware upload. All parameters used in the "
+                "interaction term are set by the physical device."
+            )
+
+    def check_validity(self, queue, observables):
+        """Check validity of pulse operations before running the standard check_validity function"""
+
+        for op in queue:
+            if isinstance(op, qml.pulse.ParametrizedEvolution):
+                self._validate_pulse_parameters(op)
+
+        super().check_validity(queue, observables)
+
     def capabilities(self=None):
         """Add support for AG on sv1"""
         # normally, we'd just call super().capabilities() here, but super()
@@ -777,10 +896,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             >>> dev_remote = qml.device('braket.aws.qubit',
             >>>                          wires=8,
             >>>                          arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy')
-            >>> settings = dev_remote.settings
-            >>> H_int = qml.pulse.transmon_interaction(**settings, coupling=0.02)
+            >>> pulse_settings = dev_remote.pulse_settings
+            >>> H_int = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
 
-        By passing the ``settings`` from the remote device to ``transmon_interaction``, an
+        By passing the ``pulse_settings`` from the remote device to ``transmon_interaction``, an
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
         This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
 

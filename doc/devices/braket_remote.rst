@@ -99,10 +99,49 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.GPi2
     braket.pennylane_plugin.MS
 
+Pulse Programming
+~~~~~~~~~~~~~~~~~
+
+The PennyLane-Braket plugin provides pulse-level control for the OQC Lucy QPU through PennyLane's `ParametrizedEvolution <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
+operation. Compatible pulse Hamiltonians can be defined using the `qml.pulse.transmon_drive <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_drive.html>`_
+function and used to create ``ParametrizedEvolution``'s using `qml.evolve <https://docs.pennylane.ai/en/stable/code/api/pennylane.evolve.html>`_:
+
+.. code-block:: python
+
+    duration = 15
+    def amp(p, t):
+        return qml.pulse.pwc(duration)(p, t)
+
+    dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+
+    drive = qml.pulse.transmon.transmon_drive(amplitude=amp, phase=0, freq=4.8, wires=[0])
+
+    @qml.qnode(dev)
+    def circuit(params, t):
+        qml.evolve(drive)(params, t)
+        return qml.expval(qml.PauliZ(wires=0))
+
+Note that the ``amplitude`` and ``freq`` arguments of ``qml.pulse.transmon_drive`` must be specified in :math:`\text{GHz}`. This will be internally
+converted into :math:`\text{rad/s}` for use with the Braket API. The ``phase`` must be specified in :math:`\text{radians}`.
+
+The pulse settings for the device can be obtained using the ``pulse_settings`` property. These settings can be used to describe the transmon
+interaction Hamiltonian using `qml.pulse.transmon_interaction <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_interaction.html>`_:
+
+    .. code-block:: python
+
+        dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+        pulse_settings = dev.pulse_settings
+        H = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
+
+By passing ``pulse_settings`` from the remote device to ``qml.pulse.transmon_interaction``, an ``H`` Hamiltonian term is created using
+the constants specific to the hardware. This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
+
+Note that the user must supply coupling coefficients, as these are not available from the hardware backend.
 
 Gradient computation on Braket with a QAOA Hamiltonian
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Currently, PennyLane will compute grouping indices for QAOA Hamiltonians and use them to split the Hamiltonian into multiple expectation values. If you wish to use `SV1’s adjoint differentiation capability<https://docs.aws.amazon.com/braket/latest/developerguide/hybrid.html>` when running QAOA from PennyLane, you will need reconstruct the cost Hamiltonian to remove the grouping indices from the cost Hamiltonian, like so:
+
+Currently, PennyLane will compute grouping indices for QAOA Hamiltonians and use them to split the Hamiltonian into multiple expectation values. If you wish to use `SV1’s adjoint differentiation capability <https://docs.aws.amazon.com/braket/latest/developerguide/hybrid.html>`_ when running QAOA from PennyLane, you will need reconstruct the cost Hamiltonian to remove the grouping indices from the cost Hamiltonian, like so:
 
 .. code-block:: python
 
