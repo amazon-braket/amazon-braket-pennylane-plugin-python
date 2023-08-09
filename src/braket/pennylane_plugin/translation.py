@@ -445,10 +445,10 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
     # The driven wires aren't the same as `op.wires` as `op.wires` contains
     # all device wires due to interaction term.
     pulse_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
-    mapped_wires = pulse_wires.map(device.wire_map)
+    frames = {w: device._device.frames[f"q{w}_drive"] for w in pulse_wires}
 
-    frames = {w: device._device.frames[f"q{w}_drive"] for w in mapped_wires}
-    time_step = frames[0].port.dt * 1e9  # seconds to nanoseconds
+    # take dt from first frame (all frames have identical dt)
+    time_step = list(frames.values())[0].port.dt * 1e9  # seconds to nanoseconds
 
     pulse_sequence = PulseSequence().barrier(list(frames.values()))
     callable_index = 0
@@ -470,19 +470,19 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
             waveform = ConstantWaveform(pulse_length, pulse.amplitude)
 
         if callable(pulse.phase):
-            phase = op.parameters[callable_index]
+            phase = float(op.parameters[callable_index])
             callable_index += 1
         else:
             phase = pulse.phase
 
         if callable(pulse.frequency):
-            frequency = op.parameters[callable_index]
+            frequency = float(op.parameters[callable_index])
             callable_index += 1
         else:
             frequency = pulse.frequency
 
         # Play pulse for each frame
-        for w in pulse.wires.map(device.wire_map):
+        for w in pulse.wires:
             pulse_sequence = (
                 pulse_sequence.set_frequency(frames[w], frequency * 1e9)  # GHz to Hz
                 .set_phase(frames[w], phase)
