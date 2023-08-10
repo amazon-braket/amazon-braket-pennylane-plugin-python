@@ -483,7 +483,7 @@ def test_translate_parametrized_evolution_constant_amplitude():
     H = transmon_drive(0.02, np.pi, 0.5, [0])
     op = ParametrizedEvolution(H, [], t=50)
 
-    braket_gate = translate_operation(op, device=dev)
+    braket_gate = translate_operation(op, device=dev._device)
 
     assert isinstance(braket_gate, gates.PulseGate)
     assert braket_gate.qubit_count == 1
@@ -515,7 +515,7 @@ def test_translate_parametrized_evolution_callable():
     frequency_param = 3.5
     op = ParametrizedEvolution(H, [amplitude_param, phase_param, frequency_param], t=50)
 
-    braket_gate = translate_operation(op, device=dev)
+    braket_gate = translate_operation(op, device=dev._device)
 
     assert isinstance(braket_gate, gates.PulseGate)
     assert braket_gate.qubit_count == 1
@@ -551,7 +551,7 @@ def test_translate_parametrized_evolution_mixed():
     frequency_param = 4.0
     op = ParametrizedEvolution(H, [phase_param, amplitude_param, frequency_param], t=50)
 
-    braket_gate = translate_operation(op, device=dev)
+    braket_gate = translate_operation(op, device=dev._device)
 
     assert isinstance(braket_gate, gates.PulseGate)
     assert braket_gate.qubit_count == 2
@@ -592,7 +592,7 @@ def test_translate_parametrized_evolution_multi_callable_amplitudes():
     second_amp_param = [0.5, np.pi, 3]
     op = ParametrizedEvolution(H, [first_amp_param, 3.5, second_amp_param], t=50)
 
-    braket_gate = translate_operation(op, device=dev)
+    braket_gate = translate_operation(op, device=dev._device)
     assert braket_gate.qubit_count == 2
 
     ps = braket_gate.pulse_sequence
