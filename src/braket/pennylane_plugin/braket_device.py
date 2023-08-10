@@ -103,7 +103,7 @@ class BraketQubitDevice(QubitDevice):
             supports the native gate set of the device. Default False.
         parametrize_differentiable (bool): Whether to bind differentiable parameters (parameters
             marked with ``required_grad=True``) on the Braket device rather than in PennyLane.
-            Default: False.
+            Default: True.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket PennyLane plugin"
@@ -119,7 +119,7 @@ class BraketQubitDevice(QubitDevice):
         shots: Union[int, None],
         noise_model: Optional[NoiseModel] = None,
         verbatim: bool = False,
-        parametrize_differentiable: bool = False,
+        parametrize_differentiable: bool = True,
         **run_kwargs,
     ):
         if DeviceActionType.OPENQASM not in device.properties.action:
