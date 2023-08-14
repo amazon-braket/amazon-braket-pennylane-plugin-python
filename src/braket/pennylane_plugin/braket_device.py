@@ -843,29 +843,33 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         res = res[0] if len(res) == 1 and active_jac else res
         return res, jacs
 
-    def _is_single_qubit_01_frame(self, f):
+    def _is_single_qubit_01_frame(self, f_string, wire=None):
         """Defines the condition for selecting frames addressing the qubit (01)
         drive based on frame name"""
         if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
-            return "drive" in f
+            if wire is not None:
+                return f_string == f"q{wire}_drive"
+            return "drive" in f_string
         else:
             raise NotImplementedError(
                 f"Single-qubit drive frame for pulse control not defined for "
                 f"device {self._device.arn}"
             )
 
-    def _is_single_qubit_12_frame(self, f):
+    def _is_single_qubit_12_frame(self, f_string, wire=None):
         """Defines the condition for selecting frames addressing excitation to
         the second excited state based on frame name"""
         if self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
-            return "second_state" in f
+            if wire is not None:
+                return f_string == f"q{wire}_second_state"
+            return "second_state" in f_string
         else:
             raise NotImplementedError(
                 f"Single-qubit drive frame for pulse control not defined for "
                 f"device {self._device.arn}"
             )
 
-    def _get_frames(self, filter):
+    def _get_frames(self, filter, wires):
         """Takes a filter defining how the relevant frames are labelled, and returns all the frames
         that fit, i.e.:
 
@@ -879,11 +883,15 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 f"Accessing drive frame for pulse control is not defined for "
                 f"device {self._device.arn}"
             )
-        return {
-            f: info
-            for f, info in self._device.properties.pulse.dict()["frames"].items()
-            if filter(f)
-        }
+
+        frames = {}
+
+        for wire in wires:
+            for frame, info in self._device.properties.pulse.dict()["frames"].items():
+                if filter(frame, wire):
+                    frames[wire] = info
+
+        return frames
 
     @property
     def pulse_settings(self):
@@ -911,26 +919,25 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 f"The pulse_settings property for pulse control is not defined for "
                 f"device {self._device.arn}"
             )
-        drive_frames_01 = self._get_frames(filter=self._is_single_qubit_01_frame)
-        drive_frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame)
 
-        qubit_freq = [drive_frames_01[f]["frequency"] * 1e-9 for f in drive_frames_01]  # Hz to GHz
         device_info = self._device.properties.paradigm
+        wires = [i for i in range(device_info.qubitCount)]
+
+        drive_frames_01 = self._get_frames(filter=self._is_single_qubit_01_frame, wires=wires)
+        drive_frames_12 = self._get_frames(filter=self._is_single_qubit_12_frame, wires=wires)
+
+        qubit_freq = [drive_frames_01[wire]["frequency"] * 1e-9 for wire in wires]  # Hz to GHz
 
         connections = []
-
         for q1, connected_qubits in device_info.connectivity.connectivityGraph.items():
             for q2 in connected_qubits:
                 connection = (int(q1), int(q2))
                 connections.append(connection)
 
-        # need to decide how to deal with non-chronological wiring order on rigetti if using
-        wires = [i for i in range(device_info.qubitCount)]
-
-        second_excitation_freq = [
-            drive_frames_12[f]["frequency"] * 1e-9 for f in drive_frames_12
-        ]  # Hz to GHz
-        anharmonicity = [f01 - f12 for f01, f12 in zip(qubit_freq, second_excitation_freq)]
+        anharmonicity = [
+            (drive_frames_01[wire]["frequency"] - drive_frames_12[wire]["frequency"]) * 1e-9
+            for wire in self.wires
+        ]
 
         return {
             "qubit_freq": qubit_freq,
