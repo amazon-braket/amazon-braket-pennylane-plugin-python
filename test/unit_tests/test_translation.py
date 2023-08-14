@@ -502,6 +502,34 @@ def test_translate_parametrized_evolution_constant_amplitude():
     assert np.isclose(waveforms[0].iq, 0.02)
 
 
+def test_translate_parametrized_evolution_constant_callable_amplitude():
+    """Test that a ParametrizedEvolution with constant amplitude, phase, and frequency
+    is translated to a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(qml.pulse.constant, np.pi, 0.5, [0])
+    op = ParametrizedEvolution(H, [0.2], t=50)
+
+    braket_gate = translate_operation(op, device=dev._device)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 1
+
+    ps = braket_gate.pulse_sequence
+    expected_frame = dev._device.frames["q0_drive"]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.2)
+
+
 def test_translate_parametrized_evolution_callable():
     """Test that a ParametrizedEvolution with callable amplitude, phase, and frequency
     is translated to a PulseGate correctly."""
