@@ -456,7 +456,6 @@ def _(op: ParametrizedEvolution, _parameters, device):
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
         if callable(pulse.amplitude):
-
             if pulse.amplitude == qml.pulse.constant:
                 amplitude = float(op.parameters[callable_index])
                 callable_index += 1
