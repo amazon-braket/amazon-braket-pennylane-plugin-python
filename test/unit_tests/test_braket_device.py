@@ -2042,6 +2042,146 @@ OQC_PULSE_PROPERTIES = json.dumps(
                 "qubitMappings": [0],
                 "qhpSpecificProperties": None,
             },
+            "q1_drive": {
+                "frameId": "q1_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q1_second_state": {
+                "frameId": "q1_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q2_drive": {
+                "frameId": "q2_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q2_second_state": {
+                "frameId": "q2_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q3_drive": {
+                "frameId": "q3_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q3_second_state": {
+                "frameId": "q3_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q4_drive": {
+                "frameId": "q4_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q4_second_state": {
+                "frameId": "q4_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q5_drive": {
+                "frameId": "q5_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q5_second_state": {
+                "frameId": "q5_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q6_drive": {
+                "frameId": "q6_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q6_second_state": {
+                "frameId": "q6_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q7_drive": {
+                "frameId": "q7_drive",
+                "portId": "channel_15",
+                "frequency": 4.6e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
+            "q7_second_state": {
+                "frameId": "q7_second_state",
+                "portId": "channel_15",
+                "frequency": 4.5e9,
+                "centerFrequency": 4360000000.0,
+                "phase": 0.0,
+                "associatedGate": None,
+                "qubitMappings": [0],
+                "qhpSpecificProperties": None,
+            },
         },
         "supportsLocalPulseElements": False,
         "supportsDynamicFrames": True,
@@ -2118,7 +2258,7 @@ class TestPulseFunctionality:
             dev._is_single_qubit_12_frame("q0_second_state")
 
         with pytest.raises(NotImplementedError, match=""):
-            dev._get_frames(filter=None)
+            dev._get_frames(filter=None, wires=[0, 1, 2])
 
     def test_get_frames(self):
         """Test that the dev._get_frames method returns the expected results"""
@@ -2130,12 +2270,12 @@ class TestPulseFunctionality:
 
         dev._device._properties = DummyProperties()
 
-        frames_01 = dev._get_frames(filter=dev._is_single_qubit_01_frame)
-        frames_12 = dev._get_frames(filter=dev._is_single_qubit_12_frame)
+        frames_01 = dev._get_frames(filter=dev._is_single_qubit_01_frame, wires=[0, 1, 2])
+        frames_12 = dev._get_frames(filter=dev._is_single_qubit_12_frame, wires=[0, 1, 2])
 
-        assert len(frames_01) == len(frames_12) == 1
-        assert "q0_drive" in frames_01.keys()
-        assert "q0_second_state" in frames_12.keys()
+        assert len(frames_01) == len(frames_12) == 3
+        assert list(frames_01.keys()) == [0, 1, 2]
+        assert list(frames_12.keys()) == [0, 1, 2]
 
     def test_settings_for_unsupported_device_raises_error(self):
         """Test that accessing dev.pulse_settings for a device where this is not defined
