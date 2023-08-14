@@ -121,9 +121,9 @@ function and used to create ``ParametrizedEvolution``'s using `qml.evolve <https
         qml.evolve(drive)(params, t)
         return qml.expval(qml.PauliZ(wires=0))
 
-Note that the ``freq`` argument of ``qml.pulse.transmon_drive`` is specified in :math:`\text{GHz}`, and for
-hardware upload the amplitude will be interpreted as an output power for control hardware in :math:`\text{Volt}`.
-The ``phase`` must be specified in :math:`\text{radians}`.
+Note that the ``freq`` argument of ``qml.pulse.transmon_drive`` is specified in GHz, and for
+hardware upload the amplitude will be interpreted as an output power for control hardware in volts.
+The ``phase`` must be specified in radians.
 
 The pulse settings for the device can be obtained using the ``pulse_settings`` property. These settings can be used to describe the transmon
 interaction Hamiltonian using `qml.pulse.transmon_interaction <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_interaction.html>`_:
