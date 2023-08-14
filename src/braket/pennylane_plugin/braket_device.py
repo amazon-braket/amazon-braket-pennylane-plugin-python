@@ -708,7 +708,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         if callable_freqs:
             raise RuntimeError(
                 "Expected all frequencies to be constants or qml.pulse.constant, "
-                "but recieved callable(s)"
+                "but received callable(s)"
             )
 
         # confirm all frequencies are within permitted difference from center frequency
@@ -763,7 +763,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         if callable_phase:
             raise RuntimeError(
                 "Expected all phases to be constants or qml.pulse.constant, "
-                "but recieved callable(s)"
+                "but received callable(s)"
             )
 
         # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
