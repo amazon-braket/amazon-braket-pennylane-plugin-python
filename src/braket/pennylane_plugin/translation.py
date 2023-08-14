@@ -456,15 +456,22 @@ def _(op: ParametrizedEvolution, _parameters, device=None):
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
         if callable(pulse.amplitude):
-            amplitude = partial(pulse.amplitude, op.parameters[callable_index])
-            callable_index += 1
 
-            # Calculate amplitude for each time step and normalize
-            amplitudes = onp.array(
-                [amplitude(t) for t in np.arange(start, end + time_step, time_step)]
-            )
+            if pulse.amplitude == qml.pulse.constant:
+                amplitude = float(op.parameters[callable_index])
+                callable_index += 1
+                waveform = ConstantWaveform(pulse_length, amplitude)
 
-            waveform = ArbitraryWaveform(amplitudes)
+            else:
+                amplitude = partial(pulse.amplitude, op.parameters[callable_index])
+                callable_index += 1
+
+                # Calculate amplitude for each time step and normalize
+                amplitudes = onp.array(
+                    [amplitude(t) for t in np.arange(start, end + time_step, time_step)]
+                )
+
+                waveform = ArbitraryWaveform(amplitudes)
 
         else:
             waveform = ConstantWaveform(pulse_length, pulse.amplitude)
