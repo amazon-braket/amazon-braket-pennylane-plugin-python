@@ -873,10 +873,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """Takes a filter defining how the relevant frames are labelled, and returns all the frames
         that fit, i.e.:
 
-        cond = lambda f: "excited" in f
-        frames = _get_frames(cond)
+        cond = lambda frame_id, wire: f"q{wire}_drive" == frame_id
+        frames = self._get_frames(cond, wires=[0, 1, 2])
 
-        would return all the frames with "excited" in the frame name.
+        would return all the frames with ids "q0_drive" "q1_drive", and "q2_drive".
         """
         if not self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             raise NotImplementedError(
