@@ -2253,7 +2253,7 @@ class TestPulseFunctionality:
 
         with pytest.raises(
             NotImplementedError,
-            match="Single-qubit drive frame for pulse control not defined for device",
+            match="Second excitation drive frame for pulse control not defined for device",
         ):
             dev._is_single_qubit_12_frame("q0_second_state")
 

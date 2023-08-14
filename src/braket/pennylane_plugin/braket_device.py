@@ -865,7 +865,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             return "second_state" in f_string
         else:
             raise NotImplementedError(
-                f"Single-qubit drive frame for pulse control not defined for "
+                f"Second excitation drive frame for pulse control not defined for "
                 f"device {self._device.arn}"
             )
 
