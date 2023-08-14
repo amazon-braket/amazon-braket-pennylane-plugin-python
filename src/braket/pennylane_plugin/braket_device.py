@@ -747,7 +747,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _validate_pulse_parameters(self, ev):
         """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
 
-        # note: the pulse upload on the other side immediately checks that the max amplitude
+        # note: the pulse upload on the AWS service checks at task creation that the max amplitude
         # is not exceeded, so that check has not been included here
 
         # confirm frequencies are constant and within the permitted frequency range for the channel
