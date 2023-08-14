@@ -789,8 +789,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """Check validity of pulse operations before running the standard check_validity function
 
         Checks whether the operations and observables in queue are all supported by the device. Runs
-        the standard check_validity function for a PennyLane device, and an additional check to validate
-        any pulse-operations in the form of a ParametrizedEvolution operation.
+        the standard check_validity function for a PennyLane device, and an additional check to
+        validate any pulse-operations in the form of a ParametrizedEvolution operation.
 
         Args:
             queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
