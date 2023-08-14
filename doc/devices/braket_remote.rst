@@ -121,8 +121,9 @@ function and used to create ``ParametrizedEvolution``'s using `qml.evolve <https
         qml.evolve(drive)(params, t)
         return qml.expval(qml.PauliZ(wires=0))
 
-Note that the ``amplitude`` and ``freq`` arguments of ``qml.pulse.transmon_drive`` must be specified in :math:`\text{GHz}`. This will be internally
-converted into :math:`\text{rad/s}` for use with the Braket API. The ``phase`` must be specified in :math:`\text{radians}`.
+Note that the ``freq`` argument of ``qml.pulse.transmon_drive`` is specified in :math:`\text{GHz}`, and for
+hardware upload the amplitude will be interpreted as an output power for control hardware in :math:`\text{Volt}`.
+The ``phase`` must be specified in :math:`\text{radians}`.
 
 The pulse settings for the device can be obtained using the ``pulse_settings`` property. These settings can be used to describe the transmon
 interaction Hamiltonian using `qml.pulse.transmon_interaction <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_interaction.html>`_:
@@ -131,12 +132,14 @@ interaction Hamiltonian using `qml.pulse.transmon_interaction <https://docs.penn
 
         dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
         pulse_settings = dev.pulse_settings
-        H = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
+        couplings = [0.01]*len(connections)
+        H = qml.pulse.transmon_interaction(**pulse_settings, coupling=couplings)
 
 By passing ``pulse_settings`` from the remote device to ``qml.pulse.transmon_interaction``, an ``H`` Hamiltonian term is created using
 the constants specific to the hardware. This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
 
-Note that the user must supply coupling coefficients, as these are not available from the hardware backend.
+Note that the user must supply coupling coefficients, as these are not available from the hardware backend. On the order of 10 MHz
+(0.01 GHz) is in a realistic range.
 
 Gradient computation on Braket with a QAOA Hamiltonian
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
