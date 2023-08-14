@@ -786,13 +786,30 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             )
 
     def check_validity(self, queue, observables):
-        """Check validity of pulse operations before running the standard check_validity function"""
+        """Check validity of pulse operations before running the standard check_validity function
+
+        Checks whether the operations and observables in queue are all supported by the device. Runs
+        the standard check_validity function for a PennyLane device, and an additional check to validate
+        any pulse-operations in the form of a ParametrizedEvolution operation.
+
+        Args:
+            queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
+                to be applied on the device
+            observables (Iterable[~.operation.Observable]): observables which are intended
+                to be evaluated on the device
+
+        Raises:
+            DeviceError: if there are operations in the queue or observables that the device does
+                not support
+            RuntimeError: if there are ParametrizedEvolution operations in the queue that are not
+                supported because of invalid pulse parameters
+        """
+
+        super().check_validity(queue, observables)
 
         for op in queue:
             if isinstance(op, qml.pulse.ParametrizedEvolution):
                 self._validate_pulse_parameters(op)
-
-        super().check_validity(queue, observables)
 
     def capabilities(self=None):
         """Add support for AG on sv1"""
