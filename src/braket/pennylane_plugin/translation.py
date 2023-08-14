@@ -437,7 +437,7 @@ def _(adjoint: Adjoint, parameters, device=None):
 
 
 @_translate_operation.register
-def _(op: ParametrizedEvolution, _parameters, device=None):
+def _(op: ParametrizedEvolution, _parameters, device):
     start, end = op.t[0], op.t[1]
     pulse_length = (end - start) * 1e-9  # nanoseconds to seconds
     pulses = op.H.pulses
