@@ -876,7 +876,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         cond = lambda frame_id, wire: f"q{wire}_drive" == frame_id
         frames = self._get_frames(cond, wires=[0, 1, 2])
 
-        would return all the frames with ids "q0_drive" "q1_drive", and "q2_drive".
+        would return all the frames with ids "q0_drive" "q1_drive", and "q2_drive", stored
+        in a dictionary with keys [0, 1, 2] identifying the qubit number.
         """
         if not self._device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy":
             raise NotImplementedError(
@@ -885,7 +886,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             )
 
         frames = {}
-
         for wire in wires:
             for frame, info in self._device.properties.pulse.dict()["frames"].items():
                 if filter(frame, wire):
