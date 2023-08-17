@@ -14,7 +14,7 @@
 """Tests that pulse uploads work via PennyLane for the OQC Lucy device"""
 
 from unittest.mock import patch
-
+from boto3.errorfactory import DeviceOfflineException
 import braket.aws.aws_quantum_task
 import numpy as np
 import pennylane as qml
@@ -55,11 +55,12 @@ H_multi_qubit = H_const + H_arbitrary  # drive on two qubits
 @patch.object(braket.aws.aws_quantum_task.AwsQuantumTask, "result")
 @patch.object(braket.pennylane_plugin.braket_device.BraketAwsQubitDevice, "_braket_to_pl_result")
 def test_pulse_upload_device_unavailable(result_mock, process_mock, drive_hamiltonian, params):
-    """Check that pulse upload works when the device is unavailable.
+    """Check that pulse upload works when the device is online but unavailable.
     The results processing is mocked (so the qnode doesn't wait for results to be
-    returned but just returns None), and the task is cancelled after creation"""
+    returned, but just returns None), and the task is cancelled after creation"""
 
-    if lucy._device.is_available:
+    # if device is available or fully offline, skip this test
+    if lucy._device.is_available or lucy._device.status == "OFFLINE":
         return
 
     @qml.qnode(lucy)
