@@ -14,7 +14,6 @@
 """Tests that pulse uploads work via PennyLane for the OQC Lucy device"""
 
 from unittest.mock import patch
-from boto3.errorfactory import DeviceOfflineException
 import braket.aws.aws_quantum_task
 import numpy as np
 import pennylane as qml
