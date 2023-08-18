@@ -102,6 +102,9 @@ class BraketQubitDevice(QubitDevice):
             execution.
         verbatim (bool): Whether to run tasks in verbatim mode. Note that verbatim mode only
             supports the native gate set of the device. Default False.
+        parametrize_differentiable (bool): Whether to bind differentiable parameters (parameters
+            marked with ``required_grad=True``) on the Braket device rather than in PennyLane.
+            Default: True.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
     name = "Braket PennyLane plugin"
@@ -117,6 +120,7 @@ class BraketQubitDevice(QubitDevice):
         shots: Union[int, None],
         noise_model: Optional[NoiseModel] = None,
         verbatim: bool = False,
+        parametrize_differentiable: bool = True,
         **run_kwargs,
     ):
         if DeviceActionType.OPENQASM not in device.properties.action:
@@ -134,6 +138,7 @@ class BraketQubitDevice(QubitDevice):
         self._circuit = None
         self._task = None
         self._noise_model = noise_model
+        self._parametrize_differentiable = parametrize_differentiable
         self._run_kwargs = run_kwargs
         self._supported_ops = supported_operations(self._device, verbatim=verbatim)
         self._check_supported_result_types()
@@ -362,7 +367,11 @@ class BraketQubitDevice(QubitDevice):
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
-        trainable = BraketQubitDevice._get_trainable_parameters(circuit) if compute_gradient else {}
+        trainable = (
+            BraketQubitDevice._get_trainable_parameters(circuit)
+            if compute_gradient or self._parametrize_differentiable
+            else {}
+        )
         self._circuit = self._pl_to_braket_circuit(
             circuit,
             compute_gradient=compute_gradient,
@@ -594,9 +603,22 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         for circuit in circuits:
             self.check_validity(circuit.operations, circuit.observables)
-        braket_circuits = [
-            self._pl_to_braket_circuit(circuit, **run_kwargs) for circuit in circuits
-        ]
+        all_trainable = []
+        braket_circuits = []
+        for circuit in circuits:
+            trainable = (
+                BraketQubitDevice._get_trainable_parameters(circuit)
+                if self._parametrize_differentiable
+                else {}
+            )
+            all_trainable.append(trainable)
+            braket_circuits.append(
+                self._pl_to_braket_circuit(
+                    circuit,
+                    trainable_indices=frozenset(trainable.keys()),
+                    **run_kwargs,
+                )
+            )
 
         batch_shots = 0 if self.analytic else self.shots
 
@@ -608,6 +630,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
+            inputs=[{f"p_{k}": v for k, v in trainable.items()} for trainable in all_trainable]
+            if self._parametrize_differentiable
+            else [],
             **self._run_kwargs,
         )
         # Call results() to retrieve the Braket results in parallel.
