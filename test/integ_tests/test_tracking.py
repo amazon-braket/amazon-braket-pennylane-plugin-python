@@ -65,7 +65,7 @@ class TestDeviceTracking:
 
         assert len(tracker.history["braket_task_id"]) == 3
 
-        if type(dev) == BraketAwsQubitDevice:
+        if isinstance(dev, BraketAwsQubitDevice):
             durations = tracker.history["braket_simulator_ms"]
             billed_durations = tracker.history["braket_simulator_billed_ms"]
             assert len(durations) == 3
