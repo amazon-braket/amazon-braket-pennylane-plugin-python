@@ -240,16 +240,10 @@ def test_apply_unique_parameters():
     )
     expected = Circuit().h(0).cnot(0, 1).rx(0, FreeParameter("p_0"))
     expected = expected.ry(0, FreeParameter("p_1"))
-    expected = expected.generalized_amplitude_damping(
-        0,
-        gamma=FreeParameter("p_2"),
-        probability=FreeParameter("p_3"),
-    )
-    expected = expected.generalized_amplitude_damping(
-        0,
-        gamma=FreeParameter("p_4"),
-        probability=FreeParameter("p_5"),
-    )
+
+    # Right now, the Braket SDK doesn't keep track of noise parameters
+    expected = expected.generalized_amplitude_damping(0, gamma=0.1, probability=0.9)
+    expected = expected.generalized_amplitude_damping(0, gamma=0.1, probability=0.9)
     assert circuit == expected
 
 

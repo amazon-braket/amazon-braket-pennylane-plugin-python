@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.20.0 (2023-08-21)
+
+### Features
+
+ * Enable `FreeParameter` creation for trainable parameters
+
+### Bug Fixes and Other Changes
+
+ * Don't create `FreeParameter`s for noise
+
 ## v1.19.1 (2023-07-27)
 
 ### Bug Fixes and Other Changes

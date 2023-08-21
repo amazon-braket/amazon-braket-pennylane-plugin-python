@@ -422,7 +422,9 @@ class BraketQubitDevice(QubitDevice):
         for operation in operations + rotations:
             param_names = []
             for _ in operation.parameters:
-                if param_index in trainable_indices or use_unique_params:
+                if not isinstance(operation, qml.operation.Channel) and (
+                    param_index in trainable_indices or use_unique_params
+                ):
                     param_names.append(f"p_{param_index}")
                 else:
                     param_names.append(None)
