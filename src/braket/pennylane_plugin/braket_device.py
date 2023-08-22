@@ -757,19 +757,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 param_idx += 1
 
             wires = self.map_wires(pulse.wires).tolist()
+            freq_min = 3  #GHz
+            freq_max = 8
 
-            for wire in wires:
-                frame_key = f"q{wire}_drive"
-                center_freq = self._device.properties.pulse.dict()["frames"][frame_key][
-                    "centerFrequency"
-                ]
-                freq_min = center_freq - freq_diff
-                freq_max = center_freq + freq_diff
-                if not (freq_min < freq * 1e9 < freq_max):
-                    raise RuntimeError(
-                        f"Frequency range for wire {wire} is between {freq_min * 1e-9} "
-                        f"and {freq_max * 1e-9} GHz, but recieved {freq} GHz."
-                    )
+            if not (freq_min < freq < freq_max):
+                raise RuntimeError(
+                    f"Frequency range for wire {wire} is between {freq_min} "
+                    f"and {freq_max} GHz, but recieved {freq} GHz."
+                )
 
     def _validate_pulse_parameters(self, ev):
         """Validates pulse input (ParametrizedEvolution) before converting to a PulseGate"""
