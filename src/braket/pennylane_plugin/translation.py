@@ -90,21 +90,32 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
 }
 
 
-def supported_operations(device: Device) -> FrozenSet[str]:
+def supported_operations(device: Device, verbatim: bool = False) -> FrozenSet[str]:
     """Returns the operations supported by the plugin based upon the device.
 
     Args:
         device (Device): The device to obtain the supported operations for
+        verbatim (bool): Whether to return the operations supported in verbatim mode,
+            the native gate set of the device. Default False
 
     Returns:
         FrozenSet[str]: The names of the supported operations
     """
     try:
-        properties = device.properties.action["braket.ir.openqasm.program"]
+        properties = (
+            device.properties.paradigm
+            if verbatim
+            else device.properties.action["braket.ir.openqasm.program"]
+        )
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
-    supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
-    supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
+
+    if verbatim:
+        supported_ops = frozenset(op.lower() for op in properties.nativeGateSet)
+        supported_pragmas = []
+    else:
+        supported_ops = frozenset(op.lower() for op in properties.supportedOperations)
+        supported_pragmas = frozenset(op.lower() for op in properties.supportedPragmas)
     translated = frozenset(
         _BRAKET_TO_PENNYLANE_OPERATIONS[op]
         for op in _BRAKET_TO_PENNYLANE_OPERATIONS
@@ -531,11 +542,14 @@ _one = np.array([[0, 0], [0, 1]])
 
 @_translate_observable.register
 def _(p: qml.Projector):
-    bitstring = p.parameters[0]
+    state, wires = p.parameters[0], p.wires
+    if len(state) == len(wires):  # state is a basis state
+        products = [_one if b else _zero for b in state]
+        hermitians = [observables.Hermitian(p) for p in products]
+        return observables.TensorProduct(hermitians)
 
-    products = [_one if b else _zero for b in bitstring]
-    hermitians = [observables.Hermitian(p) for p in products]
-    return observables.TensorProduct(hermitians)
+    # state is a state vector
+    return observables.Hermitian(p.matrix())
 
 
 @_translate_observable.register

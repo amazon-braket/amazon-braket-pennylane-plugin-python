@@ -1,5 +1,56 @@
 # Changelog
 
+## v1.20.0 (2023-08-21)
+
+### Features
+
+ * Enable `FreeParameter` creation for trainable parameters
+
+### Bug Fixes and Other Changes
+
+ * Don't create `FreeParameter`s for noise
+
+## v1.19.1 (2023-07-27)
+
+### Bug Fixes and Other Changes
+
+ * docs: update README to recommend using Python 3.8
+
+## v1.19.0 (2023-07-26)
+
+### Features
+
+ * Remove `do_queue` kwarg
+
+### Bug Fixes and Other Changes
+
+ * Replace Universal Analytics tag with GA4 tag in the docs
+ * support noise model in batch_execute
+
+## v1.18.0 (2023-07-20)
+
+### Features
+
+ * native mode
+
+## v1.17.4 (2023-07-17)
+
+### Bug Fixes and Other Changes
+
+ * Fix compatibility with the new Projector class
+
+## v1.17.3 (2023-07-13)
+
+### Bug Fixes and Other Changes
+
+ * set do_queue default to None
+
+## v1.17.2 (2023-07-12)
+
+### Bug Fixes and Other Changes
+
+ * Update pennylane version constraint
+
 ## v1.17.1 (2023-07-06)
 
 ### Bug Fixes and Other Changes
