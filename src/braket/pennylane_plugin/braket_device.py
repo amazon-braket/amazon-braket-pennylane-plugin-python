@@ -975,7 +975,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
         anharmonicity = [
             (drive_frames_01[wire]["frequency"] - drive_frames_12[wire]["frequency"]) * 1e-9
-            for wire in self.wires
+            for wire in wires
         ]
 
         return {
