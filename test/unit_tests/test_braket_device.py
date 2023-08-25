@@ -2481,7 +2481,7 @@ class TestPulseValidation:
 
         dev = get_oqc_device()
 
-        H = qml.pulse.transmon_drive(0.2, 0, 6, wires=[0])
+        H = qml.pulse.transmon_drive(0.2, 0, 9, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
 
         with pytest.raises(RuntimeError, match="Frequency range for wire"):
@@ -2497,7 +2497,7 @@ class TestPulseValidation:
         dev = get_oqc_device()
 
         H = qml.pulse.transmon_drive(0.2, 0, qml.pulse.constant, wires=[0])
-        op = ParametrizedEvolution(H, [6], t=10)
+        op = ParametrizedEvolution(H, [2.5], t=10)
 
         with pytest.raises(RuntimeError, match="Frequency range for wire"):
             dev._check_pulse_frequency_validity(op)
