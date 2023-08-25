@@ -739,10 +739,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             )
 
         # confirm all frequencies are within permitted difference from center frequency
-        freq_diff = (
-            self._device.properties.pulse.validationParameters["PERMITTED_FREQUENCY_DIFFERENCE"]
-            * 1e9
-        )
         param_idx = 0
         for pulse in ev.H.pulses:
             freq = pulse.frequency
@@ -757,7 +753,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 param_idx += 1
 
             wires = self.map_wires(pulse.wires).tolist()
-            freq_min = 3  #GHz
+            freq_min = 3  # GHz
             freq_max = 8
 
             if not (freq_min < freq < freq_max):

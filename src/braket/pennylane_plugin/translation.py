@@ -448,7 +448,9 @@ def _(op: ParametrizedEvolution, _parameters, device):
     frames = {w: device.frames[f"q{w}_drive"] for w in pulse_wires}
 
     # take dt from first frame (all frames have identical dt)
-    time_step = {wire: frame.port.dt * 1e9 for wire, frame in frames.items()}  # seconds to nanoseconds
+    time_step = {
+        wire: frame.port.dt * 1e9 for wire, frame in frames.items()
+    }  # seconds to nanoseconds
 
     pulse_sequence = PulseSequence().barrier(list(frames.values()))
     callable_index = 0
@@ -468,15 +470,13 @@ def _(op: ParametrizedEvolution, _parameters, device):
                 callable_index += 1
 
                 def waveform(dt):
-
                     # Calculate amplitude for each time step and normalize
-                    amplitudes = onp.array(
-                        [amplitude(t) for t in np.arange(start, end + dt, dt)]
-                    )
+                    amplitudes = onp.array([amplitude(t) for t in np.arange(start, end + dt, dt)])
 
                     return ArbitraryWaveform(amplitudes)
 
         else:
+
             def waveform(dt):
                 return ConstantWaveform(pulse_length, pulse.amplitude)
 
