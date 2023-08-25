@@ -13,10 +13,9 @@
 
 import json
 
-from braket.device_schema import DeviceActionType, OpenQASMDeviceActionProperties
-from braket.tasks import GateModelQuantumTaskResult
+from braket.device_schema import OpenQASMDeviceActionProperties
 from braket.task_result import GateModelTaskResult
-
+from braket.tasks import GateModelQuantumTaskResult
 
 ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
     json.dumps(
@@ -32,6 +31,19 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
                     "minShots": 0,
                     "maxShots": 0,
                 },
+            ],
+        }
+    )
+)
+
+ACTION_PROPERTIES_NO_ADJOINT = OpenQASMDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "actionType": "braket.ir.openqasm.program",
+            "version": ["1"],
+            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
+            "supportedResultTypes": [
+                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
             ],
         }
     )
@@ -406,5 +418,3 @@ OQC_PARADIGM_PROPERTIES = json.dumps(
         "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
     }
 )
-
-

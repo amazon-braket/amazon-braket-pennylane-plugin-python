@@ -27,12 +27,21 @@ from braket.device_schema import DeviceActionType
 from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
     GateModelQpuParadigmProperties,
 )
-from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
 from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult
+from device_property_jsons import (
+    ACTION_PROPERTIES,
+    ACTION_PROPERTIES_DM_DEVICE,
+    ACTION_PROPERTIES_NATIVE,
+    ACTION_PROPERTIES_NO_ADJOINT,
+    GATE_MODEL_RESULT,
+    OQC_PARADIGM_PROPERTIES,
+    OQC_PULSE_PROPERTIES_ALL_FRAMES,
+    RESULT,
+)
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.pulse import ParametrizedEvolution
@@ -49,16 +58,6 @@ from braket.pennylane_plugin import (
     __version__,
 )
 from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
-
-from device_property_jsons import (
-    ACTION_PROPERTIES,
-    ACTION_PROPERTIES_DM_DEVICE,
-    ACTION_PROPERTIES_NATIVE,
-    GATE_MODEL_RESULT,
-    RESULT,
-    OQC_PULSE_PROPERTIES_ALL_FRAMES,
-    OQC_PARADIGM_PROPERTIES
-)
 
 SHOTS = 10000
 
@@ -567,82 +566,10 @@ def _aws_device_mock_init(self, *args, **kwargs):
 @pytest.mark.parametrize(
     "action_props, shots, expected_use_grouping",
     [
-        (
-            OpenQASMDeviceActionProperties.parse_raw(
-                json.dumps(
-                    {
-                        "actionType": "braket.ir.openqasm.program",
-                        "version": ["1"],
-                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
-                        "supportedResultTypes": [
-                            {
-                                "name": "StateVector",
-                                "observables": None,
-                                "minShots": 0,
-                                "maxShots": 0,
-                            },
-                        ],
-                    }
-                )
-            ),
-            0,
-            True,
-        ),
-        (
-            OpenQASMDeviceActionProperties.parse_raw(
-                json.dumps(
-                    {
-                        "actionType": "braket.ir.openqasm.program",
-                        "version": ["1"],
-                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
-                        "supportedResultTypes": [
-                            {
-                                "name": "StateVector",
-                                "observables": None,
-                                "minShots": 0,
-                                "maxShots": 0,
-                            },
-                            {
-                                "name": "AdjointGradient",
-                                "observables": ["x", "y", "z", "h", "i"],
-                                "minShots": 0,
-                                "maxShots": 0,
-                            },
-                        ],
-                    }
-                )
-            ),
-            10,
-            True,
-        ),
-        (
-            OpenQASMDeviceActionProperties.parse_raw(
-                json.dumps(
-                    {
-                        "actionType": "braket.ir.openqasm.program",
-                        "version": ["1"],
-                        "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
-                        "supportedResultTypes": [
-                            {
-                                "name": "StateVector",
-                                "observables": None,
-                                "minShots": 0,
-                                "maxShots": 0,
-                            },
-                            {
-                                "name": "AdjointGradient",
-                                "observables": ["x", "y", "z", "h", "i"],
-                                "minShots": 0,
-                                "maxShots": 0,
-                            },
-                        ],
-                    }
-                )
-            ),
-            0,
-            # Should be disabled only when AdjGrad is present and shots = 0
-            False,
-        ),
+        (ACTION_PROPERTIES_NO_ADJOINT, 0, True),
+        (ACTION_PROPERTIES, 10, True),
+        # Should be disabled only when AdjGrad is present and shots = 0
+        (ACTION_PROPERTIES, 0, False),
     ],
 )
 def test_use_grouping(
@@ -1944,29 +1871,6 @@ def test_execute_with_noise_model(
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         inputs={},
     )
-
-
-OQC_PARADIGM_PROPERTIES = json.dumps(
-    {
-        "braketSchemaHeader": {
-            "name": "braket.device_schema.gate_model_qpu_paradigm_properties",
-            "version": "1",
-        },
-        "connectivity": {
-            "fullyConnected": False,
-            "connectivityGraph": {
-                "0": ["1", "7"],
-                "1": ["2"],
-                "2": ["3"],
-                "4": ["3", "5"],
-                "6": ["5"],
-                "7": ["6"],
-            },
-        },
-        "qubitCount": 8,
-        "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
-    }
-)
 
 
 class TestPulseFunctionality:

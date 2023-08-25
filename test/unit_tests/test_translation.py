@@ -31,13 +31,18 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.circuits.serialization import IRType
-from braket.device_schema import DeviceActionType, OpenQASMDeviceActionProperties
+from braket.device_schema import DeviceActionType
 from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
     GateModelQpuParadigmProperties,
 )
 from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
 from braket.pulse import ArbitraryWaveform, ConstantWaveform
 from braket.tasks import GateModelQuantumTaskResult
+from device_property_jsons import (
+    ACTION_PROPERTIES,
+    OQC_PARADIGM_PROPERTIES,
+    OQC_PULSE_PROPERTIES_WITH_PORTS,
+)
 from pennylane import numpy as pnp
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.pulse import ParametrizedEvolution, transmon_drive
@@ -60,8 +65,6 @@ from braket.pennylane_plugin.translation import (
     translate_result,
     translate_result_type,
 )
-
-from device_property_jsons import ACTION_PROPERTIES, OQC_PULSE_PROPERTIES_WITH_PORTS, OQC_PARADIGM_PROPERTIES
 
 
 def mock_aws_init(self, arn, aws_session):
