@@ -61,6 +61,8 @@ from braket.pennylane_plugin.translation import (
     translate_result_type,
 )
 
+from device_property_jsons import ACTION_PROPERTIES, OQC_PULSE_PROPERTIES_WITH_PORTS, OQC_PARADIGM_PROPERTIES
+
 
 def mock_aws_init(self, arn, aws_session):
     self._arn = arn
@@ -68,102 +70,9 @@ def mock_aws_init(self, arn, aws_session):
     self._ports = None
 
 
-ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
-    json.dumps(
-        {
-            "actionType": "braket.ir.openqasm.program",
-            "version": ["1"],
-            "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
-            "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
-            ],
-        }
-    )
-)
-
-OQC_PULSE_PROPERTIES = json.dumps(
-    {
-        "braketSchemaHeader": {
-            "name": "braket.device_schema.pulse.pulse_device_action_properties",
-            "version": "1",
-        },
-        "supportedQhpTemplateWaveforms": {},
-        "ports": {
-            "channel_15": {
-                "portId": "channel_15",
-                "direction": "tx",
-                "portType": "port_type_1",
-                "dt": 5e-10,
-            },
-            "channel_13": {
-                "portId": "channel_13",
-                "direction": "tx",
-                "portType": "port_type_1",
-                "dt": 5e-10,
-            },
-        },
-        "supportedFunctions": {},
-        "frames": {
-            "q0_drive": {
-                "frameId": "q0_drive",
-                "portId": "channel_15",
-                "frequency": 4.6e9,
-                "centerFrequency": 4360000000.0,
-                "phase": 0.0,
-                "associatedGate": None,
-                "qubitMappings": [0],
-                "qhpSpecificProperties": None,
-            },
-            "q1_drive": {
-                "frameId": "q1_drive",
-                "portId": "channel_13",
-                "frequency": 4.6e9,
-                "centerFrequency": 4360000000.0,
-                "phase": 0.0,
-                "associatedGate": None,
-                "qubitMappings": [0],
-                "qhpSpecificProperties": None,
-            },
-        },
-        "supportsLocalPulseElements": False,
-        "supportsDynamicFrames": True,
-        "supportsNonNativeGatesWithPulses": True,
-        "validationParameters": {
-            "MAX_SCALE": 1.0,
-            "MAX_AMPLITUDE": 1.0,
-            "PERMITTED_FREQUENCY_DIFFERENCE": 1.0,
-            "MIN_PULSE_LENGTH": 8e-09,
-            "MAX_PULSE_LENGTH": 0.00012,
-        },
-    }
-)
-
-OQC_PARADIGM_PROPERTIES = json.dumps(
-    {
-        "braketSchemaHeader": {
-            "name": "braket.device_schema.gate_model_qpu_paradigm_properties",
-            "version": "1",
-        },
-        "connectivity": {
-            "fullyConnected": False,
-            "connectivityGraph": {
-                "0": ["1", "7"],
-                "1": ["2"],
-                "2": ["3"],
-                "4": ["3", "5"],
-                "6": ["5"],
-                "7": ["6"],
-            },
-        },
-        "qubitCount": 8,
-        "nativeGateSet": ["ecr", "i", "rz", "v", "x"],
-    }
-)
-
-
 class DummyProperties:
     def __init__(self):
-        self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES)
+        self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES_WITH_PORTS)
         self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
 
 
