@@ -448,7 +448,7 @@ def _(op: ParametrizedEvolution, _parameters, device):
     frames = {w: device.frames[f"q{w}_drive"] for w in pulse_wires}
 
     # take dt from first frame (all frames have identical dt)
-    time_step = list(frames.values())[0].port.dt * 1e9  # seconds to nanoseconds
+    time_step = {wire: frame.port.dt * 1e9 for wire, frame in frames.items()}  # seconds to nanoseconds
 
     pulse_sequence = PulseSequence().barrier(list(frames.values()))
     callable_index = 0
@@ -459,21 +459,26 @@ def _(op: ParametrizedEvolution, _parameters, device):
             if pulse.amplitude == qml.pulse.constant:
                 amplitude = float(op.parameters[callable_index])
                 callable_index += 1
-                waveform = ConstantWaveform(pulse_length, amplitude)
+
+                def waveform(dt):
+                    return ConstantWaveform(pulse_length, amplitude)
 
             else:
                 amplitude = partial(pulse.amplitude, op.parameters[callable_index])
                 callable_index += 1
 
-                # Calculate amplitude for each time step and normalize
-                amplitudes = onp.array(
-                    [amplitude(t) for t in np.arange(start, end + time_step, time_step)]
-                )
+                def waveform(dt):
 
-                waveform = ArbitraryWaveform(amplitudes)
+                    # Calculate amplitude for each time step and normalize
+                    amplitudes = onp.array(
+                        [amplitude(t) for t in np.arange(start, end + dt, dt)]
+                    )
+
+                    return ArbitraryWaveform(amplitudes)
 
         else:
-            waveform = ConstantWaveform(pulse_length, pulse.amplitude)
+            def waveform(dt):
+                return ConstantWaveform(pulse_length, pulse.amplitude)
 
         if callable(pulse.phase):
             phase = float(op.parameters[callable_index])
@@ -492,7 +497,7 @@ def _(op: ParametrizedEvolution, _parameters, device):
             pulse_sequence = (
                 pulse_sequence.set_frequency(frames[w], frequency * 1e9)  # GHz to Hz
                 .set_phase(frames[w], phase)
-                .play(frames[w], waveform)
+                .play(frames[w], waveform(time_step[w]))
             )
 
     pulse_sequence = pulse_sequence.barrier(list(frames.values()))
