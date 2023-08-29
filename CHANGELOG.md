@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.20.1 (2023-08-29)
+
+### Bug Fixes and Other Changes
+
+ * build(deps): bump aws-actions/stale-issue-cleanup from 3 to 6
+
+### Documentation Changes
+
+ * Update PL requirement in `BraketQubitDevice`
+
 ## v1.20.0 (2023-08-21)
 
 ### Features
