@@ -235,11 +235,11 @@ html_theme_options = {
     # Set the path to a special layout to include for the homepage
     # "index_template": "special_index.html",
     # Set the name of the project to appear in the left sidebar.
-    "project_nav_name": "PennyLane-Braket",
+    "navbar_name": "PennyLane-Braket",
     # Set your Disqus short name to enable comments
     # "disqus_comments_shortname": "pennylane-1",
     # Set you GA account ID to enable tracking
-    "google_analytics_account": "G-C480Z9JL0D",
+    "google_analytics_tracking_id": "G-C480Z9JL0D",
     # Path to a touch icon
     "touch_icon": "logo_new.png",
     # Specify a base_url used to generate sitemap.xml links. If not
