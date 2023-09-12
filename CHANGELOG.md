@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.20.2 (2023-09-12)
+
+### Bug Fixes and Other Changes
+
+ * Extract tf casting method
+
+### Documentation Changes
+
+ * update for amazon-braket org
+
 ## v1.20.1 (2023-08-29)
 
 ### Bug Fixes and Other Changes
