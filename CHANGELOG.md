@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.20.3.post0 (2023-09-14)
+
+### Documentation Changes
+
+ * Replace aws org with amazon-braket in badges
+
+## v1.20.3 (2023-09-13)
+
+### Bug Fixes and Other Changes
+
+ * ops: update codeowner file to amazon-braket/braket-dev
+
 ## v1.20.2 (2023-09-12)
 
 ### Bug Fixes and Other Changes
