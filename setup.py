@@ -73,7 +73,7 @@ setup(
             TF_VERSION,
         ]
     },
-    url="https://github.com/aws/amazon-braket-pennylane-plugin-python",
+    url="https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python",
     author="Amazon Web Services",
     description=(
         "An open source framework for using Amazon Braket devices with the PennyLane"

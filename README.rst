@@ -7,12 +7,12 @@ Amazon Braket PennyLane Plugin
 .. image:: https://img.shields.io/pypi/pyversions/amazon-braket-pennylane-plugin.svg
     :alt: Supported Python Versions
     :target: https://pypi.python.org/pypi/amazon-braket-pennylane-plugin
-.. image:: https://img.shields.io/github/actions/workflow/status/aws/amazon-braket-strawberryfields-plugin-python/python-package.yml?branch=main&logo=github    
+.. image:: https://img.shields.io/github/actions/workflow/status/amazon-braket/amazon-braket-strawberryfields-plugin-python/python-package.yml?branch=main&logo=github    
     :alt: Build Status
-    :target: https://github.com/aws/amazon-braket-pennylane-plugin-python/actions?query=workflow%3A%22Python+package%22
-.. image:: https://codecov.io/gh/aws/amazon-braket-pennylane-plugin-python/branch/main/graph/badge.svg?token=VPPM8BJKW4
+    :target: https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python/actions?query=workflow%3A%22Python+package%22
+.. image:: https://codecov.io/gh/amazon-braket/amazon-braket-pennylane-plugin-python/branch/main/graph/badge.svg?token=VPPM8BJKW4
     :alt: codecov
-    :target: https://codecov.io/gh/aws/amazon-braket-pennylane-plugin-python
+    :target: https://codecov.io/gh/amazon-braket/amazon-braket-pennylane-plugin-python
 .. image:: https://img.shields.io/readthedocs/amazon-braket-pennylane-plugin-python.svg?logo=read-the-docs
     :alt: Documentation Status
     :target: https://amazon-braket-pennylane-plugin-python.readthedocs.io/en/latest/?badge=latest
@@ -26,7 +26,7 @@ The Amazon Braket PennyLane plugin offers four Amazon Braket quantum devices to 
 
 .. header-start-inclusion-marker-do-not-remove
 
-The `Amazon Braket Python SDK <https://github.com/aws/amazon-braket-sdk-python>`__ is an open source
+The `Amazon Braket Python SDK <https://github.com/amazon-braket/amazon-braket-sdk-python>`__ is an open source
 library that provides a framework to interact with quantum computing hardware
 devices and simulators through Amazon Braket.
 
@@ -77,7 +77,7 @@ that you installed or configured the following prerequisites:
 * Download and install `Python 3.9 <https://www.python.org/downloads/>`__ or greater.
   If you are using Windows, choose the option *Add Python to environment variables* before you begin the installation.
 * Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions
-  `here <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`__.
+  `here <https://github.com/amazon-braket/amazon-braket-sdk-python#prerequisites>`__.
 * Download and install `PennyLane <https://pennylane.ai/install.html>`__:
 
   .. code-block:: bash
@@ -97,7 +97,7 @@ pip install command in the root directory of the repository:
 
 .. code-block:: bash
 
-    git clone https://github.com/aws/amazon-braket-pennylane-plugin-python.git
+    git clone https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python.git
     cd amazon-braket-pennylane-plugin-python
     pip install .
 
@@ -152,7 +152,7 @@ Integration tests
 *****************
 
 To run the integration tests, set the ``AWS_PROFILE`` as explained in the amazon-braket-sdk-python
-`README <https://github.com/aws/amazon-braket-sdk-python/blob/main/README.md>`__:
+`README <https://github.com/amazon-braket/amazon-braket-sdk-python/blob/main/README.md>`__:
 
 .. code-block:: bash
 
@@ -202,8 +202,8 @@ or applications built with the plugin.
 Support
 =======
 
-- **Source Code:** https://github.com/aws/amazon-braket-pennylane-plugin-python
-- **Issue Tracker:** https://github.com/aws/amazon-braket-pennylane-plugin-python/issues
+- **Source Code:** https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python
+- **Issue Tracker:** https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python/issues
 - **General Questions:** https://quantumcomputing.stackexchange.com/questions/ask (add the tag amazon-braket)
 - **PennyLane Forum:** https://discuss.pennylane.ai
 
