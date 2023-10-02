@@ -1984,7 +1984,6 @@ def get_oqc_device():
 
 
 class TestPulseValidation:
-
     def test_that_check_validity_calls_pulse_validation_function(self, mocker):
         """Test that check_validity calls _validate_pulse_parameters if the
         queue contains a ParametrizedEvolution"""

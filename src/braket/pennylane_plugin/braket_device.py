@@ -35,7 +35,6 @@ Code details
 
 import collections
 import numbers
-import warnings
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
