@@ -1984,29 +1984,6 @@ def get_oqc_device():
 
 
 class TestPulseValidation:
-    def test_op_with_interaction_term_raises_a_warning(self):
-        """Check that a warning is raised if the settings from the interaction term
-        on the ParametrizedEvolution don't match the device constants"""
-
-        dev = get_oqc_device()
-
-        # some 3 qubit device
-        H = qml.pulse.transmon_interaction(
-            qubit_freq=[4.3, 4.6, 4.8],
-            connections=[(1, 2), (1, 3)],
-            coupling=[0.02, 0.03],
-            wires=[0, 1, 2],
-        )
-        # 4.3 GHz drive on wire 0 with phase=0 and amplitude=0.2
-        H += qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
-
-        op = ParametrizedEvolution(H, [], t=10)
-
-        with pytest.warns(
-            UserWarning,
-            match="The ParametrizedEvolution contains settings from an interaction term",
-        ):
-            dev._validate_pulse_parameters(op)
 
     def test_that_check_validity_calls_pulse_validation_function(self, mocker):
         """Test that check_validity calls _validate_pulse_parameters if the

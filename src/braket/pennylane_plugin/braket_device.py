@@ -795,14 +795,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                     )
                 wires_used.append(wire)
 
-        if ev.H.settings:
-            warnings.warn(
-                "The ParametrizedEvolution contains settings from an interaction term "
-                "`qml.pulse.transmon_interaction`. Please note that the settings passed to the "
-                "interaction term are not used for hardware upload. All parameters used in the "
-                "interaction term are set by the physical device."
-            )
-
     def check_validity(self, queue, observables):
         """Check validity of pulse operations before running the standard check_validity function
 
