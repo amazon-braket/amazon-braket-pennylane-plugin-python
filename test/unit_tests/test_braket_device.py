@@ -1207,9 +1207,8 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch):
     )
 
 
-@pytest.mark.parametrize("old_return_type", [True, False])
 @patch.object(AwsDevice, "run")
-def test_execute_all_samples(mock_run, old_return_type):
+def test_execute_all_samples(mock_run):
     result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
@@ -1265,19 +1264,15 @@ def test_execute_all_samples(mock_run, old_return_type):
         qml.sample(qml.Hadamard(0) @ qml.Identity(1))
         qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
 
-    if old_return_type:
-        qml.disable_return()
     results = dev.execute(circuit)
-    qml.enable_return()
 
     assert len(results) == 2
     assert results[0].shape == (4,)
     assert results[1].shape == (4,)
 
 
-@pytest.mark.parametrize("old_return_type", [True, False])
 @patch.object(AwsDevice, "run")
-def test_execute_some_samples(mock_run, old_return_type):
+def test_execute_some_samples(mock_run):
     """Tests that a combination with sample returns correctly and does not put single-number
     results in superflous arrays"""
     result = GateModelQuantumTaskResult.from_string(
@@ -1320,8 +1315,6 @@ def test_execute_some_samples(mock_run, old_return_type):
             }
         )
     )
-    if old_return_type:
-        qml.disable_return()
     task = Mock()
     task.result.return_value = result
     mock_run.return_value = task
@@ -1334,7 +1327,6 @@ def test_execute_some_samples(mock_run, old_return_type):
         qml.expval(qml.PauliZ(2))
 
     results = dev.execute(circuit)
-    qml.enable_return()
 
     assert len(results) == 2
     assert results[0].shape == (4,)
@@ -1543,7 +1535,6 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
 
 
 @patch.object(AwsDevice, "run")
-@pytest.mark.parametrize("old_return_type", [True, False])
 @pytest.mark.parametrize(
     "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
     [
@@ -1628,10 +1619,7 @@ def test_execute_and_gradients(
     expected_inputs,
     result_types,
     expected_pl_result,
-    old_return_type,
 ):
-    if old_return_type:
-        qml.disable_return()
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
@@ -1646,7 +1634,6 @@ def test_execute_and_gradients(
     )
 
     results, jacs = dev.execute_and_gradients([pl_circ])
-    qml.enable_return()
 
     assert dev.task == task
     mock_run.assert_called_with(
