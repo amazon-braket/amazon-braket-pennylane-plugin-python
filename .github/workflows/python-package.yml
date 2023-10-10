@@ -33,11 +33,9 @@ jobs:
           sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & sudo rm -rf "/usr/local/share/boost"
         fi
         df -h
-        docker system df
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install -e .[test]
     - name: Check build space
       shell: bash
       run: | 
