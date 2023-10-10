@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v4
@@ -26,10 +26,25 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Maximize build space
+      shell: bash
+      run: | 
+        df -h
+        if [ "$RUNNER_OS" != "Windows" ]; then
+          sudo rm -rf /usr/share/dotnet & 
+          sudo rm -rf /usr/local/lib/android &
+          sudo rm -rf /opt/ghc & 
+          sudo rm -rf /usr/local/share/boost
+        fi
+        df -h
     - name: Install dependencies
       run: |
         pip install --upgrade pip
         pip install -e .[test]
+    - name: Check build space
+      shell: bash
+      run: | 
+        df -h
     - name: Run unit tests
       run: |
         tox -e unit-tests
