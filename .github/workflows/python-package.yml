@@ -31,6 +31,7 @@ jobs:
       run: | 
         if [ "$RUNNER_OS" != "Windows" ]; then
           sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & sudo rm -rf "/usr/local/share/boost" & sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        fi
     - name: Install dependencies
       run: |
         pip install --upgrade pip
