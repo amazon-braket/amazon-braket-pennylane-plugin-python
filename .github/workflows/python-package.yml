@@ -29,13 +29,15 @@ jobs:
     - name: Maximize build space
       shell: bash
       run: | 
+        df -h
         if [ "$RUNNER_OS" != "Windows" ]; then
-          sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & sudo rm -rf /usr/local/share/boost
         fi
         df -h
     - name: Install dependencies
       run: |
         pip install --upgrade pip
+        pip install -e .[test]
     - name: Check build space
       shell: bash
       run: | 
