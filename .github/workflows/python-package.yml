@@ -29,7 +29,8 @@ jobs:
     - name: Maximize build space
       shell: bash
       run: | 
-        sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & sudo rm -rf "/usr/local/share/boost" & sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        if [ "$RUNNER_OS" != "Windows" ]; then
+          sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & sudo rm -rf "/usr/local/share/boost" & sudo rm -rf "$AGENT_TOOLSDIRECTORY"
     - name: Install dependencies
       run: |
         pip install --upgrade pip
