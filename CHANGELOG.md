@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.21.0 (2023-10-11)
+
+### Features
+
+ * remove python 3.8 support
+
 ## v1.20.3.post1 (2023-09-20)
 
 ### Documentation Changes
