@@ -499,7 +499,6 @@ def _(op: ParametrizedEvolution, _parameters, device):
                 .shift_phase(frames[w], phase)
                 .play(frames[w], waveform(time_step[w]))
                 .shift_phase(frames[w], -phase)
-                .play(frames[w], waveform(time_step[w]))
             )
 
     pulse_sequence = pulse_sequence.barrier(list(frames.values()))
