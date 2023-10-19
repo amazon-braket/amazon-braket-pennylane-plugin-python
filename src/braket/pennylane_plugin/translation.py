@@ -496,6 +496,9 @@ def _(op: ParametrizedEvolution, _parameters, device):
         for w in pulse.wires:
             pulse_sequence = (
                 pulse_sequence.set_frequency(frames[w], frequency * 1e9)  # GHz to Hz
+                .shift_phase(frames[w], phase)
+                .play(frames[w], waveform(time_step[w]))
+                .shift_phase(frames[w], -phase)
                 .set_phase(frames[w], phase)
                 .play(frames[w], waveform(time_step[w]))
             )
