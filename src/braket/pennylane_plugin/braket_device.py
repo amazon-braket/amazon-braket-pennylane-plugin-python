@@ -49,7 +49,7 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from pennylane import QuantumFunctionError, QubitDevice, active_return
+from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
@@ -285,23 +285,14 @@ class BraketQubitDevice(QubitDevice):
                 else result
                 for result in results
             ]
-            return results_list[0] if active_return() else np.asarray(results_list)
+            return results_list[0]
 
-        if active_return():
-            # Assuming that the braket device doesn't have native parameter broadcasting
-            # Assuming that the braket device doesn't support shot vectors.
-            # Otherwise, we may need additional nesting
-            if len(circuit.measurements) == 1:
-                return onp.array(results).squeeze()
-            return tuple(onp.array(result).squeeze() for result in results)
-
-        # Ensures that a combination with sample does not put
-        # single-number results in superfluous arrays
-        all_sampled = all(obs.return_type is Sample for obs in circuit.observables)
-        if circuit.is_sampled and not all_sampled:
-            return np.asarray(results, dtype="object")
-
-        return np.asarray(results)
+        # Assuming that the braket device doesn't have native parameter broadcasting
+        # Assuming that the braket device doesn't support shot vectors.
+        # Otherwise, we may need additional nesting
+        if len(circuit.measurements) == 1:
+            return onp.array(results).squeeze()
+        return tuple(onp.array(result).squeeze() for result in results)
 
     @staticmethod
     def _tracking_data(task):
@@ -738,7 +729,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         """
         res = []
         jacs = []
-        active_jac = False
         for circuit in circuits:
             observables = circuit.observables
             if not circuit.trainable_params:
@@ -754,15 +744,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 new_res = self.execute(circuit, compute_gradient=False)
             else:
                 results = self.execute(circuit, compute_gradient=True)
-                if active_return():
-                    active_jac = True
-                    new_res, new_jac = results
-                    new_jac = self._adjoint_jacobian_processing(new_jac)
-                else:
-                    new_res, new_jac = results[0]
+                new_res, new_jac = results
+                new_jac = self._adjoint_jacobian_processing(new_jac)
             res.append(new_res)
             jacs.append(new_jac)
-        res = res[0] if len(res) == 1 and active_jac else res
+        res = res[0] if len(res) == 1 else res
         return res, jacs
 
 
