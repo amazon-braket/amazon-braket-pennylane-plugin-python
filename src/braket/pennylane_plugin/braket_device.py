@@ -745,6 +745,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             else:
                 results = self.execute(circuit, compute_gradient=True)
                 new_res, new_jac = results
+                # PennyLane expects the forward execution result to be a scalar
+                # when it is accompanied by an adjoint gradient calculation
                 new_res = new_res[0]
                 new_jac = self._adjoint_jacobian_processing(new_jac)
             res.append(new_res)
