@@ -11,8 +11,9 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+from collections.abc import Callable
 from functools import partial
-from typing import Callable, List, Tuple, Union
+from typing import Union
 
 import numpy as np
 from braket.ahs.atom_arrangement import AtomArrangement
@@ -129,7 +130,7 @@ def _evaluate_pulses(ev_op: ParametrizedEvolution):
     return evaluated_pulses
 
 
-def _create_register(coordinates: List[Tuple[float, float]]):
+def _create_register(coordinates: list[tuple[float, float]]):
     """Create an AtomArrangement to describe the atom layout from the coordinates in the
     ParametrizedEvolution, and saves it as self._register
 
@@ -215,11 +216,11 @@ def _create_valid_local_detunings(local_pulses, dev_wires):
     are of type ``float``, or functions that return zero if the detunings are ``callable``.
 
     Args:
-        local_pulses (List[HardwarePulse]): Partially evaluated list of local pulses
+        local_pulses (list[HardwarePulse]): Partially evaluated list of local pulses
         dev_wires (~.Wires): Device wires
 
     Returns:
-        List[Union[callable, float]]: List of detunings covering all device wires.
+        list[Union[callable, float]]: List of detunings covering all device wires.
     """
     if len(local_pulses) == 0:
         return None
@@ -244,7 +245,7 @@ def _extract_pattern_from_detunings(detunings, time_points):
     ``ShiftingField`` term of the driving Hamiltonian.
 
     Args:
-        detunings (List[Union[float, callable]]): detunings to extract pattern from
+        detunings (list[Union[float, callable]]): detunings to extract pattern from
         time_points (array[Number, Number]]): Array of sampled time steps
 
     Returns:
@@ -319,13 +320,13 @@ def _extract_pattern_from_detunings(detunings, time_points):
 
 
 def translate_pulses_to_shifting_field(
-    detunings: List[Union[float, callable]], time_points: np.ndarray
+    detunings: list[Union[float, callable]], time_points: np.ndarray
 ):
     """Uses the overall detuning and pattern to create a ``ShiftingField`` object from
     AWS Braket.
 
     Args:
-        detunings (List[Union[float, callable]]): Local detuning per wire
+        detunings (list[Union[float, callable]]): Local detuning per wire
         time_points (array[Number, Number]]): Array of sampled time steps
 
     Returns:

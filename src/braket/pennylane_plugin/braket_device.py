@@ -35,10 +35,11 @@ Code details
 
 import collections
 import numbers
+from collections.abc import Iterable, Sequence
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
-from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
+from typing import Optional, Union
 
 import numpy as onp
 import pennylane as qml
@@ -152,12 +153,12 @@ class BraketQubitDevice(QubitDevice):
         self._task = None
 
     @property
-    def operations(self) -> FrozenSet[str]:
-        """FrozenSet[str]: The set of names of PennyLane operations that the device supports."""
+    def operations(self) -> frozenset[str]:
+        """frozenset[str]: The set of names of PennyLane operations that the device supports."""
         return self._supported_ops
 
     @property
-    def observables(self) -> FrozenSet[str]:
+    def observables(self) -> frozenset[str]:
         base_observables = frozenset(super().observables)
         # This needs to be here bc expectation(ax+by)== a*expectation(x)+b*expectation(y)
         # is only true when shots=0
@@ -179,7 +180,7 @@ class BraketQubitDevice(QubitDevice):
         self,
         circuit: QuantumTape,
         compute_gradient: bool = False,
-        trainable_indices: FrozenSet[int] = None,
+        trainable_indices: frozenset[int] = None,
         **run_kwargs,
     ):
         """Converts a PennyLane circuit to a Braket circuit"""
@@ -237,18 +238,18 @@ class BraketQubitDevice(QubitDevice):
 
     def statistics(
         self, braket_result: GateModelQuantumTaskResult, observables: Sequence[Observable]
-    ) -> List[float]:
+    ) -> list[float]:
         """Processes measurement results from a Braket task result and returns statistics.
 
         Args:
             braket_result (GateModelQuantumTaskResult): the Braket task result
-            observables (List[Observable]): the observables to be measured
+            observables (list[Observable]): the observables to be measured
 
         Raises:
             QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
 
         Returns:
-            List[float]: the corresponding statistics
+            list[float]: the corresponding statistics
         """
         results = []
         for obs in observables:
@@ -399,7 +400,7 @@ class BraketQubitDevice(QubitDevice):
         rotations: Sequence[Operation] = None,
         use_unique_params: bool = False,
         *,
-        trainable_indices: Optional[FrozenSet[int]] = None,
+        trainable_indices: Optional[frozenset[int]] = None,
         **run_kwargs,
     ) -> Circuit:
         """Instantiate Braket Circuit object."""
@@ -473,7 +474,7 @@ class BraketQubitDevice(QubitDevice):
         return translate_result(braket_result, observable, dev_wires, self._braket_result_types)
 
     @staticmethod
-    def _get_trainable_parameters(tape: QuantumTape) -> Dict[int, numbers.Number]:
+    def _get_trainable_parameters(tape: QuantumTape) -> dict[int, numbers.Number]:
         trainable_indices = sorted(tape.trainable_params)
         params = tape.get_parameters()
         trainable = {}
