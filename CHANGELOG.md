@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.22.0 (2023-10-21)
+
+### Deprecations and Removals
+
+ * Remove legacy return types system
+
+### Bug Fixes and Other Changes
+
+ * Remove legacy return types system
+
+### Documentation Changes
+
+ * Use builtins for type hints
+
 ## v1.21.0 (2023-10-11)
 
 ### Features
