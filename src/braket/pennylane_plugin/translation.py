@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 from functools import reduce, singledispatch
-from typing import Any, FrozenSet, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import pennylane as qml
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
@@ -90,7 +90,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
 }
 
 
-def supported_operations(device: Device, verbatim: bool = False) -> FrozenSet[str]:
+def supported_operations(device: Device, verbatim: bool = False) -> frozenset[str]:
     """Returns the operations supported by the plugin based upon the device.
 
     Args:
@@ -99,7 +99,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> FrozenSet[st
             the native gate set of the device. Default False
 
     Returns:
-        FrozenSet[str]: The names of the supported operations
+        frozenset[str]: The names of the supported operations
     """
     try:
         properties = (
@@ -130,7 +130,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> FrozenSet[st
 def translate_operation(
     operation: Operation,
     use_unique_params: bool = False,
-    param_names: Optional[List[str]] = None,
+    param_names: Optional[list[str]] = None,
     *args,
     **kwargs,
 ) -> Gate:
@@ -141,7 +141,7 @@ def translate_operation(
         use_unique_params (bool): If true, numeric parameters in the resulting operation will be
         replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
         parameters will be skipped.
-        param_names (Optional[List[str]]): A list of parameter names to be supplied
+        param_names (Optional[list[str]]): A list of parameter names to be supplied
             to the new operation. The length of the list must match the number of
             the operator's parameters; if no named parameter is needed for the corresponding
             operation parameter, then the list entry should be `None`.
@@ -427,9 +427,9 @@ def _(adjoint: Adjoint, parameters):
 
 def get_adjoint_gradient_result_type(
     observable: Observable,
-    targets: Union[List[int], List[List[int]]],
-    supported_result_types: FrozenSet[str],
-    parameters: List[str],
+    targets: Union[list[int], list[list[int]]],
+    supported_result_types: frozenset[str],
+    parameters: list[str],
 ):
     if "AdjointGradient" not in supported_result_types:
         raise NotImplementedError("Unsupported return type: AdjointGradient")
@@ -442,18 +442,18 @@ def get_adjoint_gradient_result_type(
 
 
 def translate_result_type(
-    observable: Observable, targets: List[int], supported_result_types: FrozenSet[str]
-) -> Union[ResultType, Tuple[ResultType, ...]]:
+    observable: Observable, targets: list[int], supported_result_types: frozenset[str]
+) -> Union[ResultType, tuple[ResultType, ...]]:
     """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
 
     Args:
         observable (Observable): The PennyLane ``Observable`` to translate
-        targets (List[int]): The target wires of the observable using a consecutive integer wire
+        targets (list[int]): The target wires of the observable using a consecutive integer wire
             ordering
-        supported_result_types (FrozenSet[str]): Braket result types supported by the Braket device
+        supported_result_types (frozenset[str]): Braket result types supported by the Braket device
 
     Returns:
-        Union[ResultType, Tuple[ResultType]]: The Braket result type corresponding to
+        Union[ResultType, tuple[ResultType]]: The Braket result type corresponding to
         the given observable; if the observable type has multiple terms, for example a Hamiltonian,
         then this will return a result type for each term.
     """
@@ -560,16 +560,16 @@ def _(t: qml.operation.Tensor):
 def translate_result(
     braket_result: GateModelQuantumTaskResult,
     observable: Observable,
-    targets: List[int],
-    supported_result_types: FrozenSet[str],
+    targets: list[int],
+    supported_result_types: frozenset[str],
 ) -> Any:
     """Translates a Braket result into the corresponding PennyLane return type value.
 
     Args:
         braket_result (GateModelQuantumTaskResult): The Braket result to translate.
         observable (Observable): The PennyLane observable associated with the result.
-        targets (List[int]): The qubits in the result.
-        supported_result_types (FrozenSet[str]): The result types supported by the device.
+        targets (list[int]): The qubits in the result.
+        supported_result_types (frozenset[str]): The result types supported by the device.
 
     Returns:
         Any: The translated return value.

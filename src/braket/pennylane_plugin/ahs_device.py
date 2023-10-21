@@ -32,8 +32,9 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
+from collections.abc import Iterable
 from enum import Enum, auto
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
@@ -106,11 +107,11 @@ class BraketAhsDevice(QubitDevice):
         self._ahs_program = None
         self._task = None
 
-    def apply(self, operations: List[ParametrizedEvolution], **kwargs):
+    def apply(self, operations: list[ParametrizedEvolution], **kwargs):
         """Convert the pulse operation to an AHS program and run on the connected device
 
         Args:
-            operations(List[ParametrizedEvolution]): a list containing a single
+            operations(list[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
         ev_op = operations[0]  # only one!
@@ -231,12 +232,12 @@ class BraketAhsDevice(QubitDevice):
                 continue
             self._validate_measurement_basis(o)
 
-    def _validate_operations(self, operations: List[ParametrizedEvolution]):
+    def _validate_operations(self, operations: list[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
         from a HardwareHamiltonian with only a single, global pulse
 
         Args:
-            operations(List[ParametrizedEvolution]): a list containing a single
+            operations(list[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
 
@@ -274,7 +275,7 @@ class BraketAhsDevice(QubitDevice):
                 f"the device ({len(self.wires)})"
             )
 
-    def _validate_pulses(self, pulses: List[HardwarePulse]):
+    def _validate_pulses(self, pulses: list[HardwarePulse]):
         """Confirms that the list of HardwarePulses describes a single, global pulse
 
         Args:
@@ -506,7 +507,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         super().__init__(wires=wires, device=device, shots=shots)
 
     @property
-    def settings(self) -> Dict:
+    def settings(self) -> dict:
         """Dictionary of constants set by the hardware.
 
         Used to enable initializing hardware-consistent Hamiltonians by saving
@@ -566,7 +567,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         task = self._device.run(ahs_program, shots=self.shots, steps=100)
         return task
 
-    def _validate_pulses(self, pulses: List[HardwarePulse]):  # noqa: C901
+    def _validate_pulses(self, pulses: list[HardwarePulse]):  # noqa: C901
         """Validate that all pulses are defined as expected by the device. This validation includes:
 
         * Verifying that a global drive is present
@@ -575,7 +576,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         * Verifying that all local detunings are of the same type (float or callable)
 
         Args:
-            pulses (List[HardwarePulse]): List containing all pulses
+            pulses (list[HardwarePulse]): List containing all pulses
 
         Raises:
             ValueError: if pulses are invalid
@@ -612,7 +613,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         self._validate_local_pulses(local_pulses)
 
-    def _validate_local_pulses(self, local_pulses: List[HardwarePulse]):
+    def _validate_local_pulses(self, local_pulses: list[HardwarePulse]):
         """Validate that local drives don't have amplitude or phase, and that various detunings
         aren't inconsistent The detunings are stored in the `frequency` attribute of
         0`HardwarePulse`."""
