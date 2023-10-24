@@ -11,10 +11,12 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-from functools import reduce, singledispatch
+from functools import partial, reduce, singledispatch
 from typing import Any, Optional, Union
 
+import numpy as onp
 import pennylane as qml
+from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
     AdjointGradient,
@@ -26,11 +28,13 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.devices import Device
+from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 from pennylane.ops import Adjoint
+from pennylane.pulse import ParametrizedEvolution
 
 from braket.pennylane_plugin.ops import (
     AAMS,
@@ -124,6 +128,12 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
     # both AAMS and MS map to ms
     if "AAMS" in translated:
         translated |= {"MS"}
+
+    if (
+        isinstance(device, AwsDevice)
+        and device.arn == "arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy"
+    ):
+        translated |= {"ParametrizedEvolution"}
     return translated
 
 
@@ -171,249 +181,250 @@ def translate_operation(
         parameters = [
             p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
         ]
-    return _translate_operation(operation, parameters)
+    device = kwargs.get("device", None)
+    return _translate_operation(operation, parameters, device)
 
 
 @singledispatch
-def _translate_operation(operation: Operation, _parameters) -> Gate:
+def _translate_operation(operation: Operation, _parameters, device=None) -> Gate:
     raise NotImplementedError(
         f"Braket PennyLane plugin does not support operation {operation.name}."
     )
 
 
 @_translate_operation.register
-def _(_: qml.Identity, _parameters):
+def _(_: qml.Identity, _parameters, device=None):
     return gates.I()
 
 
 @_translate_operation.register
-def _(_: qml.Hadamard, _parameters):
+def _(_: qml.Hadamard, _parameters, device=None):
     return gates.H()
 
 
 @_translate_operation.register
-def _(_: qml.PauliX, _parameters):
+def _(_: qml.PauliX, _parameters, device=None):
     return gates.X()
 
 
 @_translate_operation.register
-def _(_: qml.PauliY, _parameters):
+def _(_: qml.PauliY, _parameters, device=None):
     return gates.Y()
 
 
 @_translate_operation.register
-def _(_: qml.PauliZ, _parameters):
+def _(_: qml.PauliZ, _parameters, device=None):
     return gates.Z()
 
 
 @_translate_operation.register
-def _(_: qml.ECR, _parameters):
+def _(_: qml.ECR, _parameters, device=None):
     return gates.ECR()
 
 
 @_translate_operation.register
-def _(s: qml.S, _parameters):
+def _(s: qml.S, _parameters, device=None):
     return gates.S()
 
 
 @_translate_operation.register
-def _(sx: qml.SX, _parameters):
+def _(sx: qml.SX, _parameters, device=None):
     return gates.V()
 
 
 @_translate_operation.register
-def _(t: qml.T, _parameters):
+def _(t: qml.T, _parameters, device=None):
     return gates.T()
 
 
 @_translate_operation.register
-def _(_: qml.CNOT, _parameters):
+def _(_: qml.CNOT, _parameters, device=None):
     return gates.CNot()
 
 
 @_translate_operation.register
-def _(_: qml.CY, _parameters):
+def _(_: qml.CY, _parameters, device=None):
     return gates.CY()
 
 
 @_translate_operation.register
-def _(_: qml.CZ, _parameters):
+def _(_: qml.CZ, _parameters, device=None):
     return gates.CZ()
 
 
 @_translate_operation.register
-def _(_: qml.SWAP, _parameters):
+def _(_: qml.SWAP, _parameters, device=None):
     return gates.Swap()
 
 
 @_translate_operation.register
-def _(_: qml.CSWAP, _parameters):
+def _(_: qml.CSWAP, _parameters, device=None):
     return gates.CSwap()
 
 
 @_translate_operation.register
-def _(_: qml.Toffoli, _parameters):
+def _(_: qml.Toffoli, _parameters, device=None):
     return gates.CCNot()
 
 
 @_translate_operation.register
-def _(rx: qml.RX, parameters):
+def _(rx: qml.RX, parameters, device=None):
     phi = parameters[0]
     return gates.Rx(phi)
 
 
 @_translate_operation.register
-def _(ry: qml.RY, parameters):
+def _(ry: qml.RY, parameters, device=None):
     phi = parameters[0]
     return gates.Ry(phi)
 
 
 @_translate_operation.register
-def _(rz: qml.RZ, parameters):
+def _(rz: qml.RZ, parameters, device=None):
     phi = parameters[0]
     return gates.Rz(phi)
 
 
 @_translate_operation.register
-def _(phase_shift: qml.PhaseShift, parameters):
+def _(phase_shift: qml.PhaseShift, parameters, device=None):
     phi = parameters[0]
     return gates.PhaseShift(phi)
 
 
 @_translate_operation.register
-def _(qubit_unitary: qml.QubitUnitary, parameters):
+def _(qubit_unitary: qml.QubitUnitary, parameters, device=None):
     U = np.asarray(parameters[0])
     return gates.Unitary(U)
 
 
 @_translate_operation.register
-def _(_: qml.AmplitudeDamping, parameters):
+def _(_: qml.AmplitudeDamping, parameters, device=None):
     gamma = parameters[0]
     return noises.AmplitudeDamping(gamma)
 
 
 @_translate_operation.register
-def _(_: qml.GeneralizedAmplitudeDamping, parameters):
+def _(_: qml.GeneralizedAmplitudeDamping, parameters, device=None):
     gamma = parameters[0]
     probability = parameters[1]
     return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
 
 
 @_translate_operation.register
-def _(_: qml.PhaseDamping, parameters):
+def _(_: qml.PhaseDamping, parameters, device=None):
     gamma = parameters[0]
     return noises.PhaseDamping(gamma)
 
 
 @_translate_operation.register
-def _(_: qml.DepolarizingChannel, parameters):
+def _(_: qml.DepolarizingChannel, parameters, device=None):
     probability = parameters[0]
     return noises.Depolarizing(probability)
 
 
 @_translate_operation.register
-def _(_: qml.BitFlip, parameters):
+def _(_: qml.BitFlip, parameters, device=None):
     probability = parameters[0]
     return noises.BitFlip(probability)
 
 
 @_translate_operation.register
-def _(_: qml.PhaseFlip, parameters):
+def _(_: qml.PhaseFlip, parameters, device=None):
     probability = parameters[0]
     return noises.PhaseFlip(probability)
 
 
 @_translate_operation.register
-def _(_: qml.QubitChannel, parameters):
+def _(_: qml.QubitChannel, parameters, device=None):
     K_list = [np.asarray(matrix) for matrix in parameters]
     return noises.Kraus(K_list)
 
 
 @_translate_operation.register
-def _(c_phase_shift: qml.ControlledPhaseShift, parameters):
+def _(c_phase_shift: qml.ControlledPhaseShift, parameters, device=None):
     phi = parameters[0]
     return gates.CPhaseShift(phi)
 
 
 @_translate_operation.register
-def _(c_phase_shift_00: CPhaseShift00, parameters):
+def _(c_phase_shift_00: CPhaseShift00, parameters, device=None):
     phi = parameters[0]
     return gates.CPhaseShift00(phi)
 
 
 @_translate_operation.register
-def _(c_phase_shift_01: CPhaseShift01, parameters):
+def _(c_phase_shift_01: CPhaseShift01, parameters, device=None):
     phi = parameters[0]
     return gates.CPhaseShift01(phi)
 
 
 @_translate_operation.register
-def _(c_phase_shift_10: CPhaseShift10, parameters):
+def _(c_phase_shift_10: CPhaseShift10, parameters, device=None):
     phi = parameters[0]
     return gates.CPhaseShift10(phi)
 
 
 @_translate_operation.register
-def _(iswap: qml.ISWAP, _parameters):
+def _(iswap: qml.ISWAP, _parameters, device=None):
     return gates.ISwap()
 
 
 @_translate_operation.register
-def _(pswap: PSWAP, parameters):
+def _(pswap: PSWAP, parameters, device=None):
     phi = parameters[0]
     return gates.PSwap(phi)
 
 
 @_translate_operation.register
-def _(xy: qml.IsingXY, parameters):
+def _(xy: qml.IsingXY, parameters, device=None):
     phi = parameters[0]
     return gates.XY(phi)
 
 
 @_translate_operation.register
-def _(xx: qml.IsingXX, parameters):
+def _(xx: qml.IsingXX, parameters, device=None):
     phi = parameters[0]
     return gates.XX(phi)
 
 
 @_translate_operation.register
-def _(yy: qml.IsingYY, parameters):
+def _(yy: qml.IsingYY, parameters, device=None):
     phi = parameters[0]
     return gates.YY(phi)
 
 
 @_translate_operation.register
-def _(zz: qml.IsingZZ, parameters):
+def _(zz: qml.IsingZZ, parameters, device=None):
     phi = parameters[0]
     return gates.ZZ(phi)
 
 
 @_translate_operation.register
-def _(_gpi: GPi, parameters):
+def _(_gpi: GPi, parameters, device=None):
     phi = parameters[0]
     return gates.GPi(phi)
 
 
 @_translate_operation.register
-def _(gpi2: GPi2, parameters):
+def _(gpi2: GPi2, parameters, device=None):
     phi = parameters[0]
     return gates.GPi2(phi)
 
 
 @_translate_operation.register
-def _(ms: MS, parameters):
+def _(ms: MS, parameters, device=None):
     phi_0, phi_1 = parameters[:2]
     return gates.MS(phi_0, phi_1)
 
 
 @_translate_operation.register
-def _(ms: AAMS, parameters):
+def _(ms: AAMS, parameters, device=None):
     phi_0, phi_1, theta = parameters[:3]
     return gates.MS(phi_0, phi_1, theta)
 
 
 @_translate_operation.register
-def _(adjoint: Adjoint, parameters):
+def _(adjoint: Adjoint, parameters, device=None):
     if isinstance(adjoint.base, qml.ISWAP):
         # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
@@ -423,6 +434,75 @@ def _(adjoint: Adjoint, parameters):
             f"The adjoint of the Braket operation {base} contains more than one operation."
         )
     return base.adjoint()[0]
+
+
+@_translate_operation.register
+def _(op: ParametrizedEvolution, _parameters, device):
+    start, end = op.t[0], op.t[1]
+    pulse_length = (end - start) * 1e-9  # nanoseconds to seconds
+    pulses = op.H.pulses
+
+    # The driven wires aren't the same as `op.wires` as `op.wires` contains
+    # all device wires due to interaction term.
+    pulse_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
+    frames = {w: device.frames[f"q{w}_drive"] for w in pulse_wires}
+
+    # take dt from first frame (all frames have identical dt)
+    time_step = {
+        wire: frame.port.dt * 1e9 for wire, frame in frames.items()
+    }  # seconds to nanoseconds
+
+    pulse_sequence = PulseSequence().barrier(list(frames.values()))
+    callable_index = 0
+
+    for pulse in pulses:
+        # Create waveform for each pulse in `ParametrizedEvolution`
+        if callable(pulse.amplitude):
+            if pulse.amplitude == qml.pulse.constant:
+                amplitude = complex(op.parameters[callable_index])
+                callable_index += 1
+
+                def waveform(dt):
+                    return ConstantWaveform(pulse_length, amplitude)
+
+            else:
+                amplitude = partial(pulse.amplitude, op.parameters[callable_index])
+                callable_index += 1
+
+                def waveform(dt):
+                    # Calculate amplitude for each time step and normalize
+                    amplitudes = onp.array([amplitude(t) for t in np.arange(start, end + dt, dt)])
+
+                    return ArbitraryWaveform(amplitudes)
+
+        else:
+
+            def waveform(dt):
+                return ConstantWaveform(pulse_length, pulse.amplitude)
+
+        if callable(pulse.phase):
+            phase = float(op.parameters[callable_index])
+            callable_index += 1
+        else:
+            phase = pulse.phase
+
+        if callable(pulse.frequency):
+            frequency = float(op.parameters[callable_index])
+            callable_index += 1
+        else:
+            frequency = pulse.frequency
+
+        # Play pulse for each frame
+        for w in pulse.wires:
+            pulse_sequence = (
+                pulse_sequence.set_frequency(frames[w], frequency * 1e9)  # GHz to Hz
+                .shift_phase(frames[w], phase)
+                .play(frames[w], waveform(time_step[w]))
+                .shift_phase(frames[w], -phase)
+            )
+
+    pulse_sequence = pulse_sequence.barrier(list(frames.values()))
+    return gates.PulseGate(pulse_sequence, qubit_count=len(op.wires))
 
 
 def get_adjoint_gradient_result_type(
