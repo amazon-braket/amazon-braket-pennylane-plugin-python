@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 from functools import partial, reduce, singledispatch
-from typing import Any, FrozenSet, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as onp
 import pennylane as qml
