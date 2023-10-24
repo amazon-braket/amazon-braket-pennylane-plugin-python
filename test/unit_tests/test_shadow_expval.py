@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
@@ -352,7 +352,7 @@ class DummyLocalQubitDevice(BraketQubitDevice):
 class DummyCircuitSimulator(BraketSimulator):
     def run(
         self, program: ir.openqasm.Program, qubits: int, shots: Optional[int], *args, **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         self._shots = shots
         self._qubits = qubits
         return GATE_MODEL_RESULT
