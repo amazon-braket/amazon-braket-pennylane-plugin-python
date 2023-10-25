@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.23.0 (2023-10-25)
+
+### Features
+
+ * pulse programming support for OQC Lucy
+
 ## v1.22.0 (2023-10-21)
 
 ### Deprecations and Removals
