@@ -39,8 +39,7 @@ jobs:
         df -h
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install -e .[test]
+        pip install tox
     - name: Check build space
       shell: bash
       run: | 
