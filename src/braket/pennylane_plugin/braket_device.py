@@ -55,6 +55,7 @@ from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
     Expectation,
+    MeasurementProcess,
     MeasurementTransform,
     Probability,
     Sample,
@@ -195,10 +196,10 @@ class BraketQubitDevice(QubitDevice):
             braket_circuit = Circuit().add_verbatim_box(braket_circuit)
         if compute_gradient:
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
-        elif not isinstance(circuit.observables[0], MeasurementTransform):
-            for observable in circuit.observables:
-                dev_wires = self.map_wires(observable.wires).tolist()
-                translated = translate_result_type(observable, dev_wires, self._braket_result_types)
+        elif not isinstance(circuit.measurements[0], MeasurementTransform):
+            for measurement in circuit.measurements:
+                dev_wires = self.map_wires(measurement.wires).tolist()
+                translated = translate_result_type(measurement, dev_wires, self._braket_result_types)
                 if isinstance(translated, tuple):
                     for result_type in translated:
                         braket_circuit.add_result_type(result_type)
@@ -209,17 +210,18 @@ class BraketQubitDevice(QubitDevice):
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
         """Adds the AdjointGradient result type to the braket_circuit with the first observable in
-        circuit.observables. This fails for circuits with multiple observables"""
+        circuit.measurements. This fails for circuits with multiple observables"""
         if len(circuit.observables) != 1:
             raise ValueError(
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not {len(circuit.observables)} observables."
             )
-        pl_observable = circuit.observables[0]
-        if pl_observable.return_type != Expectation:
+        pl_measurements = circuit.measurements[0]
+        pl_observable = pl_measurements.obs
+        if pl_measurements.return_type != Expectation:
             raise ValueError(
                 f"Braket can only compute gradients for circuits with a single expectation"
-                f" observable, not a {pl_observable.return_type} observable."
+                f" observable, not a {pl_measurements.return_type} observable."
             )
         if isinstance(pl_observable, Hamiltonian):
             targets = [self.map_wires(op.wires) for op in pl_observable.ops]
@@ -237,34 +239,34 @@ class BraketQubitDevice(QubitDevice):
         return braket_circuit
 
     def statistics(
-        self, braket_result: GateModelQuantumTaskResult, observables: Sequence[Observable]
+        self, braket_result: GateModelQuantumTaskResult, measurements: Sequence[MeasurementProcess]
     ) -> list[float]:
         """Processes measurement results from a Braket task result and returns statistics.
 
         Args:
             braket_result (GateModelQuantumTaskResult): the Braket task result
-            observables (list[Observable]): the observables to be measured
+            measurements (Sequence[MeasurementProcess]): the list of measurements
 
         Raises:
-            QuantumFunctionError: if the value of :attr:`~.Observable.return_type` is not supported
+            QuantumFunctionError: if the value of :attr:`~.MeasurementProcess.return_type` is not supported
 
         Returns:
             list[float]: the corresponding statistics
         """
         results = []
-        for obs in observables:
-            if obs.return_type not in RETURN_TYPES:
+        for mp in measurements:
+            if mp.return_type not in RETURN_TYPES:
                 raise QuantumFunctionError(
-                    "Unsupported return type specified for observable {}".format(obs.name)
+                    "Unsupported return type specified for observable {}".format(mp.name)
                 )
-            results.append(self._get_statistic(braket_result, obs))
+            results.append(self._get_statistic(braket_result, mp))
         return results
 
     def _braket_to_pl_result(self, braket_result, circuit):
         """Calculates the PennyLane results from a Braket task result. A PennyLane circuit
         also determines the output observables."""
         # Compute the required statistics
-        results = self.statistics(braket_result, circuit.observables)
+        results = self.statistics(braket_result, circuit.measurements)
         ag_results = [
             result
             for result in braket_result.result_types
@@ -835,12 +837,13 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         res = []
         jacs = []
         for circuit in circuits:
+            measurements = circuit.measurements
             observables = circuit.observables
             if not circuit.trainable_params:
                 new_res = self.execute(circuit, compute_gradient=False)
                 # don't bother computing a gradient when there aren't any trainable parameters.
                 new_jac = np.tensor([])
-            elif len(observables) != 1 or observables[0].return_type != Expectation:
+            elif len(observables) != 1 or measurements[0].return_type != Expectation:
                 gradient_circuits, post_processing_fn = param_shift(circuit)
                 grad_circuit_results = [
                     self.execute(c, compute_gradient=False) for c in gradient_circuits
