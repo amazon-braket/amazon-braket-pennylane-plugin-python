@@ -524,10 +524,10 @@ def get_adjoint_gradient_result_type(
 def translate_result_type(
     measurement: MeasurementProcess, targets: list[int], supported_result_types: frozenset[str]
 ) -> Union[ResultType, tuple[ResultType, ...]]:
-    """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
+    """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
 
     Args:
-        observable (Observable): The PennyLane ``Observable`` to translate
+        measurement (MeasurementProcess): The PennyLane ``MeasurementProcess`` to translate
         targets (list[int]): The target wires of the observable using a consecutive integer wire
             ordering
         supported_result_types (frozenset[str]): Braket result types supported by the Braket device
