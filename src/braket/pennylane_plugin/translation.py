@@ -647,7 +647,8 @@ def translate_result(
 
     Args:
         braket_result (GateModelQuantumTaskResult): The Braket result to translate.
-        measurement (MeasurementProcess): The PennyLane measurement process associated with the result.
+        measurement (MeasurementProcess): The PennyLane measurement process associated with the
+            result.
         targets (list[int]): The qubits in the result.
         supported_result_types (frozenset[str]): The result types supported by the device.
 

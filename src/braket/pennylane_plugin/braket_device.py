@@ -63,7 +63,7 @@ from pennylane.measurements import (
     State,
     Variance,
 )
-from pennylane.operation import Observable, Operation
+from pennylane.operation import Operation
 from pennylane.ops.qubit.hamiltonian import Hamiltonian
 from pennylane.tape import QuantumTape
 
@@ -199,7 +199,9 @@ class BraketQubitDevice(QubitDevice):
         elif not isinstance(circuit.measurements[0], MeasurementTransform):
             for measurement in circuit.measurements:
                 dev_wires = self.map_wires(measurement.wires).tolist()
-                translated = translate_result_type(measurement, dev_wires, self._braket_result_types)
+                translated = translate_result_type(
+                    measurement, dev_wires, self._braket_result_types
+                )
                 if isinstance(translated, tuple):
                     for result_type in translated:
                         braket_circuit.add_result_type(result_type)
@@ -248,7 +250,8 @@ class BraketQubitDevice(QubitDevice):
             measurements (Sequence[MeasurementProcess]): the list of measurements
 
         Raises:
-            QuantumFunctionError: if the value of :attr:`~.MeasurementProcess.return_type` is not supported
+            QuantumFunctionError: if the value of :attr:`~.MeasurementProcess.return_type` is
+                not supported.
 
         Returns:
             list[float]: the corresponding statistics

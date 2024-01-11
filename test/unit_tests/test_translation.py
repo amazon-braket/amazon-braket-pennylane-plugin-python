@@ -43,11 +43,11 @@ from device_property_jsons import (
     OQC_PARADIGM_PROPERTIES,
     OQC_PULSE_PROPERTIES_WITH_PORTS,
 )
+from pennylane import measurements
 from pennylane import numpy as pnp
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.pulse import ParametrizedEvolution, transmon_drive
 from pennylane.wires import Wires
-from pennylane import measurements
 
 from braket.pennylane_plugin import (
     PSWAP,
@@ -327,10 +327,10 @@ braket_result_types = [
 ]
 
 _braket_to_pl_result_types = {
-        Expectation : measurements.ExpectationMP,
-        Variance: measurements.VarianceMP,
-        Sample: measurements.SampleMP,
-    }
+    Expectation: measurements.ExpectationMP,
+    Variance: measurements.VarianceMP,
+    Sample: measurements.SampleMP,
+}
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params", testdata)
@@ -687,9 +687,7 @@ def test_translate_result_type_hamiltonian_expectation():
     assert braket_result_type == braket_result_type_calculated
 
 
-@pytest.mark.parametrize(
-    "return_type", [Variance, Sample]
-)
+@pytest.mark.parametrize("return_type", [Variance, Sample])
 def test_translate_result_type_hamiltonian_unsupported_return(return_type):
     """Tests if a NotImplementedError is raised by translate_result_type
     with Hamiltonian observable and non-Expectation return type"""
