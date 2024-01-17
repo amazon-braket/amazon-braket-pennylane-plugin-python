@@ -43,6 +43,7 @@ from device_property_jsons import (
     OQC_PARADIGM_PROPERTIES,
     OQC_PULSE_PROPERTIES_WITH_PORTS,
 )
+from pennylane import measurements
 from pennylane import numpy as pnp
 from pennylane.measurements import ObservableReturnTypes
 from pennylane.pulse import ParametrizedEvolution, transmon_drive
@@ -325,6 +326,12 @@ braket_result_types = [
     Sample(observables.H(), [0]),
 ]
 
+_braket_to_pl_result_types = {
+    Expectation: measurements.ExpectationMP,
+    Variance: measurements.VarianceMP,
+    Sample: measurements.SampleMP,
+}
+
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params", testdata)
 def test_translate_operation(pl_cls, braket_cls, qubits, params):
@@ -456,7 +463,6 @@ def test_translate_parametrized_evolution_callable():
     op = ParametrizedEvolution(H, [amplitude_param, phase_param, frequency_param], t=50)
 
     braket_gate = translate_operation(op, device=dev._device)
-
     assert isinstance(braket_gate, gates.PulseGate)
     assert braket_gate.qubit_count == 1
 
@@ -627,9 +633,10 @@ def test_translate_operation_param_names_wrong_length():
 def test_translate_result_type_observable(return_type, braket_result_type):
     """Tests if a PennyLane return type that involves an observable is successfully converted into a
     Braket result using translate_result_type"""
-    obs = qml.Hadamard(0)
-    obs.return_type = return_type
-    braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
+    res_type = braket_result_type.__class__
+    pl_res_type = _braket_to_pl_result_types[res_type]
+    tape = qml.tape.QuantumTape(measurements=[pl_res_type(qml.Hadamard(0))])
+    braket_result_type_calculated = translate_result_type(tape.measurements[0], [0], frozenset())
 
     assert braket_result_type == braket_result_type_calculated
 
@@ -674,22 +681,20 @@ def test_get_adjoint_gradient_result_type_unsupported():
 def test_translate_result_type_hamiltonian_expectation():
     """Tests that a Hamiltonian is translated correctly"""
     obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
-    obs.return_type = ObservableReturnTypes.Expectation
-    braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
+    tape = qml.tape.QuantumTape(measurements=[qml.expval(obs)])
+    braket_result_type_calculated = translate_result_type(tape.measurements[0], [0], frozenset())
     braket_result_type = (Expectation(observables.X(), [0]), Expectation(observables.Y(), [1]))
     assert braket_result_type == braket_result_type_calculated
 
 
-@pytest.mark.parametrize(
-    "return_type", [ObservableReturnTypes.Variance, ObservableReturnTypes.Sample]
-)
+@pytest.mark.parametrize("return_type", [Variance, Sample])
 def test_translate_result_type_hamiltonian_unsupported_return(return_type):
     """Tests if a NotImplementedError is raised by translate_result_type
     with Hamiltonian observable and non-Expectation return type"""
     obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
-    obs.return_type = return_type
+    tape = qml.tape.QuantumTape(measurements=[_braket_to_pl_result_types[return_type](obs)])
     with pytest.raises(NotImplementedError, match="unsupported for Hamiltonian"):
-        translate_result_type(obs, [0], frozenset())
+        translate_result_type(tape.measurements[0], [0], frozenset())
 
 
 def test_translate_result_type_probs():
@@ -751,20 +756,19 @@ def test_translate_result_type_state_unimplemented():
 def test_translate_result_type_unsupported_return():
     """Tests if a NotImplementedError is raised by translate_result_type for an unknown
     return_type"""
-    obs = qml.Hadamard(0)
-    obs.return_type = None
+    obs = qml.Hadamard(wires=0)
+    tape = qml.tape.QuantumTape(measurements=[qml.counts(obs)])
 
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
-        translate_result_type(obs, [0], frozenset())
+        translate_result_type(tape.measurements[0], [0], frozenset())
 
 
 def test_translate_result_type_unsupported_obs():
     """Tests if a TypeError is raised by translate_result_type for an unknown observable"""
-    obs = qml.S(wires=0)
-    obs.return_type = None
+    tape = qml.tape.QuantumTape(measurements=[qml.expval(qml.S(wires=0))])
 
     with pytest.raises(TypeError, match="Unsupported observable"):
-        translate_result_type(obs, [0], frozenset())
+        translate_result_type(tape.measurements[0], [0], frozenset())
 
 
 def test_translate_result():
@@ -796,8 +800,8 @@ def test_translate_result_hamiltonian():
     result_dict["measuredQubits"]: targets
     result = GateModelQuantumTaskResult.from_string(json.dumps(result_dict))
     ham = qml.Hamiltonian((2, 1), (qml.PauliX(0) @ qml.PauliY(1), qml.PauliX(1)))
-    ham.return_type = ObservableReturnTypes.Expectation
-    translated = translate_result(result, ham, targets, frozenset())
+    tape = qml.tape.QuantumTape(measurements=[qml.expval(ham)])
+    translated = translate_result(result, tape.measurements[0], targets, frozenset())
     expected = 2 * result.result_types[0].value + result.result_types[1].value
     assert translated == expected
 

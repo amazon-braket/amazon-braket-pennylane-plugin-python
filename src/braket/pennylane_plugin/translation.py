@@ -31,7 +31,7 @@ from braket.devices import Device
 from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
 from braket.tasks import GateModelQuantumTaskResult
 from pennylane import numpy as np
-from pennylane.measurements import ObservableReturnTypes
+from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 from pennylane.ops import Adjoint
 from pennylane.pulse import ParametrizedEvolution
@@ -522,12 +522,12 @@ def get_adjoint_gradient_result_type(
 
 
 def translate_result_type(
-    observable: Observable, targets: list[int], supported_result_types: frozenset[str]
+    measurement: MeasurementProcess, targets: list[int], supported_result_types: frozenset[str]
 ) -> Union[ResultType, tuple[ResultType, ...]]:
-    """Translates a PennyLane ``Observable`` into the corresponding Braket ``ResultType``.
+    """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
 
     Args:
-        observable (Observable): The PennyLane ``Observable`` to translate
+        measurement (MeasurementProcess): The PennyLane ``MeasurementProcess`` to translate
         targets (list[int]): The target wires of the observable using a consecutive integer wire
             ordering
         supported_result_types (frozenset[str]): Braket result types supported by the Braket device
@@ -537,7 +537,7 @@ def translate_result_type(
         the given observable; if the observable type has multiple terms, for example a Hamiltonian,
         then this will return a result type for each term.
     """
-    return_type = observable.return_type
+    return_type = measurement.return_type
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
@@ -549,14 +549,14 @@ def translate_result_type(
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
-    if isinstance(observable, qml.Hamiltonian):
+    if isinstance(measurement.obs, qml.Hamiltonian):
         if return_type is ObservableReturnTypes.Expectation:
             return tuple(
-                Expectation(_translate_observable(term), term.wires) for term in observable.ops
+                Expectation(_translate_observable(term), term.wires) for term in measurement.obs.ops
             )
         raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
 
-    braket_observable = _translate_observable(observable)
+    braket_observable = _translate_observable(measurement.obs)
     if return_type is ObservableReturnTypes.Expectation:
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
@@ -639,7 +639,7 @@ def _(t: qml.operation.Tensor):
 
 def translate_result(
     braket_result: GateModelQuantumTaskResult,
-    observable: Observable,
+    measurement: MeasurementProcess,
     targets: list[int],
     supported_result_types: frozenset[str],
 ) -> Any:
@@ -647,7 +647,8 @@ def translate_result(
 
     Args:
         braket_result (GateModelQuantumTaskResult): The Braket result to translate.
-        observable (Observable): The PennyLane observable associated with the result.
+        measurement (MeasurementProcess): The PennyLane measurement process associated with the
+            result.
         targets (list[int]): The qubits in the result.
         supported_result_types (frozenset[str]): The result types supported by the device.
 
@@ -660,6 +661,7 @@ def translate_result(
 
     # if braket result contains adjoint gradient, just return it since it should be the only
     # result type if it's there at all.
+    observable = measurement.obs
     ag_results = [
         result for result in braket_result.result_types if result.type.type == "adjoint_gradient"
     ]
@@ -671,7 +673,7 @@ def translate_result(
             ag_result.value["gradient"][f"p_{i}"]
             for i in sorted(key_indices)
         ]
-    translated = translate_result_type(observable, targets, supported_result_types)
+    translated = translate_result_type(measurement, targets, supported_result_types)
     if isinstance(observable, qml.Hamiltonian):
         coeffs, _ = observable.terms()
         return sum(

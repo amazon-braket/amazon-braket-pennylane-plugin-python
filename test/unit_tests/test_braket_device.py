@@ -787,10 +787,9 @@ def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
     observable = qml.Identity(wires=0)
-    observable.return_type = None
-
+    tape = qml.tape.QuantumTape(measurements=[qml.counts(observable)])
     with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
-        dev.statistics(None, [observable])
+        dev.statistics(None, tape.measurements)
 
 
 def test_batch_execute_non_parallel(monkeypatch):
