@@ -35,6 +35,7 @@ Code details
 
 import collections
 import numbers
+import warnings
 from collections.abc import Iterable, Sequence
 
 # pylint: disable=invalid-name
@@ -848,6 +849,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 new_jac = np.tensor([])
             elif len(observables) != 1 or measurements[0].return_type != Expectation:
                 gradient_circuits, post_processing_fn = param_shift(circuit)
+                warnings.warn(
+                    "This circuit cannot be differentiated with the adjoint method. "
+                    "Falling back to the parameter-shift method, which will execute "
+                    f"{len(gradient_circuits)} circuits. "
+                    "To use the adjoint gradient method, make sure the circuit's only measurement "
+                    "is an expectation of one observable. "
+                    "To avoid gradient calculation, mark parameters with `requires_grad=False`."
+                )
                 grad_circuit_results = [
                     self.execute(c, compute_gradient=False) for c in gradient_circuits
                 ]
