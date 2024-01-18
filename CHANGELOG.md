@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.24.0 (2024-01-18)
+
+### Features
+
+ * use measurements getting return types
+
+### Bug Fixes and Other Changes
+
+ * Raise warning when falling back on param-shift
+
 ## v1.23.0 (2023-10-25)
 
 ### Features
