@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.24.1 (2024-01-25)
+
+### Bug Fixes and Other Changes
+
+ * set the isort profile to black
+
 ## v1.24.0 (2024-01-18)
 
 ### Features
