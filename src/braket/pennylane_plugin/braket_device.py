@@ -109,6 +109,7 @@ class BraketQubitDevice(QubitDevice):
             Default: True.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
+
     name = "Braket PennyLane plugin"
     pennylane_requires = ">=0.30.0"
     version = __version__
@@ -287,9 +288,11 @@ class BraketQubitDevice(QubitDevice):
             # to submit another result type alongside adjoint gradient, this logic will need to
             # change.
             results_list = [
-                np.asarray(result, dtype="object")
-                if isinstance(result, collections.abc.Sequence)
-                else result
+                (
+                    np.asarray(result, dtype="object")
+                    if isinstance(result, collections.abc.Sequence)
+                    else result
+                )
                 for result in results
             ]
             return results_list[0]
@@ -538,6 +541,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             supports the native gate set of the device. Default False.
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
+
     name = "Braket AwsDevice for PennyLane"
     short_name = "braket.aws.qubit"
 
@@ -629,9 +633,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
-            inputs=[{f"p_{k}": v for k, v in trainable.items()} for trainable in all_trainable]
-            if self._parametrize_differentiable
-            else [],
+            inputs=(
+                [{f"p_{k}": v for k, v in trainable.items()} for trainable in all_trainable]
+                if self._parametrize_differentiable
+                else []
+            ),
             **self._run_kwargs,
         )
         # Call results() to retrieve the Braket results in parallel.
@@ -993,6 +999,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
             Default: None
         `**run_kwargs`: Variable length keyword arguments for ``braket.devices.Device.run()``.
     """
+
     name = "Braket LocalSimulator for PennyLane"
     short_name = "braket.local.qubit"
 
