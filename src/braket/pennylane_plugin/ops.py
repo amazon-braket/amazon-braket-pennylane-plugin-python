@@ -85,6 +85,7 @@ class CPhaseShift00(Operation):
         id (str, optional): String representing the operation. Default: None
 
     """
+
     num_params = 1
     num_wires = 2
     grad_method = "A"
@@ -148,6 +149,7 @@ class CPhaseShift01(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 1
     num_wires = 2
     grad_method = "A"
@@ -209,6 +211,7 @@ class CPhaseShift10(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 1
     num_wires = 2
     grad_method = "A"
@@ -269,6 +272,7 @@ class PSWAP(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 1
     num_wires = 2
     grad_method = "A"
@@ -316,6 +320,7 @@ class GPi(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 1
     num_wires = 1
     grad_method = "F"
@@ -358,6 +363,7 @@ class GPi2(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 1
     num_wires = 1
     grad_method = "F"
@@ -404,6 +410,7 @@ class MS(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 2
     num_wires = 2
     grad_method = "F"
@@ -455,6 +462,7 @@ class AAMS(Operation):
         wires (int): the subsystem the gate acts on
         id (str or None): String representing the operation (optional)
     """
+
     num_params = 3
     num_wires = 2
     grad_method = "F"
