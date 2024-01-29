@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.24.2 (2024-01-29)
+
+### Bug Fixes and Other Changes
+
+ * update paradigm_properties to reflect new schema
+
 ## v1.24.1 (2024-01-25)
 
 ### Bug Fixes and Other Changes
