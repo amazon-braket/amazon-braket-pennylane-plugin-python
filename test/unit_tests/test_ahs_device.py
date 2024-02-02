@@ -1318,6 +1318,7 @@ class TestBraketAwsAhsDevice:
     def test_run_task(self, mock_aws_device):
         """Tests that a (mock) task can be created"""
         dev = mock_aws_device()
+        dev._device._noise_model = None
         ahs_program = dummy_ahs_program()
 
         task = dev._run_task(ahs_program)
