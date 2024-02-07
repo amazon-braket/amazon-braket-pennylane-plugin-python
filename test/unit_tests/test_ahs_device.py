@@ -15,7 +15,6 @@
 import json
 from dataclasses import dataclass
 from functools import partial
-from unittest import mock
 from unittest.mock import Mock
 
 import numpy as np
@@ -233,9 +232,9 @@ class MockDevProperties:
 def mock_aws_device(monkeypatch, wires=3):
     """A function to create a mock device that mocks most of the methods"""
     with monkeypatch.context() as m:
-        m.setattr(AwsDevice, "__init__", lambda self, *args, **kwargs: None)
-        m.setattr(AwsDevice, "aws_session", MockAwsSession)
-        m.setattr(AwsDevice, "type", mock.PropertyMock)
+        m.setattr(
+            AwsDevice, "_get_session_and_initialize", lambda self, *args, **kwargs: MockAwsSession
+        )
         m.setattr(AwsDevice, "properties", MockDevProperties)
 
         def get_aws_device(
