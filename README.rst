@@ -142,7 +142,7 @@ To run an individual test:
     tox -e unit-tests -- -k 'your_test'
 
 
-To run linters and unit tests:
+To run linters, doc, and unit tests:
 
 .. code-block:: bash
 
