@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.24.4 (2024-02-28)
+
+### Bug Fixes and Other Changes
+
+ * move to use measurementprocess.obs.name
+
 ## v1.24.3 (2024-02-20)
 
 ### Bug Fixes and Other Changes
