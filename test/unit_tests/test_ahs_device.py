@@ -557,10 +557,17 @@ class TestBraketAhsDevice:
 
         dev = qml.device("braket.local.ahs", wires=3)
 
+        # DummyOp will continue having undefined diagonalizing gates as PL expands functionality
+        class DummyOp(qml.operation.Operator):
+            pass
+
+        with pytest.raises(qml.operation.DiagGatesUndefinedError):
+            DummyOp([0, 1]).diagonalizing_gates()
+
         with pytest.raises(
             RuntimeError, match="with no diagonalizing gates; cannot determine basis"
         ):
-            dev._validate_measurement_basis(qml.CNOT([0, 1]))
+            dev._validate_measurement_basis(DummyOp([0, 1]))
 
     @pytest.mark.parametrize(
         "observable, error_expected",
