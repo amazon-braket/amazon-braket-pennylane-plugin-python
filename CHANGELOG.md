@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.24.5 (2024-03-04)
+
+### Bug Fixes and Other Changes
+
+ * update test to use DummyOp
+
+### Documentation Changes
+
+ * minor change to tox instructions
+
 ## v1.24.4 (2024-02-28)
 
 ### Bug Fixes and Other Changes
