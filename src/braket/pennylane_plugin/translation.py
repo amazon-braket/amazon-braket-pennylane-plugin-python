@@ -569,7 +569,7 @@ def translate_result_type(
 
 @singledispatch
 def _translate_observable(observable):
-    raise TypeError(f"Unsupported observable: {type(observable)}")
+    raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 @_translate_observable.register
