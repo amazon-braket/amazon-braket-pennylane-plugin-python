@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.24.6 (2024-03-05)
+
+### Bug Fixes and Other Changes
+
+ * Raise a `DeviceError instead of `TypeError`
+
 ## v1.24.5 (2024-03-04)
 
 ### Bug Fixes and Other Changes
