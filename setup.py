@@ -58,7 +58,7 @@ setup(
             "flake8-rst-docstrings",
             "isort",
             "pre-commit",
-            "pylint",
+            "pylint>=3.1",
             "pytest",
             "pytest-cov",
             "pytest-mock",
