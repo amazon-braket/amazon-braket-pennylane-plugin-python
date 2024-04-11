@@ -208,6 +208,13 @@ PARADIGM_PROPERTIES = QueraAhsParadigmProperties.parse_raw_schema(
                             {"rampTime": 100e-9, "rabiCorrection": 1.00},
                         ],
                     },
+                    "rydbergLocal": {
+                        "detuningErrorRms": 0.2,
+                        "siteCoefficientErrorRms": 0.1,
+                        "errorRateIncoherentBright": 0.2,
+                        "errorRateIncoherentDark": 0.1,
+                        "crosstalk": 0.2,
+                    },
                 },
             },
         },
