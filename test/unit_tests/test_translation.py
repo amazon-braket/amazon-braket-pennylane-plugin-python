@@ -56,7 +56,7 @@ from braket.pennylane_plugin import (
     CPhaseShift01,
     CPhaseShift10,
 )
-from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
+from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2, PRx
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     _translate_observable,
@@ -140,6 +140,7 @@ testdata = [
     (GPi, gates.GPi, [0], [2]),
     (GPi2, gates.GPi2, [0], [2]),
     (MS, gates.MS, [0, 1], [2, 3]),
+    (PRx, gates.PRx, [0], [2, 3]),
     (AAMS, gates.MS, [0, 1], [2, 3, 0.5]),
     (qml.ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
@@ -339,7 +340,7 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+    if isinstance(pl_op, (GPi, GPi2, MS, AAMS, PRx)):
         translated_back = _braket_to_pl[
             re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
         ]

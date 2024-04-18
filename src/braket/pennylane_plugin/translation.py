@@ -45,6 +45,7 @@ from braket.pennylane_plugin.ops import (
     CPhaseShift10,
     GPi,
     GPi2,
+    PRx,
 )
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
@@ -88,6 +89,7 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "yy": "IsingYY",
     "zz": "IsingZZ",
     "ecr": "ECR",
+    "prx": "PRx",
     "gpi": "GPi",
     "gpi2": "GPi2",
     "ms": "AAMS",
@@ -397,6 +399,13 @@ def _(yy: qml.IsingYY, parameters, device=None):
 def _(zz: qml.IsingZZ, parameters, device=None):
     phi = parameters[0]
     return gates.ZZ(phi)
+
+
+@_translate_operation.register
+def _(_prx: PRx, parameters, device=None):
+    theta = parameters[0]
+    phi = parameters[1]
+    return gates.PRx(theta, phi)
 
 
 @_translate_operation.register
