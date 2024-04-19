@@ -245,6 +245,57 @@ class CPhaseShift10(Operation):
         return CPhaseShift10(-phi, wires=self.wires)
 
 
+class PRx(Operation):
+    r"""Phase Rx gate.
+
+    Unitary matrix:
+
+        .. math:: \mathtt{PRx}(\theta,\phi) = \begin{bmatrix}
+                \cos{(\theta / 2)} & -i e^{-i \phi} \sin{(\theta / 2)} \\
+                -i e^{i \phi} \sin{(\theta / 2)} & \cos{(\theta / 2)}
+            \end{bmatrix}.
+
+    **Details**
+
+    * Number of wires: 1
+    * Number of parameters: 2
+
+    Args:
+        theta (Union[FreeParameterExpression, float]): The first angle of the gate in
+            radians or expression representation.
+        phi (Union[FreeParameterExpression, float]): The second angle of the gate in
+            radians or expression representation.
+    """
+
+    num_params = 2
+    num_wires = 1
+    grad_method = "F"
+
+    def __init__(self, theta, phi, wires, id=None):
+        super().__init__(theta, phi, wires=wires, id=id)
+
+    @staticmethod
+    def compute_matrix(theta, phi):
+        theta = _cast_to_tf(theta)
+        phi = _cast_to_tf(phi)
+        return np.array(
+            [
+                [
+                    np.cos(theta / 2),
+                    -1j * np.exp(-1j * phi) * np.sin(theta / 2),
+                ],
+                [
+                    -1j * np.exp(1j * phi) * np.sin(theta / 2),
+                    np.cos(theta / 2),
+                ],
+            ]
+        )
+
+    def adjoint(self):
+        (theta, phi) = self.parameters
+        return PRx(-theta, phi, wires=self.wires)
+
+
 class PSWAP(Operation):
     r""" PSWAP(phi, wires)
 

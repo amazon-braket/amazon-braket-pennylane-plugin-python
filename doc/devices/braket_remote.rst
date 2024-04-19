@@ -98,6 +98,7 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.GPi
     braket.pennylane_plugin.GPi2
     braket.pennylane_plugin.MS
+    braket.pennylane_plugin.PRx
 
 Pulse Programming
 ~~~~~~~~~~~~~~~~~
