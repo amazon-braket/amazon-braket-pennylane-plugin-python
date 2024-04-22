@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.25.0 (2024-04-22)
+
+### Features
+
+ * add phase RX gate
+
 ## v1.24.6 (2024-03-05)
 
 ### Bug Fixes and Other Changes
