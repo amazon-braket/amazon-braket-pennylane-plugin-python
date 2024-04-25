@@ -646,6 +646,11 @@ def _(t: qml.operation.Tensor):
     return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.obs])
 
 
+@_translate_observable.register
+def _(t: qml.ops.Prod):
+    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.operands])
+
+
 def translate_result(
     braket_result: GateModelQuantumTaskResult,
     measurement: MeasurementProcess,
