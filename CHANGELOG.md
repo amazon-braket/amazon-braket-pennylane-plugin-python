@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.26.0 (2024-04-29)
+
+### Features
+
+ * support Prod as an observable
+
 ## v1.25.0 (2024-04-22)
 
 ### Features
