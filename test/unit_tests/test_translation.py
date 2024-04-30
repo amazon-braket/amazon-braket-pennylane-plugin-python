@@ -846,6 +846,8 @@ def _result_meta() -> dict:
         ),
         (1.25 * observables.H(), 1.25 * qml.Hadamard(wires=0)),
         (observables.X() @ observables.Y(), qml.ops.Prod(qml.PauliX(0), qml.PauliY(1))),
+        (observables.X() + observables.Y(), qml.ops.Sum(qml.PauliX(0), qml.PauliY(1))),
+        (observables.X(), qml.ops.SProd(scalar=4, base=qml.PauliX(0))),
     ],
 )
 def test_translate_hamiltonian_observable(expected_braket_H, pl_H):

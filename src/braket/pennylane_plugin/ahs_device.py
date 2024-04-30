@@ -44,6 +44,15 @@ from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
 from pennylane.ops import CompositeOp, Hamiltonian
+
+try:
+    from pennylane.ops import LinearCombination
+except (AttributeError, ImportError):
+
+    class LinearCombination:
+        pass
+
+
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
@@ -308,7 +317,7 @@ class BraketAhsDevice(QubitDevice):
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
                 self._validate_measurement_basis(op)
-        elif isinstance(observable, Hamiltonian):
+        elif isinstance(observable, (Hamiltonian, LinearCombination)):
             for op in observable.ops:
                 self._validate_measurement_basis(op)
 

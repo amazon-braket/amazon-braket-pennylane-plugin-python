@@ -65,8 +65,15 @@ from pennylane.measurements import (
     Variance,
 )
 from pennylane.operation import Operation
-from pennylane.ops.qubit.hamiltonian import Hamiltonian
 from pennylane.tape import QuantumTape
+
+try:
+    from pennylane.ops import LinearCombination
+except (AttributeError, ImportError):
+
+    class LinearCombination:
+        pass
+
 
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
@@ -166,7 +173,7 @@ class BraketQubitDevice(QubitDevice):
         # This needs to be here bc expectation(ax+by)== a*expectation(x)+b*expectation(y)
         # is only true when shots=0
         if not self.shots:
-            return base_observables.union({"Hamiltonian"})
+            return base_observables.union({"Hamiltonian", "LinearCombination"})
         return base_observables
 
     @property
@@ -227,7 +234,7 @@ class BraketQubitDevice(QubitDevice):
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not a {pl_measurements.return_type} observable."
             )
-        if isinstance(pl_observable, Hamiltonian):
+        if isinstance(pl_observable, (qml.ops.Hamiltonian, LinearCombination)):
             targets = [self.map_wires(op.wires) for op in pl_observable.ops]
         else:
             targets = self.map_wires(pl_observable.wires).tolist()
