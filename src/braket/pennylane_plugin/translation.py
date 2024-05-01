@@ -34,15 +34,6 @@ from pennylane import numpy as np
 from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
 from pennylane.operation import Observable, Operation
 from pennylane.ops import Adjoint
-
-try:
-    from pennylane.ops import LinearCombination
-except (AttributeError, ImportError):
-
-    class LinearCombination:
-        pass
-
-
 from pennylane.pulse import ParametrizedEvolution
 
 from braket.pennylane_plugin.ops import (
@@ -567,7 +558,7 @@ def translate_result_type(
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
-    if isinstance(measurement.obs, (qml.ops.Hamiltonian, LinearCombination)):
+    if isinstance(measurement.obs, (qml.ops.Hamiltonian, qml.Hamiltonian)):
         if return_type is ObservableReturnTypes.Expectation:
             return tuple(
                 Expectation(_translate_observable(term), term.wires) for term in measurement.obs.ops
@@ -591,8 +582,8 @@ def _translate_observable(observable):
 
 
 @_translate_observable.register(qml.ops.Hamiltonian)
-@_translate_observable.register(LinearCombination)
-def _(H: Union[qml.ops.Hamiltonian, LinearCombination]):
+@_translate_observable.register(qml.Hamiltonian)
+def _(H: Union[qml.ops.Hamiltonian, qml.Hamiltonian]):
     # terms is structured like [C, O] where C is a tuple of all the coefficients, and O is
     # a tuple of all the corresponding observable terms (X, Y, Z, H, etc or a tensor product
     # of them)
@@ -708,7 +699,7 @@ def translate_result(
             for i in sorted(key_indices)
         ]
     translated = translate_result_type(measurement, targets, supported_result_types)
-    if isinstance(observable, (qml.ops.Hamiltonian, LinearCombination)):
+    if isinstance(observable, (qml.ops.Hamiltonian, qml.Hamiltonian)):
         coeffs, _ = observable.terms()
         return sum(
             coeff * braket_result.get_value_by_result_type(result_type)

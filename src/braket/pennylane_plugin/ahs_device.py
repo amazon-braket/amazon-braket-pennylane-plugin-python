@@ -37,22 +37,14 @@ from enum import Enum, auto
 from typing import Optional, Union
 
 import numpy as np
+import pennylane as qml
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
 from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
-from pennylane.ops import CompositeOp, Hamiltonian
-
-try:
-    from pennylane.ops import LinearCombination
-except (AttributeError, ImportError):
-
-    class LinearCombination:
-        pass
-
-
+from pennylane.ops import CompositeOp
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
@@ -317,7 +309,7 @@ class BraketAhsDevice(QubitDevice):
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
                 self._validate_measurement_basis(op)
-        elif isinstance(observable, (Hamiltonian, LinearCombination)):
+        elif isinstance(observable, (qml.ops.Hamiltonian, qml.Hamiltonian)):
             for op in observable.ops:
                 self._validate_measurement_basis(op)
 
