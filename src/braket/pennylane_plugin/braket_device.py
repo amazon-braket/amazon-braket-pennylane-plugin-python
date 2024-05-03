@@ -65,6 +65,7 @@ from pennylane.measurements import (
     Variance,
 )
 from pennylane.operation import Operation
+from pennylane.ops import Hamiltonian
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
@@ -226,7 +227,7 @@ class BraketQubitDevice(QubitDevice):
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not a {pl_measurements.return_type} observable."
             )
-        if isinstance(pl_observable, (qml.ops.Hamiltonian, qml.Hamiltonian)):
+        if isinstance(pl_observable, (Hamiltonian, qml.Hamiltonian)):
             targets = [self.map_wires(op.wires) for op in pl_observable.ops]
         else:
             targets = self.map_wires(pl_observable.wires).tolist()
