@@ -37,6 +37,7 @@ from enum import Enum, auto
 from typing import Optional, Union
 
 import numpy as np
+import pennylane as qml
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
@@ -308,7 +309,7 @@ class BraketAhsDevice(QubitDevice):
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
                 self._validate_measurement_basis(op)
-        elif isinstance(observable, Hamiltonian):
+        elif isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
             for op in observable.ops:
                 self._validate_measurement_basis(op)
 
