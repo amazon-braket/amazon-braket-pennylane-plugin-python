@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.27.1 (2024-05-06)
+
+### Bug Fixes and Other Changes
+
+ * Correct comment
+
 ## v1.27.0 (2024-05-06)
 
 ### Features
