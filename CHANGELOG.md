@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.27.0 (2024-05-06)
+
+### Features
+
+ * support LinearCombination as observable
+
 ## v1.26.0 (2024-04-29)
 
 ### Features
