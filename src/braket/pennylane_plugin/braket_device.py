@@ -163,8 +163,7 @@ class BraketQubitDevice(QubitDevice):
     @property
     def observables(self) -> frozenset[str]:
         base_observables = frozenset(super().observables - {"SProd", "Sum"})
-        # This needs to be here bc expectation(ax+by)== a*expectation(x)+b*expectation(y)
-        # is only true when shots=0
+        # Amazon Braket only supports coefficients and multiple terms when shots==0
         if not self.shots:
             return base_observables.union({"Hamiltonian", "LinearCombination"})
         return base_observables
