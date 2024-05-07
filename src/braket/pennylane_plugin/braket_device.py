@@ -162,7 +162,7 @@ class BraketQubitDevice(QubitDevice):
 
     @property
     def observables(self) -> frozenset[str]:
-        base_observables = frozenset(super().observables - {"SProd", "Sum"})
+        base_observables = frozenset(super().observables)
         # Amazon Braket only supports coefficients and multiple terms when shots==0
         if not self.shots:
             return base_observables.union({"Hamiltonian", "LinearCombination"})
