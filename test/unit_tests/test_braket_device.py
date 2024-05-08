@@ -508,6 +508,82 @@ def test_execute_with_gradient(
 
 
 @patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
+    [
+        (
+            CIRCUIT_2,
+            Circuit()
+            .h(0)
+            .cnot(0, 1)
+            .rx(0, FreeParameter("p_0"))
+            .ry(0, FreeParameter("p_1"))
+            .adjoint_gradient(
+                observable=(2 * Observable.X() @ Observable.Y()),
+                target=[0, 1],
+                parameters=["p_0", "p_1"],
+            ),
+            2,
+            {"p_0": 0.432, "p_1": 0.543},
+            [
+                {
+                    "type": {
+                        "observable": "2.0 * x() @ y()",
+                        "targets": [[0, 1]],
+                        "parameters": ["p_0", "p_1"],
+                        "type": "adjoint_gradient",
+                    },
+                    "value": {
+                        "gradient": {"p_0": -0.01894799, "p_1": 0.9316158},
+                        "expectation": 0.0,
+                    },
+                },
+            ],
+            [
+                (
+                    np.tensor([0.0], requires_grad=True),
+                    np.tensor([-0.01894799, 0.9316158], requires_grad=True),
+                )
+            ],
+        ),
+    ],
+)
+def test_execute_with_gradient_no_op_math(
+    mock_run,
+    pl_circ,
+    expected_braket_circ,
+    wires,
+    expected_inputs,
+    result_types,
+    expected_pl_result,
+):
+    qml.operation.disable_new_opmath()
+
+    task = Mock()
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    task.result.return_value = get_test_result_object(rts=result_types)
+    mock_run.return_value = task
+    dev = _aws_device(wires=wires, foo="bar", shots=0, device_type=AwsDeviceType.SIMULATOR)
+
+    results = dev.execute(pl_circ, compute_gradient=True)
+
+    assert dev.task == task
+
+    mock_run.assert_called_with(
+        expected_braket_circ,
+        s3_destination_folder=("foo", "bar"),
+        shots=0,
+        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+        foo="bar",
+        inputs=expected_inputs,
+    )
+    assert (results[0] == expected_pl_result[0][0]).all()
+    assert (results[1] == expected_pl_result[0][1]).all()
+
+
+@patch.object(AwsDevice, "run")
 def test_execute_tracker(mock_run):
     """Asserts tracker stores information during execute when active"""
     mock_run.side_effect = [TASK, SIM_TASK, SIM_TASK, TASK]
