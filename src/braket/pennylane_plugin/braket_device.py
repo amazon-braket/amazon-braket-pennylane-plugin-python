@@ -65,7 +65,7 @@ from pennylane.measurements import (
     Variance,
 )
 from pennylane.operation import Operation
-from pennylane.ops import Hamiltonian
+from pennylane.ops import Hamiltonian, Sum
 from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
@@ -162,7 +162,7 @@ class BraketQubitDevice(QubitDevice):
 
     @property
     def observables(self) -> frozenset[str]:
-        base_observables = frozenset(super().observables - {"SProd", "Sum"})
+        base_observables = frozenset(super().observables)
         # Amazon Braket only supports coefficients and multiple terms when shots==0
         if not self.shots:
             return base_observables.union({"Hamiltonian", "LinearCombination"})
@@ -226,8 +226,8 @@ class BraketQubitDevice(QubitDevice):
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not a {pl_measurements.return_type} observable."
             )
-        if isinstance(pl_observable, (Hamiltonian, qml.Hamiltonian)):
-            targets = [self.map_wires(op.wires) for op in pl_observable.ops]
+        if isinstance(pl_observable, (Hamiltonian, qml.Hamiltonian, Sum)):
+            targets = [self.map_wires(op.wires) for op in pl_observable.terms()[1]]
         else:
             targets = self.map_wires(pl_observable.wires).tolist()
 

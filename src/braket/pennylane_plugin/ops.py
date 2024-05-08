@@ -29,10 +29,12 @@ These operations can be imported via
         CPhaseShift00,
         CPhaseShift01,
         CPhaseShift10,
+        PRx,
         PSWAP,
         GPi,
         GPi2,
         MS,
+        AAMS,
     )
 
 Operations
@@ -42,10 +44,12 @@ Operations
     CPhaseShift00
     CPhaseShift01
     CPhaseShift10
+    PRx
     PSWAP
     GPi
     GPi2
     MS
+    AAMS
 
 Code details
 ~~~~~~~~~~~~
