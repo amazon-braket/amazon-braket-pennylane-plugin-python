@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.27.2 (2024-05-08)
+
+### Bug Fixes and Other Changes
+
+ * Translate `Sum` for adjoint gradient
+
 ## v1.27.1 (2024-05-06)
 
 ### Bug Fixes and Other Changes
