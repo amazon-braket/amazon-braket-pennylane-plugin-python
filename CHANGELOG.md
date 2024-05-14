@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.27.3 (2024-05-14)
+
+### Bug Fixes and Other Changes
+
+ * pin autoray < 0.6.10
+
 ## v1.27.2 (2024-05-08)
 
 ### Bug Fixes and Other Changes
