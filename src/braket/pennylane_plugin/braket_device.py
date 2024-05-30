@@ -139,6 +139,7 @@ class BraketQubitDevice(QubitDevice):
         super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
+        self._circuits = None
         self._task = None
         self._noise_model = noise_model
         self._parametrize_differentiable = parametrize_differentiable
@@ -153,6 +154,7 @@ class BraketQubitDevice(QubitDevice):
     def reset(self):
         super().reset()
         self._circuit = None
+        self._circuits = None
         self._task = None
 
     @property
@@ -621,6 +623,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                     **run_kwargs,
                 )
             )
+            self._circuits.append(circuit)
 
         batch_shots = 0 if self.analytic else self.shots
 
