@@ -66,6 +66,10 @@ You can set a timeout by using the ``poll_timeout_seconds`` argument;
 the device will retry circuits that do not complete within the timeout.
 A timeout of 30 to 60 seconds is recommended for circuits with fewer than 25 qubits.
 
+Each of the submitted circuit can be visualised using the attribute ``circuits`` on the device
+
+>> print(remote_device.circuits[0])
+
 Device options
 ~~~~~~~~~~~~~~
 
