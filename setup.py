@@ -35,7 +35,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk>=1.47.0",
-        "autoray<0.6.10",
+        "autoray>=0.6.11",
         "pennylane>=0.34.0",
     ],
     entry_points={
