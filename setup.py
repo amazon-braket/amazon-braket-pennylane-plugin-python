@@ -62,6 +62,7 @@ setup(
             "pre-commit",
             "pylint>=3.1.0",
             "pytest",
+            "pytest-benchmark",
             "pytest-cov",
             "pytest-mock",
             "pytest-rerunfailures",
