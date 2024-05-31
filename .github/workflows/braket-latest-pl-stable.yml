@@ -1,6 +1,6 @@
 # Workflow template for testing plugins against PennyLane stable
 
-name: Pennalane Device Test
+name: PennyLane Device Test
 on:
   push:
     branches:
