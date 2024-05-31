@@ -57,6 +57,7 @@ setup(
             "docutils>=0.19",
             "flake8",
             "flake8-rst-docstrings",
+            "flaky",
             "isort",
             "pre-commit",
             "pylint>=3.1.0",
