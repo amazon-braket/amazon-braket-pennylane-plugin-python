@@ -909,6 +909,7 @@ def test_batch_execute_non_parallel_tracker(mock_run):
 
     callback.assert_called_with(latest=latest, history=history, totals=totals)
 
+
 @patch.object(AwsDevice, "run_batch")
 def test_batch_execute_parallel_circuits_persistance(mock_run_batch):
     mock_run_batch.return_value = TASK_BATCH
@@ -926,6 +927,7 @@ def test_batch_execute_parallel_circuits_persistance(mock_run_batch):
     circuits = [circuit, circuit]
     dev.batch_execute(circuits)
     assert dev.circuits[1]
+
 
 @patch.object(AwsDevice, "run_batch")
 def test_batch_execute_parallel(mock_run_batch):
