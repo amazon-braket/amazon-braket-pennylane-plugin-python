@@ -15,6 +15,9 @@ on:
       - synchronize
       - labeled
       - unlabeled
+      
+permissions:
+  pull-requests: write
 
 jobs:
   check:
