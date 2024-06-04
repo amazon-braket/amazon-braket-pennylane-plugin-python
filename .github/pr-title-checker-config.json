@@ -4,7 +4,7 @@
     "color": "EEEEEE"
   },
   "CHECKS": {
-    "prefixes": ["fix: ", "feat: ", "test: ", "infra: ", "doc: ", "change: "],
+    "prefixes": ["fix: ", "feat: ", "test: ", "infra: ", "doc: ", "change: ", "break: ", "breaking: ", "deprecation: ", "feature: ", "depr: ", "documentation: "],
     "regexp": "docs\\(v[0-9]\\): ",
     "regexpFlags": "i",
     "ignoreLabels" : ["dont-check-PRs-with-this-label", "meta"]
