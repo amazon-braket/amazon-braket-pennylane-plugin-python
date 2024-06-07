@@ -46,9 +46,4 @@ jobs:
         df -h
     - name: Run PennyLane device integration tests
       run: |
-        if ! [ -x "$(command -v pl-device-test)" ]; then
-          echo 'Error: Version of PennyLane does not provide device integration tests.' >&2
-        else
-          pl-device-test --device=braket.local.qubit --tb=short --skip-ops --shots=20000 -k 'not no_0_shots'
-          pl-device-test --device=braket.local.qubit --tb=short --skip-ops -k 'not Sample and not no_0_shots'
-        fi
+        tox -e pennylane-device-tests 
