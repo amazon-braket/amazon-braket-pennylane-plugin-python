@@ -18,6 +18,7 @@ import numpy as onp
 import pennylane as qml
 from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
+from braket.circuits.observables import Observable as BraketObservable
 from braket.circuits.result_types import (
     AdjointGradient,
     DensityMatrix,
@@ -530,7 +531,7 @@ def get_adjoint_gradient_result_type(
     return AdjointGradient(observable=braket_observable, target=targets, parameters=parameters)
 
 
-def translate_result_type(
+def translate_result_type(  # noqa: C901
     measurement: MeasurementProcess, targets: list[int], supported_result_types: frozenset[str]
 ) -> Union[ResultType, tuple[ResultType, ...]]:
     """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
@@ -547,6 +548,7 @@ def translate_result_type(
         then this will return a result type for each term.
     """
     return_type = measurement.return_type
+    observable = measurement.obs
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
@@ -558,14 +560,21 @@ def translate_result_type(
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
-    if isinstance(measurement.obs, (Hamiltonian, qml.Hamiltonian)):
+    if isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
         if return_type is ObservableReturnTypes.Expectation:
             return tuple(
-                Expectation(_translate_observable(term), term.wires) for term in measurement.obs.ops
+                Expectation(_translate_observable(term), term.wires) for term in observable.ops
             )
         raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
 
-    braket_observable = _translate_observable(measurement.obs)
+    if return_type is ObservableReturnTypes.Sample and observable is None:
+        if isinstance(measurement, qml.measurements.SampleMeasurement):
+            return tuple(
+                Sample(BraketObservable.Z(), target) for target in targets or measurement.wires
+            )
+        raise NotImplementedError(f"Unsupported measurement type: {type(measurement)}")
+
+    braket_observable = _translate_observable(observable)
     if return_type is ObservableReturnTypes.Expectation:
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
@@ -698,6 +707,14 @@ def translate_result(
             ag_result.value["gradient"][f"p_{i}"]
             for i in sorted(key_indices)
         ]
+
+    if measurement.return_type is ObservableReturnTypes.Sample and observable is None:
+        if isinstance(measurement, qml.measurements.SampleMeasurement):
+            if targets:
+                return [m[targets] for m in braket_result.measurements]
+            return braket_result.measurements
+        raise NotImplementedError(f"Unsupported measurement type: {type(measurement)}")
+
     translated = translate_result_type(measurement, targets, supported_result_types)
     if isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
         coeffs, _ = observable.terms()
