@@ -92,11 +92,15 @@ def test_reset():
     """Tests that the members of the device are cleared on reset."""
     dev = _aws_device(wires=2)
     dev._circuit = CIRCUIT
+    dev._circuits = [CIRCUIT, CIRCUIT]
     dev._task = TASK
+    dev._tasks = [TASK, TASK]
 
     dev.reset()
     assert dev.circuit is None
+    assert dev.circuits == []
     assert dev.task is None
+    assert dev.tasks == []
 
 
 def test_apply():
@@ -946,6 +950,8 @@ def test_batch_execute_parallel(mock_run_batch):
 
     circuits = [circuit, circuit]
     batch_results = dev.batch_execute(circuits)
+
+    assert dev.tasks[0]
     for results in batch_results:
         assert np.allclose(
             results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
