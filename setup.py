@@ -70,7 +70,7 @@ setup(
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
-            "torch>=1.11",
+            "torch>2",
             TF_VERSION,
         ]
     },
