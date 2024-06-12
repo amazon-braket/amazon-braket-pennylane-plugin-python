@@ -261,9 +261,7 @@ class BraketQubitDevice(QubitDevice):
         results = []
         for mp in measurements:
             if mp.return_type not in RETURN_TYPES:
-                raise QuantumFunctionError(
-                    "Unsupported return type specified for observable {}".format(mp.obs.name)
-                )
+                raise QuantumFunctionError("Unsupported return type: {}".format(mp.return_type))
             results.append(self._get_statistic(braket_result, mp))
         return results
 

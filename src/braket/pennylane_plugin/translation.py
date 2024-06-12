@@ -11,6 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+from collections import Counter
 from functools import partial, reduce, singledispatch
 from typing import Any, Optional, Union
 
@@ -567,22 +568,22 @@ def translate_result_type(  # noqa: C901
             )
         raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
 
-    if return_type is ObservableReturnTypes.Counts and observable is None:
-        if isinstance(measurement, qml.measurements.SampleMeasurement):
+    if observable is None:
+        if return_type is ObservableReturnTypes.Counts:
             return tuple(
                 Sample(BraketObservable.Z(), target) for target in targets or measurement.wires
             )
-        raise NotImplementedError(f"Unsupported measurement type: {type(measurement)}")
+        raise NotImplementedError(f"Unsupported return type: {return_type}")
 
     braket_observable = _translate_observable(observable)
     if return_type is ObservableReturnTypes.Expectation:
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
         return Variance(braket_observable, targets)
-    elif return_type is ObservableReturnTypes.Sample:
+    elif return_type in (ObservableReturnTypes.Sample, ObservableReturnTypes.Counts):
         return Sample(braket_observable, targets)
     else:
-        raise NotImplementedError(f"Unsupported return type: {return_type}")
+        raise NotImplementedError(f"Unsupported return type: {return_type}")  # pragma: no cover
 
 
 @singledispatch
@@ -711,8 +712,15 @@ def translate_result(
     if measurement.return_type is ObservableReturnTypes.Counts and observable is None:
         if isinstance(measurement, qml.measurements.SampleMeasurement):
             if targets:
-                NotImplementedError("Sample measurement with target wires not supported")
-            return braket_result.measurement_counts
+                new_dict = {}
+                for key, value in braket_result.measurement_counts.items():
+                    new_key = "".join(key[i] for i in targets)
+                    if new_key not in new_dict:
+                        new_dict[new_key] = 0
+                    new_dict[new_key] += value
+                return new_dict
+
+            return dict(braket_result.measurement_counts)
         raise NotImplementedError(f"Unsupported measurement type: {type(measurement)}")
 
     translated = translate_result_type(measurement, targets, supported_result_types)
@@ -722,5 +730,7 @@ def translate_result(
             coeff * braket_result.get_value_by_result_type(result_type)
             for coeff, result_type in zip(coeffs, translated)
         )
+    elif measurement.return_type is ObservableReturnTypes.Counts:
+        return dict(Counter(braket_result.get_value_by_result_type(translated)))
     else:
         return braket_result.get_value_by_result_type(translated)

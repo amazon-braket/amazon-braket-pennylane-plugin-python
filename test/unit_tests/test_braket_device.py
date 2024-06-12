@@ -862,9 +862,8 @@ def test_parametrized_evolution_in_oqc_lucy_supported_ops():
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
-    observable = qml.Identity(wires=0)
-    tape = qml.tape.QuantumTape(measurements=[qml.counts(observable)])
-    with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
+    tape = qml.tape.QuantumTape(measurements=[qml.classical_shadow(wires=[0])])
+    with pytest.raises(QuantumFunctionError, match="Unsupported return type:"):
         dev.statistics(None, tape.measurements)
 
 
