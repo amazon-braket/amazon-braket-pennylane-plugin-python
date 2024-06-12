@@ -139,7 +139,9 @@ class BraketQubitDevice(QubitDevice):
         super().__init__(wires, shots=shots or None)
         self._device = device
         self._circuit = None
+        self._circuits = []
         self._task = None
+        self._tasks = []
         self._noise_model = noise_model
         self._parametrize_differentiable = parametrize_differentiable
         self._run_kwargs = run_kwargs
@@ -153,7 +155,9 @@ class BraketQubitDevice(QubitDevice):
     def reset(self):
         super().reset()
         self._circuit = None
+        self._circuits = []
         self._task = None
+        self._tasks = []
 
     @property
     def operations(self) -> frozenset[str]:
@@ -174,9 +178,19 @@ class BraketQubitDevice(QubitDevice):
         return self._circuit
 
     @property
+    def circuits(self) -> list[Circuit]:
+        """Circuit: The circuits run on this device."""
+        return self._circuits
+
+    @property
     def task(self) -> QuantumTask:
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
+
+    @property
+    def tasks(self) -> list[QuantumTask]:
+        """The tasks corresponding to the circuits run on this device."""
+        return self._tasks
 
     def _pl_to_braket_circuit(
         self,
@@ -584,6 +598,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._max_parallel = max_parallel
         self._max_connections = max_connections
         self._max_retries = max_retries
+        self._circuits = []
+        self._tasks = []
 
     @property
     def use_grouping(self) -> bool:
@@ -621,6 +637,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                     **run_kwargs,
                 )
             )
+        self._circuits = braket_circuits
 
         batch_shots = 0 if self.analytic else self.shots
 
@@ -639,6 +656,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             ),
             **self._run_kwargs,
         )
+        self._tasks = task_batch.tasks
         # Call results() to retrieve the Braket results in parallel.
         try:
             braket_results_batch = task_batch.results(
