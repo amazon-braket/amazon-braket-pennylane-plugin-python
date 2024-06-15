@@ -19,7 +19,6 @@ import numpy as onp
 import pennylane as qml
 from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
-from braket.circuits.observables import Observable as BraketObservable
 from braket.circuits.result_types import (
     AdjointGradient,
     DensityMatrix,
@@ -570,9 +569,7 @@ def translate_result_type(  # noqa: C901
 
     if observable is None:
         if return_type is ObservableReturnTypes.Counts:
-            return tuple(
-                Sample(BraketObservable.Z(), target) for target in targets or measurement.wires
-            )
+            return tuple(Sample(observables.Z(), target) for target in targets or measurement.wires)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
     braket_observable = _translate_observable(observable)
