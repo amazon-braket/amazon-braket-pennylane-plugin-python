@@ -18,7 +18,6 @@ import numpy as onp
 import pennylane as qml
 from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
-from braket.circuits.observables import Observable as BraketObservable
 from braket.circuits.result_types import (
     AdjointGradient,
     DensityMatrix,
@@ -567,12 +566,10 @@ def translate_result_type(  # noqa: C901
             )
         raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
 
-    if return_type is ObservableReturnTypes.Sample and observable is None:
-        if isinstance(measurement, qml.measurements.SampleMeasurement):
-            return tuple(
-                Sample(BraketObservable.Z(), target) for target in targets or measurement.wires
-            )
-        raise NotImplementedError(f"Unsupported measurement type: {type(measurement)}")
+    if observable is None:
+        if return_type is ObservableReturnTypes.Sample:
+            return tuple(Sample(observables.Z(), target) for target in targets or measurement.wires)
+        raise NotImplementedError(f"Unsupported return type: {return_type}")
 
     braket_observable = _translate_observable(observable)
     if return_type is ObservableReturnTypes.Expectation:
@@ -708,8 +705,8 @@ def translate_result(
             for i in sorted(key_indices)
         ]
 
-    if measurement.return_type is ObservableReturnTypes.Sample and observable is None:
-        if isinstance(measurement, qml.measurements.SampleMeasurement):
+    if observable is None:
+        if measurement.return_type is ObservableReturnTypes.Sample:
             if targets:
                 return [m[targets] for m in braket_result.measurements]
             return braket_result.measurements
