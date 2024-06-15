@@ -580,10 +580,8 @@ def translate_result_type(  # noqa: C901
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
         return Variance(braket_observable, targets)
-    elif return_type in (ObservableReturnTypes.Sample, ObservableReturnTypes.Counts):
+    else:  # ObservableReturnTypes.Sample or ObservableReturnTypes.Counts
         return Sample(braket_observable, targets)
-    else:
-        raise NotImplementedError(f"Unsupported return type: {return_type}")  # pragma: no cover
 
 
 @singledispatch
@@ -710,18 +708,16 @@ def translate_result(
         ]
 
     if measurement.return_type is ObservableReturnTypes.Counts and observable is None:
-        if isinstance(measurement, qml.measurements.SampleMeasurement):
-            if targets:
-                new_dict = {}
-                for key, value in braket_result.measurement_counts.items():
-                    new_key = "".join(key[i] for i in targets)
-                    if new_key not in new_dict:
-                        new_dict[new_key] = 0
-                    new_dict[new_key] += value
-                return new_dict
+        if targets:
+            new_dict = {}
+            for key, value in braket_result.measurement_counts.items():
+                new_key = "".join(key[i] for i in targets)
+                if new_key not in new_dict:
+                    new_dict[new_key] = 0
+                new_dict[new_key] += value
+            return new_dict
 
-            return dict(braket_result.measurement_counts)
-        raise NotImplementedError(f"Unsupported measurement type: {type(measurement)}")
+        return dict(braket_result.measurement_counts)
 
     translated = translate_result_type(measurement, targets, supported_result_types)
     if isinstance(observable, (Hamiltonian, qml.Hamiltonian)):

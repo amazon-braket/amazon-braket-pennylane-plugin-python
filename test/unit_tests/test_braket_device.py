@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 import json
+from collections import Counter
 from typing import Any, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
@@ -1230,6 +1231,155 @@ def test_execute_some_samples(mock_run):
     assert results[0].shape == (4,)
     assert isinstance(results[0], np.ndarray)
     assert results[1] == 0.0
+
+
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "num_wires, op, wires, measurements, measurement_counts, result_types, expected_result",
+    [
+        (
+            2,
+            None,
+            None,
+            [[0, 0], [1, 1], [0, 0], [1, 1]],
+            Counter({"00": 2, "11": 2}),
+            [
+                {
+                    "type": {"observable": ["z", "z"], "targets": [0, 1], "type": "sample"},
+                    "value": [1, 1, 1, 1],
+                },
+            ],
+            {"00": 2, "11": 2},
+        ),
+        (
+            2,
+            qml.PauliZ(0),
+            None,
+            [[0, 0], [1, 1], [0, 0], [1, 1]],
+            Counter({"00": 2, "11": 2}),
+            [
+                {
+                    "type": {"observable": ["z"], "targets": [0], "type": "sample"},
+                    "value": [1, -1, 1, -1],
+                },
+            ],
+            {1: 2, -1: 2},
+        ),
+        (
+            2,
+            None,
+            [0],
+            [[0, 0], [1, 1], [0, 0], [1, 1]],
+            Counter({"00": 2, "11": 2}),
+            [
+                {
+                    "type": {"observable": ["z", "z"], "targets": [0, 1], "type": "sample"},
+                    "value": [1, 1, 1, 1],
+                },
+            ],
+            {"0": 2, "1": 2},
+        ),
+        (
+            3,
+            None,
+            [2],
+            [[0, 0, 0], [1, 1, 0], [0, 0, 0], [1, 1, 0]],
+            Counter({"000": 2, "110": 2}),
+            [
+                {
+                    "type": {"observable": ["z"], "targets": [2], "type": "sample"},
+                    "value": [1, 1, 1, 1],
+                },
+            ],
+            {"0": 4},
+        ),
+    ],
+)
+def test_execute_counts(
+    mock_run,
+    num_wires,
+    op,
+    wires,
+    measurements,
+    measurement_counts,
+    result_types,
+    expected_result,
+):
+    result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": measurements,
+                "measurement_counts": measurement_counts,
+                "resultTypes": result_types,
+                "measuredQubits": [0, 1],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 4,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+
+    task = Mock()
+    task.result.return_value = result
+    mock_run.return_value = task
+
+    dev = _aws_device(wires=num_wires, shots=4)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.counts(op=op, wires=wires)
+
+    results = dev.execute(circuit)
+
+    assert results == expected_result
+
+
+def test_counts_all_outcomes_fails():
+    """Tests that the calling counts with 'all_outcomes=True' raises an error"""
+    dev = _aws_device(wires=2, shots=4)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.counts(all_outcomes=True)
+
+    does_not_support = "Unsupported return type: ObservableReturnTypes.AllCounts"
+    with pytest.raises(NotImplementedError, match=does_not_support):
+        dev.execute(circuit)
+
+
+def test_sample_fails():
+    """Tests that the calling sample raises an error"""
+    dev = _aws_device(wires=2, shots=4)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.sample()
+
+    does_not_support = "Unsupported return type: ObservableReturnTypes.Sample"
+    with pytest.raises(NotImplementedError, match=does_not_support):
+        dev.execute(circuit)
 
 
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
