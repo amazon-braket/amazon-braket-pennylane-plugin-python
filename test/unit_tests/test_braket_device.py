@@ -13,6 +13,7 @@
 
 import json
 from collections import Counter
+from enum import Enum
 from typing import Any, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
@@ -1380,6 +1381,22 @@ def test_sample_fails():
     does_not_support = "Unsupported return type: ObservableReturnTypes.Sample"
     with pytest.raises(NotImplementedError, match=does_not_support):
         dev.execute(circuit)
+
+
+def test_unsupported_return_type():
+    """Tests that using an unsupported return type for measurement raises an error"""
+    dev = _aws_device(wires=2, shots=4)
+
+    mock_measurement = Mock()
+    mock_measurement.return_type = Enum("ObservableReturnTypes", {"Foo": "foo"}).Foo
+    mock_measurement.obs = qml.PauliZ(0)
+    mock_measurement.wires = qml.wires.Wires([0])
+
+    tape = qml.tape.QuantumTape(measurements=[mock_measurement])
+
+    does_not_support = "Unsupported return type: ObservableReturnTypes.Foo"
+    with pytest.raises(NotImplementedError, match=does_not_support):
+        dev.execute(tape)
 
 
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)

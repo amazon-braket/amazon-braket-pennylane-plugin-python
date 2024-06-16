@@ -577,8 +577,10 @@ def translate_result_type(  # noqa: C901
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
         return Variance(braket_observable, targets)
-    else:  # ObservableReturnTypes.Sample or ObservableReturnTypes.Counts
+    elif return_type in (ObservableReturnTypes.Sample, ObservableReturnTypes.Counts):
         return Sample(braket_observable, targets)
+    else:
+        raise NotImplementedError(f"Unsupported return type: {return_type}")
 
 
 @singledispatch
