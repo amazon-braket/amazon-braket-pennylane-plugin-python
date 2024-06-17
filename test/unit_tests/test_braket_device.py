@@ -912,8 +912,9 @@ def test_batch_execute_non_parallel_tracker(mock_run):
 
 
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_parallel(mock_run_batch):
-    """Test batch_execute(parallel=True) correctly calls batch execution methods in Braket SDK"""
+def test_aws_device_batch_execute_parallel(mock_run_batch):
+    """Test batch_execute(parallel=True) correctly calls batch
+    execution methods for AwsDevices in Braket SDK"""
     mock_run_batch.return_value = TASK_BATCH
     dev = _aws_device(wires=4, foo="bar", parallel=True)
     assert dev.parallel is True
@@ -964,13 +965,98 @@ def test_batch_execute_parallel(mock_run_batch):
     )
 
 
+@patch.object(LocalSimulator, "run_batch")
+def test_local_sim_batch_execute_parallel(mock_run_batch):
+    """Test batch_execute(parallel=True) correctly calls
+    batch execution methods for LocalSimulators in Braket SDK"""
+    mock_run_batch.return_value = TASK_BATCH
+    dev = BraketLocalQubitDevice(
+        wires=4, shots=SHOTS, parallel=True, parametrize_differentiable=False
+    )
+    assert dev.parallel is True
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    circuits = [circuit, circuit]
+    batch_results = dev.batch_execute(circuits)
+    for results in batch_results:
+        assert np.allclose(
+            results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+        )
+        assert np.allclose(
+            results[1],
+            RESULT.get_value_by_result_type(
+                result_types.Expectation(observable=Observable.X(), target=1)
+            ),
+        )
+        assert np.allclose(
+            results[2],
+            RESULT.get_value_by_result_type(
+                result_types.Variance(observable=Observable.Y(), target=2)
+            ),
+        )
+        assert np.allclose(
+            results[3],
+            RESULT.get_value_by_result_type(
+                result_types.Sample(observable=Observable.Z(), target=3)
+            ),
+        )
+
+    mock_run_batch.assert_called_with(
+        [CIRCUIT, CIRCUIT],
+        shots=SHOTS,
+        max_parallel=None,
+        inputs=[],
+    )
+
+
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_parallel_tracker(mock_run_batch):
-    """Asserts tracker updates during parallel execution"""
+def test_aws_device_batch_execute_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel execution for AWS devices"""
 
     mock_run_batch.return_value = TASK_BATCH
     type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
     dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    circuits = [circuit, circuit]
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.batch_execute(circuits)
+    dev.batch_execute(circuits)
+
+    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    history = {
+        "batches": [1],
+        "executions": [2],
+        "shots": [2 * SHOTS],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
+    totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
+@patch.object(LocalSimulator, "run_batch")
+def test_local_sim_batch_execute_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel execution for local simulators"""
+
+    mock_run_batch.return_value = TASK_BATCH
+    dev = BraketLocalQubitDevice(wires=1, shots=SHOTS, parallel=True)
+    type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
