@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.27.5 (2024-06-13)
+
+### Bug Fixes and Other Changes
+
+ * Replace `FreeParameter("b")` with `FreeParameter("d")` in unittests
+
+## v1.27.4 (2024-06-03)
+
+### Bug Fixes and Other Changes
+
+ * Update autoray to >= 0.6.11
+
 ## v1.27.3 (2024-05-14)
 
 ### Bug Fixes and Other Changes
