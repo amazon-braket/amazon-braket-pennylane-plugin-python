@@ -757,8 +757,7 @@ def test_translate_result_type_state_unimplemented():
 def test_translate_result_type_unsupported_return():
     """Tests if a NotImplementedError is raised by translate_result_type for an unknown
     return_type"""
-    obs = qml.Hadamard(wires=0)
-    tape = qml.tape.QuantumTape(measurements=[qml.counts(obs)])
+    tape = qml.tape.QuantumTape(measurements=[qml.purity(wires=[0])])
 
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
         translate_result_type(tape.measurements[0], [0], frozenset())
