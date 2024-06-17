@@ -24,6 +24,86 @@ np.random.seed(42)
 class TestSample:
     """Tests for the sample return type"""
 
+    def test_sample_default(self, device, shots, tol):
+        """Tests if the samples returned by sample have
+        the correct values when no observable is specified
+        """
+        dev = device(2)
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(np.pi / 4, wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.sample()
+
+        shot_vector = circuit()
+
+        # The sample should only contain 1 and 0
+        assert shot_vector.dtype == np.dtype("int")
+        assert np.all((shot_vector == 0) | (shot_vector == 1))
+        assert shot_vector.shape == (shots, 2)
+
+    def test_sample_wires(self, device, shots, tol):
+        """Tests if the samples returned by sample have
+        the correct values when only wires are specified
+        """
+        dev = device(3)
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.RX(np.pi / 4, wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.sample(wires=[0, 2])
+
+        shot_vector = circuit()
+
+        # The sample should only contain 1 and 0
+        assert shot_vector.dtype == np.dtype("int")
+        assert np.all((shot_vector == 0) | (shot_vector == 1))
+        assert shot_vector.shape == (shots, 2)
+
+    def test_sample_batch_default(self, device, shots, tol):
+        """Tests if the samples returned by sample have
+        the correct values when no observable is specified and
+        the batch dimension is returned
+        """
+        dev = device(3)
+
+        @qml.qnode(dev)
+        def circuit(a):
+            qml.RX(a, wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.sample()
+
+        shot_vector = circuit([np.pi / 4, np.pi / 3])
+
+        # The sample should only contain 1 and 0
+        assert shot_vector.dtype == np.dtype("int")
+        assert np.all((shot_vector == 0) | (shot_vector == 1))
+        assert shot_vector.shape == (2, shots, 3)
+
+    def test_sample_batch_wires(self, device, shots, tol):
+        """Tests if the samples returned by sample have
+        the correct values when only wires are specified
+        """
+        dev = device(4)
+
+        @qml.qnode(dev)
+        def circuit(a):
+            qml.RX(a, wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.CNOT(wires=[1, 2])
+            return qml.sample(wires=[0, 2, 3])
+
+        shot_vector = circuit([np.pi / 4, np.pi / 3])
+
+        # The sample should only contain 1 and 0
+        assert shot_vector.dtype == np.dtype("int")
+        assert np.all((shot_vector == 0) | (shot_vector == 1))
+        assert shot_vector.shape == (2, shots, 3)
+
     def test_sample_values(self, device, shots, tol):
         """Tests if the samples returned by sample have
         the correct values
