@@ -55,6 +55,7 @@ from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
+    Counts,
     Expectation,
     MeasurementProcess,
     MeasurementTransform,
@@ -78,7 +79,7 @@ from braket.pennylane_plugin.translation import (
 
 from ._version import __version__
 
-RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
+RETURN_TYPES = [Expectation, Variance, Sample, Probability, State, Counts]
 MIN_SIMULATOR_BILLED_MS = 3000
 OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
 
@@ -260,9 +261,7 @@ class BraketQubitDevice(QubitDevice):
         results = []
         for mp in measurements:
             if mp.return_type not in RETURN_TYPES:
-                raise QuantumFunctionError(
-                    "Unsupported return type specified for observable {}".format(mp.obs.name)
-                )
+                raise QuantumFunctionError("Unsupported return type: {}".format(mp.return_type))
             results.append(self._get_statistic(braket_result, mp))
         return results
 

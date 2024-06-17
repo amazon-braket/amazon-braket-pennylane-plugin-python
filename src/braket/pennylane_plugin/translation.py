@@ -11,6 +11,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+from collections import Counter
 from functools import partial, reduce, singledispatch
 from typing import Any, Optional, Union
 
@@ -530,7 +531,7 @@ def get_adjoint_gradient_result_type(
     return AdjointGradient(observable=braket_observable, target=targets, parameters=parameters)
 
 
-def translate_result_type(
+def translate_result_type(  # noqa: C901
     measurement: MeasurementProcess, targets: list[int], supported_result_types: frozenset[str]
 ) -> Union[ResultType, tuple[ResultType, ...]]:
     """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
@@ -547,6 +548,7 @@ def translate_result_type(
         then this will return a result type for each term.
     """
     return_type = measurement.return_type
+    observable = measurement.obs
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
@@ -558,19 +560,24 @@ def translate_result_type(
             return DensityMatrix(targets)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
-    if isinstance(measurement.obs, (Hamiltonian, qml.Hamiltonian)):
+    if isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
         if return_type is ObservableReturnTypes.Expectation:
             return tuple(
-                Expectation(_translate_observable(term), term.wires) for term in measurement.obs.ops
+                Expectation(_translate_observable(term), term.wires) for term in observable.ops
             )
         raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
 
-    braket_observable = _translate_observable(measurement.obs)
+    if observable is None:
+        if return_type is ObservableReturnTypes.Counts:
+            return tuple(Sample(observables.Z(), target) for target in targets or measurement.wires)
+        raise NotImplementedError(f"Unsupported return type: {return_type}")
+
+    braket_observable = _translate_observable(observable)
     if return_type is ObservableReturnTypes.Expectation:
         return Expectation(braket_observable, targets)
     elif return_type is ObservableReturnTypes.Variance:
         return Variance(braket_observable, targets)
-    elif return_type is ObservableReturnTypes.Sample:
+    elif return_type in (ObservableReturnTypes.Sample, ObservableReturnTypes.Counts):
         return Sample(braket_observable, targets)
     else:
         raise NotImplementedError(f"Unsupported return type: {return_type}")
@@ -698,6 +705,19 @@ def translate_result(
             ag_result.value["gradient"][f"p_{i}"]
             for i in sorted(key_indices)
         ]
+
+    if measurement.return_type is ObservableReturnTypes.Counts and observable is None:
+        if targets:
+            new_dict = {}
+            for key, value in braket_result.measurement_counts.items():
+                new_key = "".join(key[i] for i in targets)
+                if new_key not in new_dict:
+                    new_dict[new_key] = 0
+                new_dict[new_key] += value
+            return new_dict
+
+        return dict(braket_result.measurement_counts)
+
     translated = translate_result_type(measurement, targets, supported_result_types)
     if isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
         coeffs, _ = observable.terms()
@@ -705,5 +725,7 @@ def translate_result(
             coeff * braket_result.get_value_by_result_type(result_type)
             for coeff, result_type in zip(coeffs, translated)
         )
+    elif measurement.return_type is ObservableReturnTypes.Counts:
+        return dict(Counter(braket_result.get_value_by_result_type(translated)))
     else:
         return braket_result.get_value_by_result_type(translated)
