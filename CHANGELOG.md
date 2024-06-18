@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.27.6 (2024-06-18)
+
+### Bug Fixes and Other Changes
+
+ * Support `qml.counts` for circuits
+
 ## v1.27.5 (2024-06-13)
 
 ### Bug Fixes and Other Changes
