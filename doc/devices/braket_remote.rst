@@ -34,7 +34,7 @@ For example:
         qml.RY(y, wires=[0])
         qml.RX(x, wires=[0])
         qml.CNOT(wires=[0, 1])
-        return qml.expval(qml.PauliZ(0)), var(qml.PauliZ(1))
+        return qml.expval(qml.PauliZ(0)), qml.var(qml.PauliZ(1))
 
 When executed, the circuit performs the computation on the Amazon Braket service.
 
