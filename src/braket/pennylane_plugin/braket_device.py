@@ -51,6 +51,7 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
@@ -294,6 +295,17 @@ class BraketQubitDevice(QubitDevice):
             )
         )
         return braket_circuit
+
+    def _update_tracker_for_batch(
+        self, task_batch: Union[AwsQuantumTaskBatch, LocalQuantumTaskBatch], batch_shots: int
+    ):
+        for task in task_batch.tasks:
+            tracking_data = self._tracking_data(task)
+            self.tracker.update(**tracking_data)
+        total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+        total_shots = total_executions * batch_shots
+        self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+        self.tracker.record()
 
     def statistics(
         self, braket_result: GateModelQuantumTaskResult, measurements: Sequence[MeasurementProcess]
@@ -661,13 +673,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         # Update the tracker before raising an exception further if some circuits do not complete.
         finally:
             if self.tracker.active:
-                for task in task_batch.tasks:
-                    tracking_data = self._tracking_data(task)
-                    self.tracker.update(**tracking_data)
-                total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
-                total_shots = total_executions * batch_shots
-                self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
-                self.tracker.record()
+                self._update_tracker_for_batch(task_batch, batch_shots)
 
         return braket_results_batch
 
@@ -1037,13 +1043,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
 
         # Update the tracker
         if self.tracker.active:
-            for task in task_batch.tasks:
-                tracking_data = self._tracking_data(task)
-                self.tracker.update(**tracking_data)
-            total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
-            total_shots = total_executions * batch_shots
-            self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
-            self.tracker.record()
+            self._update_tracker_for_batch(task_batch, batch_shots)
 
         return braket_results_batch
 
