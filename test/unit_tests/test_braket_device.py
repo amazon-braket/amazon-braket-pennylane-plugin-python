@@ -12,6 +12,8 @@
 # language governing permissions and limitations under the License.
 
 import json
+from collections import Counter
+from enum import Enum
 from typing import Any, Optional
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
@@ -862,9 +864,8 @@ def test_parametrized_evolution_in_oqc_lucy_supported_ops():
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
-    observable = qml.Identity(wires=0)
-    tape = qml.tape.QuantumTape(measurements=[qml.counts(observable)])
-    with pytest.raises(QuantumFunctionError, match="Unsupported return type specified"):
+    tape = qml.tape.QuantumTape(measurements=[qml.classical_shadow(wires=[0])])
+    with pytest.raises(QuantumFunctionError, match="Unsupported return type:"):
         dev.statistics(None, tape.measurements)
 
 
@@ -911,8 +912,9 @@ def test_batch_execute_non_parallel_tracker(mock_run):
 
 
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_parallel(mock_run_batch):
-    """Test batch_execute(parallel=True) correctly calls batch execution methods in Braket SDK"""
+def test_aws_device_batch_execute_parallel(mock_run_batch):
+    """Test batch_execute(parallel=True) correctly calls batch
+    execution methods for AwsDevices in Braket SDK"""
     mock_run_batch.return_value = TASK_BATCH
     dev = _aws_device(wires=4, foo="bar", parallel=True)
     assert dev.parallel is True
@@ -963,13 +965,98 @@ def test_batch_execute_parallel(mock_run_batch):
     )
 
 
+@patch.object(LocalSimulator, "run_batch")
+def test_local_sim_batch_execute_parallel(mock_run_batch):
+    """Test batch_execute(parallel=True) correctly calls
+    batch execution methods for LocalSimulators in Braket SDK"""
+    mock_run_batch.return_value = TASK_BATCH
+    dev = BraketLocalQubitDevice(
+        wires=4, shots=SHOTS, parallel=True, parametrize_differentiable=False
+    )
+    assert dev.parallel is True
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    circuits = [circuit, circuit]
+    batch_results = dev.batch_execute(circuits)
+    for results in batch_results:
+        assert np.allclose(
+            results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+        )
+        assert np.allclose(
+            results[1],
+            RESULT.get_value_by_result_type(
+                result_types.Expectation(observable=Observable.X(), target=1)
+            ),
+        )
+        assert np.allclose(
+            results[2],
+            RESULT.get_value_by_result_type(
+                result_types.Variance(observable=Observable.Y(), target=2)
+            ),
+        )
+        assert np.allclose(
+            results[3],
+            RESULT.get_value_by_result_type(
+                result_types.Sample(observable=Observable.Z(), target=3)
+            ),
+        )
+
+    mock_run_batch.assert_called_with(
+        [CIRCUIT, CIRCUIT],
+        shots=SHOTS,
+        max_parallel=None,
+        inputs=[],
+    )
+
+
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_parallel_tracker(mock_run_batch):
-    """Asserts tracker updates during parallel execution"""
+def test_aws_device_batch_execute_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel execution for AWS devices"""
 
     mock_run_batch.return_value = TASK_BATCH
     type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
     dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(wires=(0,))
+
+    circuits = [circuit, circuit]
+
+    callback = Mock()
+    with qml.Tracker(dev, callback=callback) as tracker:
+        dev.batch_execute(circuits)
+    dev.batch_execute(circuits)
+
+    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    history = {
+        "batches": [1],
+        "executions": [2],
+        "shots": [2 * SHOTS],
+        "braket_task_id": ["task_arn", "task_arn"],
+    }
+    totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    assert tracker.latest == latest
+    assert tracker.history == history
+    assert tracker.totals == totals
+
+    callback.assert_called_with(latest=latest, history=history, totals=totals)
+
+
+@patch.object(LocalSimulator, "run_batch")
+def test_local_sim_batch_execute_parallel_tracker(mock_run_batch):
+    """Asserts tracker updates during parallel execution for local simulators"""
+
+    mock_run_batch.return_value = TASK_BATCH
+    dev = BraketLocalQubitDevice(wires=1, shots=SHOTS, parallel=True)
+    type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
 
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
@@ -1231,6 +1318,171 @@ def test_execute_some_samples(mock_run):
     assert results[0].shape == (4,)
     assert isinstance(results[0], np.ndarray)
     assert results[1] == 0.0
+
+
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "num_wires, op, wires, measurements, measurement_counts, result_types, expected_result",
+    [
+        (
+            2,
+            None,
+            None,
+            [[0, 0], [1, 1], [0, 0], [1, 1]],
+            Counter({"00": 2, "11": 2}),
+            [
+                {
+                    "type": {"observable": ["z", "z"], "targets": [0, 1], "type": "sample"},
+                    "value": [1, 1, 1, 1],
+                },
+            ],
+            {"00": 2, "11": 2},
+        ),
+        (
+            2,
+            qml.PauliZ(0),
+            None,
+            [[0, 0], [1, 1], [0, 0], [1, 1]],
+            Counter({"00": 2, "11": 2}),
+            [
+                {
+                    "type": {"observable": ["z"], "targets": [0], "type": "sample"},
+                    "value": [1, -1, 1, -1],
+                },
+            ],
+            {1: 2, -1: 2},
+        ),
+        (
+            2,
+            None,
+            [0],
+            [[0, 0], [1, 1], [0, 0], [1, 1]],
+            Counter({"00": 2, "11": 2}),
+            [
+                {
+                    "type": {"observable": ["z", "z"], "targets": [0, 1], "type": "sample"},
+                    "value": [1, 1, 1, 1],
+                },
+            ],
+            {"0": 2, "1": 2},
+        ),
+        (
+            3,
+            None,
+            [2],
+            [[0, 0, 0], [1, 1, 0], [0, 0, 0], [1, 1, 0]],
+            Counter({"000": 2, "110": 2}),
+            [
+                {
+                    "type": {"observable": ["z"], "targets": [2], "type": "sample"},
+                    "value": [1, 1, 1, 1],
+                },
+            ],
+            {"0": 4},
+        ),
+    ],
+)
+def test_execute_counts(
+    mock_run,
+    num_wires,
+    op,
+    wires,
+    measurements,
+    measurement_counts,
+    result_types,
+    expected_result,
+):
+    result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": measurements,
+                "measurement_counts": measurement_counts,
+                "resultTypes": result_types,
+                "measuredQubits": [0, 1],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 4,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+
+    task = Mock()
+    task.result.return_value = result
+    mock_run.return_value = task
+
+    dev = _aws_device(wires=num_wires, shots=4)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.counts(op=op, wires=wires)
+
+    results = dev.execute(circuit)
+
+    assert results == expected_result
+
+
+def test_counts_all_outcomes_fails():
+    """Tests that the calling counts with 'all_outcomes=True' raises an error"""
+    dev = _aws_device(wires=2, shots=4)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.counts(all_outcomes=True)
+
+    does_not_support = "Unsupported return type: ObservableReturnTypes.AllCounts"
+    with pytest.raises(NotImplementedError, match=does_not_support):
+        dev.execute(circuit)
+
+
+def test_sample_fails():
+    """Tests that the calling sample raises an error"""
+    dev = _aws_device(wires=2, shots=4)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.sample()
+
+    does_not_support = "Unsupported return type: ObservableReturnTypes.Sample"
+    with pytest.raises(NotImplementedError, match=does_not_support):
+        dev.execute(circuit)
+
+
+def test_unsupported_return_type():
+    """Tests that using an unsupported return type for measurement raises an error"""
+    dev = _aws_device(wires=2, shots=4)
+
+    mock_measurement = Mock()
+    mock_measurement.return_type = Enum("ObservableReturnTypes", {"Foo": "foo"}).Foo
+    mock_measurement.obs = qml.PauliZ(0)
+    mock_measurement.wires = qml.wires.Wires([0])
+
+    tape = qml.tape.QuantumTape(measurements=[mock_measurement])
+
+    does_not_support = "Unsupported return type: ObservableReturnTypes.Foo"
+    with pytest.raises(NotImplementedError, match=does_not_support):
+        dev.execute(tape)
 
 
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)

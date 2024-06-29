@@ -51,10 +51,12 @@ from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.simulator import BraketSimulator
 from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
+    Counts,
     Expectation,
     MeasurementProcess,
     MeasurementTransform,
@@ -78,7 +80,7 @@ from braket.pennylane_plugin.translation import (
 
 from ._version import __version__
 
-RETURN_TYPES = [Expectation, Variance, Sample, Probability, State]
+RETURN_TYPES = [Expectation, Variance, Sample, Probability, State, Counts]
 MIN_SIMULATOR_BILLED_MS = 3000
 OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
 
@@ -104,6 +106,12 @@ class BraketQubitDevice(QubitDevice):
             execution.
         verbatim (bool): Whether to run tasks in verbatim mode. Note that verbatim mode only
             supports the native gate set of the device. Default False.
+        parallel (bool): Whether to run tasks in parallel if supported by the device backend.
+            Default False.
+        max_parallel (int, optional): Maximum number of tasks to run on AWS in parallel.
+            Batch creation will fail if this value is greater than the maximum allowed concurrent
+            tasks on the device. If unspecified, uses defaults defined in ``AwsDevice``.
+            Ignored if ``parallel=False``.
         parametrize_differentiable (bool): Whether to bind differentiable parameters (parameters
             marked with ``required_grad=True``) on the Braket device rather than in PennyLane.
             Default: True.
@@ -123,6 +131,8 @@ class BraketQubitDevice(QubitDevice):
         shots: Union[int, None],
         noise_model: Optional[NoiseModel] = None,
         verbatim: bool = False,
+        parallel: bool = False,
+        max_parallel: Optional[int] = None,
         parametrize_differentiable: bool = True,
         **run_kwargs,
     ):
@@ -138,6 +148,8 @@ class BraketQubitDevice(QubitDevice):
 
         super().__init__(wires, shots=shots or None)
         self._device = device
+        self._parallel = parallel
+        self._max_parallel = max_parallel
         self._circuit = None
         self._task = None
         self._noise_model = noise_model
@@ -177,6 +189,49 @@ class BraketQubitDevice(QubitDevice):
     def task(self) -> QuantumTask:
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
+
+    @property
+    def parallel(self) -> bool:
+        """bool: Whether the device supports parallel execution of batches."""
+        return self._parallel
+
+    def batch_execute(self, circuits, **run_kwargs):
+        if not self._parallel:
+            return super().batch_execute(circuits)
+
+        for circuit in circuits:
+            self.check_validity(circuit.operations, circuit.observables)
+        all_trainable = []
+        braket_circuits = []
+        for circuit in circuits:
+            trainable = (
+                BraketQubitDevice._get_trainable_parameters(circuit)
+                if self._parametrize_differentiable
+                else {}
+            )
+            all_trainable.append(trainable)
+            braket_circuits.append(
+                self._pl_to_braket_circuit(
+                    circuit,
+                    trainable_indices=frozenset(trainable.keys()),
+                    **run_kwargs,
+                )
+            )
+
+        batch_shots = 0 if self.analytic else self.shots
+
+        batch_inputs = (
+            [{f"p_{k}": v for k, v in trainable.items()} for trainable in all_trainable]
+            if self._parametrize_differentiable
+            else []
+        )
+
+        braket_results_batch = self._run_task_batch(braket_circuits, batch_shots, batch_inputs)
+
+        return [
+            self._braket_to_pl_result(braket_result, circuit)
+            for braket_result, circuit in zip(braket_results_batch, circuits)
+        ]
 
     def _pl_to_braket_circuit(
         self,
@@ -241,6 +296,17 @@ class BraketQubitDevice(QubitDevice):
         )
         return braket_circuit
 
+    def _update_tracker_for_batch(
+        self, task_batch: Union[AwsQuantumTaskBatch, LocalQuantumTaskBatch], batch_shots: int
+    ):
+        for task in task_batch.tasks:
+            tracking_data = self._tracking_data(task)
+            self.tracker.update(**tracking_data)
+        total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
+        total_shots = total_executions * batch_shots
+        self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+        self.tracker.record()
+
     def statistics(
         self, braket_result: GateModelQuantumTaskResult, measurements: Sequence[MeasurementProcess]
     ) -> list[float]:
@@ -260,9 +326,7 @@ class BraketQubitDevice(QubitDevice):
         results = []
         for mp in measurements:
             if mp.return_type not in RETURN_TYPES:
-                raise QuantumFunctionError(
-                    "Unsupported return type specified for observable {}".format(mp.obs.name)
-                )
+                raise QuantumFunctionError("Unsupported return type: {}".format(mp.return_type))
             results.append(self._get_statistic(braket_result, mp))
         return results
 
@@ -526,10 +590,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
             Default: False
-        max_parallel (int, optional): Maximum number of tasks to run on AWS in parallel.
-            Batch creation will fail if this value is greater than the maximum allowed concurrent
-            tasks on the device. If unspecified, uses defaults defined in ``AwsDevice``.
-            Ignored if ``parallel=False``.
         max_connections (int): The maximum number of connections in the Boto3 connection pool.
             Also the maximum number of thread pool workers for the batch.
             Ignored if ``parallel=False``.
@@ -554,8 +614,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         aws_session: Optional[AwsSession] = None,
-        parallel: bool = False,
-        max_parallel: Optional[int] = None,
         max_connections: int = AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         max_retries: int = AwsQuantumTaskBatch.MAX_RETRIES,
         **run_kwargs,
@@ -580,8 +638,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
-        self._parallel = parallel
-        self._max_parallel = max_parallel
         self._max_connections = max_connections
         self._max_retries = max_retries
 
@@ -595,50 +651,19 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         caps = self.capabilities()
         return not ("provides_jacobian" in caps and caps["provides_jacobian"])
 
-    @property
-    def parallel(self):
-        return self._parallel
-
-    def batch_execute(self, circuits, **run_kwargs):
-        if not self._parallel:
-            return super().batch_execute(circuits)
-
-        for circuit in circuits:
-            self.check_validity(circuit.operations, circuit.observables)
-        all_trainable = []
-        braket_circuits = []
-        for circuit in circuits:
-            trainable = (
-                BraketQubitDevice._get_trainable_parameters(circuit)
-                if self._parametrize_differentiable
-                else {}
-            )
-            all_trainable.append(trainable)
-            braket_circuits.append(
-                self._pl_to_braket_circuit(
-                    circuit,
-                    trainable_indices=frozenset(trainable.keys()),
-                    **run_kwargs,
-                )
-            )
-
-        batch_shots = 0 if self.analytic else self.shots
-
+    def _run_task_batch(self, batch_circuits, batch_shots: int, inputs):
         task_batch = self._device.run_batch(
-            braket_circuits,
+            batch_circuits,
             s3_destination_folder=self._s3_folder,
             shots=batch_shots,
             max_parallel=self._max_parallel,
             max_connections=self._max_connections,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
-            inputs=(
-                [{f"p_{k}": v for k, v in trainable.items()} for trainable in all_trainable]
-                if self._parametrize_differentiable
-                else []
-            ),
+            inputs=inputs,
             **self._run_kwargs,
         )
+
         # Call results() to retrieve the Braket results in parallel.
         try:
             braket_results_batch = task_batch.results(
@@ -648,18 +673,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         # Update the tracker before raising an exception further if some circuits do not complete.
         finally:
             if self.tracker.active:
-                for task in task_batch.tasks:
-                    tracking_data = self._tracking_data(task)
-                    self.tracker.update(**tracking_data)
-                total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
-                total_shots = total_executions * batch_shots
-                self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
-                self.tracker.record()
+                self._update_tracker_for_batch(task_batch, batch_shots)
 
-        return [
-            self._braket_to_pl_result(braket_result, circuit)
-            for braket_result, circuit in zip(braket_results_batch, circuits)
-        ]
+        return braket_results_batch
 
     def _run_task(self, circuit, inputs=None):
         return self._device.run(
@@ -1012,6 +1028,24 @@ class BraketLocalQubitDevice(BraketQubitDevice):
     ):
         device = LocalSimulator(backend)
         super().__init__(wires, device, shots=shots, **run_kwargs)
+
+    def _run_task_batch(self, batch_circuits, batch_shots: int, inputs):
+        task_batch = self._device.run_batch(
+            batch_circuits,
+            shots=batch_shots,
+            max_parallel=self._max_parallel,
+            inputs=inputs,
+            **self._run_kwargs,
+        )
+
+        # Should not need try-except here as this is a local sim.
+        braket_results_batch = task_batch.results()
+
+        # Update the tracker
+        if self.tracker.active:
+            self._update_tracker_for_batch(task_batch, batch_shots)
+
+        return braket_results_batch
 
     def _run_task(self, circuit, inputs=None):
         return self._device.run(

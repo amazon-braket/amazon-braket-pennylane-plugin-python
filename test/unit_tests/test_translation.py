@@ -248,14 +248,14 @@ testdata_with_params = [
     (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
     (GPi, gates.GPi, [0], [2], ["a"], [FreeParameter("a")]),
     (GPi2, gates.GPi2, [0], [2], ["a"], [FreeParameter("a")]),
-    (MS, gates.MS, [0, 1], [2, 3], ["a", "b"], [FreeParameter("a"), FreeParameter("b")]),
+    (MS, gates.MS, [0, 1], [2, 3], ["a", "c"], [FreeParameter("a"), FreeParameter("c")]),
     (
         AAMS,
         gates.MS,
         [0, 1],
         [2, 3, 0.5],
-        ["a", "b", "c"],
-        [FreeParameter("a"), FreeParameter("b"), FreeParameter("c")],
+        ["a", "c", "d"],
+        [FreeParameter("a"), FreeParameter("c"), FreeParameter("d")],
     ),
     (PSWAP, gates.PSwap, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
     (qml.ECR, gates.ECR, [0, 1], [], [], []),
@@ -757,8 +757,7 @@ def test_translate_result_type_state_unimplemented():
 def test_translate_result_type_unsupported_return():
     """Tests if a NotImplementedError is raised by translate_result_type for an unknown
     return_type"""
-    obs = qml.Hadamard(wires=0)
-    tape = qml.tape.QuantumTape(measurements=[qml.counts(obs)])
+    tape = qml.tape.QuantumTape(measurements=[qml.purity(wires=[0])])
 
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
         translate_result_type(tape.measurements[0], [0], frozenset())
