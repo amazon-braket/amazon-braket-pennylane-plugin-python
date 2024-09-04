@@ -537,19 +537,17 @@ class TestBraketAhsDevice:
         task run"""
         ahs_program = dummy_ahs_program()
         dev = qml.device("braket.local.ahs", wires=3)
+        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        dev = dev.target_device if hasattr(dev, "target_device") else dev
+
         # checked in _validate_operations in the full pipeline
         # since these are created manually for the unit test elsewhere in the file,
         # we confirm the values used for the test are valid here
         assert len(ahs_program.register.coordinate_list(0)) == len(dev.wires)
 
         task = dev._run_task(ahs_program)
-
-        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
-        if hasattr(dev, "target_device"):
-            dev.target_device._task = task
-        else:
-            dev._task = task
+        dev._task = task
 
         samples = dev.generate_samples()
 
@@ -561,8 +559,11 @@ class TestBraketAhsDevice:
         """Test that expval takes the average ignoring NaN values"""
 
         dev = qml.device("braket.local.ahs", wires=4, shots=4)
+        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        dev = dev.target_device if hasattr(dev, "target_device") else dev
 
-        samples = np.array(
+        dev._samples = np.array(
             [
                 [0, 1, 1, np.NaN],
                 [1, 1, 0, 0],
@@ -570,13 +571,6 @@ class TestBraketAhsDevice:
                 [0, 1, 1, 1],
             ]
         )
-
-        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
-        if hasattr(dev, "target_device"):
-            dev.target_device._samples = samples
-        else:
-            dev._samples = samples
 
         res = dev.expval(qml.PauliZ(3))
 

@@ -29,6 +29,9 @@ class TestDeviceIntegration:
     def test_load_device(self, d, extra_kwargs):
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
+        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        dev = dev.target_device if hasattr(dev, "target_device") else dev
         assert dev.num_wires == 2
         assert dev.shots is None
         assert dev.short_name == d[0]
