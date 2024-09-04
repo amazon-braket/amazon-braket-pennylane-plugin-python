@@ -16,7 +16,6 @@
 import numpy as np
 import pennylane as qml
 import pytest
-from pennylane.measurements import Shots
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
 from pennylane.pulse.rydberg import rydberg_drive, rydberg_interaction
 
