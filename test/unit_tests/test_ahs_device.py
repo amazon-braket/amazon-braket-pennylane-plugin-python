@@ -537,7 +537,6 @@ class TestBraketAhsDevice:
         task run"""
         ahs_program = dummy_ahs_program()
         dev = qml.device("braket.local.ahs", wires=3)
-
         # checked in _validate_operations in the full pipeline
         # since these are created manually for the unit test elsewhere in the file,
         # we confirm the values used for the test are valid here
@@ -545,7 +544,7 @@ class TestBraketAhsDevice:
 
         task = dev._run_task(ahs_program)
 
-        dev._task = task
+        dev.target_device._task = task
         samples = dev.generate_samples()
 
         assert len(samples) == 1000
@@ -557,7 +556,7 @@ class TestBraketAhsDevice:
 
         dev = qml.device("braket.local.ahs", wires=4, shots=4)
 
-        dev._samples = np.array(
+        dev.target_device._samples = np.array(
             [
                 [0, 1, 1, np.NaN],
                 [1, 1, 0, 0],
