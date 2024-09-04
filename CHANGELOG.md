@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.28.0 (2024-07-01)
+
+### Features
+
+ * Support `batch_execute` for `BraketLocalQubitDevice`
+
 ## v1.27.6 (2024-06-18)
 
 ### Bug Fixes and Other Changes
