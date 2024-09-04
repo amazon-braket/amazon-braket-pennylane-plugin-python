@@ -41,6 +41,7 @@ import pennylane as qml
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
+from braket.tasks.local_quantum_task import LocalQuantumTask
 from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
@@ -562,11 +563,10 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         return ahs_program
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> AwsQuantumTask:
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> LocalQuantumTask:
         """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
-        task = self._device.run(ahs_program, shots=self.shots, steps=100)
-        return task
+        return self._device.run(ahs_program, shots=self.shots, steps=100)
 
     def _validate_pulses(self, pulses: list[HardwarePulse]):  # noqa: C901
         """Validate that all pulses are defined as expected by the device. This validation includes:
