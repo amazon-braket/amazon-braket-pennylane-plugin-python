@@ -544,7 +544,13 @@ class TestBraketAhsDevice:
 
         task = dev._run_task(ahs_program)
 
-        dev.target_device._task = task
+        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        if hasattr(dev, "target_device"):
+            dev.target_device._task = task
+        else:
+            dev._task = task
+
         samples = dev.generate_samples()
 
         assert len(samples) == 1000
@@ -556,7 +562,7 @@ class TestBraketAhsDevice:
 
         dev = qml.device("braket.local.ahs", wires=4, shots=4)
 
-        dev.target_device._samples = np.array(
+        samples = np.array(
             [
                 [0, 1, 1, np.NaN],
                 [1, 1, 0, 0],
@@ -564,6 +570,13 @@ class TestBraketAhsDevice:
                 [0, 1, 1, 1],
             ]
         )
+
+        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        if hasattr(dev, "target_device"):
+            dev.target_device._samples = samples
+        else:
+            dev._samples = samples
 
         res = dev.expval(qml.PauliZ(3))
 
