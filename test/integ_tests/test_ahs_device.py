@@ -88,9 +88,13 @@ class TestDeviceIntegration:
     def test_load_device(self, shortname, arn_nr, backend_name):
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(shortname, arn_nr, wires=2)
+        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        dev = dev.target_device if hasattr(dev, "target_device") else dev
         assert dev.num_wires == 2
         assert dev.shots == 100
         assert dev.short_name == shortname
+
         assert dev._device.name == backend_name
 
     def test_args_hardware(self):
@@ -210,7 +214,14 @@ class TestQnodeIntegration:
             )
 
         res = circuit()
-        expected_shape = (mp.shape(dev, qml.measurements.Shots(dev.shots)) for mp in measurements)
+
+        # PennyLane 0.38+ changes the signature of `shape`
+        # TODO: Remove else branch once minimum PennyLane is >=0.38
+        expected_shape = (
+            (mp.shape(shots=dev.shots.total_shots) for mp in measurements)
+            if hasattr(dev, "target_device")
+            else (mp.shape(dev, qml.measurements.Shots(dev.shots)) for mp in measurements)
+        )
 
         assert len(res) == len(measurements)
         assert all(r.shape == es for r, es in zip(res, expected_shape))
