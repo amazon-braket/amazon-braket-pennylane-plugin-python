@@ -1,0 +1,49 @@
+# Workflow template for testing plugins against PennyLane stable
+
+name: PennyLane Device Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - feature/**
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Maximize build space
+      shell: bash
+      run: | 
+        df -h
+        if [ "$RUNNER_OS" != "Windows" ]; then
+          sudo rm -rf /usr/share/dotnet & 
+          sudo rm -rf /usr/local/lib/android &
+          sudo rm -rf /opt/ghc & 
+          sudo rm -rf /usr/local/share/boost
+        fi
+        df -h
+    - name: Install dependencies
+      run: |
+        pip install tox
+    - name: Check build space
+      shell: bash
+      run: | 
+        df -h
+    - name: Run PennyLane device integration tests
+      run: |
+        tox -e pennylane-device-tests 
