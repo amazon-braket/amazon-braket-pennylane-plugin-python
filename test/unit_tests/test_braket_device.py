@@ -23,7 +23,7 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, FreeParameter, Gate, Noise, Observable, result_types
+from braket.circuits import Circuit, FreeParameter, Gate, Noise, observables, result_types
 from braket.circuits.noise_model import GateCriteria, NoiseModel, NoiseModelInstruction
 from braket.device_schema import DeviceActionType
 from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
@@ -82,9 +82,9 @@ CIRCUIT = (
     .i(2)
     .i(3)
     .probability(target=[0])
-    .expectation(observable=Observable.X(), target=1)
-    .variance(observable=Observable.Y(), target=2)
-    .sample(observable=Observable.Z(), target=3)
+    .expectation(observable=observables.X(1))
+    .variance(observable=observables.Y(2))
+    .sample(observable=observables.Z(3))
 )
 
 DEVICE_ARN = "baz"
@@ -196,17 +196,15 @@ def test_execute(mock_run):
     )
     assert np.allclose(
         results[1],
-        RESULT.get_value_by_result_type(
-            result_types.Expectation(observable=Observable.X(), target=1)
-        ),
+        RESULT.get_value_by_result_type(result_types.Expectation(observable=observables.X(1))),
     )
     assert np.allclose(
         results[2],
-        RESULT.get_value_by_result_type(result_types.Variance(observable=Observable.Y(), target=2)),
+        RESULT.get_value_by_result_type(result_types.Variance(observable=observables.Y(2))),
     )
     assert np.allclose(
         results[3],
-        RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
+        RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
     )
     assert dev.task == TASK
     EXPECTED_CIRC = (
@@ -218,9 +216,9 @@ def test_execute(mock_run):
         .i(2)
         .i(3)
         .probability(target=[0])
-        .expectation(observable=Observable.X(), target=1)
-        .variance(observable=Observable.Y(), target=2)
-        .sample(observable=Observable.Z(), target=3)
+        .expectation(observable=observables.X(1))
+        .variance(observable=observables.Y(2))
+        .sample(observable=observables.Z(3))
     )
     mock_run.assert_called_with(
         EXPECTED_CIRC,
@@ -255,17 +253,15 @@ def test_execute_parametrize_differentiable(mock_run):
     )
     assert np.allclose(
         results[1],
-        RESULT.get_value_by_result_type(
-            result_types.Expectation(observable=Observable.X(), target=1)
-        ),
+        RESULT.get_value_by_result_type(result_types.Expectation(observable=observables.X(1))),
     )
     assert np.allclose(
         results[2],
-        RESULT.get_value_by_result_type(result_types.Variance(observable=Observable.Y(), target=2)),
+        RESULT.get_value_by_result_type(result_types.Variance(observable=observables.Y(2))),
     )
     assert np.allclose(
         results[3],
-        RESULT.get_value_by_result_type(result_types.Sample(observable=Observable.Z(), target=3)),
+        RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
     )
     assert dev.task == TASK
     EXPECTED_CIRC = (
@@ -279,9 +275,9 @@ def test_execute_parametrize_differentiable(mock_run):
         .i(2)
         .i(3)
         .probability(target=[0])
-        .expectation(observable=Observable.X(), target=1)
-        .variance(observable=Observable.Y(), target=2)
-        .sample(observable=Observable.Z(), target=3)
+        .expectation(observable=observables.X(1))
+        .variance(observable=observables.Y(2))
+        .sample(observable=observables.Z(3))
     )
     mock_run.assert_called_with(
         EXPECTED_CIRC,
@@ -378,7 +374,7 @@ CIRCUIT_6 = QuantumScript(
             .cnot(0, 1)
             .rx(0, FreeParameter("p_0"))
             .ry(0, 0.543)
-            .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
+            .adjoint_gradient(observable=observables.X(1), parameters=["p_0"]),
             2,
             {"p_0": 0.432},
             [
@@ -410,8 +406,7 @@ CIRCUIT_6 = QuantumScript(
             .rx(0, FreeParameter("p_0"))
             .ry(0, FreeParameter("p_1"))
             .adjoint_gradient(
-                observable=(2 * Observable.X() @ Observable.Y()),
-                target=[0, 1],
+                observable=(2 * observables.X(0) @ observables.Y(1)),
                 parameters=["p_0", "p_1"],
             ),
             2,
@@ -446,9 +441,9 @@ CIRCUIT_6 = QuantumScript(
             .ry(0, FreeParameter("p_1"))
             .adjoint_gradient(
                 observable=(
-                    2 * Observable.X() @ Observable.Y() + 0.75 * Observable.Y() @ Observable.Z()
+                    2 * observables.X(0) @ observables.Y(1)
+                    + 0.75 * observables.Y(0) @ observables.Z(1)
                 ),
-                target=[[0, 1], [0, 1]],
                 parameters=["p_0", "p_1"],
             ),
             2,
@@ -521,8 +516,7 @@ def test_execute_with_gradient(
             .rx(0, FreeParameter("p_0"))
             .ry(0, FreeParameter("p_1"))
             .adjoint_gradient(
-                observable=(2 * Observable.X() @ Observable.Y()),
-                target=[0, 1],
+                observable=(2 * observables.X(0) @ observables.Y(1)),
                 parameters=["p_0", "p_1"],
             ),
             2,
@@ -681,7 +675,7 @@ def test_pl_to_braket_circuit():
         .rx(0, 0.2)
         .rx(1, 0.3)
         .cnot(0, 1)
-        .add_result_type(result_types.Expectation(observable=Observable.Z(), target=0))
+        .add_result_type(result_types.Expectation(observable=observables.Z(0)))
     )
 
     braket_circuit = dev._pl_to_braket_circuit(tape)
@@ -706,9 +700,7 @@ def test_pl_to_braket_circuit_compute_gradient():
         .rx(1, FreeParameter("p_1"))
         .cnot(0, 1)
         .add_result_type(
-            result_types.AdjointGradient(
-                observable=Observable.Z(), target=0, parameters=["p_0", "p_1"]
-            )
+            result_types.AdjointGradient(observable=observables.Z(0), parameters=["p_0", "p_1"])
         )
     )
 
@@ -740,16 +732,14 @@ def test_pl_to_braket_circuit_compute_gradient_hamiltonian_tensor_product_terms(
             )
         )
 
-    braket_obs = 2 * Observable.X() @ Observable.X() + 3 * Observable.Y() @ Observable.Y()
+    braket_obs = 2 * observables.X(0) @ observables.X(1) + 3 * observables.Y(0) @ observables.Y(1)
     braket_circuit_true = (
         Circuit()
         .rx(0, FreeParameter("p_0"))
         .rx(1, FreeParameter("p_1"))
         .cnot(0, 1)
         .add_result_type(
-            result_types.AdjointGradient(
-                observable=braket_obs, target=[[0, 1], [0, 1]], parameters=["p_0", "p_1"]
-            )
+            result_types.AdjointGradient(observable=braket_obs, parameters=["p_0", "p_1"])
         )
     )
 
@@ -814,8 +804,8 @@ def test_pl_to_braket_circuit_hamiltonian():
         .rx(0, 0.2)
         .rx(1, 0.3)
         .cnot(0, 1)
-        .expectation(Observable.X(), [0])
-        .expectation(Observable.Y(), [1])
+        .expectation(observables.X(0))
+        .expectation(observables.Y(1))
     )
 
     braket_circuit = dev._pl_to_braket_circuit(tape)
@@ -847,8 +837,8 @@ def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
         .rx(0, 0.2)
         .rx(1, 0.3)
         .cnot(0, 1)
-        .expectation(Observable.X() @ Observable.X(), [0, 1])
-        .expectation(Observable.Y() @ Observable.Y(), [0, 1])
+        .expectation(observables.X(0) @ observables.X(1))
+        .expectation(observables.Y(0) @ observables.Y(1))
     )
 
     braket_circuit = dev._pl_to_braket_circuit(tape)
@@ -935,21 +925,15 @@ def test_aws_device_batch_execute_parallel(mock_run_batch):
         )
         assert np.allclose(
             results[1],
-            RESULT.get_value_by_result_type(
-                result_types.Expectation(observable=Observable.X(), target=1)
-            ),
+            RESULT.get_value_by_result_type(result_types.Expectation(observable=observables.X(1))),
         )
         assert np.allclose(
             results[2],
-            RESULT.get_value_by_result_type(
-                result_types.Variance(observable=Observable.Y(), target=2)
-            ),
+            RESULT.get_value_by_result_type(result_types.Variance(observable=observables.Y(2))),
         )
         assert np.allclose(
             results[3],
-            RESULT.get_value_by_result_type(
-                result_types.Sample(observable=Observable.Z(), target=3)
-            ),
+            RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
     mock_run_batch.assert_called_with(
@@ -991,21 +975,15 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
         )
         assert np.allclose(
             results[1],
-            RESULT.get_value_by_result_type(
-                result_types.Expectation(observable=Observable.X(), target=1)
-            ),
+            RESULT.get_value_by_result_type(result_types.Expectation(observable=observables.X(1))),
         )
         assert np.allclose(
             results[2],
-            RESULT.get_value_by_result_type(
-                result_types.Variance(observable=Observable.Y(), target=2)
-            ),
+            RESULT.get_value_by_result_type(result_types.Variance(observable=observables.Y(2))),
         )
         assert np.allclose(
             results[3],
-            RESULT.get_value_by_result_type(
-                result_types.Sample(observable=Observable.Z(), target=3)
-            ),
+            RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
     mock_run_batch.assert_called_with(
@@ -1165,7 +1143,7 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch):
         .cnot(0, 1)
         .i(2)
         .i(3)
-        .expectation(observable=Observable.X(), target=1)
+        .expectation(observable=observables.X(1))
     )
 
     expected_2 = (
@@ -1175,7 +1153,7 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch):
         .cnot(0, 1)
         .i(2)
         .i(3)
-        .sample(observable=Observable.Z(), target=3)
+        .sample(observable=observables.Z(3))
     )
 
     circuits = [circuit1, circuit2]
@@ -1477,6 +1455,7 @@ def test_unsupported_return_type():
     mock_measurement.return_type = Enum("ObservableReturnTypes", {"Foo": "foo"}).Foo
     mock_measurement.obs = qml.PauliZ(0)
     mock_measurement.wires = qml.wires.Wires([0])
+    mock_measurement.map_wires.return_value = mock_measurement
 
     tape = qml.tape.QuantumTape(measurements=[mock_measurement])
 
@@ -1696,7 +1675,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             .cnot(0, 1)
             .rx(0, FreeParameter("p_0"))
             .ry(0, 0.543)
-            .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
+            .adjoint_gradient(observable=observables.X(1), parameters=["p_0"]),
             2,
             {"p_0": 0.432},
             [
@@ -1722,7 +1701,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             .cnot(0, 1)
             .rx(0, 0.432)
             .ry(0, 0.543)
-            .expectation(observable=Observable.X(), target=1),
+            .expectation(observable=observables.X(1)),
             2,
             {},
             [
@@ -1741,7 +1720,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             .rx(0, FreeParameter("p_1"))
             .unitary([0], 1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]))
             .cnot(0, 1)
-            .adjoint_gradient(observable=Observable.X(), target=1, parameters=["p_0"]),
+            .adjoint_gradient(observable=observables.X(1), parameters=["p_0"]),
             2,
             {"p_1": 0.432},
             [
@@ -1814,7 +1793,7 @@ def test_execute_and_gradients(
             .cnot(0, 1)
             .rx(0, 0.432)
             .ry(0, 0.543)
-            .variance(observable=Observable.X() @ Observable.Y(), target=[0, 1]),
+            .variance(observable=observables.X(0) @ observables.Y(1)),
             2,
             {"p_1": 0.543},
             [
@@ -2154,9 +2133,9 @@ def expected_braket_circuit_with_noise():
         .i(2)
         .i(3)
         .probability(target=[0])
-        .expectation(observable=Observable.X(), target=1)
-        .variance(observable=Observable.Y(), target=2)
-        .sample(observable=Observable.Z(), target=3)
+        .expectation(observable=observables.X(1))
+        .variance(observable=observables.Y(2))
+        .sample(observable=observables.Z(3))
     )
 
 
@@ -2485,7 +2464,7 @@ def test_native(mock_run, device_type):
         .add_verbatim_box(
             Circuit().gpi(0, x[0]).gpi2(0, x[0]).ms(0, 1, x[0], x[1]).ms(0, 1, x[0], x[1], x[2])
         )
-        .expectation(observable=Observable.Z(), target=1)
+        .expectation(observable=observables.Z(1))
     )
     mock_run.assert_called_with(
         expected_circuit,

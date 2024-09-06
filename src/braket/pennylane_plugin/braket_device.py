@@ -174,11 +174,7 @@ class BraketQubitDevice(QubitDevice):
 
     @property
     def observables(self) -> frozenset[str]:
-        base_observables = frozenset(super().observables)
-        # Amazon Braket only supports coefficients and multiple terms when shots==0
-        if not self.shots:
-            return base_observables.union({"Hamiltonian", "LinearCombination"})
-        return base_observables
+        return frozenset(super().observables)
 
     @property
     def circuit(self) -> Circuit:
@@ -254,9 +250,8 @@ class BraketQubitDevice(QubitDevice):
             braket_circuit = self._apply_gradient_result_type(circuit, braket_circuit)
         elif not isinstance(circuit.measurements[0], MeasurementTransform):
             for measurement in circuit.measurements:
-                dev_wires = self.map_wires(measurement.wires).tolist()
                 translated = translate_result_type(
-                    measurement, dev_wires, self._braket_result_types
+                    measurement.map_wires(self.wire_map), None, self._braket_result_types
                 )
                 if isinstance(translated, tuple):
                     for result_type in translated:
@@ -281,7 +276,7 @@ class BraketQubitDevice(QubitDevice):
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not a {pl_measurements.return_type} observable."
             )
-        if isinstance(pl_observable, (Hamiltonian, qml.Hamiltonian, Sum)):
+        if isinstance(pl_observable, (Hamiltonian, Sum)):
             targets = [self.map_wires(op.wires) for op in pl_observable.terms()[1]]
         else:
             targets = self.map_wires(pl_observable.wires).tolist()
@@ -544,9 +539,10 @@ class BraketQubitDevice(QubitDevice):
     def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
         raise NotImplementedError("Need to implement snapshots runner")
 
-    def _get_statistic(self, braket_result, observable):
-        dev_wires = self.map_wires(observable.wires).tolist()
-        return translate_result(braket_result, observable, dev_wires, self._braket_result_types)
+    def _get_statistic(self, braket_result, mp):
+        return translate_result(
+            braket_result, mp.map_wires(self.wire_map), None, self._braket_result_types
+        )
 
     @staticmethod
     def _get_trainable_parameters(tape: QuantumTape) -> dict[int, numbers.Number]:
@@ -640,6 +636,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._poll_interval_seconds = poll_interval_seconds
         self._max_connections = max_connections
         self._max_retries = max_retries
+
+    @property
+    def observables(self) -> frozenset[str]:
+        base_observables = frozenset(super().observables)
+        # Amazon Braket only supports coefficients and multiple terms when shots==0
+        if not self.shots:
+            return base_observables.union({"Hamiltonian", "LinearCombination"})
+        return base_observables
 
     @property
     def use_grouping(self) -> bool:
