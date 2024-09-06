@@ -831,22 +831,22 @@ def _result_meta() -> dict:
     "expected_braket_H, pl_H",
     [
         (
-            2 * observables.X() @ observables.Y() @ observables.Z(),
+            2 * observables.X(0) @ observables.Y(1) @ observables.Z(2),
             2 * qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2),
         ),
         (
-            2 * (observables.X() @ observables.Y() @ observables.Z()),
+            2 * (observables.X(0) @ observables.Y(1) @ observables.Z(2)),
             2 * (qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2)),
         ),
         (
-            2 * observables.X() @ observables.Y() @ observables.Z() + 0.75 * observables.X(),
+            2 * observables.X(0) @ observables.Y(1) @ observables.Z(2) + 0.75 * observables.X(0),
             2 * qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2)
             + 0.75 * qml.PauliX(0),
         ),
-        (1.25 * observables.H(), 1.25 * qml.Hadamard(wires=0)),
-        (observables.X() @ observables.Y(), qml.ops.Prod(qml.PauliX(0), qml.PauliY(1))),
-        (observables.X() + observables.Y(), qml.ops.Sum(qml.PauliX(0), qml.PauliY(1))),
-        (observables.X(), qml.ops.SProd(scalar=4, base=qml.PauliX(0))),
+        (1.25 * observables.H(0), 1.25 * qml.Hadamard(wires=0)),
+        (observables.X(0) @ observables.Y(1), qml.ops.Prod(qml.PauliX(0), qml.PauliY(1))),
+        (observables.X(0) + observables.Y(1), qml.ops.Sum(qml.PauliX(0), qml.PauliY(1))),
+        (observables.X(0), qml.ops.SProd(scalar=4, base=qml.PauliX(0))),
     ],
 )
 def test_translate_hamiltonian_observable(expected_braket_H, pl_H):
