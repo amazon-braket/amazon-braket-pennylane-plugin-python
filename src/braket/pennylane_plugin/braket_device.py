@@ -174,7 +174,11 @@ class BraketQubitDevice(QubitDevice):
 
     @property
     def observables(self) -> frozenset[str]:
-        return frozenset(super().observables)
+        base_observables = frozenset(super().observables)
+        # Amazon Braket only supports scalar multiplication and addition when shots==0
+        if not self.shots:
+            return base_observables.union({"Hamiltonian", "LinearCombination"})
+        return base_observables
 
     @property
     def circuit(self) -> Circuit:
@@ -636,14 +640,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._poll_interval_seconds = poll_interval_seconds
         self._max_connections = max_connections
         self._max_retries = max_retries
-
-    @property
-    def observables(self) -> frozenset[str]:
-        base_observables = frozenset(super().observables)
-        # Amazon Braket only supports coefficients and multiple terms when shots==0
-        if not self.shots:
-            return base_observables.union({"Hamiltonian", "LinearCombination"})
-        return base_observables
 
     @property
     def use_grouping(self) -> bool:
