@@ -589,8 +589,9 @@ def translate_result_type(  # noqa: C901
 def _flatten_observable(observable):
     if isinstance(observable, (qml.ops.Hamiltonian, qml.ops.CompositeOp, qml.ops.SProd)):
         simplified = qml.ops.LinearCombination(*observable.terms()).simplify()
-        coeffs, ops = simplified.terms()
-        return simplified if len(coeffs) > 1 or coeffs[0] != 1 else observable
+        coeffs, _ = simplified.terms()
+        if len(coeffs) > 1 or coeffs[0] != 1:
+            return simplified
     return observable
 
 
