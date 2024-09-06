@@ -551,7 +551,6 @@ def translate_result_type(  # noqa: C901
     return_type = measurement.return_type
     targets = targets or measurement.wires.tolist()
     observable = measurement.obs
-    print(observable)
 
     if return_type is ObservableReturnTypes.Probability:
         return Probability(targets)
