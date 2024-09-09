@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.29.0 (2024-09-09)
+
+### Features
+
+ * Support `SProd` and `CompositeOp` for expval
+
+### Documentation Changes
+
+ * Fix typo in qml.var usage
+
 ## v1.28.0 (2024-07-01)
 
 ### Features
