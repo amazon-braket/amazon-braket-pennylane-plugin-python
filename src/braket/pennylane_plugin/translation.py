@@ -527,8 +527,8 @@ def _(op: ParametrizedEvolution, _parameters, device):
 
 def supported_observables(device: Device, shots: int) -> frozenset[str]:
     action = device.properties.action[DeviceActionType.OPENQASM]
-    braket_observables = set.intersection(
-        *[set(r.observables) for r in action.supportedResultTypes if r.observables is not None]
+    braket_observables = set.union(
+        *[set(r.observables) for r in action.supportedResultTypes if r.observables]
     )
     supported = frozenset.union(
         *[_BRAKET_TO_PENNYLANE_OBSERVABLES[braket_obs] for braket_obs in braket_observables],
