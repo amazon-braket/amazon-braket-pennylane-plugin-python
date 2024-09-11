@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.30.0 (2024-09-11)
+
+### Features
+
+ * Device-specific supported observables
+
 ## v1.29.0 (2024-09-09)
 
 ### Features
