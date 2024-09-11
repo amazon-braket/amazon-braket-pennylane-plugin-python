@@ -1935,7 +1935,7 @@ class DummyCircuitSimulator(BraketSimulator):
                     "supportedResultTypes": [
                         {
                             "name": "resultType1",
-                            "observables": ["observable1"],
+                            "observables": ["z"],
                             "minShots": 2,
                             "maxShots": 4,
                         }

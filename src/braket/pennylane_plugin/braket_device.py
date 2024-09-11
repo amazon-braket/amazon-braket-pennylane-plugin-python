@@ -72,6 +72,7 @@ from pennylane.tape import QuantumTape
 
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
+    supported_observables,
     supported_operations,
     translate_operation,
     translate_result,
@@ -156,6 +157,7 @@ class BraketQubitDevice(QubitDevice):
         self._parametrize_differentiable = parametrize_differentiable
         self._run_kwargs = run_kwargs
         self._supported_ops = supported_operations(self._device, verbatim=verbatim)
+        self._supported_obs = supported_observables(self._device, self.shots)
         self._check_supported_result_types()
         self._verbatim = verbatim
 
@@ -174,11 +176,7 @@ class BraketQubitDevice(QubitDevice):
 
     @property
     def observables(self) -> frozenset[str]:
-        base_observables = frozenset(super().observables)
-        # Amazon Braket only supports scalar multiplication and addition when shots==0
-        if not self.shots:
-            return base_observables.union({"Hamiltonian", "LinearCombination"})
-        return base_observables
+        return self._supported_obs
 
     @property
     def circuit(self) -> Circuit:

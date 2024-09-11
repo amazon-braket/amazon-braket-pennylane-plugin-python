@@ -27,7 +27,7 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
                 {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
                 {
                     "name": "AdjointGradient",
-                    "observables": ["x", "y", "z", "h", "i"],
+                    "observables": ["x", "y", "z", "h", "i", "hermitian"],
                     "minShots": 0,
                     "maxShots": 0,
                 },
@@ -43,7 +43,12 @@ ACTION_PROPERTIES_NO_ADJOINT = OpenQASMDeviceActionProperties.parse_raw(
             "version": ["1"],
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "StateVector",
+                    "observables": ["x", "y", "z"],
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
             ],
         }
     )
@@ -56,7 +61,12 @@ ACTION_PROPERTIES_DM_DEVICE = OpenQASMDeviceActionProperties.parse_raw(
             "version": ["1"],
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "StateVector",
+                    "observables": ["x", "y", "z"],
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
             ],
             "supportedPragmas": [
                 "braket_noise_bit_flip",
