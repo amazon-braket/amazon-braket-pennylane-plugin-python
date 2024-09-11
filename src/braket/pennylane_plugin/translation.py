@@ -28,6 +28,7 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.device_schema import DeviceActionType
 from braket.devices import Device
 from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
 from braket.tasks import GateModelQuantumTaskResult
@@ -96,6 +97,16 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
 }
 
 
+_BRAKET_TO_PENNYLANE_OBSERVABLES = {
+    "x": frozenset({"PauliX"}),
+    "y": frozenset({"PauliY"}),
+    "z": frozenset({"PauliZ"}),
+    "h": frozenset({"Hadamard"}),
+    "hermitian": frozenset({"Hermitian", "Projector"}),
+    "i": frozenset({"Identity"}),
+}
+
+
 def supported_operations(device: Device, verbatim: bool = False) -> frozenset[str]:
     """Returns the operations supported by the plugin based upon the device.
 
@@ -111,7 +122,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
         properties = (
             device.properties.paradigm
             if verbatim
-            else device.properties.action["braket.ir.openqasm.program"]
+            else device.properties.action[DeviceActionType.OPENQASM]
         )
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
@@ -512,6 +523,18 @@ def _(op: ParametrizedEvolution, _parameters, device):
 
     pulse_sequence = pulse_sequence.barrier(list(frames.values()))
     return gates.PulseGate(pulse_sequence, qubit_count=len(op.wires))
+
+
+def supported_observables(device: Device, shots: int) -> frozenset[str]:
+    action = device.properties.action[DeviceActionType.OPENQASM]
+    braket_observables = set.union(
+        *[set(r.observables) for r in action.supportedResultTypes if r.observables]
+    )
+    supported = frozenset.union(
+        *[_BRAKET_TO_PENNYLANE_OBSERVABLES[braket_obs] for braket_obs in braket_observables],
+    )
+    supported |= {"Prod", "SProd"}
+    return supported if shots else supported | {"Sum", "Hamiltonian", "LinearCombination"}
 
 
 def get_adjoint_gradient_result_type(
