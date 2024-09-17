@@ -4,7 +4,6 @@ line-length = 100
 lint.isort = { known-first-party = [
   "braket",
 ] }
-# See https://tiny.amazon.com/18sj6qd74/docsastrshruffrule for Ruff rules
 lint.extend-select = ["I"]
 lint.preview = true
 
