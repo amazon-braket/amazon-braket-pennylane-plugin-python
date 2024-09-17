@@ -53,12 +53,8 @@ setup(
     },
     extras_require={
         "test": [
-            "black",
             "docutils>=0.19",
-            "flake8",
-            "flake8-rst-docstrings",
             "flaky",
-            "isort",
             "pre-commit",
             "pylint>=3.1.0",
             "pytest",
@@ -67,6 +63,7 @@ setup(
             "pytest-mock",
             "pytest-rerunfailures",
             "pytest-xdist",
+            "ruff",
             "sphinx",
             "sphinx-automodapi",
             "sphinx-rtd-theme",

@@ -17,6 +17,11 @@ from typing import Any, Optional, Union
 
 import numpy as onp
 import pennylane as qml
+from pennylane import numpy as np
+from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
+from pennylane.operation import Observable, Operation
+from pennylane.pulse import ParametrizedEvolution
+
 from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
@@ -30,13 +35,6 @@ from braket.circuits.result_types import (
 )
 from braket.device_schema import DeviceActionType
 from braket.devices import Device
-from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
-from braket.tasks import GateModelQuantumTaskResult
-from pennylane import numpy as np
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
-from pennylane.operation import Observable, Operation
-from pennylane.pulse import ParametrizedEvolution
-
 from braket.pennylane_plugin.ops import (
     AAMS,
     MS,
@@ -48,6 +46,8 @@ from braket.pennylane_plugin.ops import (
     GPi2,
     PRx,
 )
+from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
+from braket.tasks import GateModelQuantumTaskResult
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "i": "Identity",

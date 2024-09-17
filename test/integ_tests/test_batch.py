@@ -84,7 +84,8 @@ def test_batch_execution_of_gradient(device, shots, mocker):
 @pytest.mark.parametrize("shots", [None])
 def test_batch_execution_of_gradient_torch(device, shots, mocker):
     """Test that the output of a parallelized execution of batch circuits to evaluate the
-    gradient is correct in comparison to default.qubit when using the torch interface."""
+    gradient is correct in comparison to default.qubit when using the torch interface.
+    """
     try:
         import torch
     except ImportError:

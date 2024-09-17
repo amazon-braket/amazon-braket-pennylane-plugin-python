@@ -23,13 +23,22 @@ import numpy as anp
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
-from braket.circuits import Circuit, FreeParameter, Gate, Noise, observables, result_types
+from braket.circuits import (
+    Circuit,
+    FreeParameter,
+    Gate,
+    Noise,
+    observables,
+    result_types,
+)
 from braket.circuits.noise_model import GateCriteria, NoiseModel, NoiseModelInstruction
 from braket.device_schema import DeviceActionType
 from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
     GateModelQpuParadigmProperties,
 )
-from braket.device_schema.pulse.pulse_device_action_properties_v1 import PulseDeviceActionProperties
+from braket.device_schema.pulse.pulse_device_action_properties_v1 import (
+    PulseDeviceActionProperties,
+)
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.simulator import BraketSimulator
@@ -135,7 +144,11 @@ def test_apply_unique_parameters():
 def test_apply_unused_qubits():
     """Tests that the correct circuit is created when not all wires in the device are used."""
     dev = _aws_device(wires=4)
-    operations = [qml.Hadamard(wires=1), qml.CNOT(wires=[1, 2]), qml.RX(np.pi / 2, wires=2)]
+    operations = [
+        qml.Hadamard(wires=1),
+        qml.CNOT(wires=[1, 2]),
+        qml.RX(np.pi / 2, wires=2),
+    ]
     rotations = [qml.RY(np.pi, wires=1)]
     circuit = dev.apply(operations, rotations)
 
@@ -192,7 +205,8 @@ def test_execute(mock_run):
     results = dev.execute(circuit)
 
     assert np.allclose(
-        results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+        results[0],
+        RESULT.get_value_by_result_type(result_types.Probability(target=[0])),
     )
     assert np.allclose(
         results[1],
@@ -249,7 +263,8 @@ def test_execute_parametrize_differentiable(mock_run):
     results = dev._execute_legacy(circuit)
 
     assert np.allclose(
-        results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+        results[0],
+        RESULT.get_value_by_result_type(result_types.Probability(target=[0])),
     )
     assert np.allclose(
         results[1],
@@ -921,7 +936,8 @@ def test_aws_device_batch_execute_parallel(mock_run_batch):
     batch_results = dev.batch_execute(circuits)
     for results in batch_results:
         assert np.allclose(
-            results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+            results[0],
+            RESULT.get_value_by_result_type(result_types.Probability(target=[0])),
         )
         assert np.allclose(
             results[1],
@@ -971,7 +987,8 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
     batch_results = dev.batch_execute(circuits)
     for results in batch_results:
         assert np.allclose(
-            results[0], RESULT.get_value_by_result_type(result_types.Probability(target=[0]))
+            results[0],
+            RESULT.get_value_by_result_type(result_types.Probability(target=[0])),
         )
         assert np.allclose(
             results[1],
@@ -1183,7 +1200,11 @@ def test_execute_all_samples(mock_run):
                 "measurements": [[0, 0, 1], [1, 0, 1], [1, 1, 0], [0, 0, 0]],
                 "resultTypes": [
                     {
-                        "type": {"observable": ["h", "i"], "targets": [0, 1], "type": "sample"},
+                        "type": {
+                            "observable": ["h", "i"],
+                            "targets": [0, 1],
+                            "type": "sample",
+                        },
                         "value": [1, -1, 1, 1],
                     },
                     {
@@ -1249,11 +1270,19 @@ def test_execute_some_samples(mock_run):
                 "measurements": [[0, 0, 1], [1, 0, 1], [1, 1, 0], [0, 0, 0]],
                 "resultTypes": [
                     {
-                        "type": {"observable": ["h", "i"], "targets": [0, 1], "type": "sample"},
+                        "type": {
+                            "observable": ["h", "i"],
+                            "targets": [0, 1],
+                            "type": "sample",
+                        },
                         "value": [1, -1, 1, 1],
                     },
                     {
-                        "type": {"observable": ["z"], "targets": [2], "type": "expectation"},
+                        "type": {
+                            "observable": ["z"],
+                            "targets": [2],
+                            "type": "expectation",
+                        },
                         "value": 0.0,
                     },
                 ],
@@ -1310,7 +1339,11 @@ def test_execute_some_samples(mock_run):
             Counter({"00": 2, "11": 2}),
             [
                 {
-                    "type": {"observable": ["z", "z"], "targets": [0, 1], "type": "sample"},
+                    "type": {
+                        "observable": ["z", "z"],
+                        "targets": [0, 1],
+                        "type": "sample",
+                    },
                     "value": [1, 1, 1, 1],
                 },
             ],
@@ -1338,7 +1371,11 @@ def test_execute_some_samples(mock_run):
             Counter({"00": 2, "11": 2}),
             [
                 {
-                    "type": {"observable": ["z", "z"], "targets": [0, 1], "type": "sample"},
+                    "type": {
+                        "observable": ["z", "z"],
+                        "targets": [0, 1],
+                        "type": "sample",
+                    },
                     "value": [1, 1, 1, 1],
                 },
             ],
@@ -1706,7 +1743,11 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             {},
             [
                 {
-                    "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
+                    "type": {
+                        "observable": ["x"],
+                        "targets": [1],
+                        "type": "expectation",
+                    },
                     "value": 0.0,
                 }
             ],
@@ -1798,7 +1839,11 @@ def test_execute_and_gradients(
             {"p_1": 0.543},
             [
                 {
-                    "type": {"observable": ["x", "y"], "targets": [0, 1], "type": "variance"},
+                    "type": {
+                        "observable": ["x", "y"],
+                        "targets": [0, 1],
+                        "type": "variance",
+                    },
                     "value": 0.0,
                 }
             ],
@@ -1891,7 +1936,12 @@ class DummyLocalQubitDevice(BraketQubitDevice):
 
 class DummyCircuitSimulator(BraketSimulator):
     def run(
-        self, program: ir.openqasm.Program, qubits: int, shots: Optional[int], *args, **kwargs
+        self,
+        program: ir.openqasm.Program,
+        qubits: int,
+        shots: Optional[int],
+        *args,
+        **kwargs,
     ) -> dict[str, Any]:
         self._shots = shots
         self._qubits = qubits
@@ -2142,7 +2192,11 @@ def expected_braket_circuit_with_noise():
 @patch.object(AwsDevice, "run")
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 def test_execute_with_noise_model(
-    mock_name, mock_run, noise_model, pennylane_quantum_tape, expected_braket_circuit_with_noise
+    mock_name,
+    mock_run,
+    noise_model,
+    pennylane_quantum_tape,
+    expected_braket_circuit_with_noise,
 ):
     mock_run.return_value = TASK
     mock_name.return_value = "dm1"

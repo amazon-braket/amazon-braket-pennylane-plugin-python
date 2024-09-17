@@ -32,22 +32,24 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
+
 from collections.abc import Iterable
 from enum import Enum, auto
 from typing import Optional, Union
 
 import numpy as np
 import pennylane as qml
-from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
-from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
-from braket.devices import Device, LocalSimulator
-from braket.tasks.local_quantum_task import LocalQuantumTask
 from pennylane import QubitDevice
 from pennylane._version import __version__
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
 from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+
+from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
+from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
+from braket.devices import Device, LocalSimulator
+from braket.tasks.local_quantum_task import LocalQuantumTask
 
 from .ahs_translation import (
     _create_register,

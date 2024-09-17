@@ -24,7 +24,12 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
             "version": ["1"],
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "StateVector",
+                    "observables": None,
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
                 {
                     "name": "AdjointGradient",
                     "observables": ["x", "y", "z", "h", "i", "hermitian"],
@@ -97,7 +102,12 @@ ACTION_PROPERTIES_NATIVE = OpenQASMDeviceActionProperties.parse_raw(
             "version": ["1"],
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "StateVector",
+                    "observables": None,
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
                 {
                     "name": "AdjointGradient",
                     "observables": ["x", "y", "z", "h", "i"],
@@ -115,14 +125,20 @@ GATE_MODEL_RESULT = GateModelTaskResult(
         "measurements": [[0, 0], [0, 0], [0, 0], [1, 1]],
         "measuredQubits": [0, 1],
         "taskMetadata": {
-            "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+            "braketSchemaHeader": {
+                "name": "braket.task_result.task_metadata",
+                "version": "1",
+            },
             "id": "task_arn",
             "shots": 100,
             "deviceId": "default",
         },
         "additionalMetadata": {
             "action": {
-                "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.ir.openqasm.program",
+                    "version": "1",
+                },
                 "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
             },
         },
@@ -140,10 +156,17 @@ RESULT = GateModelQuantumTaskResult.from_string(
             "resultTypes": [
                 {"type": {"targets": [0], "type": "probability"}, "value": [0.5, 0.5]},
                 {
-                    "type": {"observable": ["x"], "targets": [1], "type": "expectation"},
+                    "type": {
+                        "observable": ["x"],
+                        "targets": [1],
+                        "type": "expectation",
+                    },
                     "value": 0.0,
                 },
-                {"type": {"observable": ["y"], "targets": [2], "type": "variance"}, "value": 0.1},
+                {
+                    "type": {"observable": ["y"], "targets": [2], "type": "variance"},
+                    "value": 0.1,
+                },
                 {
                     "type": {"observable": ["z"], "targets": [3], "type": "sample"},
                     "value": [1, -1, 1, 1],
@@ -151,14 +174,20 @@ RESULT = GateModelQuantumTaskResult.from_string(
             ],
             "measuredQubits": [0, 1, 2, 3],
             "taskMetadata": {
-                "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.task_metadata",
+                    "version": "1",
+                },
                 "id": "task_arn",
                 "shots": 0,
                 "deviceId": "default",
             },
             "additionalMetadata": {
                 "action": {
-                    "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                    "braketSchemaHeader": {
+                        "name": "braket.ir.openqasm.program",
+                        "version": "1",
+                    },
                     "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                 },
             },

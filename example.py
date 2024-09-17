@@ -24,7 +24,11 @@ dev_managed_sim = qml.device(
     shots=0,
 )
 dev_qpu = qml.device(
-    "braket.rigetti", s3_destination_folder=s3, poll_timeout_seconds=1800, shots=10000, wires=2
+    "braket.rigetti",
+    s3_destination_folder=s3,
+    poll_timeout_seconds=1800,
+    shots=10000,
+    wires=2,
 )
 
 
