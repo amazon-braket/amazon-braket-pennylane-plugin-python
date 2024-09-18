@@ -44,14 +44,6 @@ from typing import Optional, Union
 
 import numpy as onp
 import pennylane as qml
-from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch, AwsSession
-from braket.circuits import Circuit, Instruction
-from braket.circuits.noise_model import NoiseModel
-from braket.device_schema import DeviceActionType
-from braket.devices import Device, LocalSimulator
-from braket.simulator import BraketSimulator
-from braket.tasks import GateModelQuantumTaskResult, QuantumTask
-from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 from pennylane import QuantumFunctionError, QubitDevice
 from pennylane import numpy as np
 from pennylane.gradients import param_shift
@@ -70,6 +62,17 @@ from pennylane.operation import Operation
 from pennylane.ops import Hamiltonian, Sum
 from pennylane.tape import QuantumTape
 
+from braket.aws import (
+    AwsDevice,
+    AwsDeviceType,
+    AwsQuantumTask,
+    AwsQuantumTaskBatch,
+    AwsSession,
+)
+from braket.circuits import Circuit, Instruction
+from braket.circuits.noise_model import NoiseModel
+from braket.device_schema import DeviceActionType
+from braket.devices import Device, LocalSimulator
 from braket.pennylane_plugin.translation import (
     get_adjoint_gradient_result_type,
     supported_observables,
@@ -78,6 +81,9 @@ from braket.pennylane_plugin.translation import (
     translate_result,
     translate_result_type,
 )
+from braket.simulator import BraketSimulator
+from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 
 from ._version import __version__
 
@@ -253,7 +259,9 @@ class BraketQubitDevice(QubitDevice):
         elif not isinstance(circuit.measurements[0], MeasurementTransform):
             for measurement in circuit.measurements:
                 translated = translate_result_type(
-                    measurement.map_wires(self.wire_map), None, self._braket_result_types
+                    measurement.map_wires(self.wire_map),
+                    None,
+                    self._braket_result_types,
                 )
                 if isinstance(translated, tuple):
                     for result_type in translated:
@@ -294,7 +302,9 @@ class BraketQubitDevice(QubitDevice):
         return braket_circuit
 
     def _update_tracker_for_batch(
-        self, task_batch: Union[AwsQuantumTaskBatch, LocalQuantumTaskBatch], batch_shots: int
+        self,
+        task_batch: Union[AwsQuantumTaskBatch, LocalQuantumTaskBatch],
+        batch_shots: int,
     ):
         for task in task_batch.tasks:
             tracking_data = self._tracking_data(task)
@@ -305,7 +315,9 @@ class BraketQubitDevice(QubitDevice):
         self.tracker.record()
 
     def statistics(
-        self, braket_result: GateModelQuantumTaskResult, measurements: Sequence[MeasurementProcess]
+        self,
+        braket_result: GateModelQuantumTaskResult,
+        measurements: Sequence[MeasurementProcess],
     ) -> list[float]:
         """Processes measurement results from a Braket task result and returns statistics.
 

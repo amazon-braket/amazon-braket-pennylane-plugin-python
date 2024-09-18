@@ -16,6 +16,10 @@ from functools import partial
 from typing import Union
 
 import numpy as np
+from numpy.typing import ArrayLike
+from pennylane.pulse import ParametrizedEvolution
+from pennylane.pulse.hardware_hamiltonian import HardwarePulse
+
 from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.driving_field import DrivingField
 from braket.ahs.field import Field
@@ -23,9 +27,6 @@ from braket.ahs.pattern import Pattern
 from braket.ahs.shifting_field import ShiftingField
 from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
 from braket.timings.time_series import TimeSeries
-from numpy.typing import ArrayLike
-from pennylane.pulse import ParametrizedEvolution
-from pennylane.pulse.hardware_hamiltonian import HardwarePulse
 
 ANGULAR_AND_M_SCALING_FACTOR = 2 * np.pi * 1e6
 

@@ -9,7 +9,9 @@ import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
 from braket.device_schema import DeviceActionType
-from braket.device_schema.openqasm_device_action_properties import OpenQASMDeviceActionProperties
+from braket.device_schema.openqasm_device_action_properties import (
+    OpenQASMDeviceActionProperties,
+)
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
 from braket.simulator import BraketSimulator
@@ -33,7 +35,12 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
             "version": ["1"],
             "supportedOperations": ["rx", "ry", "h", "cy", "cnot", "unitary"],
             "supportedResultTypes": [
-                {"name": "StateVector", "observables": None, "minShots": 0, "maxShots": 0},
+                {
+                    "name": "StateVector",
+                    "observables": None,
+                    "minShots": 0,
+                    "maxShots": 0,
+                },
                 {
                     "name": "AdjointGradient",
                     "observables": ["x", "y", "z", "h", "i"],
@@ -52,14 +59,20 @@ GATE_MODEL_RESULT = GateModelTaskResult(
         "measurements": SNAPSHOTS,
         "measuredQubits": [0, 1],
         "taskMetadata": {
-            "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+            "braketSchemaHeader": {
+                "name": "braket.task_result.task_metadata",
+                "version": "1",
+            },
             "id": "task_arn",
             "shots": SHOTS,
             "deviceId": "default",
         },
         "additionalMetadata": {
             "action": {
-                "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.ir.openqasm.program",
+                    "version": "1",
+                },
                 "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
             },
         },
@@ -77,14 +90,20 @@ RESULT = GateModelQuantumTaskResult.from_string(
             "resultTypes": [],
             "measuredQubits": [0, 1],
             "taskMetadata": {
-                "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.task_metadata",
+                    "version": "1",
+                },
                 "id": "task_arn",
                 "shots": 1,
                 "deviceId": "default",
             },
             "additionalMetadata": {
                 "action": {
-                    "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                    "braketSchemaHeader": {
+                        "name": "braket.ir.openqasm.program",
+                        "version": "1",
+                    },
                     "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                 },
             },
@@ -103,14 +122,20 @@ BATCH_RESULT_1 = GateModelQuantumTaskResult.from_string(
             "resultTypes": [],
             "measuredQubits": [0, 1],
             "taskMetadata": {
-                "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.task_metadata",
+                    "version": "1",
+                },
                 "id": "task_arn",
                 "shots": 1,
                 "deviceId": "default",
             },
             "additionalMetadata": {
                 "action": {
-                    "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                    "braketSchemaHeader": {
+                        "name": "braket.ir.openqasm.program",
+                        "version": "1",
+                    },
                     "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                 },
             },
@@ -128,14 +153,20 @@ BATCH_RESULT_2 = GateModelQuantumTaskResult.from_string(
             "resultTypes": [],
             "measuredQubits": [0, 1],
             "taskMetadata": {
-                "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.task_metadata",
+                    "version": "1",
+                },
                 "id": "task_arn",
                 "shots": 1,
                 "deviceId": "default",
             },
             "additionalMetadata": {
                 "action": {
-                    "braketSchemaHeader": {"name": "braket.ir.openqasm.program", "version": "1"},
+                    "braketSchemaHeader": {
+                        "name": "braket.ir.openqasm.program",
+                        "version": "1",
+                    },
                     "source": "qubit[2] q; cnot q[0], q[1]; measure q;",
                 },
             },
@@ -228,7 +259,11 @@ def test_shadow_expval_aws_device(
     max_conn,
 ):
     dev = _aws_device(
-        wires=2, foo="bar", parallel=parallel, max_parallel=max_para, max_connections=max_conn
+        wires=2,
+        foo="bar",
+        parallel=parallel,
+        max_parallel=max_para,
+        max_connections=max_conn,
     )
     mock_runner = mock_run_batch if parallel else mock_run
     mock_runner.return_value = return_val
@@ -351,7 +386,12 @@ class DummyLocalQubitDevice(BraketQubitDevice):
 
 class DummyCircuitSimulator(BraketSimulator):
     def run(
-        self, program: ir.openqasm.Program, qubits: int, shots: Optional[int], *args, **kwargs
+        self,
+        program: ir.openqasm.Program,
+        qubits: int,
+        shots: Optional[int],
+        *args,
+        **kwargs,
     ) -> dict[str, Any]:
         self._shots = shots
         self._qubits = qubits
@@ -463,7 +503,10 @@ def test_shadows_parallel_tracker(mock_run_batch):
 
 class DummyMeasurementTransform(MeasurementTransform):
     def __init__(
-        self, wires: Optional[Wires] = None, seed: Optional[int] = None, id: Optional[str] = None
+        self,
+        wires: Optional[Wires] = None,
+        seed: Optional[int] = None,
+        id: Optional[str] = None,
     ):
         self.seed = seed
         super().__init__(wires=wires, id=id)

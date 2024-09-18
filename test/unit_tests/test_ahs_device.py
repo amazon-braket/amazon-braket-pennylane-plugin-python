@@ -28,7 +28,9 @@ from braket.ahs.pattern import Pattern
 from braket.ahs.shifting_field import ShiftingField
 from braket.aws import AwsDevice, AwsQuantumTask
 from braket.device_schema import DeviceActionProperties, DeviceActionType
-from braket.device_schema.quera.quera_ahs_paradigm_properties_v1 import QueraAhsParadigmProperties
+from braket.device_schema.quera.quera_ahs_paradigm_properties_v1 import (
+    QueraAhsParadigmProperties,
+)
 from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
 from braket.tasks.local_quantum_task import LocalQuantumTask
 from braket.timings.time_series import TimeSeries
@@ -104,14 +106,26 @@ params_amp = [2.5, 0.9, 0.3]
 
 HAMILTONIANS_AND_PARAMS = [
     (H_i + rydberg_drive(amplitude=4, phase=1, detuning=3, wires=[0, 1, 2]), []),
-    (H_i + rydberg_drive(amplitude=amp, phase=1, detuning=2, wires=[0, 1, 2]), [params_amp]),
-    (H_i + rydberg_drive(amplitude=2, phase=f1, detuning=2, wires=[0, 1, 2]), [params1]),
-    (H_i + rydberg_drive(amplitude=2, phase=2, detuning=f2, wires=[0, 1, 2]), [params2]),
+    (
+        H_i + rydberg_drive(amplitude=amp, phase=1, detuning=2, wires=[0, 1, 2]),
+        [params_amp],
+    ),
+    (
+        H_i + rydberg_drive(amplitude=2, phase=f1, detuning=2, wires=[0, 1, 2]),
+        [params1],
+    ),
+    (
+        H_i + rydberg_drive(amplitude=2, phase=2, detuning=f2, wires=[0, 1, 2]),
+        [params2],
+    ),
     (
         H_i + rydberg_drive(amplitude=amp, phase=1, detuning=f2, wires=[0, 1, 2]),
         [params_amp, params2],
     ),
-    (H_i + rydberg_drive(amplitude=4, phase=f2, detuning=f1, wires=[0, 1, 2]), [params2, params1]),
+    (
+        H_i + rydberg_drive(amplitude=4, phase=f2, detuning=f1, wires=[0, 1, 2]),
+        [params2, params1],
+    ),
     (
         H_i + rydberg_drive(amplitude=amp, phase=f2, detuning=4, wires=[0, 1, 2]),
         [params_amp, params2],
@@ -233,7 +247,9 @@ def mock_aws_device(monkeypatch, wires=3):
     """A function to create a mock device that mocks most of the methods"""
     with monkeypatch.context() as m:
         m.setattr(
-            AwsDevice, "_get_session_and_initialize", lambda self, *args, **kwargs: MockAwsSession
+            AwsDevice,
+            "_get_session_and_initialize",
+            lambda self, *args, **kwargs: MockAwsSession,
         )
         m.setattr(AwsDevice, "properties", MockDevProperties)
 
@@ -296,10 +312,22 @@ class DummyMeasurementResult:
 
 
 DUMMY_RESULTS = [
-    (DummyMeasurementResult(Status("Success"), np.array([1]), np.array([1])), np.array([0])),
-    (DummyMeasurementResult(Status("Success"), np.array([1]), np.array([0])), np.array([1])),
-    (DummyMeasurementResult(Status("Success"), np.array([0]), np.array([0])), np.array([np.NaN])),
-    (DummyMeasurementResult(Status("Failure"), np.array([1]), np.array([1])), np.array([np.NaN])),
+    (
+        DummyMeasurementResult(Status("Success"), np.array([1]), np.array([1])),
+        np.array([0]),
+    ),
+    (
+        DummyMeasurementResult(Status("Success"), np.array([1]), np.array([0])),
+        np.array([1]),
+    ),
+    (
+        DummyMeasurementResult(Status("Success"), np.array([0]), np.array([0])),
+        np.array([np.NaN]),
+    ),
+    (
+        DummyMeasurementResult(Status("Failure"), np.array([1]), np.array([1])),
+        np.array([np.NaN]),
+    ),
     (
         DummyMeasurementResult(Status("Success"), np.array([1, 1, 0]), np.array([1, 0, 0])),
         np.array([0, 1, np.NaN]),
@@ -497,9 +525,18 @@ class TestBraketAhsDevice:
 
         # elements of the hamiltonian have the expected shape
         h = ahs_program.hamiltonian
-        amp_time, amp_vals = h.amplitude.time_series.times(), h.amplitude.time_series.values()
-        phase_time, phase_vals = h.phase.time_series.times(), h.phase.time_series.values()
-        det_time, det_vals = h.detuning.time_series.times(), h.detuning.time_series.values()
+        amp_time, amp_vals = (
+            h.amplitude.time_series.times(),
+            h.amplitude.time_series.values(),
+        )
+        phase_time, phase_vals = (
+            h.phase.time_series.times(),
+            h.phase.time_series.values(),
+        )
+        det_time, det_vals = (
+            h.detuning.time_series.times(),
+            h.detuning.time_series.values(),
+        )
 
         assert amp_time == phase_time == det_time
         assert amp_time[0] == evolution.t[0] * 1e-6
@@ -700,7 +737,8 @@ class TestBraketAhsDevice:
         op2 = qml.evolve(H_i + H1)
 
         with pytest.raises(
-            NotImplementedError, match="Support for multiple ParametrizedEvolution operators"
+            NotImplementedError,
+            match="Support for multiple ParametrizedEvolution operators",
         ):
             dev_sim._validate_operations([op1, op2])
 
@@ -1063,7 +1101,11 @@ class TestLocalAhsDevice:
             ([3, 2, 1], 3, [1, 2 / 3, 1 / 3]),
             ([lambda t: 2, dummy_cfunc, lambda t: 0], dummy_cfunc, [0.2, 1, 0]),
             (
-                [sin_squared, lambda t: 0.5 * sin_squared(t), lambda t: 0.333 * sin_squared(t)],
+                [
+                    sin_squared,
+                    lambda t: 0.5 * sin_squared(t),
+                    lambda t: 0.333 * sin_squared(t),
+                ],
                 sin_squared,
                 [1, 0.5, 0.333],
             ),
@@ -1086,7 +1128,11 @@ class TestLocalAhsDevice:
         "detunings, pattern",
         [
             (
-                [lambda t: sin_squared(t), lambda t: sin_squared(t), lambda t: 5 * sin_squared(t)],
+                [
+                    lambda t: sin_squared(t),
+                    lambda t: sin_squared(t),
+                    lambda t: 5 * sin_squared(t),
+                ],
                 [0.2, 0.2, 1],
             ),
             ([1, 8.9, 10], [0.1, 0.89, 1]),
@@ -1293,9 +1339,18 @@ class TestBraketAwsAhsDevice:
 
         # elements of the hamiltonian have the expected shape
         h = ahs_program.hamiltonian
-        amp_time, amp_vals = h.amplitude.time_series.times(), h.amplitude.time_series.values()
-        phase_time, phase_vals = h.phase.time_series.times(), h.phase.time_series.values()
-        det_time, det_vals = h.detuning.time_series.times(), h.detuning.time_series.values()
+        amp_time, amp_vals = (
+            h.amplitude.time_series.times(),
+            h.amplitude.time_series.values(),
+        )
+        phase_time, phase_vals = (
+            h.phase.time_series.times(),
+            h.phase.time_series.values(),
+        )
+        det_time, det_vals = (
+            h.detuning.time_series.times(),
+            h.detuning.time_series.values(),
+        )
 
         assert amp_time == phase_time == det_time
         assert float(amp_time[0]) == evolution.t[0] * 1e-6
@@ -1326,11 +1381,15 @@ class TestBraketAwsAhsDevice:
             p = params[params_idx]
             params_idx += 1
             assert np.allclose(
-                [fn(p, float(t) * 1e6) for t in amp_time], [float(v) for v in phase_vals], atol=1e-7
+                [fn(p, float(t) * 1e6) for t in amp_time],
+                [float(v) for v in phase_vals],
+                atol=1e-7,
             )
         else:
             assert np.allclose(
-                [pulse.phase for t in amp_time], [float(v) for v in phase_vals], atol=1e-7
+                [pulse.phase for t in amp_time],
+                [float(v) for v in phase_vals],
+                atol=1e-7,
             )
 
         if callable(pulse.frequency):
@@ -1343,7 +1402,8 @@ class TestBraketAwsAhsDevice:
             )
         else:
             assert np.allclose(
-                [pulse.frequency * 2 * np.pi * 1e6 for t in amp_time], [float(v) for v in det_vals]
+                [pulse.frequency * 2 * np.pi * 1e6 for t in amp_time],
+                [float(v) for v in det_vals],
             )
 
     def test_run_task(self, mock_aws_device):
