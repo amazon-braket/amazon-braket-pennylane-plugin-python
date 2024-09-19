@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.30.1 (2024-09-19)
+
+### Bug Fixes and Other Changes
+
+ * onboard onto ruff
+
 ## v1.30.0 (2024-09-11)
 
 ### Features
