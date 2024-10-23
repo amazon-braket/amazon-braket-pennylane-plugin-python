@@ -53,7 +53,7 @@ setup(
     },
     extras_require={
         "test": [
-            "autoray<0.7.0" # autoray.tensorflow_diag no longer works
+            "autoray<0.7.0", # autoray.tensorflow_diag no longer works
             "docutils>=0.19",
             "flaky",
             "pre-commit",
