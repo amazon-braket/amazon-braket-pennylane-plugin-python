@@ -576,6 +576,8 @@ def translate_result_type(  # noqa: C901
     observable = measurement.obs
 
     if return_type is ObservableReturnTypes.Probability:
+        if observable:
+            raise qml.DeviceError("Probability result type not supported for observables")
         return Probability(targets)
 
     if return_type is ObservableReturnTypes.State:
