@@ -39,8 +39,8 @@ from typing import Optional, Union
 
 import numpy as np
 import pennylane as qml
-from pennylane import QubitDevice
 from pennylane._version import __version__
+from pennylane.devices import QubitDevice
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
 from pennylane.ops import CompositeOp, Hamiltonian
 from pennylane.pulse import ParametrizedEvolution
