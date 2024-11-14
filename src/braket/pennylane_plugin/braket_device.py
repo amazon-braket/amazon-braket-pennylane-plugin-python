@@ -44,8 +44,9 @@ from typing import Optional, Union
 
 import numpy as onp
 import pennylane as qml
-from pennylane import QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError
 from pennylane import numpy as np
+from pennylane.devices import QubitDevice
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
     Counts,
