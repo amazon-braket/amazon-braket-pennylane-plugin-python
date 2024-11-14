@@ -53,8 +53,9 @@ from device_property_jsons import (
     OQC_PULSE_PROPERTIES_ALL_FRAMES,
     RESULT,
 )
-from pennylane import QuantumFunctionError, QubitDevice
+from pennylane import QuantumFunctionError
 from pennylane import numpy as np
+from pennylane.devices import QubitDevice
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
 
