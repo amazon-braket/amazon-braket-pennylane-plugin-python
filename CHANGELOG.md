@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.30.2 (2024-11-18)
+
+### Bug Fixes and Other Changes
+
+ * Remove deprecated import path for QubitDevice
+
 ## v1.30.1 (2024-09-19)
 
 ### Bug Fixes and Other Changes
