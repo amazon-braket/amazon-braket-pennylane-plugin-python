@@ -1313,8 +1313,6 @@ def test_execute_some_samples(mock_run):
     mock_run.return_value = task
     dev = _aws_device(wires=3)
 
-    print(type(qml.Hadamard(0) @ qml.Identity(1)))
-
     with QuantumTape() as circuit:
         qml.Hadamard(wires=0)
         qml.CNOT(wires=[0, 1])

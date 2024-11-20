@@ -38,7 +38,6 @@ from enum import Enum, auto
 from typing import Optional, Union
 
 import numpy as np
-import pennylane as qml
 from pennylane._version import __version__
 from pennylane.devices import QubitDevice
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
