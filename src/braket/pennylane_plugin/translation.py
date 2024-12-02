@@ -534,7 +534,7 @@ def supported_observables(device: Device, shots: int) -> frozenset[str]:
         *[_BRAKET_TO_PENNYLANE_OBSERVABLES[braket_obs] for braket_obs in braket_observables],
     )
     supported |= {"Prod", "SProd"}
-    return supported if shots else supported | {"Sum", "Hamiltonian", "LinearCombination"}
+    return supported if shots else supported | {"Sum", "LinearCombination"}
 
 
 def get_adjoint_gradient_result_type(
@@ -568,7 +568,7 @@ def translate_result_type(  # noqa: C901
 
     Returns:
         Union[ResultType, tuple[ResultType]]: The Braket result type corresponding to
-        the given observable; if the observable type has multiple terms, for example a Hamiltonian,
+        the given observable; if the observable type has multiple terms, for example a Sum,
         then this will return a result type for each term.
     """
     return_type = measurement.return_type
@@ -595,7 +595,7 @@ def translate_result_type(  # noqa: C901
     if isinstance(observable, qml.ops.LinearCombination):
         if return_type is ObservableReturnTypes.Expectation:
             return tuple(Expectation(_translate_observable(op)) for op in observable.terms()[1])
-        raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
+        raise NotImplementedError(f"Return type {return_type} unsupported for LinearCombination")
 
     braket_observable = _translate_observable(observable)
     if return_type is ObservableReturnTypes.Expectation:
@@ -609,7 +609,7 @@ def translate_result_type(  # noqa: C901
 
 
 def _flatten_observable(observable):
-    if isinstance(observable, (qml.ops.Hamiltonian, qml.ops.CompositeOp, qml.ops.SProd)):
+    if isinstance(observable, (qml.ops.CompositeOp, qml.ops.SProd)):
         simplified = qml.ops.LinearCombination(*observable.terms()).simplify()
         coeffs, _ = simplified.terms()
         if len(coeffs) > 1 or coeffs[0] != 1:
@@ -667,11 +667,6 @@ def _(obs: qml.Projector):
 
     # state is a state vector
     return observables.Hermitian(obs.matrix(), targets=wires)
-
-
-@_translate_observable.register
-def _(t: qml.operation.Tensor):
-    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.obs])
 
 
 @_translate_observable.register

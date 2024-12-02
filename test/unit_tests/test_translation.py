@@ -749,7 +749,7 @@ def test_translate_result_type_hamiltonian_unsupported_return(return_type):
     with Hamiltonian observable and non-Expectation return type"""
     obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
     tape = qml.tape.QuantumTape(measurements=[_braket_to_pl_result_types[return_type](obs)])
-    with pytest.raises(NotImplementedError, match="unsupported for Hamiltonian"):
+    with pytest.raises(NotImplementedError, match="unsupported for LinearCombination"):
         translate_result_type(tape.measurements[0], [0], frozenset())
 
 

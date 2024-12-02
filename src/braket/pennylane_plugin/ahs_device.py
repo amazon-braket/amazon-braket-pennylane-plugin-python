@@ -38,11 +38,10 @@ from enum import Enum, auto
 from typing import Optional, Union
 
 import numpy as np
-import pennylane as qml
 from pennylane._version import __version__
 from pennylane.devices import QubitDevice
 from pennylane.measurements import MeasurementProcess, SampleMeasurement
-from pennylane.ops import CompositeOp, Hamiltonian
+from pennylane.ops import CompositeOp
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
 
@@ -311,9 +310,6 @@ class BraketAhsDevice(QubitDevice):
         # loop through those and evaluate individually
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
-                self._validate_measurement_basis(op)
-        elif isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
-            for op in observable.ops:
                 self._validate_measurement_basis(op)
 
         elif not observable.has_diagonalizing_gates:

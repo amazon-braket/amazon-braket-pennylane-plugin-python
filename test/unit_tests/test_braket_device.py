@@ -569,7 +569,6 @@ def test_execute_with_gradient_no_op_math(
     result_types,
     expected_pl_result,
 ):
-    qml.operation.disable_new_opmath()
 
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
@@ -830,8 +829,8 @@ def test_pl_to_braket_circuit_hamiltonian():
 
 
 def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
-    """Tests that a PennyLane circuit is correctly converted into a Braket circuit"""
-    """when the Hamiltonian has multiple tensor product ops"""
+    """Tests that a PennyLane circuit is correctly converted into a Braket circuit
+    when the Hamiltonian has multiple tensor product ops"""
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
