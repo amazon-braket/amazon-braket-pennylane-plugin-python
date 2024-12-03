@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.31.0 (2024-12-03)
+
+### Deprecations and Removals
+
+ * remove legacy opmath
+
 ## v1.30.2 (2024-11-18)
 
 ### Bug Fixes and Other Changes
