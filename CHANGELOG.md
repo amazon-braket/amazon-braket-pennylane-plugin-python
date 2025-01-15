@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.31.1 (2025-01-15)
+
+### Bug Fixes and Other Changes
+
+ * Pin PL <0.40
+
 ## v1.31.0 (2024-12-03)
 
 ### Deprecations and Removals
