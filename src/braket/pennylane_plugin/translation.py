@@ -546,7 +546,7 @@ def get_adjoint_gradient_result_type(
     if "AdjointGradient" not in supported_result_types:
         raise NotImplementedError("Unsupported return type: AdjointGradient")
 
-    braket_observable = _translate_observable(_flatten_observable(observable))
+    braket_observable = _translate_observable(observable)
     braket_observable = (
         braket_observable.item() if hasattr(braket_observable, "item") else braket_observable
     )
@@ -590,7 +590,7 @@ def translate_result_type(  # noqa: C901
             return tuple(Sample(observables.Z(target)) for target in targets or measurement.wires)
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
-    observable = _flatten_observable(observable)
+    observable = flatten_observable(observable)
 
     if isinstance(observable, qml.ops.LinearCombination):
         if return_type is ObservableReturnTypes.Expectation:
@@ -608,7 +608,7 @@ def translate_result_type(  # noqa: C901
         raise NotImplementedError(f"Unsupported return type: {return_type}")
 
 
-def _flatten_observable(observable):
+def flatten_observable(observable):
     if isinstance(observable, (qml.ops.CompositeOp, qml.ops.SProd)):
         simplified = qml.ops.LinearCombination(*observable.terms()).simplify()
         coeffs, _ = simplified.terms()
@@ -735,7 +735,7 @@ def translate_result(
         return dict(braket_result.measurement_counts)
 
     translated = translate_result_type(measurement, targets, supported_result_types)
-    observable = _flatten_observable(observable)
+    observable = flatten_observable(observable)
     if isinstance(observable, qml.ops.LinearCombination):
         coeffs, _ = observable.terms()
         return sum(

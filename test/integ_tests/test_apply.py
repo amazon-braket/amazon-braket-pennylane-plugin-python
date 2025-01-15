@@ -85,7 +85,7 @@ class TestHardwareApply:
 
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.compute_decomposition(state, wires=[0])
+            qml.StatePrep.compute_decomposition(state, wires=[0])
             return qml.probs(wires=range(1))
 
         assert np.allclose(circuit(), np.abs(state) ** 2, **tol)
@@ -177,7 +177,7 @@ class TestHardwareApply:
     def assert_op_and_inverse(op, dev, state, wires, tol, op_args):
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.compute_decomposition(state, wires=wires)
+            qml.StatePrep.compute_decomposition(state, wires=wires)
             op(*op_args, wires=wires)
             return qml.probs(wires=wires)
 
@@ -185,7 +185,7 @@ class TestHardwareApply:
 
         @qml.qnode(dev)
         def circuit_inv():
-            qml.QubitStateVector.compute_decomposition(state, wires=wires)
+            qml.StatePrep.compute_decomposition(state, wires=wires)
             qml.adjoint(op(*op_args, wires=wires))
             return qml.probs(wires=wires)
 
@@ -197,7 +197,7 @@ class TestHardwareApply:
     def assert_noise_op(op, dev, state, wires, tol, op_args):
         @qml.qnode(dev)
         def circuit():
-            qml.QubitStateVector.compute_decomposition(state, wires=wires)
+            qml.StatePrep.compute_decomposition(state, wires=wires)
             op(*op_args, wires=wires)
             return qml.probs(wires=wires)
 

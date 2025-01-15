@@ -75,6 +75,7 @@ from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device, LocalSimulator
 from braket.pennylane_plugin.translation import (
+    flatten_observable,
     get_adjoint_gradient_result_type,
     supported_observables,
     supported_operations,
@@ -281,7 +282,7 @@ class BraketQubitDevice(QubitDevice):
                 f" observable, not {len(circuit.observables)} observables."
             )
         pl_measurements = circuit.measurements[0]
-        pl_observable = pl_measurements.obs
+        pl_observable = flatten_observable(pl_measurements.obs)
         if pl_measurements.return_type != Expectation:
             raise ValueError(
                 f"Braket can only compute gradients for circuits with a single expectation"

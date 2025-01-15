@@ -569,7 +569,6 @@ def test_execute_with_gradient_no_op_math(
     result_types,
     expected_pl_result,
 ):
-
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
