@@ -36,7 +36,7 @@ setup(
     install_requires=[
         "amazon-braket-sdk>=1.87.0",
         "autoray>=0.6.11",
-        "pennylane>=0.34.0,<0.40",
+        "pennylane>=0.34.0",
     ],
     entry_points={
         "pennylane.plugins": [
@@ -53,7 +53,7 @@ setup(
     },
     extras_require={
         "test": [
-            "autoray<0.7.0", # autoray.tensorflow_diag no longer works
+            "autoray<0.7.0",  # autoray.tensorflow_diag no longer works
             "docutils>=0.19",
             "flaky",
             "pre-commit",

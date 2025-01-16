@@ -336,7 +336,10 @@ CIRCUIT_3 = QuantumScript(
         qml.RY(0.543, wires=0),
     ],
     measurements=[
-        qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)),
+        qml.expval(
+            2 * qml.PauliX(0) @ qml.PauliY(1) @ qml.Identity(2)
+            + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)
+        ),
     ],
 )
 CIRCUIT_3.trainable_params = [0, 1]
@@ -569,7 +572,6 @@ def test_execute_with_gradient_no_op_math(
     result_types,
     expected_pl_result,
 ):
-
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
