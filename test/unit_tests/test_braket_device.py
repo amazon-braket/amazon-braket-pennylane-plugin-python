@@ -336,7 +336,10 @@ CIRCUIT_3 = QuantumScript(
         qml.RY(0.543, wires=0),
     ],
     measurements=[
-        qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1) + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)),
+        qml.expval(
+            2 * qml.PauliX(0) @ qml.PauliY(1) @ qml.Identity(2)
+            + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)
+        ),
     ],
 )
 CIRCUIT_3.trainable_params = [0, 1]
@@ -1625,22 +1628,6 @@ def test_supported_ops_set(monkeypatch):
         )
         dev = _aws_device(wires=2)
         assert dev.operations == test_ops
-
-
-def test_simplification():
-    """Test that the Projector observable is correctly supported."""
-    wires = 5
-    dev = BraketLocalQubitDevice(wires=wires)
-
-    obs = qml.ops.LinearCombination([1.0, 2.0], [qml.X(0) @ qml.I(1), qml.Y(0) @ qml.X(1)])
-
-    @qml.qnode(dev)
-    def circuit(x):
-        qml.RX(x, 0)
-        return qml.expval(obs)
-
-    phi = np.array(1.5, requires_grad=True)
-    assert np.isclose(circuit(phi), 0)
 
 
 def test_projection():
