@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.31.2 (2025-01-16)
+
+### Bug Fixes and Other Changes
+
+ * Flatten observable before getting targets
+
 ## v1.31.1 (2025-01-15)
 
 ### Bug Fixes and Other Changes
