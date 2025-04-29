@@ -49,15 +49,15 @@ from pennylane import numpy as np
 from pennylane.devices import QubitDevice
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
-    Counts,
-    Expectation,
+    CountsMP,
+    ExpectationMP,
     MeasurementProcess,
     MeasurementTransform,
-    Probability,
-    Sample,
+    ProbabilityMP,
+    SampleMP,
     ShadowExpvalMP,
-    State,
-    Variance,
+    StateMP,
+    VarianceMP,
 )
 from pennylane.operation import Operation
 from pennylane.ops import Sum
@@ -89,7 +89,7 @@ from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 
 from ._version import __version__
 
-RETURN_TYPES = [Expectation, Variance, Sample, Probability, State, Counts]
+RETURN_TYPES  = (ExpectationMP, VarianceMP, SampleMP, ProbabilityMP, StateMP, CountsMP)
 MIN_SIMULATOR_BILLED_MS = 3000
 OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
 
@@ -283,10 +283,10 @@ class BraketQubitDevice(QubitDevice):
             )
         pl_measurements = circuit.measurements[0]
         pl_observable = flatten_observable(pl_measurements.obs)
-        if pl_measurements.return_type != Expectation:
+        if not isinstance(pl_measurements, ExpectationMP):
             raise ValueError(
                 f"Braket can only compute gradients for circuits with a single expectation"
-                f" observable, not a {pl_measurements.return_type} observable."
+                f" observable, not a {type(pl_measurements)} measurement."
             )
         if isinstance(pl_observable, Sum):
             targets = [self.map_wires(op.wires) for op in pl_observable.terms()[1]]
@@ -328,7 +328,7 @@ class BraketQubitDevice(QubitDevice):
             measurements (Sequence[MeasurementProcess]): the list of measurements
 
         Raises:
-            QuantumFunctionError: if the value of :attr:`~.MeasurementProcess.return_type` is
+            QuantumFunctionError: if the type of :attr:`~.MeasurementProcess` is
                 not supported.
 
         Returns:
@@ -336,8 +336,8 @@ class BraketQubitDevice(QubitDevice):
         """
         results = []
         for mp in measurements:
-            if mp.return_type not in RETURN_TYPES:
-                raise QuantumFunctionError("Unsupported return type: {}".format(mp.return_type))
+            if not isinstance(mp, RETURN_TYPES):
+                raise QuantumFunctionError("Unsupported return type: {}".format(type(mp)))
             results.append(self._get_statistic(braket_result, mp))
         return results
 
@@ -835,7 +835,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         Args:
             queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
                 to be applied on the device
-            observables (Iterable[~.operation.Observable]): observables which are intended
+            observables (Iterable[~.operation.Operator]): observables which are intended
                 to be evaluated on the device
 
         Raises:
@@ -880,7 +880,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 new_res = self.execute(circuit, compute_gradient=False)
                 # don't bother computing a gradient when there aren't any trainable parameters.
                 new_jac = np.tensor([])
-            elif len(observables) != 1 or measurements[0].return_type != Expectation:
+            elif len(observables) != 1 or not isinstance(measurements[0], ExpectationMP):
                 gradient_circuits, post_processing_fn = param_shift(circuit)
                 warnings.warn(
                     "This circuit cannot be differentiated with the adjoint method. "

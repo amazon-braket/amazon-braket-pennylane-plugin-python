@@ -47,7 +47,6 @@ from device_property_jsons import (
 )
 from pennylane import measurements
 from pennylane import numpy as pnp
-from pennylane.measurements import ObservableReturnTypes
 from pennylane.pulse import ParametrizedEvolution, transmon_drive
 from pennylane.wires import Wires
 
@@ -366,11 +365,7 @@ _braket_to_pl = {
     for op in _BRAKET_TO_PENNYLANE_OPERATIONS
 }
 
-pl_return_types = [
-    ObservableReturnTypes.Expectation,
-    ObservableReturnTypes.Variance,
-    ObservableReturnTypes.Sample,
-]
+pl_return_types = [qml.expval, qml.var, qml.sample]
 
 braket_result_types = [
     Expectation(observables.H(), [0]),
