@@ -18,8 +18,8 @@ from typing import Any, Optional, Union
 import numpy as onp
 import pennylane as qml
 from pennylane import numpy as np
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
-from pennylane.operation import Observable, Operation
+from pennylane.measurements import MeasurementProcess
+from pennylane.operation import Operation, Operator
 from pennylane.pulse import ParametrizedEvolution
 
 from braket.aws import AwsDevice
@@ -538,7 +538,7 @@ def supported_observables(device: Device, shots: int) -> frozenset[str]:
 
 
 def get_adjoint_gradient_result_type(
-    observable: Observable,
+    observable: Operator,
     targets: Union[list[int], list[list[int]]],
     supported_result_types: frozenset[str],
     parameters: list[str],
@@ -571,41 +571,41 @@ def translate_result_type(  # noqa: C901
         the given observable; if the observable type has multiple terms, for example a Sum,
         then this will return a result type for each term.
     """
-    return_type = measurement.return_type
     targets = targets or measurement.wires.tolist()
     observable = measurement.obs
 
-    if return_type is ObservableReturnTypes.Probability:
+    if isinstance(measurement, qml.measurements.ProbabilityMP):
         return Probability(targets)
 
-    if return_type is ObservableReturnTypes.State:
+    if isinstance(measurement, qml.measurements.StateMP):
         if not targets and "StateVector" in supported_result_types:
             return StateVector()
         elif "DensityMatrix" in supported_result_types:
             return DensityMatrix(targets)
-        raise NotImplementedError(f"Unsupported return type: {return_type}")
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
     if observable is None:
-        if return_type is ObservableReturnTypes.Counts:
+        if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
             return tuple(Sample(observables.Z(target)) for target in targets or measurement.wires)
-        raise NotImplementedError(f"Unsupported return type: {return_type}")
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
     observable = flatten_observable(observable)
 
     if isinstance(observable, qml.ops.LinearCombination):
-        if return_type is ObservableReturnTypes.Expectation:
+        if isinstance(measurement, qml.measurements.ExpectationMP):
             return tuple(Expectation(_translate_observable(op)) for op in observable.terms()[1])
-        raise NotImplementedError(f"Return type {return_type} unsupported for LinearCombination")
+        raise NotImplementedError(f"Return type {type(measurement)} unsupported for LinearCombination")
 
     braket_observable = _translate_observable(observable)
-    if return_type is ObservableReturnTypes.Expectation:
+    if isinstance(measurement, qml.measurements.ExpectationMP):
         return Expectation(braket_observable)
-    elif return_type is ObservableReturnTypes.Variance:
+    if isinstance(measurement, qml.measurements.VarianceMP):
         return Variance(braket_observable)
-    elif return_type in (ObservableReturnTypes.Sample, ObservableReturnTypes.Counts):
+    if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
         return Sample(braket_observable)
-    else:
-        raise NotImplementedError(f"Unsupported return type: {return_type}")
+    if isinstance(measurement, qml.measurements.SampleMP):
+        return Sample(braket_observable)
+    raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
 
 def flatten_observable(observable):
@@ -722,7 +722,7 @@ def translate_result(
         ]
 
     targets = targets or measurement.wires.tolist()
-    if measurement.return_type is ObservableReturnTypes.Counts and observable is None:
+    if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes and observable is None:
         if targets:
             new_dict = {}
             for key, value in braket_result.measurement_counts.items():
@@ -742,7 +742,7 @@ def translate_result(
             coeff * braket_result.get_value_by_result_type(result_type)
             for coeff, result_type in zip(coeffs, translated)
         )
-    elif measurement.return_type is ObservableReturnTypes.Counts:
+    elif isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
         return dict(Counter(braket_result.get_value_by_result_type(translated)))
     else:
         return braket_result.get_value_by_result_type(translated)

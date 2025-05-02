@@ -1467,7 +1467,7 @@ def test_counts_all_outcomes_fails():
         qml.CNOT(wires=[0, 1])
         qml.counts(all_outcomes=True)
 
-    does_not_support = "Unsupported return type: ObservableReturnTypes.AllCounts"
+    does_not_support = "Unsupported return type: <class 'pennylane.measurements.counts.CountsMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
         dev.execute(circuit)
 
@@ -1481,7 +1481,7 @@ def test_sample_fails():
         qml.CNOT(wires=[0, 1])
         qml.sample()
 
-    does_not_support = "Unsupported return type: ObservableReturnTypes.Sample"
+    does_not_support = "Unsupported return type: <class 'pennylane.measurements.sample.SampleMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
         dev.execute(circuit)
 
@@ -1491,14 +1491,13 @@ def test_unsupported_return_type():
     dev = _aws_device(wires=2, shots=4)
 
     mock_measurement = Mock()
-    mock_measurement.return_type = Enum("ObservableReturnTypes", {"Foo": "foo"}).Foo
     mock_measurement.obs = qml.PauliZ(0)
     mock_measurement.wires = qml.wires.Wires([0])
     mock_measurement.map_wires.return_value = mock_measurement
 
     tape = qml.tape.QuantumTape(measurements=[mock_measurement])
 
-    does_not_support = "Unsupported return type: ObservableReturnTypes.Foo"
+    does_not_support = "Unsupported return type: <class 'unittest.mock.Mock'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
         dev.execute(tape)
 

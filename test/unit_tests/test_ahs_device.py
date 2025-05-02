@@ -646,7 +646,7 @@ class TestBraketAhsDevice:
         ],
     )
     def test_validate_measurement_basis(self, observable, error_expected):
-        """Tests that when given an Observable not in the Z basis, _validate_measurement_basis,
+        """Tests that when given an Operator not in the Z basis, _validate_measurement_basis,
         fails with an error, but otherwise passes"""
 
         dev = qml.device("braket.local.ahs", wires=3)
