@@ -19,7 +19,7 @@ import numpy as onp
 import pennylane as qml
 from pennylane import numpy as np
 from pennylane.measurements import MeasurementProcess
-from pennylane.operation import Operator, Operation
+from pennylane.operation import Operation, Operator
 from pennylane.pulse import ParametrizedEvolution
 
 from braket.aws import AwsDevice
