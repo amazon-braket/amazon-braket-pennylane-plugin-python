@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.31.3 (2025-05-05)
+
+### Bug Fixes and Other Changes
+
+ * Remove use of `MeasurementProcess.return_type`
+
 ## v1.31.2 (2025-01-16)
 
 ### Bug Fixes and Other Changes
