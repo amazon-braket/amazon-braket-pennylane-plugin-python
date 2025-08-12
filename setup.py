@@ -34,7 +34,7 @@ setup(
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk>=1.87.0",
+        "amazon-braket-sdk>=1.97.0",
         "autoray>=0.6.11",
         "pennylane>=0.34.0",
     ],
