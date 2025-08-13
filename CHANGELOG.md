@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.32.0 (2025-08-13)
+
+### Features
+
+ * Program sets
+
 ## v1.31.3 (2025-05-05)
 
 ### Bug Fixes and Other Changes
