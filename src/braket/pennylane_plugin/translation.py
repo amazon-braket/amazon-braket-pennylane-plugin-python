@@ -594,7 +594,9 @@ def translate_result_type(  # noqa: C901
     if isinstance(observable, qml.ops.LinearCombination):
         if isinstance(measurement, qml.measurements.ExpectationMP):
             return tuple(Expectation(_translate_observable(op)) for op in observable.terms()[1])
-        raise NotImplementedError(f"Return type {type(measurement)} unsupported for LinearCombination")
+        raise NotImplementedError(
+            f"Return type {type(measurement)} unsupported for LinearCombination"
+        )
 
     braket_observable = _translate_observable(observable)
     if isinstance(measurement, qml.measurements.ExpectationMP):
@@ -722,7 +724,11 @@ def translate_result(
         ]
 
     targets = targets or measurement.wires.tolist()
-    if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes and observable is None:
+    if (
+        isinstance(measurement, qml.measurements.CountsMP)
+        and not measurement.all_outcomes
+        and observable is None
+    ):
         if targets:
             new_dict = {}
             for key, value in braket_result.measurement_counts.items():
