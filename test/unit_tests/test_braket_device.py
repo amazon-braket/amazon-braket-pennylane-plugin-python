@@ -154,7 +154,7 @@ PROGRAM_RESULT = {
         }
     },
 }
-PROGRAM_SET_RESULT = ProgramSetQuantumTaskResult(
+PROGRAM_SET_RESULT = ProgramSetQuantumTaskResult.from_object(
     ProgramSetTaskResult(
         **{
             "braketSchemaHeader": {
