@@ -322,15 +322,15 @@ DUMMY_RESULTS = [
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([0]), np.array([0])),
-        np.array([np.NaN]),
+        np.array([np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Failure"), np.array([1]), np.array([1])),
-        np.array([np.NaN]),
+        np.array([np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([1, 1, 0]), np.array([1, 0, 0])),
-        np.array([0, 1, np.NaN]),
+        np.array([0, 1, np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([1, 1]), np.array([0, 0])),
@@ -338,15 +338,15 @@ DUMMY_RESULTS = [
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([0, 1]), np.array([0, 0])),
-        np.array([np.NaN, 1]),
+        np.array([np.nan, 1]),
     ),
     (
         DummyMeasurementResult(Status("Failure"), np.array([1, 1]), np.array([1, 1])),
-        np.array([np.NaN, np.NaN]),
+        np.array([np.nan, np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([0, 1]), np.array([1, 0])),
-        np.array([np.NaN, 1]),
+        np.array([np.nan, 1]),
     ),
 ]
 
@@ -583,7 +583,7 @@ class TestBraketAhsDevice:
 
         dev._samples = np.array(
             [
-                [0, 1, 1, np.NaN],
+                [0, 1, 1, np.nan],
                 [1, 1, 0, 0],
                 [1, 0, 0, 1],
                 [0, 1, 1, 1],
@@ -592,7 +592,7 @@ class TestBraketAhsDevice:
 
         res = dev.expval(qml.PauliZ(3))
 
-        assert res != np.NaN
+        assert res != np.nan
 
     def test_no_diagonalzing_gates_raises_error(self):
         """Tests that if passed an Operator with no diagonalizing gates,
