@@ -171,10 +171,10 @@ def translate_ahs_shot_result(res: ShotResult):
 
     # if entire measurement failed, all NaN
     if not res.status.value.lower() == "success":
-        return np.array([np.NaN for i in res.pre_sequence])
+        return np.array([np.nan for i in res.pre_sequence])
 
     # if a single atom failed to initialize, NaN for that individual measurement
-    pre_sequence = [i if i else np.NaN for i in res.pre_sequence]
+    pre_sequence = [i if i else np.nan for i in res.pre_sequence]
 
     # set entry to 0 if ground state measured
     # 1 if excited state measured
