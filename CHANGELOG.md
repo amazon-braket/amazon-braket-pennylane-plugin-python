@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.33.0 (2025-08-21)
+
+### Deprecations and Removals
+
+ * Drop Python 3.9, support 3.12, 3.13
+
+### Bug Fixes and Other Changes
+
+ * Update linters to Python 3.10
+
+### Documentation Changes
+
+ * Unquote python latest for docs
+ * Add Python 3.12, 3.13 to supported versions
+
 ## v1.32.0 (2025-08-13)
 
 ### Features
