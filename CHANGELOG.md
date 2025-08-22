@@ -1,5 +1,56 @@
 # Changelog
 
+## v1.33.0 (2025-08-21)
+
+### Deprecations and Removals
+
+ * Drop Python 3.9, support 3.12, 3.13
+
+### Bug Fixes and Other Changes
+
+ * Update linters to Python 3.10
+
+### Documentation Changes
+
+ * Unquote python latest for docs
+ * Add Python 3.12, 3.13 to supported versions
+
+## v1.32.0 (2025-08-13)
+
+### Features
+
+ * Program sets
+
+## v1.31.3 (2025-05-05)
+
+### Bug Fixes and Other Changes
+
+ * Remove use of `MeasurementProcess.return_type`
+
+## v1.31.2 (2025-01-16)
+
+### Bug Fixes and Other Changes
+
+ * Flatten observable before getting targets
+
+## v1.31.1 (2025-01-15)
+
+### Bug Fixes and Other Changes
+
+ * Pin PL <0.40
+
+## v1.31.0 (2024-12-03)
+
+### Deprecations and Removals
+
+ * remove legacy opmath
+
+## v1.30.2 (2024-11-18)
+
+### Bug Fixes and Other Changes
+
+ * Remove deprecated import path for QubitDevice
+
 ## v1.30.1 (2024-09-19)
 
 ### Bug Fixes and Other Changes

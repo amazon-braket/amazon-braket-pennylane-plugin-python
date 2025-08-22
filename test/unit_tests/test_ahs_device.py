@@ -322,15 +322,15 @@ DUMMY_RESULTS = [
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([0]), np.array([0])),
-        np.array([np.NaN]),
+        np.array([np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Failure"), np.array([1]), np.array([1])),
-        np.array([np.NaN]),
+        np.array([np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([1, 1, 0]), np.array([1, 0, 0])),
-        np.array([0, 1, np.NaN]),
+        np.array([0, 1, np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([1, 1]), np.array([0, 0])),
@@ -338,15 +338,15 @@ DUMMY_RESULTS = [
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([0, 1]), np.array([0, 0])),
-        np.array([np.NaN, 1]),
+        np.array([np.nan, 1]),
     ),
     (
         DummyMeasurementResult(Status("Failure"), np.array([1, 1]), np.array([1, 1])),
-        np.array([np.NaN, np.NaN]),
+        np.array([np.nan, np.nan]),
     ),
     (
         DummyMeasurementResult(Status("Success"), np.array([0, 1]), np.array([1, 0])),
-        np.array([np.NaN, 1]),
+        np.array([np.nan, 1]),
     ),
 ]
 
@@ -461,25 +461,6 @@ class TestBraketAhsDevice:
             qml.var(qml.Identity(0)),
             qml.sample(qml.PauliZ(0)),
             qml.prod(qml.PauliZ(0), qml.Identity(1)),
-            qml.counts(),
-        ]
-        dev = qml.device("braket.local.ahs", wires=3)
-
-        dev.check_validity(ops, obs)
-
-    @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
-    def test_check_validity_valid_circuit_no_op_math(self, H, params):
-        """Tests that check_validity() doesn't raise any errors when the operations and
-        observables are valid."""
-        qml.operation.disable_new_opmath()
-        ops = [ParametrizedEvolution(H, params, [0, 1.5])]
-        obs = [
-            qml.PauliZ(0),
-            qml.expval(qml.PauliZ(0)),
-            qml.var(qml.Identity(0)),
-            qml.sample(qml.PauliZ(0)),
-            qml.prod(qml.PauliZ(0), qml.Identity(1)),
-            qml.Hamiltonian([2, 3], [qml.PauliZ(0), qml.PauliZ(1)]),
             qml.counts(),
         ]
         dev = qml.device("braket.local.ahs", wires=3)
@@ -602,7 +583,7 @@ class TestBraketAhsDevice:
 
         dev._samples = np.array(
             [
-                [0, 1, 1, np.NaN],
+                [0, 1, 1, np.nan],
                 [1, 1, 0, 0],
                 [1, 0, 0, 1],
                 [0, 1, 1, 1],
@@ -611,7 +592,7 @@ class TestBraketAhsDevice:
 
         res = dev.expval(qml.PauliZ(3))
 
-        assert res != np.NaN
+        assert res != np.nan
 
     def test_no_diagonalzing_gates_raises_error(self):
         """Tests that if passed an Operator with no diagonalizing gates,
@@ -665,7 +646,7 @@ class TestBraketAhsDevice:
         ],
     )
     def test_validate_measurement_basis(self, observable, error_expected):
-        """Tests that when given an Observable not in the Z basis, _validate_measurement_basis,
+        """Tests that when given an Operator not in the Z basis, _validate_measurement_basis,
         fails with an error, but otherwise passes"""
 
         dev = qml.device("braket.local.ahs", wires=3)
