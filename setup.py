@@ -11,8 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import platform
-
 from setuptools import find_namespace_packages, setup
 
 with open("README.rst", "r") as fh:
@@ -20,11 +18,6 @@ with open("README.rst", "r") as fh:
 
 with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
-
-if platform.system() == "Darwin" and platform.machine() == "arm64":
-    TF_VERSION = "tensorflow-macos>=2.14.0"
-else:
-    TF_VERSION = "tensorflow>=2.14.0"
 
 setup(
     name="amazon-braket-pennylane-plugin",
@@ -71,7 +64,7 @@ setup(
             "sphinxcontrib-apidoc",
             "tox",
             "torch>2",
-            TF_VERSION,
+            "tensorflow>=2.16.1",
         ]
     },
     url="https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python",
