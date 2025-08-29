@@ -13,7 +13,7 @@
 
 from collections import Counter
 from functools import partial, reduce, singledispatch
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as onp
 import pennylane as qml
@@ -153,7 +153,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
 def translate_operation(
     operation: Operation,
     use_unique_params: bool = False,
-    param_names: Optional[list[str]] = None,
+    param_names: list[str] | None = None,
     *args,
     **kwargs,
 ) -> Gate:
@@ -164,7 +164,7 @@ def translate_operation(
         use_unique_params (bool): If true, numeric parameters in the resulting operation will be
         replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
         parameters will be skipped.
-        param_names (Optional[list[str]]): A list of parameter names to be supplied
+        param_names (list[str] | None): A list of parameter names to be supplied
             to the new operation. The length of the list must match the number of
             the operator's parameters; if no named parameter is needed for the corresponding
             operation parameter, then the list entry should be `None`.
@@ -539,7 +539,7 @@ def supported_observables(device: Device, shots: int) -> frozenset[str]:
 
 def get_adjoint_gradient_result_type(
     observable: Operator,
-    targets: Union[list[int], list[list[int]]],
+    targets: list[int] | list[list[int]],
     supported_result_types: frozenset[str],
     parameters: list[str],
 ):
@@ -555,19 +555,19 @@ def get_adjoint_gradient_result_type(
 
 def translate_result_type(  # noqa: C901
     measurement: MeasurementProcess,
-    targets: Optional[list[int]],
+    targets: list[int] | None,
     supported_result_types: frozenset[str],
-) -> Union[ResultType, tuple[ResultType, ...]]:
+) -> ResultType | tuple[ResultType, ...]:
     """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
 
     Args:
         measurement (MeasurementProcess): The PennyLane ``MeasurementProcess`` to translate
-        targets (Optional[list[int]]): The target wires of the observable using a consecutive
+        targets (list[int] | None): The target wires of the observable using a consecutive
             integer wire ordering
         supported_result_types (frozenset[str]): Braket result types supported by the Braket device
 
     Returns:
-        Union[ResultType, tuple[ResultType]]: The Braket result type corresponding to
+        ResultType | tuple[ResultType, ...]: The Braket result type corresponding to
         the given observable; if the observable type has multiple terms, for example a Sum,
         then this will return a result type for each term.
     """
@@ -689,7 +689,7 @@ def _(t: qml.ops.Sum):
 def translate_result(
     braket_result: GateModelQuantumTaskResult,
     measurement: MeasurementProcess,
-    targets: Optional[list[int]],
+    targets: list[int] | None,
     supported_result_types: frozenset[str],
 ) -> Any:
     """Translates a Braket result into the corresponding PennyLane return type value.
@@ -698,7 +698,7 @@ def translate_result(
         braket_result (GateModelQuantumTaskResult): The Braket result to translate.
         measurement (MeasurementProcess): The PennyLane measurement process associated with the
             result.
-        targets (Optional[list[int]]): The qubits in the result.
+        targets (list[int] | None): The qubits in the result.
         supported_result_types (frozenset[str]): The result types supported by the device.
 
     Returns:

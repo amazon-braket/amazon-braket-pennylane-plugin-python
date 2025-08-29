@@ -35,7 +35,6 @@ Code details
 
 from collections.abc import Iterable
 from enum import Enum, auto
-from typing import Optional, Union
 
 import numpy as np
 from pennylane._version import __version__
@@ -89,10 +88,10 @@ class BraketAhsDevice(QubitDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device: Device,
         *,
-        shots: Union[int, Shots] = Shots.DEFAULT,
+        shots: int | Shots = Shots.DEFAULT,
     ):
         if not shots:
             raise RuntimeError(f"This device requires shots. Received shots={shots}")
@@ -347,7 +346,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         poll_interval_seconds (float): The polling interval for results in seconds.
         shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
             Default: Shots.DEFAULT
-        aws_session (Optional[AwsSession]): An AwsSession object created to manage
+        aws_session (AwsSession | None): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
 
@@ -378,14 +377,14 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device_arn: str,
         s3_destination_folder: AwsSession.S3DestinationFolder = None,
         *,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        shots: Union[int, Shots] = Shots.DEFAULT,
-        aws_session: Optional[AwsSession] = None,
+        shots: int | Shots = Shots.DEFAULT,
+        aws_session: AwsSession | None = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
@@ -499,9 +498,9 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         *,
-        shots: Union[int, Shots] = Shots.DEFAULT,
+        shots: int | Shots = Shots.DEFAULT,
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
