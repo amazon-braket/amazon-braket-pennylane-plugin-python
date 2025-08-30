@@ -638,7 +638,7 @@ def _translate_observable(observable):
             return observables.H(wires[0])
         case qml.Hermitian(wires=wires):
             return observables.Hermitian(qml.matrix(observable), targets=wires)
-        case qml.Projector(parameters=parameters, matrix=matrix, wires=wires):
+        case qml.Projector(parameters=parameters, wires=wires):
             state = parameters[0]
             if len(state) == len(wires):  # state is a basis state
                 products = [_one if b else _zero for b in state]
@@ -647,7 +647,7 @@ def _translate_observable(observable):
                 ]
                 return observables.TensorProduct(hermitians)
             # state is a state vector
-            return observables.Hermitian(matrix(), targets=wires)
+            return observables.Hermitian(observable.matrix(), targets=wires)
         case qml.ops.Prod(operands=operands):
             return reduce(
                 lambda x, y: x @ y, [_translate_observable(factor) for factor in operands]
