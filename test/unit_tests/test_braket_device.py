@@ -13,7 +13,7 @@
 
 import json
 from collections import Counter
-from typing import Any, Optional
+from typing import Any
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
@@ -2165,7 +2165,7 @@ class DummyCircuitSimulator(BraketSimulator):
         self,
         program: ir.openqasm.Program,
         qubits: int,
-        shots: Optional[int],
+        shots: int | None,
         *args,
         **kwargs,
     ) -> dict[str, Any]:

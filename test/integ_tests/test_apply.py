@@ -22,7 +22,6 @@ from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseS
 
 np.random.seed(42)
 
-
 # =========================================================
 
 # list of all non-parametrized single-qubit gates
