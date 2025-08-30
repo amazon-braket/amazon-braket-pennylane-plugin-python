@@ -619,71 +619,47 @@ def flatten_observable(observable):
     return observable
 
 
-@singledispatch
-def _translate_observable(observable):
-    raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
-
-
-@_translate_observable.register
-def _(obs: qml.PauliX):
-    return observables.X(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.PauliY):
-    return observables.Y(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.PauliZ):
-    return observables.Z(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.Hadamard):
-    return observables.H(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.Identity):
-    return observables.I(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.Hermitian):
-    return observables.Hermitian(qml.matrix(obs), targets=obs.wires)
-
-
 _zero = np.array([[1, 0], [0, 0]])
 _one = np.array([[0, 0], [0, 1]])
 
 
-@_translate_observable.register
-def _(obs: qml.Projector):
-    state = obs.parameters[0]
-    wires = obs.wires
-    if len(state) == len(wires):  # state is a basis state
-        products = [_one if b else _zero for b in state]
-        hermitians = [observables.Hermitian(p, targets=[w]) for p, w in zip(products, wires)]
-        return observables.TensorProduct(hermitians)
-
-    # state is a state vector
-    return observables.Hermitian(obs.matrix(), targets=wires)
-
-
-@_translate_observable.register
-def _(t: qml.ops.Prod):
-    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.operands])
-
-
-@_translate_observable.register
-def _(t: qml.ops.SProd):
-    return t.scalar * _translate_observable(t.base)
-
-
-@_translate_observable.register
-def _(t: qml.ops.Sum):
-    return reduce(lambda x, y: x + y, [_translate_observable(operator) for operator in t.operands])
+@singledispatch
+def _translate_observable(observable):
+    match observable:
+        case qml.Identity(wires=wires):
+            return observables.I(wires[0])
+        case qml.PauliX(wires=wires):
+            return observables.X(wires[0])
+        case qml.PauliY(wires=wires):
+            return observables.Y(wires[0])
+        case qml.PauliZ(wires=wires):
+            return observables.Z(wires[0])
+        case qml.Hadamard(wires=wires):
+            return observables.H(wires[0])
+        case qml.Hermitian(wires=wires):
+            return observables.Hermitian(qml.matrix(observable), targets=wires)
+        case qml.Projector(parameters=parameters, matrix=matrix, wires=wires):
+            state = parameters[0]
+            if len(state) == len(wires):  # state is a basis state
+                products = [_one if b else _zero for b in state]
+                hermitians = [
+                    observables.Hermitian(p, targets=[w]) for p, w in zip(products, wires)
+                ]
+                return observables.TensorProduct(hermitians)
+            # state is a state vector
+            return observables.Hermitian(matrix(), targets=wires)
+        case qml.ops.Prod(operands=operands):
+            return reduce(
+                lambda x, y: x @ y, [_translate_observable(factor) for factor in operands]
+            )
+        case qml.ops.SProd(base=base, scalar=scalar):
+            return scalar * _translate_observable(base)
+        case qml.ops.Sum(operands=operands):
+            return reduce(
+                lambda x, y: x + y, [_translate_observable(operator) for operator in operands]
+            )
+        case _:
+            raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 def translate_result(
