@@ -1,5 +1,18 @@
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
 import json
-from typing import Any, Optional
+from typing import Any
 from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
@@ -490,7 +503,7 @@ class DummyCircuitSimulator(BraketSimulator):
         self,
         program: ir.openqasm.Program,
         qubits: int,
-        shots: Optional[int],
+        shots: int | None,
         *args,
         **kwargs,
     ) -> dict[str, Any]:
@@ -609,9 +622,9 @@ def test_shadows_parallel_tracker(mock_run_batch, mock_properties):
 class DummyMeasurementTransform(MeasurementTransform):
     def __init__(
         self,
-        wires: Optional[Wires] = None,
-        seed: Optional[int] = None,
-        id: Optional[str] = None,
+        wires: Wires | None = None,
+        seed: int | None = None,
+        id: str | None = None,
     ):
         self.seed = seed
         super().__init__(wires=wires, id=id)

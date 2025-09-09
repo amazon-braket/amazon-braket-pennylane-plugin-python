@@ -40,7 +40,6 @@ from collections.abc import Iterable, Sequence
 
 # pylint: disable=invalid-name
 from enum import Enum, auto
-from typing import Optional, Union
 
 import numpy as onp
 import pennylane as qml
@@ -135,14 +134,14 @@ class BraketQubitDevice(QubitDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device: Device,
         *,
-        shots: Union[int, None],
-        noise_model: Optional[NoiseModel] = None,
+        shots: int | None,
+        noise_model: NoiseModel | None = None,
         verbatim: bool = False,
         parallel: bool = False,
-        max_parallel: Optional[int] = None,
+        max_parallel: int | None = None,
         parametrize_differentiable: bool = True,
         **run_kwargs,
     ):
@@ -319,7 +318,7 @@ class BraketQubitDevice(QubitDevice):
 
     def _update_tracker_for_batch(
         self,
-        task_batch: Union[AwsQuantumTaskBatch, LocalQuantumTaskBatch],
+        task_batch: AwsQuantumTaskBatch | LocalQuantumTaskBatch,
         batch_shots: int,
     ):
         for task in task_batch.tasks:
@@ -518,7 +517,7 @@ class BraketQubitDevice(QubitDevice):
         rotations: Sequence[Operation] = None,
         use_unique_params: bool = False,
         *,
-        trainable_indices: Optional[frozenset[int]] = None,
+        trainable_indices: frozenset[int] | None = None,
         apply_identities: bool = True,
         **run_kwargs,
     ) -> Circuit:
@@ -633,7 +632,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             to ``0`` or ``None``, the device runs in analytic mode (calculations will be exact).
             Analytic mode is not available on QPU and hence an error will be raised.
             Default: Shots.DEFAULT
-        aws_session (Optional[AwsSession]): An AwsSession object created to manage
+        aws_session (AwsSession | None): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
             Default: False
@@ -653,14 +652,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device_arn: str,
         s3_destination_folder: AwsSession.S3DestinationFolder = None,
         *,
-        shots: Union[int, None, Shots] = Shots.DEFAULT,
+        shots: int | Shots | None = Shots.DEFAULT,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        aws_session: Optional[AwsSession] = None,
+        aws_session: AwsSession | None = None,
         max_connections: int = AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         max_retries: int = AwsQuantumTaskBatch.MAX_RETRIES,
         **run_kwargs,
@@ -1082,7 +1081,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         wires (int or Iterable[Number, str]]): Number of subsystems represented by the device,
             or iterable that contains unique labels for the subsystems as numbers
             (i.e., ``[-1, 0, 2]``) or strings (``['ancilla', 'q1', 'q2']``).
-        backend (Union[str, BraketSimulator]): The name of the simulator backend or
+        backend (str | BraketSimulator): The name of the simulator backend or
             the actual simulator instance to use for simulation. Defaults to the
             ``default`` simulator backend name.
         shots (int or None): Number of circuit evaluations or random samples included,
@@ -1097,10 +1096,10 @@ class BraketLocalQubitDevice(BraketQubitDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
-        backend: Union[str, BraketSimulator] = "default",
+        wires: int | Iterable,
+        backend: str | BraketSimulator = "default",
         *,
-        shots: Union[int, None] = None,
+        shots: int | None = None,
         **run_kwargs,
     ):
         device = LocalSimulator(backend)

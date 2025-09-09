@@ -13,7 +13,7 @@
 
 from collections import Counter
 from functools import partial, reduce, singledispatch
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as onp
 import pennylane as qml
@@ -153,7 +153,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
 def translate_operation(
     operation: Operation,
     use_unique_params: bool = False,
-    param_names: Optional[list[str]] = None,
+    param_names: list[str] | None = None,
     *args,
     **kwargs,
 ) -> Gate:
@@ -164,7 +164,7 @@ def translate_operation(
         use_unique_params (bool): If true, numeric parameters in the resulting operation will be
         replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
         parameters will be skipped.
-        param_names (Optional[list[str]]): A list of parameter names to be supplied
+        param_names (list[str] | None): A list of parameter names to be supplied
             to the new operation. The length of the list must match the number of
             the operator's parameters; if no named parameter is needed for the corresponding
             operation parameter, then the list entry should be `None`.
@@ -539,7 +539,7 @@ def supported_observables(device: Device, shots: int) -> frozenset[str]:
 
 def get_adjoint_gradient_result_type(
     observable: Operator,
-    targets: Union[list[int], list[list[int]]],
+    targets: list[int] | list[list[int]],
     supported_result_types: frozenset[str],
     parameters: list[str],
 ):
@@ -555,19 +555,19 @@ def get_adjoint_gradient_result_type(
 
 def translate_result_type(  # noqa: C901
     measurement: MeasurementProcess,
-    targets: Optional[list[int]],
+    targets: list[int] | None,
     supported_result_types: frozenset[str],
-) -> Union[ResultType, tuple[ResultType, ...]]:
+) -> ResultType | tuple[ResultType, ...]:
     """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
 
     Args:
         measurement (MeasurementProcess): The PennyLane ``MeasurementProcess`` to translate
-        targets (Optional[list[int]]): The target wires of the observable using a consecutive
+        targets (list[int] | None): The target wires of the observable using a consecutive
             integer wire ordering
         supported_result_types (frozenset[str]): Braket result types supported by the Braket device
 
     Returns:
-        Union[ResultType, tuple[ResultType]]: The Braket result type corresponding to
+        ResultType | tuple[ResultType, ...]: The Braket result type corresponding to
         the given observable; if the observable type has multiple terms, for example a Sum,
         then this will return a result type for each term.
     """
@@ -619,77 +619,53 @@ def flatten_observable(observable):
     return observable
 
 
-@singledispatch
-def _translate_observable(observable):
-    raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
-
-
-@_translate_observable.register
-def _(obs: qml.PauliX):
-    return observables.X(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.PauliY):
-    return observables.Y(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.PauliZ):
-    return observables.Z(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.Hadamard):
-    return observables.H(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.Identity):
-    return observables.I(obs.wires[0])
-
-
-@_translate_observable.register
-def _(obs: qml.Hermitian):
-    return observables.Hermitian(qml.matrix(obs), targets=obs.wires)
-
-
 _zero = np.array([[1, 0], [0, 0]])
 _one = np.array([[0, 0], [0, 1]])
 
 
-@_translate_observable.register
-def _(obs: qml.Projector):
-    state = obs.parameters[0]
-    wires = obs.wires
-    if len(state) == len(wires):  # state is a basis state
-        products = [_one if b else _zero for b in state]
-        hermitians = [observables.Hermitian(p, targets=[w]) for p, w in zip(products, wires)]
-        return observables.TensorProduct(hermitians)
-
-    # state is a state vector
-    return observables.Hermitian(obs.matrix(), targets=wires)
-
-
-@_translate_observable.register
-def _(t: qml.ops.Prod):
-    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.operands])
-
-
-@_translate_observable.register
-def _(t: qml.ops.SProd):
-    return t.scalar * _translate_observable(t.base)
-
-
-@_translate_observable.register
-def _(t: qml.ops.Sum):
-    return reduce(lambda x, y: x + y, [_translate_observable(operator) for operator in t.operands])
+@singledispatch
+def _translate_observable(observable):
+    match observable:
+        case qml.Identity(wires=wires):
+            return observables.I(wires[0])
+        case qml.PauliX(wires=wires):
+            return observables.X(wires[0])
+        case qml.PauliY(wires=wires):
+            return observables.Y(wires[0])
+        case qml.PauliZ(wires=wires):
+            return observables.Z(wires[0])
+        case qml.Hadamard(wires=wires):
+            return observables.H(wires[0])
+        case qml.Hermitian(wires=wires):
+            return observables.Hermitian(qml.matrix(observable), targets=wires)
+        case qml.Projector(parameters=parameters, wires=wires):
+            state = parameters[0]
+            if len(state) == len(wires):  # state is a basis state
+                products = [_one if b else _zero for b in state]
+                hermitians = [
+                    observables.Hermitian(p, targets=[w]) for p, w in zip(products, wires)
+                ]
+                return observables.TensorProduct(hermitians)
+            # state is a state vector
+            return observables.Hermitian(observable.matrix(), targets=wires)
+        case qml.ops.Prod(operands=operands):
+            return reduce(
+                lambda x, y: x @ y, [_translate_observable(factor) for factor in operands]
+            )
+        case qml.ops.SProd(base=base, scalar=scalar):
+            return scalar * _translate_observable(base)
+        case qml.ops.Sum(operands=operands):
+            return reduce(
+                lambda x, y: x + y, [_translate_observable(operator) for operator in operands]
+            )
+        case _:
+            raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 def translate_result(
     braket_result: GateModelQuantumTaskResult,
     measurement: MeasurementProcess,
-    targets: Optional[list[int]],
+    targets: list[int] | None,
     supported_result_types: frozenset[str],
 ) -> Any:
     """Translates a Braket result into the corresponding PennyLane return type value.
@@ -698,7 +674,7 @@ def translate_result(
         braket_result (GateModelQuantumTaskResult): The Braket result to translate.
         measurement (MeasurementProcess): The PennyLane measurement process associated with the
             result.
-        targets (Optional[list[int]]): The qubits in the result.
+        targets (list[int] | None): The qubits in the result.
         supported_result_types (frozenset[str]): The result types supported by the device.
 
     Returns:
