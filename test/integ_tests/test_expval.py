@@ -104,7 +104,10 @@ class TestExpval:
             return [qml.expval(qml.Hadamard(i)) for i in range(2)]
 
         expected = np.array(
-            [np.sin(theta) * np.sin(phi) + np.cos(theta), np.cos(theta) * np.cos(phi) + np.sin(phi)]
+            [
+                np.sin(theta) * np.sin(phi) + np.cos(theta),
+                np.cos(theta) * np.cos(phi) + np.sin(phi),
+            ]
         ) / np.sqrt(2)
         assert np.allclose(circuit(), expected, **tol)
 

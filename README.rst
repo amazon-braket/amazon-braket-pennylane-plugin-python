@@ -7,7 +7,7 @@ Amazon Braket PennyLane Plugin
 .. image:: https://img.shields.io/pypi/pyversions/amazon-braket-pennylane-plugin.svg
     :alt: Supported Python Versions
     :target: https://pypi.python.org/pypi/amazon-braket-pennylane-plugin
-.. image:: https://img.shields.io/github/actions/workflow/status/amazon-braket/amazon-braket-strawberryfields-plugin-python/python-package.yml?branch=main&logo=github    
+.. image:: https://img.shields.io/github/actions/workflow/status/amazon-braket/amazon-braket-pennylane-plugin-python/python-package.yml?branch=main&logo=github
     :alt: Build Status
     :target: https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python/actions?query=workflow%3A%22Python+package%22
 .. image:: https://codecov.io/gh/amazon-braket/amazon-braket-pennylane-plugin-python/branch/main/graph/badge.svg?token=VPPM8BJKW4
@@ -74,7 +74,7 @@ Before you begin working with the Amazon Braket PennyLane Plugin, make sure
 that you installed or configured the following prerequisites:
 
 
-* Download and install `Python 3.9 <https://www.python.org/downloads/>`__ or greater.
+* Download and install `Python 3.10 <https://www.python.org/downloads/>`__ or greater.
   If you are using Windows, choose the option *Add Python to environment variables* before you begin the installation.
 * Make sure that your AWS account is onboarded to Amazon Braket, as per the instructions
   `here <https://github.com/amazon-braket/amazon-braket-sdk-python#prerequisites>`__.

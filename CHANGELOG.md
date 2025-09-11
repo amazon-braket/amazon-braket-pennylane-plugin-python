@@ -1,5 +1,102 @@
 # Changelog
 
+## v1.33.1 (2025-09-10)
+
+### Bug Fixes and Other Changes
+
+ * Python 3.10 syntax
+
+## v1.33.0 (2025-08-21)
+
+### Deprecations and Removals
+
+ * Drop Python 3.9, support 3.12, 3.13
+
+### Bug Fixes and Other Changes
+
+ * Update linters to Python 3.10
+
+### Documentation Changes
+
+ * Unquote python latest for docs
+ * Add Python 3.12, 3.13 to supported versions
+
+## v1.32.0 (2025-08-13)
+
+### Features
+
+ * Program sets
+
+## v1.31.3 (2025-05-05)
+
+### Bug Fixes and Other Changes
+
+ * Remove use of `MeasurementProcess.return_type`
+
+## v1.31.2 (2025-01-16)
+
+### Bug Fixes and Other Changes
+
+ * Flatten observable before getting targets
+
+## v1.31.1 (2025-01-15)
+
+### Bug Fixes and Other Changes
+
+ * Pin PL <0.40
+
+## v1.31.0 (2024-12-03)
+
+### Deprecations and Removals
+
+ * remove legacy opmath
+
+## v1.30.2 (2024-11-18)
+
+### Bug Fixes and Other Changes
+
+ * Remove deprecated import path for QubitDevice
+
+## v1.30.1 (2024-09-19)
+
+### Bug Fixes and Other Changes
+
+ * onboard onto ruff
+
+## v1.30.0 (2024-09-11)
+
+### Features
+
+ * Device-specific supported observables
+
+## v1.29.0 (2024-09-09)
+
+### Features
+
+ * Support `SProd` and `CompositeOp` for expval
+
+### Documentation Changes
+
+ * Fix typo in qml.var usage
+
+## v1.28.0 (2024-07-01)
+
+### Features
+
+ * Support `batch_execute` for `BraketLocalQubitDevice`
+
+## v1.27.6 (2024-06-18)
+
+### Bug Fixes and Other Changes
+
+ * Support `qml.counts` for circuits
+
+## v1.27.5 (2024-06-13)
+
+### Bug Fixes and Other Changes
+
+ * Replace `FreeParameter("b")` with `FreeParameter("d")` in unittests
+
 ## v1.27.4 (2024-06-03)
 
 ### Bug Fixes and Other Changes

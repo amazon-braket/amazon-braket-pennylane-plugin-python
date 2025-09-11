@@ -533,10 +533,30 @@ class AAMS(Operation):
 
         return np.array(
             [
-                [np.cos(theta / 2), 0, 0, -1j * np.exp(-1j * (phi_0 + phi_1)) * np.sin(theta / 2)],
-                [0, np.cos(theta / 2), -1j * np.exp(-1j * (phi_0 - phi_1)) * np.sin(theta / 2), 0],
-                [0, -1j * np.exp(1j * (phi_0 - phi_1)) * np.sin(theta / 2), np.cos(theta / 2), 0],
-                [-1j * np.exp(1j * (phi_0 + phi_1)) * np.sin(theta / 2), 0, 0, np.cos(theta / 2)],
+                [
+                    np.cos(theta / 2),
+                    0,
+                    0,
+                    -1j * np.exp(-1j * (phi_0 + phi_1)) * np.sin(theta / 2),
+                ],
+                [
+                    0,
+                    np.cos(theta / 2),
+                    -1j * np.exp(-1j * (phi_0 - phi_1)) * np.sin(theta / 2),
+                    0,
+                ],
+                [
+                    0,
+                    -1j * np.exp(1j * (phi_0 - phi_1)) * np.sin(theta / 2),
+                    np.cos(theta / 2),
+                    0,
+                ],
+                [
+                    -1j * np.exp(1j * (phi_0 + phi_1)) * np.sin(theta / 2),
+                    0,
+                    0,
+                    np.cos(theta / 2),
+                ],
             ]
         )
 

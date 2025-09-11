@@ -11,11 +11,17 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+from collections import Counter
 from functools import partial, reduce, singledispatch
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as onp
 import pennylane as qml
+from pennylane import numpy as np
+from pennylane.measurements import MeasurementProcess
+from pennylane.operation import Operation, Operator
+from pennylane.pulse import ParametrizedEvolution
+
 from braket.aws import AwsDevice
 from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
 from braket.circuits.result_types import (
@@ -27,15 +33,8 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.device_schema import DeviceActionType
 from braket.devices import Device
-from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
-from braket.tasks import GateModelQuantumTaskResult
-from pennylane import numpy as np
-from pennylane.measurements import MeasurementProcess, ObservableReturnTypes
-from pennylane.operation import Observable, Operation
-from pennylane.ops import Adjoint, Hamiltonian
-from pennylane.pulse import ParametrizedEvolution
-
 from braket.pennylane_plugin.ops import (
     AAMS,
     MS,
@@ -47,6 +46,8 @@ from braket.pennylane_plugin.ops import (
     GPi2,
     PRx,
 )
+from braket.pulse import ArbitraryWaveform, ConstantWaveform, PulseSequence
+from braket.tasks import GateModelQuantumTaskResult
 
 _BRAKET_TO_PENNYLANE_OPERATIONS = {
     "i": "Identity",
@@ -96,6 +97,16 @@ _BRAKET_TO_PENNYLANE_OPERATIONS = {
 }
 
 
+_BRAKET_TO_PENNYLANE_OBSERVABLES = {
+    "x": frozenset({"PauliX"}),
+    "y": frozenset({"PauliY"}),
+    "z": frozenset({"PauliZ"}),
+    "h": frozenset({"Hadamard"}),
+    "hermitian": frozenset({"Hermitian", "Projector"}),
+    "i": frozenset({"Identity"}),
+}
+
+
 def supported_operations(device: Device, verbatim: bool = False) -> frozenset[str]:
     """Returns the operations supported by the plugin based upon the device.
 
@@ -111,7 +122,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
         properties = (
             device.properties.paradigm
             if verbatim
-            else device.properties.action["braket.ir.openqasm.program"]
+            else device.properties.action[DeviceActionType.OPENQASM]
         )
     except AttributeError:
         raise AttributeError("Device needs to have properties defined.")
@@ -142,7 +153,7 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
 def translate_operation(
     operation: Operation,
     use_unique_params: bool = False,
-    param_names: Optional[list[str]] = None,
+    param_names: list[str] | None = None,
     *args,
     **kwargs,
 ) -> Gate:
@@ -153,7 +164,7 @@ def translate_operation(
         use_unique_params (bool): If true, numeric parameters in the resulting operation will be
         replaced with FreeParameter objects (with names corresponding to param_names). Non-numeric
         parameters will be skipped.
-        param_names (Optional[list[str]]): A list of parameter names to be supplied
+        param_names (list[str] | None): A list of parameter names to be supplied
             to the new operation. The length of the list must match the number of
             the operator's parameters; if no named parameter is needed for the corresponding
             operation parameter, then the list entry should be `None`.
@@ -433,7 +444,7 @@ def _(ms: AAMS, parameters, device=None):
 
 
 @_translate_operation.register
-def _(adjoint: Adjoint, parameters, device=None):
+def _(adjoint: qml.ops.Adjoint, parameters, device=None):
     if isinstance(adjoint.base, qml.ISWAP):
         # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
@@ -514,158 +525,147 @@ def _(op: ParametrizedEvolution, _parameters, device):
     return gates.PulseGate(pulse_sequence, qubit_count=len(op.wires))
 
 
+def supported_observables(device: Device, shots: int) -> frozenset[str]:
+    action = device.properties.action[DeviceActionType.OPENQASM]
+    braket_observables = set.union(
+        *[set(r.observables) for r in action.supportedResultTypes if r.observables]
+    )
+    supported = frozenset.union(
+        *[_BRAKET_TO_PENNYLANE_OBSERVABLES[braket_obs] for braket_obs in braket_observables],
+    )
+    supported |= {"Prod", "SProd"}
+    return supported if shots else supported | {"Sum", "LinearCombination"}
+
+
 def get_adjoint_gradient_result_type(
-    observable: Observable,
-    targets: Union[list[int], list[list[int]]],
+    observable: Operator,
+    targets: list[int] | list[list[int]],
     supported_result_types: frozenset[str],
     parameters: list[str],
 ):
     if "AdjointGradient" not in supported_result_types:
         raise NotImplementedError("Unsupported return type: AdjointGradient")
-    braket_observable = _translate_observable(observable)
 
+    braket_observable = _translate_observable(observable)
     braket_observable = (
         braket_observable.item() if hasattr(braket_observable, "item") else braket_observable
     )
     return AdjointGradient(observable=braket_observable, target=targets, parameters=parameters)
 
 
-def translate_result_type(
-    measurement: MeasurementProcess, targets: list[int], supported_result_types: frozenset[str]
-) -> Union[ResultType, tuple[ResultType, ...]]:
+def translate_result_type(  # noqa: C901
+    measurement: MeasurementProcess,
+    targets: list[int] | None,
+    supported_result_types: frozenset[str],
+) -> ResultType | tuple[ResultType, ...]:
     """Translates a PennyLane ``MeasurementProcess`` into the corresponding Braket ``ResultType``.
 
     Args:
         measurement (MeasurementProcess): The PennyLane ``MeasurementProcess`` to translate
-        targets (list[int]): The target wires of the observable using a consecutive integer wire
-            ordering
+        targets (list[int] | None): The target wires of the observable using a consecutive
+            integer wire ordering
         supported_result_types (frozenset[str]): Braket result types supported by the Braket device
 
     Returns:
-        Union[ResultType, tuple[ResultType]]: The Braket result type corresponding to
-        the given observable; if the observable type has multiple terms, for example a Hamiltonian,
+        ResultType | tuple[ResultType, ...]: The Braket result type corresponding to
+        the given observable; if the observable type has multiple terms, for example a Sum,
         then this will return a result type for each term.
     """
-    return_type = measurement.return_type
+    targets = targets or measurement.wires.tolist()
+    observable = measurement.obs
 
-    if return_type is ObservableReturnTypes.Probability:
+    if isinstance(measurement, qml.measurements.ProbabilityMP):
         return Probability(targets)
 
-    if return_type is ObservableReturnTypes.State:
+    if isinstance(measurement, qml.measurements.StateMP):
         if not targets and "StateVector" in supported_result_types:
             return StateVector()
         elif "DensityMatrix" in supported_result_types:
             return DensityMatrix(targets)
-        raise NotImplementedError(f"Unsupported return type: {return_type}")
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
-    if isinstance(measurement.obs, (Hamiltonian, qml.Hamiltonian)):
-        if return_type is ObservableReturnTypes.Expectation:
-            return tuple(
-                Expectation(_translate_observable(term), term.wires) for term in measurement.obs.ops
-            )
-        raise NotImplementedError(f"Return type {return_type} unsupported for Hamiltonian")
+    if observable is None:
+        if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
+            return tuple(Sample(observables.Z(target)) for target in targets or measurement.wires)
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
-    braket_observable = _translate_observable(measurement.obs)
-    if return_type is ObservableReturnTypes.Expectation:
-        return Expectation(braket_observable, targets)
-    elif return_type is ObservableReturnTypes.Variance:
-        return Variance(braket_observable, targets)
-    elif return_type is ObservableReturnTypes.Sample:
-        return Sample(braket_observable, targets)
-    else:
-        raise NotImplementedError(f"Unsupported return type: {return_type}")
+    observable = flatten_observable(observable)
 
+    if isinstance(observable, qml.ops.LinearCombination):
+        if isinstance(measurement, qml.measurements.ExpectationMP):
+            return tuple(Expectation(_translate_observable(op)) for op in observable.terms()[1])
+        raise NotImplementedError(
+            f"Return type {type(measurement)} unsupported for LinearCombination"
+        )
 
-@singledispatch
-def _translate_observable(observable):
-    raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
-
-
-@_translate_observable.register(Hamiltonian)
-@_translate_observable.register(qml.Hamiltonian)
-def _(H: Union[Hamiltonian, qml.Hamiltonian]):
-    # terms is structured like [C, O] where C is a tuple of all the coefficients, and O is
-    # a tuple of all the corresponding observable terms (X, Y, Z, H, etc or a tensor product
-    # of them)
-    coefficents, pl_observables = H.terms()
-    braket_observables = list(map(lambda obs: _translate_observable(obs), pl_observables))
-    braket_hamiltonian = sum(
-        (coef * obs for coef, obs in zip(coefficents[1:], braket_observables[1:])),
-        coefficents[0] * braket_observables[0],
-    )
-    return braket_hamiltonian
+    braket_observable = _translate_observable(observable)
+    if isinstance(measurement, qml.measurements.ExpectationMP):
+        return Expectation(braket_observable)
+    if isinstance(measurement, qml.measurements.VarianceMP):
+        return Variance(braket_observable)
+    if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
+        return Sample(braket_observable)
+    if isinstance(measurement, qml.measurements.SampleMP):
+        return Sample(braket_observable)
+    raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
 
-@_translate_observable.register
-def _(_: qml.PauliX):
-    return observables.X()
-
-
-@_translate_observable.register
-def _(_: qml.PauliY):
-    return observables.Y()
-
-
-@_translate_observable.register
-def _(_: qml.PauliZ):
-    return observables.Z()
-
-
-@_translate_observable.register
-def _(_: qml.Hadamard):
-    return observables.H()
-
-
-@_translate_observable.register
-def _(_: qml.Identity):
-    return observables.I()
-
-
-@_translate_observable.register
-def _(h: qml.Hermitian):
-    return observables.Hermitian(qml.matrix(h))
+def flatten_observable(observable):
+    if isinstance(observable, (qml.ops.CompositeOp, qml.ops.SProd)):
+        simplified = qml.ops.LinearCombination(*observable.terms()).simplify()
+        coeffs, _ = simplified.terms()
+        if len(coeffs) > 1 or coeffs[0] != 1:
+            return simplified
+    return observable
 
 
 _zero = np.array([[1, 0], [0, 0]])
 _one = np.array([[0, 0], [0, 1]])
 
 
-@_translate_observable.register
-def _(p: qml.Projector):
-    state, wires = p.parameters[0], p.wires
-    if len(state) == len(wires):  # state is a basis state
-        products = [_one if b else _zero for b in state]
-        hermitians = [observables.Hermitian(p) for p in products]
-        return observables.TensorProduct(hermitians)
-
-    # state is a state vector
-    return observables.Hermitian(p.matrix())
-
-
-@_translate_observable.register
-def _(t: qml.operation.Tensor):
-    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.obs])
-
-
-@_translate_observable.register
-def _(t: qml.ops.Prod):
-    return reduce(lambda x, y: x @ y, [_translate_observable(factor) for factor in t.operands])
-
-
-@_translate_observable.register
-def _(t: qml.ops.SProd):
-    return t.scalar * _translate_observable(t.base)
-
-
-@_translate_observable.register
-def _(t: qml.ops.Sum):
-    return reduce(lambda x, y: x + y, [_translate_observable(operator) for operator in t.operands])
+@singledispatch
+def _translate_observable(observable):
+    match observable:
+        case qml.Identity(wires=wires):
+            return observables.I(wires[0])
+        case qml.PauliX(wires=wires):
+            return observables.X(wires[0])
+        case qml.PauliY(wires=wires):
+            return observables.Y(wires[0])
+        case qml.PauliZ(wires=wires):
+            return observables.Z(wires[0])
+        case qml.Hadamard(wires=wires):
+            return observables.H(wires[0])
+        case qml.Hermitian(wires=wires):
+            return observables.Hermitian(qml.matrix(observable), targets=wires)
+        case qml.Projector(parameters=parameters, wires=wires):
+            state = parameters[0]
+            if len(state) == len(wires):  # state is a basis state
+                products = [_one if b else _zero for b in state]
+                hermitians = [
+                    observables.Hermitian(p, targets=[w]) for p, w in zip(products, wires)
+                ]
+                return observables.TensorProduct(hermitians)
+            # state is a state vector
+            return observables.Hermitian(observable.matrix(), targets=wires)
+        case qml.ops.Prod(operands=operands):
+            return reduce(
+                lambda x, y: x @ y, [_translate_observable(factor) for factor in operands]
+            )
+        case qml.ops.SProd(base=base, scalar=scalar):
+            return scalar * _translate_observable(base)
+        case qml.ops.Sum(operands=operands):
+            return reduce(
+                lambda x, y: x + y, [_translate_observable(operator) for operator in operands]
+            )
+        case _:
+            raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 def translate_result(
     braket_result: GateModelQuantumTaskResult,
     measurement: MeasurementProcess,
-    targets: list[int],
+    targets: list[int] | None,
     supported_result_types: frozenset[str],
 ) -> Any:
     """Translates a Braket result into the corresponding PennyLane return type value.
@@ -674,7 +674,7 @@ def translate_result(
         braket_result (GateModelQuantumTaskResult): The Braket result to translate.
         measurement (MeasurementProcess): The PennyLane measurement process associated with the
             result.
-        targets (list[int]): The qubits in the result.
+        targets (list[int] | None): The qubits in the result.
         supported_result_types (frozenset[str]): The result types supported by the device.
 
     Returns:
@@ -698,12 +698,33 @@ def translate_result(
             ag_result.value["gradient"][f"p_{i}"]
             for i in sorted(key_indices)
         ]
+
+    targets = targets or measurement.wires.tolist()
+    if (
+        isinstance(measurement, qml.measurements.CountsMP)
+        and not measurement.all_outcomes
+        and observable is None
+    ):
+        if targets:
+            new_dict = {}
+            for key, value in braket_result.measurement_counts.items():
+                new_key = "".join(key[i] for i in targets)
+                if new_key not in new_dict:
+                    new_dict[new_key] = 0
+                new_dict[new_key] += value
+            return new_dict
+
+        return dict(braket_result.measurement_counts)
+
     translated = translate_result_type(measurement, targets, supported_result_types)
-    if isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
+    observable = flatten_observable(observable)
+    if isinstance(observable, qml.ops.LinearCombination):
         coeffs, _ = observable.terms()
         return sum(
             coeff * braket_result.get_value_by_result_type(result_type)
             for coeff, result_type in zip(coeffs, translated)
         )
+    elif isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
+        return dict(Counter(braket_result.get_value_by_result_type(translated)))
     else:
         return braket_result.get_value_by_result_type(translated)

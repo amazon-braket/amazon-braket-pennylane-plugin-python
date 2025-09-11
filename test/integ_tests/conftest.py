@@ -59,7 +59,10 @@ devices = sv_devices + dm_devices
 shortname_and_backends = [(d.short_name, backend) for (d, backend) in devices]
 
 # List of local devices
-local_devices = [(BraketLocalQubitDevice, "braket_sv"), (BraketLocalQubitDevice, "braket_dm")]
+local_devices = [
+    (BraketLocalQubitDevice, "braket_sv"),
+    (BraketLocalQubitDevice, "braket_dm"),
+]
 
 # ==========================================================
 # AWS resources
@@ -78,7 +81,8 @@ except ClientError as e:
     error_code = e.response["Error"]["Code"]
     if error_code == "404":
         s3_bucket.create(
-            ACL="private", CreateBucketConfiguration={"LocationConstraint": session.region_name}
+            ACL="private",
+            CreateBucketConfiguration={"LocationConstraint": session.region_name},
         )
 
 

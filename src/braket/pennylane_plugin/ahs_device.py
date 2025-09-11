@@ -32,21 +32,22 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
+
 from collections.abc import Iterable
 from enum import Enum, auto
-from typing import Optional, Union
 
 import numpy as np
-import pennylane as qml
+from pennylane._version import __version__
+from pennylane.devices import QubitDevice
+from pennylane.measurements import MeasurementProcess, SampleMeasurement
+from pennylane.ops import CompositeOp
+from pennylane.pulse import ParametrizedEvolution
+from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
-from pennylane import QubitDevice
-from pennylane._version import __version__
-from pennylane.measurements import MeasurementProcess, SampleMeasurement
-from pennylane.ops import CompositeOp, Hamiltonian
-from pennylane.pulse import ParametrizedEvolution
-from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+from braket.tasks.local_quantum_task import LocalQuantumTask
 
 from .ahs_translation import (
     _create_register,
@@ -87,10 +88,10 @@ class BraketAhsDevice(QubitDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device: Device,
         *,
-        shots: Union[int, Shots] = Shots.DEFAULT,
+        shots: int | Shots = Shots.DEFAULT,
     ):
         if not shots:
             raise RuntimeError(f"This device requires shots. Received shots={shots}")
@@ -208,7 +209,7 @@ class BraketAhsDevice(QubitDevice):
         Args:
             queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
                 to be applied on the device
-            observables (Iterable[~.operation.Observable]): observables which are intended
+            observables (Iterable[~.operation.Operator]): observables which are intended
                 to be evaluated on the device
 
         Raises:
@@ -309,9 +310,6 @@ class BraketAhsDevice(QubitDevice):
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
                 self._validate_measurement_basis(op)
-        elif isinstance(observable, (Hamiltonian, qml.Hamiltonian)):
-            for op in observable.ops:
-                self._validate_measurement_basis(op)
 
         elif not observable.has_diagonalizing_gates:
             raise RuntimeError(
@@ -348,7 +346,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         poll_interval_seconds (float): The polling interval for results in seconds.
         shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
             Default: Shots.DEFAULT
-        aws_session (Optional[AwsSession]): An AwsSession object created to manage
+        aws_session (AwsSession | None): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
 
@@ -379,14 +377,14 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device_arn: str,
         s3_destination_folder: AwsSession.S3DestinationFolder = None,
         *,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        shots: Union[int, Shots] = Shots.DEFAULT,
-        aws_session: Optional[AwsSession] = None,
+        shots: int | Shots = Shots.DEFAULT,
+        aws_session: AwsSession | None = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
@@ -500,9 +498,9 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         *,
-        shots: Union[int, Shots] = Shots.DEFAULT,
+        shots: int | Shots = Shots.DEFAULT,
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
@@ -562,11 +560,10 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         return ahs_program
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> AwsQuantumTask:
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> LocalQuantumTask:
         """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
-        task = self._device.run(ahs_program, shots=self.shots, steps=100)
-        return task
+        return self._device.run(ahs_program, shots=self.shots, steps=100)
 
     def _validate_pulses(self, pulses: list[HardwarePulse]):  # noqa: C901
         """Validate that all pulses are defined as expected by the device. This validation includes:

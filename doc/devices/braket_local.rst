@@ -35,12 +35,38 @@ For example:
         qml.RY(y, wires=[0])
         qml.RX(x, wires=[0])
         qml.CNOT(wires=[0, 1])
-        return qml.expval(qml.PauliZ(0)), var(qml.PauliZ(1))
+        return qml.expval(qml.PauliZ(0)), qml.var(qml.PauliZ(1))
 
 When executed, the circuit will perform the computation on the local machine.
 
 >>> circuit(0.2, 0.1, 0.3)
 array([0.97517033, 0.04904283])
+
+Enabling the parallel execution of multiple circuits
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Where supported by the backend of the local simulator, the local device can be used to execute multiple
+quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parallel=True`` argument:
+
+>>> local_device = qml.device('braket.local.qubit', [... ,] parallel=True)
+
+The details of the parallelization scheme depend on the PennyLane version you use, as well as the specific local simulator
+backend you use.
+
+For example, PennyLane 0.13.0 and higher supports the parallel execution of circuits created during the computation of gradients.
+Just by instantiating the remote device with the ``parallel=True`` option, this feature is automatically used and can
+lead to significant speedups of your optimization pipeline.
+
+The maximum number of circuits that can be executed in parallel is specified by the ``max_parallel`` argument.
+
+>>> local_device = qml.device('braket.local.qubit', [... ,] parallel=True, max_parallel=20)
+
+If ``max_parallel`` is not specified, the local simulator backend will use its own default. Each parallel execution
+will use additional memory, so be careful not to set ``max_parallel`` so high that you run out of memory on your local
+device. The exact limit will depend on your device. Additionally, setting ``max_parallel`` much higher than the number of
+CPU cores available (if you are using a CPU-based local simulator) or GPUs/GPU streams (if you are using a GPU-based local
+simulator) will not improve and may even degrade performance as too many parallel workers begin to contend for the same
+scarce resources.
 
 Device options
 ~~~~~~~~~~~~~~
