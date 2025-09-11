@@ -13,11 +13,13 @@
 
 import json
 import re
-from unittest.mock import patch
+from unittest import mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pennylane as qml
 import pytest
+from braket.aws import AwsDevice, AwsDeviceType
 from braket.circuits import FreeParameter, gates, noises, observables
 from braket.circuits.result_types import (
     AdjointGradient,
@@ -29,13 +31,33 @@ from braket.circuits.result_types import (
     Variance,
 )
 from braket.circuits.serialization import IRType
+from braket.device_schema import DeviceActionType
+from braket.device_schema.gate_model_qpu_paradigm_properties_v1 import (
+    GateModelQpuParadigmProperties,
+)
+from braket.device_schema.pulse.pulse_device_action_properties_v1 import (
+    PulseDeviceActionProperties,
+)
+from braket.pulse import ArbitraryWaveform, ConstantWaveform
 from braket.tasks import GateModelQuantumTaskResult
+from device_property_jsons import (
+    ACTION_PROPERTIES,
+    OQC_PARADIGM_PROPERTIES,
+    OQC_PULSE_PROPERTIES_WITH_PORTS,
+)
+from pennylane import measurements
 from pennylane import numpy as pnp
-from pennylane.measurements import ObservableReturnTypes
+from pennylane.pulse import ParametrizedEvolution, transmon_drive
 from pennylane.wires import Wires
 
-from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
-from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2
+from braket.pennylane_plugin import (
+    PSWAP,
+    BraketAwsQubitDevice,
+    CPhaseShift00,
+    CPhaseShift01,
+    CPhaseShift10,
+)
+from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2, PRx
 from braket.pennylane_plugin.translation import (
     _BRAKET_TO_PENNYLANE_OPERATIONS,
     _translate_observable,
@@ -45,6 +67,52 @@ from braket.pennylane_plugin.translation import (
     translate_result,
     translate_result_type,
 )
+
+
+def mock_aws_init(self, arn, aws_session):
+    self._arn = arn
+    self._frames = None
+    self._ports = None
+
+
+class DummyProperties:
+    def __init__(self):
+        self.pulse = PulseDeviceActionProperties.parse_raw(OQC_PULSE_PROPERTIES_WITH_PORTS)
+        self.paradigm = GateModelQpuParadigmProperties.parse_raw(OQC_PARADIGM_PROPERTIES)
+
+
+@patch.object(AwsDevice, "__init__", mock_aws_init)
+@patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "properties")
+def _aws_device(
+    properties_mock,
+    type_mock,
+    session_mock,
+    wires,
+    device_type=AwsDeviceType.QPU,
+    shots=10000,
+    device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy",
+    action_properties=ACTION_PROPERTIES,
+    **kwargs,
+):
+    properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
+    properties_mock.return_value.action.return_value = {
+        DeviceActionType.OPENQASM: action_properties
+    }
+    type_mock.return_value = device_type
+    dev = BraketAwsQubitDevice(
+        wires=wires,
+        s3_destination_folder=("foo", "bar"),
+        device_arn=device_arn,
+        aws_session=Mock(),
+        shots=shots,
+        **kwargs,
+    )
+
+    dev._device._properties = DummyProperties()
+    return dev
+
 
 testdata = [
     (qml.Identity, gates.I, [0], []),
@@ -73,6 +141,7 @@ testdata = [
     (GPi, gates.GPi, [0], [2]),
     (GPi2, gates.GPi2, [0], [2]),
     (MS, gates.MS, [0, 1], [2, 3]),
+    (PRx, gates.PRx, [0], [2, 3]),
     (AAMS, gates.MS, [0, 1], [2, 3, 0.5]),
     (qml.ECR, gates.ECR, [0, 1], []),
     (qml.ISWAP, gates.ISwap, [0, 1], []),
@@ -82,7 +151,12 @@ testdata = [
     (qml.IsingYY, gates.YY, [0, 1], [np.pi]),
     (qml.IsingZZ, gates.ZZ, [0, 1], [np.pi]),
     (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
-    (qml.GeneralizedAmplitudeDamping, noises.GeneralizedAmplitudeDamping, [0], [0.1, 0.15]),
+    (
+        qml.GeneralizedAmplitudeDamping,
+        noises.GeneralizedAmplitudeDamping,
+        [0],
+        [0.1, 0.15],
+    ),
     (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1]),
     (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1]),
     (qml.BitFlip, noises.BitFlip, [0], [0.1]),
@@ -121,14 +195,16 @@ testdata_inverses = [
             1
             / np.sqrt(2)
             * np.array(
-                [[1, 0, 0, 1j], [0, 1j, 1, 0], [0, 1j, -1, 0], [1, 0, 0, -1j]], dtype=complex
+                [[1, 0, 0, 1j], [0, 1j, 1, 0], [0, 1j, -1, 0], [1, 0, 0, -1j]],
+                dtype=complex,
             )
         ],
         [
             1
             / np.sqrt(2)
             * np.array(
-                [[1, 0, 0, 1], [0, -1j, -1j, 0], [0, 1, -1, 0], [-1j, 0, 0, 1j]], dtype=complex
+                [[1, 0, 0, 1], [0, -1j, -1j, 0], [0, 1, -1, 0], [-1j, 0, 0, 1j]],
+                dtype=complex,
             )
         ],
     ),
@@ -174,20 +250,55 @@ testdata_with_params = [
     (qml.SWAP, gates.Swap, [0, 1], [], [], []),
     (qml.CSWAP, gates.CSwap, [0, 1, 2], [], [], []),
     (qml.Toffoli, gates.CCNot, [0, 1, 2], [], [], []),
-    (qml.ControlledPhaseShift, gates.CPhaseShift, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
-    (CPhaseShift00, gates.CPhaseShift00, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
-    (CPhaseShift01, gates.CPhaseShift01, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
-    (CPhaseShift10, gates.CPhaseShift10, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
+    (
+        qml.ControlledPhaseShift,
+        gates.CPhaseShift,
+        [0, 1],
+        [np.pi],
+        ["pi"],
+        [FreeParameter("pi")],
+    ),
+    (
+        CPhaseShift00,
+        gates.CPhaseShift00,
+        [0, 1],
+        [np.pi],
+        ["pi"],
+        [FreeParameter("pi")],
+    ),
+    (
+        CPhaseShift01,
+        gates.CPhaseShift01,
+        [0, 1],
+        [np.pi],
+        ["pi"],
+        [FreeParameter("pi")],
+    ),
+    (
+        CPhaseShift10,
+        gates.CPhaseShift10,
+        [0, 1],
+        [np.pi],
+        ["pi"],
+        [FreeParameter("pi")],
+    ),
     (GPi, gates.GPi, [0], [2], ["a"], [FreeParameter("a")]),
     (GPi2, gates.GPi2, [0], [2], ["a"], [FreeParameter("a")]),
-    (MS, gates.MS, [0, 1], [2, 3], ["a", "b"], [FreeParameter("a"), FreeParameter("b")]),
+    (
+        MS,
+        gates.MS,
+        [0, 1],
+        [2, 3],
+        ["a", "c"],
+        [FreeParameter("a"), FreeParameter("c")],
+    ),
     (
         AAMS,
         gates.MS,
         [0, 1],
         [2, 3, 0.5],
-        ["a", "b", "c"],
-        [FreeParameter("a"), FreeParameter("b"), FreeParameter("c")],
+        ["a", "c", "d"],
+        [FreeParameter("a"), FreeParameter("c"), FreeParameter("d")],
     ),
     (PSWAP, gates.PSwap, [0, 1], [np.pi], ["pi"], [FreeParameter("pi")]),
     (qml.ECR, gates.ECR, [0, 1], [], [], []),
@@ -213,7 +324,14 @@ testdata_with_params = [
         [FreeParameter("p_000"), FreeParameter("p_001")],
     ),
     (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1], ["a"], [FreeParameter("a")]),
-    (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1], ["a"], [FreeParameter("a")]),
+    (
+        qml.DepolarizingChannel,
+        noises.Depolarizing,
+        [0],
+        [0.1],
+        ["a"],
+        [FreeParameter("a")],
+    ),
     (qml.BitFlip, noises.BitFlip, [0], [0.1], ["a"], [FreeParameter("a")]),
     (qml.PhaseFlip, noises.PhaseFlip, [0], [0.1], ["a"], [FreeParameter("a")]),
     (
@@ -247,17 +365,19 @@ _braket_to_pl = {
     for op in _BRAKET_TO_PENNYLANE_OPERATIONS
 }
 
-pl_return_types = [
-    ObservableReturnTypes.Expectation,
-    ObservableReturnTypes.Variance,
-    ObservableReturnTypes.Sample,
-]
+pl_return_types = [qml.expval, qml.var, qml.sample]
 
 braket_result_types = [
     Expectation(observables.H(), [0]),
     Variance(observables.H(), [0]),
     Sample(observables.H(), [0]),
 ]
+
+_braket_to_pl_result_types = {
+    Expectation: measurements.ExpectationMP,
+    Variance: measurements.VarianceMP,
+    Sample: measurements.SampleMP,
+}
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params", testdata)
@@ -266,7 +386,7 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+    if isinstance(pl_op, (GPi, GPi2, MS, AAMS, PRx)):
         translated_back = _braket_to_pl[
             re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
         ]
@@ -314,6 +434,177 @@ def test_translate_operation_with_unique_params(
             _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
             == pl_op.name
         )
+
+
+def amplitude(p, t):
+    return p * (np.sin(t) + 1)
+
+
+def test_translate_parametrized_evolution_constant_amplitude():
+    """Test that a ParametrizedEvolution with constant amplitude, phase, and frequency
+    is translated to a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(0.02, np.pi, 0.5, [0])
+    op = ParametrizedEvolution(H, [], t=50)
+
+    braket_gate = translate_operation(op, device=dev._device)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 1
+
+    ps = braket_gate.pulse_sequence
+    expected_frame = dev._device.frames["q0_drive"]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.02)
+
+
+def test_translate_parametrized_evolution_constant_callable_amplitude():
+    """Test that a ParametrizedEvolution with constant amplitude, phase, and frequency
+    is translated to a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(qml.pulse.constant, np.pi, 0.5, [0])
+    op = ParametrizedEvolution(H, [0.2], t=50)
+
+    braket_gate = translate_operation(op, device=dev._device)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 1
+
+    ps = braket_gate.pulse_sequence
+    expected_frame = dev._device.frames["q0_drive"]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.2)
+
+
+def test_translate_parametrized_evolution_callable():
+    """Test that a ParametrizedEvolution with callable amplitude, phase, and frequency
+    is translated to a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(amplitude, qml.pulse.constant, qml.pulse.constant, [0])
+
+    amplitude_param = 0.1
+    phase_param = np.pi
+    frequency_param = 3.5
+    op = ParametrizedEvolution(H, [amplitude_param, phase_param, frequency_param], t=50)
+
+    braket_gate = translate_operation(op, device=dev._device)
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 1
+
+    ps = braket_gate.pulse_sequence
+    expected_frame = dev._device.frames["q0_drive"]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 1
+    assert frames[0] == expected_frame
+
+    dt = expected_frame.port.dt * 1e9
+    amplitudes = [amplitude(amplitude_param, t) for t in np.arange(0, 50 + dt, dt)]
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 1
+    assert isinstance(waveforms[0], ArbitraryWaveform)
+    assert np.allclose(waveforms[0].amplitudes, amplitudes)
+
+
+def test_translate_parametrized_evolution_mixed():
+    """Test that a ParametrizedEvolution with one constant and one callable amplitude pulse
+    along with mixed constant and qml.pulse.constant phase and frequenciesis translated to
+    a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    H = transmon_drive(0.02, qml.pulse.constant, 0.5, [0])
+    H += transmon_drive(amplitude, -np.pi / 2, qml.pulse.constant, [1])
+
+    phase_param = 1.5
+    amplitude_param = 0.1
+    frequency_param = 4.0
+    op = ParametrizedEvolution(H, [phase_param, amplitude_param, frequency_param], t=50)
+
+    braket_gate = translate_operation(op, device=dev._device)
+
+    assert isinstance(braket_gate, gates.PulseGate)
+    assert braket_gate.qubit_count == 2
+
+    ps = braket_gate.pulse_sequence
+    expected_frames = [dev._device.frames[f"q{w}_drive"] for w in range(2)]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 2
+    assert all(actual == expected for actual, expected in zip(frames, expected_frames))
+
+    dt = expected_frames[0].port.dt * 1e9
+    amplitudes = [amplitude(amplitude_param, t) for t in np.arange(0, 50 + dt, dt)]
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 2
+    assert isinstance(waveforms[0], ConstantWaveform)
+    assert np.isclose(waveforms[0].length, 50e-9)
+    assert np.isclose(waveforms[0].iq, 0.02)
+
+    assert isinstance(waveforms[1], ArbitraryWaveform)
+    assert np.allclose(waveforms[1].amplitudes, amplitudes)
+
+
+def test_translate_parametrized_evolution_multi_callable_amplitudes():
+    """Test that a ParametrizedEvolution with multiple callable amplitude pulses is translated to
+    a PulseGate correctly."""
+    n_wires = 4
+    dev = _aws_device(wires=n_wires)
+
+    def second_amplitude(p, t):
+        return p[0] * np.sin(p[1] * t) ** p[2] + p[0] * 1.1
+
+    H = transmon_drive(amplitude, np.pi, qml.pulse.constant, [0])
+    H += transmon_drive(second_amplitude, -np.pi / 2, 0.42, [1])
+
+    first_amp_param = 0.1
+    second_amp_param = [0.5, np.pi, 3]
+    op = ParametrizedEvolution(H, [first_amp_param, 3.5, second_amp_param], t=50)
+
+    braket_gate = translate_operation(op, device=dev._device)
+    assert braket_gate.qubit_count == 2
+
+    ps = braket_gate.pulse_sequence
+    expected_frames = [dev._device.frames[f"q{w}_drive"] for w in range(2)]
+
+    frames = list(ps._frames.values())
+    assert len(frames) == 2
+    assert all(actual == expected for actual, expected in zip(frames, expected_frames))
+
+    dt = expected_frames[0].port.dt * 1e9
+    amplitudes = [
+        [amplitude(first_amp_param, t) for t in np.arange(0, 50 + dt, dt)],
+        [second_amplitude(second_amp_param, t) for t in np.arange(0, 50 + dt, dt)],
+    ]
+
+    waveforms = list(ps._waveforms.values())
+    assert len(waveforms) == 2
+    assert all(isinstance(w, ArbitraryWaveform) for w in waveforms)
+    assert all(np.allclose(w.amplitudes, a) for w, a in zip(waveforms, amplitudes))
 
 
 @pytest.mark.parametrize("pl_cls, braket_cls, qubits, params, inv_params", testdata_inverses)
@@ -378,7 +669,8 @@ def test_translate_operation_iswap_inverse():
 def test_translate_operation_param_names_wrong_length():
     """Tests that translation fails if provided param_names list is the wrong length"""
     with pytest.raises(
-        ValueError, match="Parameter names list must be equal to number of operation parameters"
+        ValueError,
+        match="Parameter names list must be equal to number of operation parameters",
     ):
         translate_operation(qml.RX(0.432, wires=0), use_unique_params=True, param_names=["a", "b"])
 
@@ -389,9 +681,10 @@ def test_translate_operation_param_names_wrong_length():
 def test_translate_result_type_observable(return_type, braket_result_type):
     """Tests if a PennyLane return type that involves an observable is successfully converted into a
     Braket result using translate_result_type"""
-    obs = qml.Hadamard(0)
-    obs.return_type = return_type
-    braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
+    res_type = braket_result_type.__class__
+    pl_res_type = _braket_to_pl_result_types[res_type]
+    tape = qml.tape.QuantumTape(measurements=[pl_res_type(qml.Hadamard(0))])
+    braket_result_type_calculated = translate_result_type(tape.measurements[0], [0], frozenset())
 
     assert braket_result_type == braket_result_type_calculated
 
@@ -436,22 +729,23 @@ def test_get_adjoint_gradient_result_type_unsupported():
 def test_translate_result_type_hamiltonian_expectation():
     """Tests that a Hamiltonian is translated correctly"""
     obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
-    obs.return_type = ObservableReturnTypes.Expectation
-    braket_result_type_calculated = translate_result_type(obs, [0], frozenset())
-    braket_result_type = (Expectation(observables.X(), [0]), Expectation(observables.Y(), [1]))
+    tape = qml.tape.QuantumTape(measurements=[qml.expval(obs)])
+    braket_result_type_calculated = translate_result_type(tape.measurements[0], [0], frozenset())
+    braket_result_type = (
+        Expectation(observables.X(), [0]),
+        Expectation(observables.Y(), [1]),
+    )
     assert braket_result_type == braket_result_type_calculated
 
 
-@pytest.mark.parametrize(
-    "return_type", [ObservableReturnTypes.Variance, ObservableReturnTypes.Sample]
-)
+@pytest.mark.parametrize("return_type", [Variance, Sample])
 def test_translate_result_type_hamiltonian_unsupported_return(return_type):
     """Tests if a NotImplementedError is raised by translate_result_type
     with Hamiltonian observable and non-Expectation return type"""
     obs = qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1)))
-    obs.return_type = return_type
-    with pytest.raises(NotImplementedError, match="unsupported for Hamiltonian"):
-        translate_result_type(obs, [0], frozenset())
+    tape = qml.tape.QuantumTape(measurements=[_braket_to_pl_result_types[return_type](obs)])
+    with pytest.raises(NotImplementedError, match="unsupported for LinearCombination"):
+        translate_result_type(tape.measurements[0], [0], frozenset())
 
 
 def test_translate_result_type_probs():
@@ -513,20 +807,18 @@ def test_translate_result_type_state_unimplemented():
 def test_translate_result_type_unsupported_return():
     """Tests if a NotImplementedError is raised by translate_result_type for an unknown
     return_type"""
-    obs = qml.Hadamard(0)
-    obs.return_type = None
+    tape = qml.tape.QuantumTape(measurements=[qml.purity(wires=[0])])
 
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
-        translate_result_type(obs, [0], frozenset())
+        translate_result_type(tape.measurements[0], [0], frozenset())
 
 
 def test_translate_result_type_unsupported_obs():
-    """Tests if a TypeError is raised by translate_result_type for an unknown observable"""
-    obs = qml.S(wires=0)
-    obs.return_type = None
+    """Tests if a DeviceError is raised by translate_result_type for an unknown observable"""
+    tape = qml.tape.QuantumTape(measurements=[qml.expval(qml.S(wires=0))])
 
-    with pytest.raises(TypeError, match="Unsupported observable"):
-        translate_result_type(obs, [0], frozenset())
+    with pytest.raises(qml.DeviceError, match="Unsupported observable"):
+        translate_result_type(tape.measurements[0], [0], frozenset())
 
 
 def test_translate_result():
@@ -546,7 +838,11 @@ def test_translate_result_hamiltonian():
     result_dict = _result_meta()
     result_dict["resultTypes"] = [
         {
-            "type": {"observable": ["x", "y"], "targets": [0, 1], "type": "expectation"},
+            "type": {
+                "observable": ["x", "y"],
+                "targets": [0, 1],
+                "type": "expectation",
+            },
             "value": 2.0,
         },
         {
@@ -558,8 +854,8 @@ def test_translate_result_hamiltonian():
     result_dict["measuredQubits"]: targets
     result = GateModelQuantumTaskResult.from_string(json.dumps(result_dict))
     ham = qml.Hamiltonian((2, 1), (qml.PauliX(0) @ qml.PauliY(1), qml.PauliX(1)))
-    ham.return_type = ObservableReturnTypes.Expectation
-    translated = translate_result(result, ham, targets, frozenset())
+    tape = qml.tape.QuantumTape(measurements=[qml.expval(ham)])
+    translated = translate_result(result, tape.measurements[0], targets, frozenset())
     expected = 2 * result.result_types[0].value + result.result_types[1].value
     assert translated == expected
 
@@ -571,14 +867,20 @@ def _result_meta() -> dict:
             "version": "1",
         },
         "taskMetadata": {
-            "braketSchemaHeader": {"name": "braket.task_result.task_metadata", "version": "1"},
+            "braketSchemaHeader": {
+                "name": "braket.task_result.task_metadata",
+                "version": "1",
+            },
             "id": "task_arn",
             "shots": 0,
             "deviceId": "default",
         },
         "additionalMetadata": {
             "action": {
-                "braketSchemaHeader": {"name": "braket.ir.jaqcd.program", "version": "1"},
+                "braketSchemaHeader": {
+                    "name": "braket.ir.jaqcd.program",
+                    "version": "1",
+                },
                 "instructions": [{"control": 0, "target": 1, "type": "cnot"}],
             },
         },
@@ -589,19 +891,28 @@ def _result_meta() -> dict:
     "expected_braket_H, pl_H",
     [
         (
-            2 * observables.X() @ observables.Y() @ observables.Z(),
+            2 * observables.X(0) @ observables.Y(1) @ observables.Z(2),
             2 * qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2),
         ),
         (
-            2 * (observables.X() @ observables.Y() @ observables.Z()),
+            2 * (observables.X(0) @ observables.Y(1) @ observables.Z(2)),
             2 * (qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2)),
         ),
         (
-            2 * observables.X() @ observables.Y() @ observables.Z() + 0.75 * observables.X(),
+            2 * observables.X(0) @ observables.Y(1) @ observables.Z(2) + 0.75 * observables.X(0),
             2 * qml.PauliX(wires=0) @ qml.PauliY(wires=1) @ qml.PauliZ(wires=2)
             + 0.75 * qml.PauliX(0),
         ),
-        (1.25 * observables.H(), 1.25 * qml.Hadamard(wires=0)),
+        (1.25 * observables.H(0), 1.25 * qml.Hadamard(wires=0)),
+        (
+            observables.X(0) @ observables.Y(1),
+            qml.ops.Prod(qml.PauliX(0), qml.PauliY(1)),
+        ),
+        (
+            observables.X(0) + observables.Y(1),
+            qml.ops.Sum(qml.PauliX(0), qml.PauliY(1)),
+        ),
+        (observables.X(0), qml.ops.SProd(scalar=4, base=qml.PauliX(0))),
     ],
 )
 def test_translate_hamiltonian_observable(expected_braket_H, pl_H):

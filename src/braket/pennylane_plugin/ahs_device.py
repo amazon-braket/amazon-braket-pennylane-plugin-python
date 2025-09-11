@@ -32,19 +32,22 @@ Classes
 Code details
 ~~~~~~~~~~~~
 """
+
+from collections.abc import Iterable
 from enum import Enum, auto
-from typing import Dict, Iterable, List, Optional, Union
 
 import numpy as np
+from pennylane._version import __version__
+from pennylane.devices import QubitDevice
+from pennylane.measurements import MeasurementProcess, SampleMeasurement
+from pennylane.ops import CompositeOp
+from pennylane.pulse import ParametrizedEvolution
+from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
 from braket.devices import Device, LocalSimulator
-from pennylane import QubitDevice
-from pennylane._version import __version__
-from pennylane.measurements import MeasurementProcess, SampleMeasurement
-from pennylane.ops import CompositeOp, Hamiltonian
-from pennylane.pulse import ParametrizedEvolution
-from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+from braket.tasks.local_quantum_task import LocalQuantumTask
 
 from .ahs_translation import (
     _create_register,
@@ -85,10 +88,10 @@ class BraketAhsDevice(QubitDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device: Device,
         *,
-        shots: Union[int, Shots] = Shots.DEFAULT,
+        shots: int | Shots = Shots.DEFAULT,
     ):
         if not shots:
             raise RuntimeError(f"This device requires shots. Received shots={shots}")
@@ -106,11 +109,11 @@ class BraketAhsDevice(QubitDevice):
         self._ahs_program = None
         self._task = None
 
-    def apply(self, operations: List[ParametrizedEvolution], **kwargs):
+    def apply(self, operations: list[ParametrizedEvolution], **kwargs):
         """Convert the pulse operation to an AHS program and run on the connected device
 
         Args:
-            operations(List[ParametrizedEvolution]): a list containing a single
+            operations(list[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
         ev_op = operations[0]  # only one!
@@ -206,7 +209,7 @@ class BraketAhsDevice(QubitDevice):
         Args:
             queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
                 to be applied on the device
-            observables (Iterable[~.operation.Observable]): observables which are intended
+            observables (Iterable[~.operation.Operator]): observables which are intended
                 to be evaluated on the device
 
         Raises:
@@ -231,12 +234,12 @@ class BraketAhsDevice(QubitDevice):
                 continue
             self._validate_measurement_basis(o)
 
-    def _validate_operations(self, operations: List[ParametrizedEvolution]):
+    def _validate_operations(self, operations: list[ParametrizedEvolution]):
         """Confirms that the list of operations provided contains a single ParametrizedEvolution
         from a HardwareHamiltonian with only a single, global pulse
 
         Args:
-            operations(List[ParametrizedEvolution]): a list containing a single
+            operations(list[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
         """
 
@@ -274,7 +277,7 @@ class BraketAhsDevice(QubitDevice):
                 f"the device ({len(self.wires)})"
             )
 
-    def _validate_pulses(self, pulses: List[HardwarePulse]):
+    def _validate_pulses(self, pulses: list[HardwarePulse]):
         """Confirms that the list of HardwarePulses describes a single, global pulse
 
         Args:
@@ -306,9 +309,6 @@ class BraketAhsDevice(QubitDevice):
         # loop through those and evaluate individually
         if isinstance(observable, CompositeOp):
             for op in observable.operands:
-                self._validate_measurement_basis(op)
-        elif isinstance(observable, Hamiltonian):
-            for op in observable.ops:
                 self._validate_measurement_basis(op)
 
         elif not observable.has_diagonalizing_gates:
@@ -346,7 +346,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         poll_interval_seconds (float): The polling interval for results in seconds.
         shots (int or Shots.DEFAULT): Number of executions to run to aquire measurements.
             Default: Shots.DEFAULT
-        aws_session (Optional[AwsSession]): An AwsSession object created to manage
+        aws_session (AwsSession | None): An AwsSession object created to manage
             interactions with AWS services, to be supplied if extra control
             is desired. Default: None
 
@@ -377,14 +377,14 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         device_arn: str,
         s3_destination_folder: AwsSession.S3DestinationFolder = None,
         *,
         poll_timeout_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds: float = AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        shots: Union[int, Shots] = Shots.DEFAULT,
-        aws_session: Optional[AwsSession] = None,
+        shots: int | Shots = Shots.DEFAULT,
+        aws_session: AwsSession | None = None,
     ):
         device = AwsDevice(device_arn, aws_session=aws_session)
         user_agent = f"BraketPennylanePlugin/{__version__}"
@@ -498,15 +498,15 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
     def __init__(
         self,
-        wires: Union[int, Iterable],
+        wires: int | Iterable,
         *,
-        shots: Union[int, Shots] = Shots.DEFAULT,
+        shots: int | Shots = Shots.DEFAULT,
     ):
         device = LocalSimulator("braket_ahs")
         super().__init__(wires=wires, device=device, shots=shots)
 
     @property
-    def settings(self) -> Dict:
+    def settings(self) -> dict:
         """Dictionary of constants set by the hardware.
 
         Used to enable initializing hardware-consistent Hamiltonians by saving
@@ -560,13 +560,12 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         return ahs_program
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> AwsQuantumTask:
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> LocalQuantumTask:
         """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
-        task = self._device.run(ahs_program, shots=self.shots, steps=100)
-        return task
+        return self._device.run(ahs_program, shots=self.shots, steps=100)
 
-    def _validate_pulses(self, pulses: List[HardwarePulse]):  # noqa: C901
+    def _validate_pulses(self, pulses: list[HardwarePulse]):  # noqa: C901
         """Validate that all pulses are defined as expected by the device. This validation includes:
 
         * Verifying that a global drive is present
@@ -575,7 +574,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         * Verifying that all local detunings are of the same type (float or callable)
 
         Args:
-            pulses (List[HardwarePulse]): List containing all pulses
+            pulses (list[HardwarePulse]): List containing all pulses
 
         Raises:
             ValueError: if pulses are invalid
@@ -612,7 +611,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         self._validate_local_pulses(local_pulses)
 
-    def _validate_local_pulses(self, local_pulses: List[HardwarePulse]):
+    def _validate_local_pulses(self, local_pulses: list[HardwarePulse]):
         """Validate that local drives don't have amplitude or phase, and that various detunings
         aren't inconsistent The detunings are stored in the `frequency` attribute of
         0`HardwarePulse`."""

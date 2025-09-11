@@ -11,7 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-
 """Tests that gradients are correctly computed in the plugin device via braket"""
 
 import math
@@ -96,7 +95,12 @@ class TestAdjointGradient:
                     qml.RZ(rand_param, wires=i)
                 if random.randint(0, 3) == 0:
                     # cnot i with some random other qubit
-                    qml.CNOT(wires=[i, random.choice([j for j in range(num_qubits) if i != j])])
+                    qml.CNOT(
+                        wires=[
+                            i,
+                            random.choice([j for j in range(num_qubits) if i != j]),
+                        ]
+                    )
 
             # use every parameter at least once
             for i in range(num_params):

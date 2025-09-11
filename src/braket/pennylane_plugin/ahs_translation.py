@@ -11,10 +11,14 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+from collections.abc import Callable
 from functools import partial
-from typing import Callable, List, Tuple, Union
 
 import numpy as np
+from numpy.typing import ArrayLike
+from pennylane.pulse import ParametrizedEvolution
+from pennylane.pulse.hardware_hamiltonian import HardwarePulse
+
 from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.driving_field import DrivingField
 from braket.ahs.field import Field
@@ -22,22 +26,19 @@ from braket.ahs.pattern import Pattern
 from braket.ahs.shifting_field import ShiftingField
 from braket.tasks.analog_hamiltonian_simulation_quantum_task_result import ShotResult
 from braket.timings.time_series import TimeSeries
-from numpy.typing import ArrayLike
-from pennylane.pulse import ParametrizedEvolution
-from pennylane.pulse.hardware_hamiltonian import HardwarePulse
 
 ANGULAR_AND_M_SCALING_FACTOR = 2 * np.pi * 1e6
 
 
 def _convert_to_time_series(
-    pulse_parameter: Union[float, Callable],
+    pulse_parameter: float | Callable,
     time_points: ArrayLike,
     scaling_factor: float = 1,
 ):
     """Converts pulse information into a TimeSeries
 
     Args:
-        pulse_parameter(Union[float, Callable]): a physical parameter (pulse, amplitude
+        pulse_parameter(float | Callable): a physical parameter (pulse, amplitude
             or frequency detuning) of the pulse. If this is a callalbe, it has already been
             partially evaluated, such that it is only a function of time.
         time_points(array): the times where parameters will be set in the TimeSeries, specified
@@ -129,7 +130,7 @@ def _evaluate_pulses(ev_op: ParametrizedEvolution):
     return evaluated_pulses
 
 
-def _create_register(coordinates: List[Tuple[float, float]]):
+def _create_register(coordinates: list[tuple[float, float]]):
     """Create an AtomArrangement to describe the atom layout from the coordinates in the
     ParametrizedEvolution, and saves it as self._register
 
@@ -169,10 +170,10 @@ def translate_ahs_shot_result(res: ShotResult):
 
     # if entire measurement failed, all NaN
     if not res.status.value.lower() == "success":
-        return np.array([np.NaN for i in res.pre_sequence])
+        return np.array([np.nan for i in res.pre_sequence])
 
     # if a single atom failed to initialize, NaN for that individual measurement
-    pre_sequence = [i if i else np.NaN for i in res.pre_sequence]
+    pre_sequence = [i if i else np.nan for i in res.pre_sequence]
 
     # set entry to 0 if ground state measured
     # 1 if excited state measured
@@ -206,7 +207,7 @@ def _get_sample_times(time_interval: ArrayLike):
     return times / 1e9
 
 
-def _create_valid_local_detunings(local_pulses, dev_wires):
+def _create_valid_local_detunings(local_pulses, dev_wires) -> list[float | Callable]:
     """Return ordered list of local detunings for all wires in device.
 
     This function uses the local detunings of the pulses of the ``ParametrizedEvolution`` being
@@ -215,11 +216,11 @@ def _create_valid_local_detunings(local_pulses, dev_wires):
     are of type ``float``, or functions that return zero if the detunings are ``callable``.
 
     Args:
-        local_pulses (List[HardwarePulse]): Partially evaluated list of local pulses
+        local_pulses (list[HardwarePulse]): Partially evaluated list of local pulses
         dev_wires (~.Wires): Device wires
 
     Returns:
-        List[Union[callable, float]]: List of detunings covering all device wires.
+        list[float | Callable]: List of detunings covering all device wires.
     """
     if len(local_pulses) == 0:
         return None
@@ -236,7 +237,9 @@ def _create_valid_local_detunings(local_pulses, dev_wires):
     return device_detunings
 
 
-def _extract_pattern_from_detunings(detunings, time_points):
+def _extract_pattern_from_detunings(
+    detunings: list[float | Callable], time_points: np.ndarray
+) -> float | Callable:
     """Use the detunings to find the pattern for the ``ShiftingField``.
 
     This function creates a time series for the local detunings and uses the values
@@ -244,11 +247,11 @@ def _extract_pattern_from_detunings(detunings, time_points):
     ``ShiftingField`` term of the driving Hamiltonian.
 
     Args:
-        detunings (List[Union[float, callable]]): detunings to extract pattern from
-        time_points (array[Number, Number]]): Array of sampled time steps
+        detunings (list[float | Callable]): detunings to extract pattern from
+        time_points (array[Number, Number]): Array of sampled time steps
 
     Returns:
-        Union[float, callable]: Maximum detuning to be used as the magnitude for ``ShiftingField``
+        float | Callable: Maximum detuning to be used as the magnitude for ``ShiftingField``
         Pattern: object containing magnitude of detunings for individual atoms in the device
 
     Raises:
@@ -319,14 +322,14 @@ def _extract_pattern_from_detunings(detunings, time_points):
 
 
 def translate_pulses_to_shifting_field(
-    detunings: List[Union[float, callable]], time_points: np.ndarray
-):
+    detunings: list[float | Callable], time_points: np.ndarray
+) -> ShiftingField:
     """Uses the overall detuning and pattern to create a ``ShiftingField`` object from
     AWS Braket.
 
     Args:
-        detunings (List[Union[float, callable]]): Local detuning per wire
-        time_points (array[Number, Number]]): Array of sampled time steps
+        detunings (list[float | Callable]): Local detuning per wire
+        time_points (array[Number, Number]): Array of sampled time steps
 
     Returns:
         ShiftingField: the object representing the local drive for the

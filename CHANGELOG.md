@@ -1,5 +1,220 @@
 # Changelog
 
+## v1.33.1 (2025-09-10)
+
+### Bug Fixes and Other Changes
+
+ * Python 3.10 syntax
+
+## v1.33.0 (2025-08-21)
+
+### Deprecations and Removals
+
+ * Drop Python 3.9, support 3.12, 3.13
+
+### Bug Fixes and Other Changes
+
+ * Update linters to Python 3.10
+
+### Documentation Changes
+
+ * Unquote python latest for docs
+ * Add Python 3.12, 3.13 to supported versions
+
+## v1.32.0 (2025-08-13)
+
+### Features
+
+ * Program sets
+
+## v1.31.3 (2025-05-05)
+
+### Bug Fixes and Other Changes
+
+ * Remove use of `MeasurementProcess.return_type`
+
+## v1.31.2 (2025-01-16)
+
+### Bug Fixes and Other Changes
+
+ * Flatten observable before getting targets
+
+## v1.31.1 (2025-01-15)
+
+### Bug Fixes and Other Changes
+
+ * Pin PL <0.40
+
+## v1.31.0 (2024-12-03)
+
+### Deprecations and Removals
+
+ * remove legacy opmath
+
+## v1.30.2 (2024-11-18)
+
+### Bug Fixes and Other Changes
+
+ * Remove deprecated import path for QubitDevice
+
+## v1.30.1 (2024-09-19)
+
+### Bug Fixes and Other Changes
+
+ * onboard onto ruff
+
+## v1.30.0 (2024-09-11)
+
+### Features
+
+ * Device-specific supported observables
+
+## v1.29.0 (2024-09-09)
+
+### Features
+
+ * Support `SProd` and `CompositeOp` for expval
+
+### Documentation Changes
+
+ * Fix typo in qml.var usage
+
+## v1.28.0 (2024-07-01)
+
+### Features
+
+ * Support `batch_execute` for `BraketLocalQubitDevice`
+
+## v1.27.6 (2024-06-18)
+
+### Bug Fixes and Other Changes
+
+ * Support `qml.counts` for circuits
+
+## v1.27.5 (2024-06-13)
+
+### Bug Fixes and Other Changes
+
+ * Replace `FreeParameter("b")` with `FreeParameter("d")` in unittests
+
+## v1.27.4 (2024-06-03)
+
+### Bug Fixes and Other Changes
+
+ * Update autoray to >= 0.6.11
+
+## v1.27.3 (2024-05-14)
+
+### Bug Fixes and Other Changes
+
+ * pin autoray < 0.6.10
+
+## v1.27.2 (2024-05-08)
+
+### Bug Fixes and Other Changes
+
+ * Translate `Sum` for adjoint gradient
+
+## v1.27.1 (2024-05-06)
+
+### Bug Fixes and Other Changes
+
+ * Correct comment
+
+## v1.27.0 (2024-05-06)
+
+### Features
+
+ * support LinearCombination as observable
+
+## v1.26.0 (2024-04-29)
+
+### Features
+
+ * support Prod as an observable
+
+## v1.25.0 (2024-04-22)
+
+### Features
+
+ * add phase RX gate
+
+## v1.24.6 (2024-03-05)
+
+### Bug Fixes and Other Changes
+
+ * Raise a `DeviceError instead of `TypeError`
+
+## v1.24.5 (2024-03-04)
+
+### Bug Fixes and Other Changes
+
+ * update test to use DummyOp
+
+### Documentation Changes
+
+ * minor change to tox instructions
+
+## v1.24.4 (2024-02-28)
+
+### Bug Fixes and Other Changes
+
+ * move to use measurementprocess.obs.name
+
+## v1.24.3 (2024-02-20)
+
+### Bug Fixes and Other Changes
+
+ * use the linter checks for code formatting
+
+## v1.24.2 (2024-01-29)
+
+### Bug Fixes and Other Changes
+
+ * update paradigm_properties to reflect new schema
+
+## v1.24.1 (2024-01-25)
+
+### Bug Fixes and Other Changes
+
+ * set the isort profile to black
+
+## v1.24.0 (2024-01-18)
+
+### Features
+
+ * use measurements getting return types
+
+### Bug Fixes and Other Changes
+
+ * Raise warning when falling back on param-shift
+
+## v1.23.0 (2023-10-25)
+
+### Features
+
+ * pulse programming support for OQC Lucy
+
+## v1.22.0 (2023-10-21)
+
+### Deprecations and Removals
+
+ * Remove legacy return types system
+
+### Bug Fixes and Other Changes
+
+ * Remove legacy return types system
+
+### Documentation Changes
+
+ * Use builtins for type hints
+
+## v1.21.0 (2023-10-11)
+
+### Features
+
+ * remove python 3.8 support
+
 ## v1.20.3.post1 (2023-09-20)
 
 ### Documentation Changes

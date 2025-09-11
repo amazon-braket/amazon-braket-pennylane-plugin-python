@@ -11,8 +11,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import platform
-
 from setuptools import find_namespace_packages, setup
 
 with open("README.rst", "r") as fh:
@@ -21,21 +19,17 @@ with open("README.rst", "r") as fh:
 with open("src/braket/pennylane_plugin/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
-if platform.system() == "Darwin" and platform.machine() == "arm64":
-    TF_VERSION = "tensorflow-macos>=2.12.0,<2.13.0"
-else:
-    TF_VERSION = "tensorflow>=2.12.0,<2.13.0"
-
 setup(
     name="amazon-braket-pennylane-plugin",
     version=version,
     license="Apache License 2.0",
-    python_requires=">= 3.8.2",
+    python_requires=">= 3.10",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
-        "amazon-braket-sdk>=1.47.0",
-        "pennylane>=0.30.0",
+        "amazon-braket-sdk>=1.97.0",
+        "autoray>=0.6.11",
+        "pennylane>=0.34.0",
     ],
     entry_points={
         "pennylane.plugins": [
@@ -52,25 +46,26 @@ setup(
     },
     extras_require={
         "test": [
-            "black",
+            "autoray<0.7.0",  # autoray.tensorflow_diag no longer works
             "docutils>=0.19",
-            "flake8",
-            "flake8-rst-docstrings",
-            "isort",
+            "flaky",
             "pre-commit",
-            "pylint",
+            "pylint>=3.1.0",
             "pytest",
+            "pytest-benchmark",
             "pytest-cov",
             "pytest-mock",
-            "pytest-rerunfailures",
+            # https://github.com/pytest-dev/pytest-rerunfailures/issues/302
+            "pytest-rerunfailures<16.0",
             "pytest-xdist",
+            "ruff",
             "sphinx",
             "sphinx-automodapi",
             "sphinx-rtd-theme",
             "sphinxcontrib-apidoc",
             "tox",
-            "torch>=1.11",
-            TF_VERSION,
+            "torch>2",
+            "tensorflow>=2.16.1",
         ]
     },
     url="https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python",
@@ -88,9 +83,9 @@ setup(
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
