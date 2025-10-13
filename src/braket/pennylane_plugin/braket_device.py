@@ -274,7 +274,11 @@ class BraketQubitDevice(QubitDevice):
                     else:
                         braket_circuit.add_result_type(translated)
             else:
-                observables = [measurement.obs for measurement in circuit.measurements if measurement.obs is not None]
+                observables = [
+                    measurement.obs
+                    for measurement in circuit.measurements
+                    if measurement.obs is not None
+                ]
                 if observables:
                     groups = qml.pauli.group_observables(observables, grouping_type="qwc")
                     if len(groups) > 1:

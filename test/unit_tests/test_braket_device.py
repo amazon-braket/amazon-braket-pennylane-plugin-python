@@ -1683,6 +1683,39 @@ def test_counts_all_outcomes_fails():
         dev.execute(circuit)
 
 
+@patch.object(LocalSimulator, "run_batch")
+def test_counts_without_observable_batch_execute(mock_run_batch):
+    """Tests batch execution without observable works correctly"""
+    task_batch = Mock()
+    task_batch.unsuccessful = {}
+    mock_results = []
+    for _ in range(5):
+        result = Mock()
+        result.measurement_counts = {"10": 100}
+        result.result_types = []
+        result.task_metadata.shots = 100
+        mock_results.append(result)
+    task_batch.results.return_value = mock_results
+    mock_run_batch.return_value = task_batch
+
+    dev = BraketLocalQubitDevice(wires=2, shots=100, parallel=True)
+
+    @qml.qnode(dev)
+    def bell_circuit():
+        qml.X(wires=0)
+        return qml.counts()
+
+    # Construct and execute tape to trigger batch_execute
+    tape_generator = qml.workflow.construct_tape(bell_circuit)
+    tapes = [tape_generator() for _ in range(5)]
+    results = qml.execute(tapes, dev)
+
+    assert len(results) == 5
+    for result in results:
+        assert result.item() == {"10": 100}
+    mock_run_batch.assert_called_once()
+
+
 def test_sample_fails():
     """Tests that the calling sample raises an error"""
     dev = _aws_device(wires=2, shots=4)
