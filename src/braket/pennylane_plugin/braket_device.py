@@ -274,9 +274,12 @@ class BraketQubitDevice(QubitDevice):
                     else:
                         braket_circuit.add_result_type(translated)
             else:
-                groups = qml.pauli.group_observables(
-                    [measurement.obs for measurement in circuit.measurements], grouping_type="qwc"
-                )
+                observables = [
+                    measurement.obs
+                    for measurement in circuit.measurements
+                    if measurement.obs is not None
+                ]
+                groups = qml.pauli.group_observables(observables, grouping_type="qwc")
                 if len(groups) > 1:
                     raise ValueError(
                         f"Observables need to mutually commute, but found {len(groups)}: {groups}"
