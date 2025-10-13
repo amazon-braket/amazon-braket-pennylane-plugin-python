@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.33.2 (2025-10-13)
+
+### Bug Fixes and Other Changes
+
+ * handle batch execute for program with no observables
+
 ## v1.33.1 (2025-09-10)
 
 ### Bug Fixes and Other Changes
