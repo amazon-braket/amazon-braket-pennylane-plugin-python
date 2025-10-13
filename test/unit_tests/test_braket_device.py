@@ -1705,10 +1705,10 @@ def test_counts_without_observable_batch_execute(mock_run_batch):
         qml.X(wires=0)
         return qml.counts()
 
-    # Construct and execute tape to trigger batch_execute
+    # Construct and execute tapes with batch_execute to trigger program sets
     tape_generator = qml.workflow.construct_tape(bell_circuit)
     tapes = [tape_generator() for _ in range(5)]
-    results = qml.execute(tapes, dev)
+    results = dev.batch_execute(tapes)
 
     assert len(results) == 5
     for result in results:
