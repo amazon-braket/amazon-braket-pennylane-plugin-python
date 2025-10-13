@@ -274,15 +274,15 @@ class BraketQubitDevice(QubitDevice):
                     else:
                         braket_circuit.add_result_type(translated)
             else:
-                groups = qml.pauli.group_observables(
-                    [measurement.obs for measurement in circuit.measurements], grouping_type="qwc"
-                )
-                if len(groups) > 1:
-                    raise ValueError(
-                        f"Observables need to mutually commute, but found {len(groups)}: {groups}"
-                    )
-                diagonalizing_ops = qml.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
-                braket_circuit += self.apply(diagonalizing_ops, apply_identities=False)
+                observables = [measurement.obs for measurement in circuit.measurements if measurement.obs is not None]
+                if observables:
+                    groups = qml.pauli.group_observables(observables, grouping_type="qwc")
+                    if len(groups) > 1:
+                        raise ValueError(
+                            f"Observables need to mutually commute, but found {len(groups)}: {groups}"
+                        )
+                    diagonalizing_ops = qml.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
+                    braket_circuit += self.apply(diagonalizing_ops, apply_identities=False)
 
         return braket_circuit
 
