@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.33.3 (2025-10-14)
+
+### Bug Fixes and Other Changes
+
+ * handle in test for local sim that supports program sets
+
 ## v1.33.2 (2025-10-13)
 
 ### Bug Fixes and Other Changes
