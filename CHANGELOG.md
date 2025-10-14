@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.33.4 (2025-10-14)
+
+### Bug Fixes and Other Changes
+
+ * Bypass program sets for local device
+
 ## v1.33.3 (2025-10-14)
 
 ### Bug Fixes and Other Changes
