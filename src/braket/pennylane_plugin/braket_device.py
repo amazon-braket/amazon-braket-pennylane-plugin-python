@@ -1107,6 +1107,9 @@ class BraketLocalQubitDevice(BraketQubitDevice):
     ):
         device = LocalSimulator(backend)
         super().__init__(wires, device, shots=shots, **run_kwargs)
+        # TODO: Enable program sets once local simulator supports multiprocessing
+        # for program set execution
+        self._supports_program_sets = False
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         task_batch = self._device.run_batch(
