@@ -98,6 +98,17 @@ CIRCUIT = (
     .sample(observable=observables.Z(3))
 )
 
+# Circuit with basis rotations for `CIRCUIT` when using program sets
+CIRCUIT_WITH_BASIS_ROTATION = (
+    Circuit()
+    .h(0)
+    .cnot(0, 1)
+    .i(2)
+    .i(3)
+    .ry(1, -np.pi / 2)  # Basis rotation gate for PauliX(1)
+    .rx(2, np.pi / 2)  # Basis rotation gate for PauliY(2)
+)
+
 CIRCUIT_BELL = Circuit().h(0).cnot(0, 1)
 PROGRAM_RESULT = {
     "braketSchemaHeader": {
@@ -1204,8 +1215,13 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
             RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
+    if dev._supports_program_sets:
+        expected_circuits = [CIRCUIT_WITH_BASIS_ROTATION, CIRCUIT_WITH_BASIS_ROTATION]
+    else:
+        expected_circuits = [CIRCUIT, CIRCUIT]
+
     mock_run_batch.assert_called_with(
-        [CIRCUIT, CIRCUIT],
+        expected_circuits,
         shots=SHOTS,
         max_parallel=None,
         inputs=[],
