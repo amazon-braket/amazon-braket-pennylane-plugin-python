@@ -6,6 +6,10 @@ on:
       - main
       - feature/**
 
+
+permissions:
+  contents: read
+
 jobs:
   twine-check:
     name: Check long description
