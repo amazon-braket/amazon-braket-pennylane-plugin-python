@@ -10,8 +10,6 @@ on:
       - main
       - feature/**
 
-
-
 permissions:
   contents: read
 
