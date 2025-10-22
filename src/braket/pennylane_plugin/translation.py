@@ -659,7 +659,7 @@ def _translate_observable(observable):
                 lambda x, y: x + y, [_translate_observable(operator) for operator in operands]
             )
         case _:
-            raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
+            raise qml.exceptions.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 def translate_result(
