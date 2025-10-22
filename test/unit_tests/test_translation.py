@@ -817,7 +817,7 @@ def test_translate_result_type_unsupported_obs():
     """Tests if a DeviceError is raised by translate_result_type for an unknown observable"""
     tape = qml.tape.QuantumTape(measurements=[qml.expval(qml.S(wires=0))])
 
-    with pytest.raises(qml.DeviceError, match="Unsupported observable"):
+    with pytest.raises(qml.exceptions.DeviceError, match="Unsupported observable"):
         translate_result_type(tape.measurements[0], [0], frozenset())
 
 
