@@ -43,9 +43,9 @@ from enum import Enum, auto
 
 import numpy as onp
 import pennylane as qml
-from pennylane import QuantumFunctionError
 from pennylane import numpy as np
 from pennylane.devices import QubitDevice
+from pennylane.exceptions import QuantumFunctionError
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
     CountsMP,
