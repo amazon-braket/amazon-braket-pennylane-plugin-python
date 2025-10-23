@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.33.5 (2025-10-23)
+
+### Bug Fixes and Other Changes
+
+ * update exception import paths for pennylane>=0.42
+
 ## v1.33.4 (2025-10-14)
 
 ### Bug Fixes and Other Changes
