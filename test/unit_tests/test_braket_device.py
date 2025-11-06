@@ -1125,14 +1125,65 @@ def test_batch_execute_program_set_noncommuting():
         dev.batch_execute(circuits)
 
 
-def test_batch_execute_program_set_exceeds_max_executables():
+@patch.object(AwsDevice, "run")
+def test_batch_execute_program_set_exceeds_max_executables(mock_run):
     """Test batch_execute falls back to individual programs when exceeding maximumExecutables
-
-    When the number of circuits exceeds the device's maximumExecutables limit (100),
-    the device should fall back to using super().batch_execute() which processes
-    circuits individually instead of using a program set.
     """
-    dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
+    # Create a custom result that matches our circuit's measurement (X⊗Y expectation on qubits [0,1])
+    custom_result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": [[0, 0], [1, 1], [0, 1], [1, 0]],
+                "resultTypes": [
+                    {
+                        "type": {
+                            "observable": ["x", "y"],
+                            "targets": [0, 1],
+                            "type": "expectation",
+                        },
+                        "value": 0.5,
+                    },
+                ],
+                "measuredQubits": [0, 1],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 10000,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; h q[0]; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+    
+    # Mock the task to return our custom result
+    task = Mock()
+    task.result.return_value = custom_result
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    mock_run.return_value = task
+    
+    dev = _aws_device(wires=4, foo="bar", parallel=True, supports_program_sets=True)
+
+    # Verify the device properties are set correctly to ensure we hit the second condition
+    assert dev._parallel == True
+    assert dev._supports_program_sets == True
+    assert dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables == 100
 
     # Create 101 circuits (exceeds maximumExecutables of 100, defined in ACTION_PROPERTIES_PROGRAMSET)
     circuits = []
@@ -1143,11 +1194,12 @@ def test_batch_execute_program_set_exceeds_max_executables():
             qml.expval(qml.PauliX(0) @ qml.PauliY(1))
         circuits.append(circuit)
 
-    with patch.object(dev.__class__.__bases__[0], "batch_execute") as mock_super_batch_execute:
-        mock_super_batch_execute.return_value = [0.5] * 101
+    assert len(circuits) == 101
+    assert len(circuits) > dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
 
-        result = dev.batch_execute(circuits)
-        mock_super_batch_execute.assert_called_once_with(circuits)
+    result = dev.batch_execute(circuits)
+    assert mock_run.call_count == 101
+    assert len(result) == 101
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
@@ -2341,7 +2393,6 @@ def _aws_device(
         parametrize_differentiable=parametrize_differentiable,
         **kwargs,
     )
-    # Manually set the _properties to the mock since the property is patched
     dev._device._properties = properties_mock
     return dev
 
