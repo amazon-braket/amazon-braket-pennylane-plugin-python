@@ -46,6 +46,7 @@ from braket.task_result import ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
 from device_property_jsons import (
     ACTION_PROPERTIES,
+    ACTION_PROPERTIES_PROGRAMSET,
     ACTION_PROPERTIES_DM_DEVICE,
     ACTION_PROPERTIES_NATIVE,
     ACTION_PROPERTIES_NO_ADJOINT,
@@ -752,9 +753,9 @@ def test_execute_tracker(mock_run):
 
 def _aws_device_mock_init(self, *args, **kwargs):
     self._arn = args[0]
-    self._properties = None
     self._ports = None
     self._name = "name"
+    # The _properties will be set by the properties mock
     return None
 
 
@@ -1122,6 +1123,31 @@ def test_batch_execute_program_set_noncommuting():
     circuits = [circuit, circuit]
     with pytest.raises(ValueError):
         dev.batch_execute(circuits)
+
+
+def test_batch_execute_program_set_exceeds_max_executables():
+    """Test batch_execute falls back to individual programs when exceeding maximumExecutables
+
+    When the number of circuits exceeds the device's maximumExecutables limit (100),
+    the device should fall back to using super().batch_execute() which processes
+    circuits individually instead of using a program set.
+    """
+    dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
+
+    # Create 101 circuits (exceeds maximumExecutables of 100, defined in ACTION_PROPERTIES_PROGRAMSET)
+    circuits = []
+    for _ in range(101):
+        with QuantumTape() as circuit:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+        circuits.append(circuit)
+
+    with patch.object(dev.__class__.__bases__[0], "batch_execute") as mock_super_batch_execute:
+        mock_super_batch_execute.return_value = [0.5] * 101
+
+        result = dev.batch_execute(circuits)
+        mock_super_batch_execute.assert_called_once_with(circuits)
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
@@ -2299,7 +2325,7 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = ACTION_PROPERTIES_PROGRAMSET
     properties_mock.paradigm.nativeGateSet = native_gate_set
     if native_gate_set is None:
         type(properties_mock).paradigm = PropertyMock(side_effect=AttributeError("paradigm"))
@@ -2315,6 +2341,8 @@ def _aws_device(
         parametrize_differentiable=parametrize_differentiable,
         **kwargs,
     )
+    # Manually set the _properties to the mock since the property is patched
+    dev._device._properties = properties_mock
     return dev
 
 
