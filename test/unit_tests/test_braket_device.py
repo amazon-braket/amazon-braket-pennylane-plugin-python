@@ -1128,7 +1128,6 @@ def test_batch_execute_program_set_noncommuting():
 @patch.object(AwsDevice, "run")
 def test_batch_execute_program_set_exceeds_max_executables(mock_run):
     """Test batch_execute falls back to individual programs when exceeding maximumExecutables"""
-    # Create a custom result that matches our circuit's measurement (X⊗Y expectation on qubits [0,1])
     custom_result = GateModelQuantumTaskResult.from_string(
         json.dumps(
             {
