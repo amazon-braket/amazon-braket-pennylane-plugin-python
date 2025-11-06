@@ -209,6 +209,12 @@ class BraketQubitDevice(QubitDevice):
         if not self._parallel and not self._supports_program_sets:
             return super().batch_execute(circuits)
 
+        if self._supports_program_sets and (
+            len(circuits)
+            > self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+        ):
+            return super().batch_execute(circuits)
+
         for circuit in circuits:
             self.check_validity(circuit.operations, circuit.observables)
         all_trainable = []

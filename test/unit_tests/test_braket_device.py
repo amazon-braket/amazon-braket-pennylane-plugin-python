@@ -46,6 +46,7 @@ from braket.task_result import ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
 from device_property_jsons import (
     ACTION_PROPERTIES,
+    ACTION_PROPERTIES_PROGRAMSET,
     ACTION_PROPERTIES_DM_DEVICE,
     ACTION_PROPERTIES_NATIVE,
     ACTION_PROPERTIES_NO_ADJOINT,
@@ -752,9 +753,9 @@ def test_execute_tracker(mock_run):
 
 def _aws_device_mock_init(self, *args, **kwargs):
     self._arn = args[0]
-    self._properties = None
     self._ports = None
     self._name = "name"
+    # The _properties will be set by the properties mock
     return None
 
 
@@ -1122,6 +1123,84 @@ def test_batch_execute_program_set_noncommuting():
     circuits = [circuit, circuit]
     with pytest.raises(ValueError):
         dev.batch_execute(circuits)
+
+
+@patch.object(AwsDevice, "run")
+def test_batch_execute_program_set_exceeds_max_executables(mock_run):
+    """Test batch_execute falls back to individual programs when exceeding maximumExecutables"""
+    custom_result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": [[0, 0], [1, 1], [0, 1], [1, 0]],
+                "resultTypes": [
+                    {
+                        "type": {
+                            "observable": ["x", "y"],
+                            "targets": [0, 1],
+                            "type": "expectation",
+                        },
+                        "value": 0.5,
+                    },
+                ],
+                "measuredQubits": [0, 1],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 10000,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; h q[0]; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+
+    # Mock the task to return our custom result
+    task = Mock()
+    task.result.return_value = custom_result
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    mock_run.return_value = task
+
+    dev = _aws_device(wires=4, foo="bar", parallel=True, supports_program_sets=True)
+
+    # Verify the device properties are set correctly to ensure we hit the second condition
+    assert dev._parallel == True
+    assert dev._supports_program_sets == True
+    assert dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables == 100
+
+    # Create 101 circuits (exceeds maximumExecutables of 100, defined in ACTION_PROPERTIES_PROGRAMSET)
+    circuits = []
+    for _ in range(101):
+        with QuantumTape() as circuit:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+        circuits.append(circuit)
+
+    assert len(circuits) == 101
+    assert (
+        len(circuits)
+        > dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+    )
+
+    result = dev.batch_execute(circuits)
+    assert mock_run.call_count == 101
+    assert len(result) == 101
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
@@ -2299,7 +2378,7 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = ACTION_PROPERTIES_PROGRAMSET
     properties_mock.paradigm.nativeGateSet = native_gate_set
     if native_gate_set is None:
         type(properties_mock).paradigm = PropertyMock(side_effect=AttributeError("paradigm"))
@@ -2315,6 +2394,7 @@ def _aws_device(
         parametrize_differentiable=parametrize_differentiable,
         **kwargs,
     )
+    dev._device._properties = properties_mock
     return dev
 
 
