@@ -1127,8 +1127,7 @@ def test_batch_execute_program_set_noncommuting():
 
 @patch.object(AwsDevice, "run")
 def test_batch_execute_program_set_exceeds_max_executables(mock_run):
-    """Test batch_execute falls back to individual programs when exceeding maximumExecutables
-    """
+    """Test batch_execute falls back to individual programs when exceeding maximumExecutables"""
     # Create a custom result that matches our circuit's measurement (X⊗Y expectation on qubits [0,1])
     custom_result = GateModelQuantumTaskResult.from_string(
         json.dumps(
@@ -1170,14 +1169,14 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
             }
         )
     )
-    
+
     # Mock the task to return our custom result
     task = Mock()
     task.result.return_value = custom_result
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
     mock_run.return_value = task
-    
+
     dev = _aws_device(wires=4, foo="bar", parallel=True, supports_program_sets=True)
 
     # Verify the device properties are set correctly to ensure we hit the second condition
@@ -1195,7 +1194,10 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
         circuits.append(circuit)
 
     assert len(circuits) == 101
-    assert len(circuits) > dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+    assert (
+        len(circuits)
+        > dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+    )
 
     result = dev.batch_execute(circuits)
     assert mock_run.call_count == 101
