@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.33.6 (2025-11-10)
+
+### Bug Fixes and Other Changes
+
+ * fall back to programs when program set is too big
+
 ## v1.33.5 (2025-10-23)
 
 ### Bug Fixes and Other Changes
