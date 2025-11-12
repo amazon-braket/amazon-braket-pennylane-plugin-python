@@ -821,6 +821,17 @@ def test_translate_result_type_unsupported_obs():
         translate_result_type(tape.measurements[0], [0], frozenset())
 
 
+def test_translate_result_type_probs_observable():
+    """Tests if a DeviceError is raised by translate_result_type for a Probability return type
+    with an observable attached"""
+    mp = qml.probs(op=qml.X(wires=0))
+
+    with pytest.raises(
+        qml.DeviceError, match="Probability result type not supported for observables"
+    ):
+        translate_result_type(mp, [0], frozenset())
+
+
 def test_translate_result():
     result_dict = _result_meta()
     result_dict["resultTypes"] = [
