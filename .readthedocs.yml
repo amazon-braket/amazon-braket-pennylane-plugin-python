@@ -18,7 +18,8 @@ build:
   os: ubuntu-lts-latest
   tools:
     python: latest
-
+  apt_packages:
+    - graphviz
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
