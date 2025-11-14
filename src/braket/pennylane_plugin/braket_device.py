@@ -48,6 +48,7 @@ from pennylane.devices import QubitDevice
 from pennylane.exceptions import QuantumFunctionError
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
+    ClassicalShadowMP,
     CountsMP,
     ExpectationMP,
     MeasurementProcess,
@@ -172,6 +173,11 @@ class BraketQubitDevice(QubitDevice):
             DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
             and self._shots is not None
         )
+        self._max_program_set_executables = (
+            self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+            if self._supports_program_sets
+            else None
+        )
 
         if noise_model:
             self._validate_noise_model_support()
@@ -209,10 +215,7 @@ class BraketQubitDevice(QubitDevice):
         if not self._parallel and not self._supports_program_sets:
             return super().batch_execute(circuits)
 
-        if self._supports_program_sets and (
-            len(circuits)
-            > self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
-        ):
+        if self._supports_program_sets and len(circuits) > self._max_program_set_executables:
             return super().batch_execute(circuits)
 
         for circuit in circuits:
@@ -220,6 +223,17 @@ class BraketQubitDevice(QubitDevice):
         all_trainable = []
         braket_circuits = []
         for circuit in circuits:
+            if isinstance(circuit.observables[0], ClassicalShadowMP):
+                if len(circuit.observables) > 1:
+                    raise ValueError(
+                        "A circuit with a ClassicalShadowMP observable must "
+                        "have that as its only result type."
+                    )
+                if len(circuits) > 1:
+                    raise ValueError("Classical shadow must be called with a single circuit.")
+                bits, recipes = self.classical_shadow(circuit.observables[0], circuit)
+                return [(bits, recipes)]
+
             trainable = (
                 BraketQubitDevice._get_trainable_parameters(circuit)
                 if self._parametrize_differentiable
@@ -764,7 +778,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
         n_snapshots = len(snapshot_circuits)
         outcomes = np.zeros((n_snapshots, n_qubits))
-        if self._supports_program_sets:
+        if self._supports_program_sets and n_snapshots < self._max_program_set_executables:
             program_set = ProgramSet(snapshot_circuits)
             task = self._device.run(
                 program_set,
