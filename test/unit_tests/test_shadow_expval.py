@@ -335,6 +335,12 @@ circs = [Circuit().h(0).cnot(0, 1).rx(0, 0.432).ry(0, 0.543) for s in range(SHOT
 # basis rotation with seed
 circs[0].h(1)
 
+# Circuits with measurements for program set (required for program sets to work)
+circs_with_measurements = [
+    Circuit().h(0).cnot(0, 1).rx(0, 0.432).ry(0, 0.543).h(1).measure(0).measure(1),
+    Circuit().h(0).cnot(0, 1).rx(0, 0.432).ry(0, 0.543).measure(0).measure(1),
+]
+
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run")
@@ -649,3 +655,141 @@ def test_non_shadow_expval_transform():
         dummy_measurement_transform()
 
     dev.execute(circuit)
+
+
+# Test for classical_shadow with program sets
+CIRCUIT_CLASSICAL_SHADOW = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+    ],
+    measurements=[qml.classical_shadow(wires=range(2), seed=SEED)],
+)
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run")
+def test_classical_shadow_with_program_sets(mock_run, mock_properties):
+    """Test that classical_shadow measurement raises error (not yet supported in execute)"""
+    mock_action = Mock()
+    mock_action.action = {"braket.ir.openqasm.program": None}
+    mock_properties.return_value = mock_action
+
+    dev = _aws_device(
+        wires=2,
+        foo="bar",
+        supports_program_sets=True,
+    )
+
+    # When using program sets, return TASK_PROGRAM_SET instead of TASK
+    mock_run.return_value = TASK_PROGRAM_SET
+
+    # Execute circuit with classical_shadow should raise an error
+    # because ClassicalShadowMP is not yet handled in the execute method
+    with pytest.raises(
+        RuntimeError,
+        match="The circuit has an unsupported MeasurementTransform",
+    ):
+        dev.execute(CIRCUIT_CLASSICAL_SHADOW)
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run")
+def test_classical_shadow_multiple_observables_error(mock_run, mock_properties):
+    """Test that classical_shadow raises error (not yet supported in execute)"""
+    mock_action = Mock()
+    mock_action.action = {"braket.ir.openqasm.program": None}
+    mock_properties.return_value = mock_action
+
+    dev = _aws_device(wires=2, foo="bar")
+
+    # Create circuit with multiple measurements including classical_shadow
+    circuit = QuantumScript(
+        ops=[qml.Hadamard(wires=0)],
+        measurements=[
+            qml.classical_shadow(wires=[0], seed=SEED),
+            qml.expval(qml.PauliZ(0)),
+        ],
+    )
+
+    # Since ClassicalShadowMP is not handled in execute, it raises RuntimeError
+    with pytest.raises(
+        RuntimeError,
+        match="The circuit has an unsupported MeasurementTransform",
+    ):
+        dev.execute(circuit)
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run")
+def test_batch_execute_classical_shadow_single_circuit(mock_run, mock_properties):
+    """Test that batch_execute handles ClassicalShadowMP with a single circuit"""
+    mock_program_set_action = Mock()
+    mock_program_set_action.maximumExecutables = 10
+
+    mock_action = Mock()
+    mock_action.action = {
+        "braket.ir.openqasm.program": None,
+        "braket.ir.openqasm.program_set": mock_program_set_action,
+    }
+    mock_properties.return_value = mock_action
+
+    dev = _aws_device(
+        wires=2,
+        foo="bar",
+        supports_program_sets=True,
+    )
+
+    mock_run.return_value = TASK_PROGRAM_SET
+    circuits = [CIRCUIT_CLASSICAL_SHADOW]
+    results = dev.batch_execute(circuits)
+
+    assert len(results) == 1
+    bits, recipes = results[0]
+    assert bits.shape == (SHOTS, 2)
+    assert recipes.shape == (SHOTS, 2)
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "circuits, error_message",
+    [
+        (
+            [
+                QuantumScript(
+                    ops=[qml.Hadamard(wires=0)],
+                    measurements=[
+                        qml.classical_shadow(wires=[0], seed=SEED),
+                        qml.expval(qml.PauliZ(0)),
+                    ],
+                )
+            ],
+            "A circuit with a ClassicalShadowMP observable must have that as its only result type",
+        ),
+        (
+            [CIRCUIT_CLASSICAL_SHADOW, CIRCUIT_CLASSICAL_SHADOW],
+            "Classical shadow must be called with a single circuit",
+        ),
+    ],
+)
+def test_batch_execute_classical_shadow_errors(mock_run, mock_properties, circuits, error_message):
+    """Test that batch_execute raises appropriate errors for invalid ClassicalShadowMP usage"""
+    mock_program_set_action = Mock()
+    mock_program_set_action.maximumExecutables = 10
+
+    mock_action = Mock()
+    mock_action.action = {
+        "braket.ir.openqasm.program": None,
+        "braket.ir.openqasm.program_set": mock_program_set_action,
+    }
+    mock_properties.return_value = mock_action
+
+    dev = _aws_device(
+        wires=2,
+        foo="bar",
+        supports_program_sets=True,
+    )
+
+    with pytest.raises(ValueError, match=error_message):
+        dev.batch_execute(circuits)

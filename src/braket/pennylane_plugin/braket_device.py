@@ -48,6 +48,7 @@ from pennylane.devices import QubitDevice
 from pennylane.exceptions import QuantumFunctionError
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
+    ClassicalShadowMP,
     CountsMP,
     ExpectationMP,
     MeasurementProcess,
@@ -220,6 +221,17 @@ class BraketQubitDevice(QubitDevice):
         all_trainable = []
         braket_circuits = []
         for circuit in circuits:
+            if isinstance(circuit.observables[0], ClassicalShadowMP):
+                if len(circuit.observables) > 1:
+                    raise ValueError(
+                        "A circuit with a ClassicalShadowMP observable must "
+                        "have that as its only result type."
+                    )
+                if len(circuits) > 1:
+                    raise ValueError("Classical shadow must be called with a single circuit.")
+                bits, recipes = self.classical_shadow(circuit.observables[0], circuit)
+                return [(bits, recipes)]
+
             trainable = (
                 BraketQubitDevice._get_trainable_parameters(circuit)
                 if self._parametrize_differentiable
