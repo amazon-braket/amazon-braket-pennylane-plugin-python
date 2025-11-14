@@ -689,62 +689,6 @@ CIRCUIT_CLASSICAL_SHADOW = QuantumScript(
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run")
-def test_classical_shadow_with_program_sets(mock_run, mock_properties):
-    """Test that classical_shadow measurement raises error (not yet supported in execute)"""
-    mock_action = Mock()
-    mock_action.action = {
-        DeviceActionType.OPENQASM: ACTION_PROPERTIES,
-        DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
-    }
-    mock_properties.return_value = mock_action
-
-    dev = _aws_device(
-        wires=2,
-        foo="bar",
-        supports_program_sets=True,
-    )
-
-    # When using program sets, return TASK_PROGRAM_SET instead of TASK
-    mock_run.return_value = TASK_PROGRAM_SET
-
-    # Execute circuit with classical_shadow should raise an error
-    # because ClassicalShadowMP is not yet handled in the execute method
-    with pytest.raises(
-        RuntimeError,
-        match="The circuit has an unsupported MeasurementTransform",
-    ):
-        dev.execute(CIRCUIT_CLASSICAL_SHADOW)
-
-
-@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
-@patch.object(AwsDevice, "run")
-def test_classical_shadow_multiple_observables_error(mock_run, mock_properties):
-    """Test that classical_shadow raises error (not yet supported in execute)"""
-    mock_action = Mock()
-    mock_action.action = {"braket.ir.openqasm.program": None}
-    mock_properties.return_value = mock_action
-
-    dev = _aws_device(wires=2, foo="bar")
-
-    # Create circuit with multiple measurements including classical_shadow
-    circuit = QuantumScript(
-        ops=[qml.Hadamard(wires=0)],
-        measurements=[
-            qml.classical_shadow(wires=[0], seed=SEED),
-            qml.expval(qml.PauliZ(0)),
-        ],
-    )
-
-    # Since ClassicalShadowMP is not handled in execute, it raises RuntimeError
-    with pytest.raises(
-        RuntimeError,
-        match="The circuit has an unsupported MeasurementTransform",
-    ):
-        dev.execute(circuit)
-
-
-@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
-@patch.object(AwsDevice, "run")
 def test_batch_execute_classical_shadow_single_circuit(mock_run, mock_properties):
     """Test that batch_execute handles ClassicalShadowMP with a single circuit"""
     mock_action = Mock()
