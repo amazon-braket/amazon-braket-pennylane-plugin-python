@@ -22,8 +22,9 @@ import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
 from braket.device_schema import DeviceActionType
-from braket.device_schema.openqasm_device_action_properties import (
+from braket.device_schema import (
     OpenQASMDeviceActionProperties,
+    OpenQASMProgramSetDeviceActionProperties,
 )
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
@@ -62,6 +63,17 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
                     "maxShots": 0,
                 },
             ],
+        }
+    )
+)
+
+ACTION_PROPERTIES_PROGRAM_SET = OpenQASMProgramSetDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "version": ["1"],
+            "actionType": "braket.ir.openqasm.program_set",
+            "maximumExecutables": 10,
+            "maximumTotalShots": 200000,
         }
     )
 )
@@ -379,7 +391,13 @@ def test_shadow_expval_aws_device(
     supports_program_sets,
 ):
     mock_action = Mock()
-    mock_action.action = {"braket.ir.openqasm.program": None}
+    if supports_program_sets:
+        mock_action.action = {
+            DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+            DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
+        }
+    else:
+        mock_action.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
     mock_properties.return_value = mock_action
     dev = _aws_device(
         wires=2,
@@ -485,7 +503,9 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = (
+            ACTION_PROPERTIES_PROGRAM_SET
+        )
     type_mock.return_value = device_type
     dev = BraketAwsQubitDevice(
         wires=wires,
@@ -672,7 +692,10 @@ CIRCUIT_CLASSICAL_SHADOW = QuantumScript(
 def test_classical_shadow_with_program_sets(mock_run, mock_properties):
     """Test that classical_shadow measurement raises error (not yet supported in execute)"""
     mock_action = Mock()
-    mock_action.action = {"braket.ir.openqasm.program": None}
+    mock_action.action = {
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+        DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
+    }
     mock_properties.return_value = mock_action
 
     dev = _aws_device(
@@ -724,13 +747,10 @@ def test_classical_shadow_multiple_observables_error(mock_run, mock_properties):
 @patch.object(AwsDevice, "run")
 def test_batch_execute_classical_shadow_single_circuit(mock_run, mock_properties):
     """Test that batch_execute handles ClassicalShadowMP with a single circuit"""
-    mock_program_set_action = Mock()
-    mock_program_set_action.maximumExecutables = 10
-
     mock_action = Mock()
     mock_action.action = {
-        "braket.ir.openqasm.program": None,
-        "braket.ir.openqasm.program_set": mock_program_set_action,
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+        DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
     }
     mock_properties.return_value = mock_action
 
@@ -775,13 +795,10 @@ def test_batch_execute_classical_shadow_single_circuit(mock_run, mock_properties
 )
 def test_batch_execute_classical_shadow_errors(mock_run, mock_properties, circuits, error_message):
     """Test that batch_execute raises appropriate errors for invalid ClassicalShadowMP usage"""
-    mock_program_set_action = Mock()
-    mock_program_set_action.maximumExecutables = 10
-
     mock_action = Mock()
     mock_action.action = {
-        "braket.ir.openqasm.program": None,
-        "braket.ir.openqasm.program_set": mock_program_set_action,
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+        DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
     }
     mock_properties.return_value = mock_action
 
