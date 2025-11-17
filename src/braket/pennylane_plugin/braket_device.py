@@ -212,10 +212,7 @@ class BraketQubitDevice(QubitDevice):
         return self._parallel
 
     def batch_execute(self, circuits, **run_kwargs):
-        if not self._parallel and not self._supports_program_sets:
-            return super().batch_execute(circuits)
-
-        if self._supports_program_sets and len(circuits) > self._max_program_set_executables:
+        if not self._parallel and not self._can_run_as_program_set(len(circuits)):
             return super().batch_execute(circuits)
 
         for circuit in circuits:
@@ -227,7 +224,7 @@ class BraketQubitDevice(QubitDevice):
                 if len(circuit.observables) > 1:
                     raise ValueError(
                         "A circuit with a ClassicalShadowMP observable must "
-                        "have that as its only result type."
+                        "have that as its only return type."
                     )
                 if len(circuits) > 1:
                     raise ValueError("Classical shadow must be called with a single circuit.")
@@ -244,7 +241,7 @@ class BraketQubitDevice(QubitDevice):
                 self._pl_to_braket_circuit(
                     circuit,
                     trainable_indices=frozenset(trainable.keys()),
-                    add_observables=not self._supports_program_sets,
+                    add_observables=not self._can_run_as_program_set(len(circuits)),
                     **run_kwargs,
                 )
             )
@@ -258,6 +255,10 @@ class BraketQubitDevice(QubitDevice):
         )
 
         return self._run_task_batch(braket_circuits, circuits, batch_shots, batch_inputs)
+
+    def _can_run_as_program_set(self, n_executables: int) -> bool:
+        """Whether a list of executables can be run as a program set"""
+        return self._supports_program_sets and n_executables < self._max_program_set_executables
 
     def _pl_to_braket_circuit(
         self,
@@ -524,7 +525,7 @@ class BraketQubitDevice(QubitDevice):
             if len(circuit.observables) > 1:
                 raise ValueError(
                     "A circuit with a ShadowExpvalMP observable must "
-                    "have that as its only result type."
+                    "have that as its only return type."
                 )
             return [self.shadow_expval(circuit.observables[0], circuit)]
         raise RuntimeError("The circuit has an unsupported MeasurementTransform.")
@@ -721,7 +722,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return not ("provides_jacobian" in caps and caps["provides_jacobian"])
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
-        if self._supports_program_sets:
+        if self._can_run_as_program_set(len(braket_circuits)):
             program_set = (
                 ProgramSet.zip(braket_circuits, input_sets=inputs)
                 if inputs
@@ -778,7 +779,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
         n_snapshots = len(snapshot_circuits)
         outcomes = np.zeros((n_snapshots, n_qubits))
-        if self._supports_program_sets and n_snapshots < self._max_program_set_executables:
+        if self._can_run_as_program_set(n_snapshots):
             program_set = ProgramSet(snapshot_circuits)
             task = self._device.run(
                 program_set,

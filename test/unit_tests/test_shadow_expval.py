@@ -729,7 +729,7 @@ def test_batch_execute_classical_shadow_single_circuit(mock_run, mock_properties
                     ],
                 )
             ],
-            "A circuit with a ClassicalShadowMP observable must have that as its only result type",
+            "A circuit with a ClassicalShadowMP observable must have that as its only return type",
         ),
         (
             [CIRCUIT_CLASSICAL_SHADOW, CIRCUIT_CLASSICAL_SHADOW],
