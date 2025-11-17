@@ -22,8 +22,9 @@ import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
 from braket.device_schema import DeviceActionType
-from braket.device_schema.openqasm_device_action_properties import (
+from braket.device_schema import (
     OpenQASMDeviceActionProperties,
+    OpenQASMProgramSetDeviceActionProperties,
 )
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
@@ -62,6 +63,17 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
                     "maxShots": 0,
                 },
             ],
+        }
+    )
+)
+
+ACTION_PROPERTIES_PROGRAM_SET = OpenQASMProgramSetDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "version": ["1"],
+            "actionType": "braket.ir.openqasm.program_set",
+            "maximumExecutables": 10,
+            "maximumTotalShots": 200000,
         }
     )
 )
@@ -335,6 +347,12 @@ circs = [Circuit().h(0).cnot(0, 1).rx(0, 0.432).ry(0, 0.543) for s in range(SHOT
 # basis rotation with seed
 circs[0].h(1)
 
+# Circuits with measurements for program set (required for program sets to work)
+circs_with_measurements = [
+    Circuit().h(0).cnot(0, 1).rx(0, 0.432).ry(0, 0.543).h(1).measure(0).measure(1),
+    Circuit().h(0).cnot(0, 1).rx(0, 0.432).ry(0, 0.543).measure(0).measure(1),
+]
+
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run")
@@ -373,7 +391,13 @@ def test_shadow_expval_aws_device(
     supports_program_sets,
 ):
     mock_action = Mock()
-    mock_action.action = {"braket.ir.openqasm.program": None}
+    if supports_program_sets:
+        mock_action.action = {
+            DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+            DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
+        }
+    else:
+        mock_action.action = {DeviceActionType.OPENQASM: ACTION_PROPERTIES}
     mock_properties.return_value = mock_action
     dev = _aws_device(
         wires=2,
@@ -479,7 +503,9 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = (
+            ACTION_PROPERTIES_PROGRAM_SET
+        )
     type_mock.return_value = device_type
     dev = BraketAwsQubitDevice(
         wires=wires,
@@ -649,3 +675,82 @@ def test_non_shadow_expval_transform():
         dummy_measurement_transform()
 
     dev.execute(circuit)
+
+
+# Test for classical_shadow with program sets
+CIRCUIT_CLASSICAL_SHADOW = QuantumScript(
+    ops=[
+        qml.Hadamard(wires=0),
+        qml.CNOT(wires=[0, 1]),
+    ],
+    measurements=[qml.classical_shadow(wires=range(2), seed=SEED)],
+)
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run")
+def test_batch_execute_classical_shadow_single_circuit(mock_run, mock_properties):
+    """Test that batch_execute handles ClassicalShadowMP with a single circuit"""
+    mock_action = Mock()
+    mock_action.action = {
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+        DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
+    }
+    mock_properties.return_value = mock_action
+
+    dev = _aws_device(
+        wires=2,
+        foo="bar",
+        supports_program_sets=True,
+    )
+
+    mock_run.return_value = TASK_PROGRAM_SET
+    circuits = [CIRCUIT_CLASSICAL_SHADOW]
+    results = dev.batch_execute(circuits)
+
+    assert len(results) == 1
+    bits, recipes = results[0]
+    assert bits.shape == (SHOTS, 2)
+    assert recipes.shape == (SHOTS, 2)
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run")
+@pytest.mark.parametrize(
+    "circuits, error_message",
+    [
+        (
+            [
+                QuantumScript(
+                    ops=[qml.Hadamard(wires=0)],
+                    measurements=[
+                        qml.classical_shadow(wires=[0], seed=SEED),
+                        qml.expval(qml.PauliZ(0)),
+                    ],
+                )
+            ],
+            "A circuit with a ClassicalShadowMP observable must have that as its only return type",
+        ),
+        (
+            [CIRCUIT_CLASSICAL_SHADOW, CIRCUIT_CLASSICAL_SHADOW],
+            "Classical shadow must be called with a single circuit",
+        ),
+    ],
+)
+def test_batch_execute_classical_shadow_errors(mock_run, mock_properties, circuits, error_message):
+    """Test that batch_execute raises appropriate errors for invalid ClassicalShadowMP usage"""
+    mock_action = Mock()
+    mock_action.action = {
+        DeviceActionType.OPENQASM: ACTION_PROPERTIES,
+        DeviceActionType.OPENQASM_PROGRAM_SET: ACTION_PROPERTIES_PROGRAM_SET,
+    }
+    mock_properties.return_value = mock_action
+
+    dev = _aws_device(
+        wires=2,
+        foo="bar",
+        supports_program_sets=True,
+    )
+
+    with pytest.raises(ValueError, match=error_message):
+        dev.batch_execute(circuits)
