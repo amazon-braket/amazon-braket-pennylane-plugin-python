@@ -575,6 +575,8 @@ def translate_result_type(  # noqa: C901
     observable = measurement.obs
 
     if isinstance(measurement, qml.measurements.ProbabilityMP):
+        if observable and observable.diagonalizing_gates():
+            raise qml.DeviceError("Probability result type not supported for observables")
         return Probability(targets)
 
     if isinstance(measurement, qml.measurements.StateMP):
