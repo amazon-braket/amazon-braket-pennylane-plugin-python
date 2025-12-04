@@ -215,11 +215,15 @@ def test_reset():
     """Tests that the members of the device are cleared on reset."""
     dev = _aws_device(wires=2)
     dev._circuit = CIRCUIT
+    dev._circuits = [CIRCUIT, CIRCUIT]
     dev._task = TASK
+    dev._tasks = [TASK, TASK]
 
     dev.reset()
     assert dev.circuit is None
+    assert dev.circuits == []
     assert dev.task is None
+    assert dev.tasks == []
 
 
 def test_apply():
@@ -1205,6 +1209,24 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
+def test_aws_device_batch_execute_parallel_circuits_persistance(mock_run_batch):
+    mock_run_batch.return_value = TASK_BATCH
+    dev = _aws_device(wires=4, foo="bar", parallel=True)
+    assert dev.parallel is True
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.probs(wires=[0])
+        qml.expval(qml.PauliX(1))
+        qml.var(qml.PauliY(2))
+        qml.sample(qml.PauliZ(3))
+
+    circuits = [circuit, circuit]
+    dev.batch_execute(circuits)
+    assert dev.circuits[1]
+
+
 def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
     """Test batch_execute(parallel=True) correctly calls batch
     execution methods for AwsDevices in Braket SDK"""
@@ -1225,6 +1247,8 @@ def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
 
     circuits = [circuit, circuit]
     batch_results = dev.batch_execute(circuits)
+
+    assert dev.tasks[0]
     for results in batch_results:
         assert np.allclose(
             results[0],

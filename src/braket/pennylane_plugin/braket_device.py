@@ -160,7 +160,9 @@ class BraketQubitDevice(QubitDevice):
         self._parallel = parallel
         self._max_parallel = max_parallel
         self._circuit = None
+        self._circuits = []
         self._task = None
+        self._tasks = []
         self._noise_model = noise_model
         self._parametrize_differentiable = parametrize_differentiable
         self._run_kwargs = run_kwargs
@@ -179,7 +181,9 @@ class BraketQubitDevice(QubitDevice):
     def reset(self):
         super().reset()
         self._circuit = None
+        self._circuits = []
         self._task = None
+        self._tasks = []
 
     @property
     def operations(self) -> frozenset[str]:
@@ -196,9 +200,19 @@ class BraketQubitDevice(QubitDevice):
         return self._circuit
 
     @property
+    def circuits(self) -> list[Circuit]:
+        """Circuit: The circuits run on this device."""
+        return self._circuits
+
+    @property
     def task(self) -> QuantumTask:
         """QuantumTask: The task corresponding to the last run circuit."""
         return self._task
+
+    @property
+    def tasks(self) -> list[QuantumTask]:
+        """The tasks corresponding to the circuits run on this device."""
+        return self._tasks
 
     @property
     def parallel(self) -> bool:
@@ -695,6 +709,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._poll_interval_seconds = poll_interval_seconds
         self._max_connections = max_connections
         self._max_retries = max_retries
+        self._circuits = []
+        self._tasks = []
 
     @property
     def use_grouping(self) -> bool:
@@ -707,6 +723,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return not ("provides_jacobian" in caps and caps["provides_jacobian"])
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
+        self._circuits = braket_circuits
+        batch_shots = 0 if self.analytic else self.shots
         if self._supports_program_sets:
             program_set = (
                 ProgramSet.zip(braket_circuits, input_sets=inputs)
@@ -721,6 +739,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                 poll_interval_seconds=self._poll_interval_seconds,
                 **self._run_kwargs,
             )
+            self._tasks = [task]
             return self._braket_program_set_to_pl_result(task.result(), pl_circuits)
         task_batch = self._device.run_batch(
             braket_circuits,
@@ -733,7 +752,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             inputs=inputs,
             **self._run_kwargs,
         )
-
+        self._tasks = task_batch.tasks
         # Call results() to retrieve the Braket results in parallel.
         try:
             braket_results_batch = task_batch.results(
