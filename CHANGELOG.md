@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.33.6 (2025-11-10)
+
+### Bug Fixes and Other Changes
+
+ * fall back to programs when program set is too big
+
+## v1.33.5 (2025-10-23)
+
+### Bug Fixes and Other Changes
+
+ * update exception import paths for pennylane>=0.42
+
+## v1.33.4 (2025-10-14)
+
+### Bug Fixes and Other Changes
+
+ * Bypass program sets for local device
+
+## v1.33.3 (2025-10-14)
+
+### Bug Fixes and Other Changes
+
+ * handle in test for local sim that supports program sets
+
+## v1.33.2 (2025-10-13)
+
+### Bug Fixes and Other Changes
+
+ * handle batch execute for program with no observables
+
 ## v1.33.1 (2025-09-10)
 
 ### Bug Fixes and Other Changes

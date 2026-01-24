@@ -689,6 +689,14 @@ def test_translate_result_type_observable(return_type, braket_result_type):
     assert braket_result_type == braket_result_type_calculated
 
 
+def test_translate_result_type_identity_multiple_qubits():
+    assert translate_result_type(
+        qml.tape.QuantumTape(measurements=[qml.expval(qml.Identity([2, 5, 8]))]).measurements[0],
+        None,
+        frozenset(),
+    ) == Expectation(observables.I(2) @ observables.I(5) @ observables.I(8))
+
+
 @pytest.mark.parametrize(
     "pl_obs, braket_obs, targets, param_names",
     [
@@ -817,7 +825,7 @@ def test_translate_result_type_unsupported_obs():
     """Tests if a DeviceError is raised by translate_result_type for an unknown observable"""
     tape = qml.tape.QuantumTape(measurements=[qml.expval(qml.S(wires=0))])
 
-    with pytest.raises(qml.DeviceError, match="Unsupported observable"):
+    with pytest.raises(qml.exceptions.DeviceError, match="Unsupported observable"):
         translate_result_type(tape.measurements[0], [0], frozenset())
 
 

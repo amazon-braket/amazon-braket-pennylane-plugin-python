@@ -46,6 +46,7 @@ from braket.task_result import ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
 from device_property_jsons import (
     ACTION_PROPERTIES,
+    ACTION_PROPERTIES_PROGRAMSET,
     ACTION_PROPERTIES_DM_DEVICE,
     ACTION_PROPERTIES_NATIVE,
     ACTION_PROPERTIES_NO_ADJOINT,
@@ -54,9 +55,9 @@ from device_property_jsons import (
     OQC_PULSE_PROPERTIES_ALL_FRAMES,
     RESULT,
 )
-from pennylane import QuantumFunctionError
 from pennylane import numpy as np
 from pennylane.devices import QubitDevice
+from pennylane.exceptions import QuantumFunctionError
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
 
@@ -96,6 +97,17 @@ CIRCUIT = (
     .expectation(observable=observables.X(1))
     .variance(observable=observables.Y(2))
     .sample(observable=observables.Z(3))
+)
+
+# Circuit with basis rotations for `CIRCUIT` when using program sets
+CIRCUIT_WITH_BASIS_ROTATION = (
+    Circuit()
+    .h(0)
+    .cnot(0, 1)
+    .i(2)
+    .i(3)
+    .ry(1, -np.pi / 2)  # Basis rotation gate for PauliX(1)
+    .rx(2, np.pi / 2)  # Basis rotation gate for PauliY(2)
 )
 
 CIRCUIT_BELL = Circuit().h(0).cnot(0, 1)
@@ -741,9 +753,9 @@ def test_execute_tracker(mock_run):
 
 def _aws_device_mock_init(self, *args, **kwargs):
     self._arn = args[0]
-    self._properties = None
     self._ports = None
     self._name = "name"
+    # The _properties will be set by the properties mock
     return None
 
 
@@ -1113,6 +1125,84 @@ def test_batch_execute_program_set_noncommuting():
         dev.batch_execute(circuits)
 
 
+@patch.object(AwsDevice, "run")
+def test_batch_execute_program_set_exceeds_max_executables(mock_run):
+    """Test batch_execute falls back to individual programs when exceeding maximumExecutables"""
+    custom_result = GateModelQuantumTaskResult.from_string(
+        json.dumps(
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.gate_model_task_result",
+                    "version": "1",
+                },
+                "measurements": [[0, 0], [1, 1], [0, 1], [1, 0]],
+                "resultTypes": [
+                    {
+                        "type": {
+                            "observable": ["x", "y"],
+                            "targets": [0, 1],
+                            "type": "expectation",
+                        },
+                        "value": 0.5,
+                    },
+                ],
+                "measuredQubits": [0, 1],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.task_metadata",
+                        "version": "1",
+                    },
+                    "id": "task_arn",
+                    "shots": 10000,
+                    "deviceId": "default",
+                },
+                "additionalMetadata": {
+                    "action": {
+                        "braketSchemaHeader": {
+                            "name": "braket.ir.openqasm.program",
+                            "version": "1",
+                        },
+                        "source": "qubit[2] q; h q[0]; cnot q[0], q[1]; measure q;",
+                    },
+                },
+            }
+        )
+    )
+
+    # Mock the task to return our custom result
+    task = Mock()
+    task.result.return_value = custom_result
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    mock_run.return_value = task
+
+    dev = _aws_device(wires=4, foo="bar", parallel=True, supports_program_sets=True)
+
+    # Verify the device properties are set correctly to ensure we hit the second condition
+    assert dev._parallel == True
+    assert dev._supports_program_sets == True
+    assert dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables == 100
+
+    # Create 101 circuits (exceeds maximumExecutables of 100, defined in ACTION_PROPERTIES_PROGRAMSET)
+    circuits = []
+    for _ in range(101):
+        with QuantumTape() as circuit:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+        circuits.append(circuit)
+
+    assert len(circuits) == 101
+    assert (
+        len(circuits)
+        > dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+    )
+
+    result = dev.batch_execute(circuits)
+    assert mock_run.call_count == 101
+    assert len(result) == 101
+
+
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
 def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
@@ -1204,8 +1294,13 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
             RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
+    if dev._supports_program_sets:
+        expected_circuits = [CIRCUIT_WITH_BASIS_ROTATION, CIRCUIT_WITH_BASIS_ROTATION]
+    else:
+        expected_circuits = [CIRCUIT, CIRCUIT]
+
     mock_run_batch.assert_called_with(
-        [CIRCUIT, CIRCUIT],
+        expected_circuits,
         shots=SHOTS,
         max_parallel=None,
         inputs=[],
@@ -1681,6 +1776,39 @@ def test_counts_all_outcomes_fails():
     does_not_support = "Unsupported return type: <class 'pennylane.measurements.counts.CountsMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
         dev.execute(circuit)
+
+
+@patch.object(LocalSimulator, "run_batch")
+def test_counts_without_observable_batch_execute(mock_run_batch):
+    """Tests batch execution without observable works correctly"""
+    task_batch = Mock()
+    task_batch.unsuccessful = {}
+    mock_results = []
+    for _ in range(5):
+        result = Mock()
+        result.measurement_counts = {"10": 100}
+        result.result_types = []
+        result.task_metadata.shots = 100
+        mock_results.append(result)
+    task_batch.results.return_value = mock_results
+    mock_run_batch.return_value = task_batch
+
+    dev = BraketLocalQubitDevice(wires=2, shots=100, parallel=True)
+
+    @qml.qnode(dev)
+    def bell_circuit():
+        qml.X(wires=0)
+        return qml.counts()
+
+    # Construct and execute tapes with batch_execute to trigger program sets
+    tape_generator = qml.workflow.construct_tape(bell_circuit)
+    tapes = [tape_generator() for _ in range(5)]
+    results = dev.batch_execute(tapes)
+
+    assert len(results) == 5
+    for result in results:
+        assert result.item() == {"10": 100}
+    mock_run_batch.assert_called_once()
 
 
 def test_sample_fails():
@@ -2250,7 +2378,7 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = ACTION_PROPERTIES_PROGRAMSET
     properties_mock.paradigm.nativeGateSet = native_gate_set
     if native_gate_set is None:
         type(properties_mock).paradigm = PropertyMock(side_effect=AttributeError("paradigm"))
@@ -2266,6 +2394,7 @@ def _aws_device(
         parametrize_differentiable=parametrize_differentiable,
         **kwargs,
     )
+    dev._device._properties = properties_mock
     return dev
 
 

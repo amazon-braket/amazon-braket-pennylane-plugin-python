@@ -43,9 +43,9 @@ from enum import Enum, auto
 
 import numpy as onp
 import pennylane as qml
-from pennylane import QuantumFunctionError
 from pennylane import numpy as np
 from pennylane.devices import QubitDevice
+from pennylane.exceptions import QuantumFunctionError
 from pennylane.gradients import param_shift
 from pennylane.measurements import (
     CountsMP,
@@ -209,6 +209,12 @@ class BraketQubitDevice(QubitDevice):
         if not self._parallel and not self._supports_program_sets:
             return super().batch_execute(circuits)
 
+        if self._supports_program_sets and (
+            len(circuits)
+            > self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
+        ):
+            return super().batch_execute(circuits)
+
         for circuit in circuits:
             self.check_validity(circuit.operations, circuit.observables)
         all_trainable = []
@@ -274,9 +280,12 @@ class BraketQubitDevice(QubitDevice):
                     else:
                         braket_circuit.add_result_type(translated)
             else:
-                groups = qml.pauli.group_observables(
-                    [measurement.obs for measurement in circuit.measurements], grouping_type="qwc"
-                )
+                observables = [
+                    measurement.obs
+                    for measurement in circuit.measurements
+                    if measurement.obs is not None
+                ]
+                groups = qml.pauli.group_observables(observables, grouping_type="qwc")
                 if len(groups) > 1:
                     raise ValueError(
                         f"Observables need to mutually commute, but found {len(groups)}: {groups}"
@@ -1104,6 +1113,9 @@ class BraketLocalQubitDevice(BraketQubitDevice):
     ):
         device = LocalSimulator(backend)
         super().__init__(wires, device, shots=shots, **run_kwargs)
+        # TODO: Enable program sets once local simulator supports multiprocessing
+        # for program set execution
+        self._supports_program_sets = False
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         task_batch = self._device.run_batch(

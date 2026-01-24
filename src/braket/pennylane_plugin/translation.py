@@ -629,7 +629,11 @@ _one = np.array([[0, 0], [0, 1]])
 def _translate_observable(observable):
     match observable:
         case qml.Identity(wires=wires):
-            return observables.I(wires[0])
+            return (
+                observables.I(wires[0])
+                if len(wires) == 1
+                else observables.TensorProduct([observables.I(wire) for wire in wires])
+            )
         case qml.PauliX(wires=wires):
             return observables.X(wires[0])
         case qml.PauliY(wires=wires):
@@ -661,7 +665,7 @@ def _translate_observable(observable):
                 lambda x, y: x + y, [_translate_observable(operator) for operator in operands]
             )
         case _:
-            raise qml.DeviceError(f"Unsupported observable: {type(observable)}")
+            raise qml.exceptions.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 def translate_result(

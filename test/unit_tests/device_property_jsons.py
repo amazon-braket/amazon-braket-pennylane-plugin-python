@@ -13,7 +13,10 @@
 
 import json
 
-from braket.device_schema import OpenQASMDeviceActionProperties
+from braket.device_schema import (
+    OpenQASMDeviceActionProperties,
+    OpenQASMProgramSetDeviceActionProperties,
+)
 from braket.task_result import GateModelTaskResult
 from braket.tasks import GateModelQuantumTaskResult
 
@@ -37,6 +40,17 @@ ACTION_PROPERTIES = OpenQASMDeviceActionProperties.parse_raw(
                     "maxShots": 0,
                 },
             ],
+        }
+    )
+)
+
+ACTION_PROPERTIES_PROGRAMSET = OpenQASMProgramSetDeviceActionProperties.parse_raw(
+    json.dumps(
+        {
+            "version": ["1"],
+            "actionType": "braket.ir.openqasm.program_set",
+            "maximumExecutables": 100,
+            "maximumTotalShots": 200000,
         }
     )
 )
