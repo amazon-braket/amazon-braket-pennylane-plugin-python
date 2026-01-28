@@ -117,7 +117,6 @@ class CPhaseShift00(Operation):
 
     @staticmethod
     def compute_matrix(phi):
-        phi = _cast_to_tf(phi)
         return qml.math.diag([qml.math.exp(1j * phi), 1, 1, 1])
 
     def adjoint(self):
@@ -179,7 +178,6 @@ class CPhaseShift01(Operation):
 
     @staticmethod
     def compute_matrix(phi):
-        phi = _cast_to_tf(phi)
         return qml.math.diag([1, qml.math.exp(1j * phi), 1, 1])
 
     def adjoint(self):
@@ -241,7 +239,6 @@ class CPhaseShift10(Operation):
 
     @staticmethod
     def compute_matrix(phi):
-        phi = _cast_to_tf(phi)
         return qml.math.diag([1, 1, qml.math.exp(1j * phi), 1])
 
     def adjoint(self):
@@ -280,8 +277,6 @@ class PRx(Operation):
 
     @staticmethod
     def compute_matrix(theta, phi):
-        theta = _cast_to_tf(theta)
-        phi = _cast_to_tf(phi)
         return np.array(
             [
                 [
@@ -347,7 +342,6 @@ class PSWAP(Operation):
 
     @staticmethod
     def compute_matrix(phi):
-        phi = _cast_to_tf(phi)
         return qml.math.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]
 
     def adjoint(self):
@@ -385,7 +379,6 @@ class GPi(Operation):
 
     @staticmethod
     def compute_matrix(phi):
-        phi = _cast_to_tf(phi)
         return np.array(
             [
                 [0, np.exp(-1j * phi)],
@@ -428,7 +421,6 @@ class GPi2(Operation):
 
     @staticmethod
     def compute_matrix(phi):
-        phi = _cast_to_tf(phi)
         return np.array(
             [
                 [1, -1j * np.exp(-1j * phi)],
@@ -475,9 +467,6 @@ class MS(Operation):
 
     @staticmethod
     def compute_matrix(phi_0, phi_1):
-        phi_0 = _cast_to_tf(phi_0)
-        phi_1 = _cast_to_tf(phi_1)
-
         return np.array(
             [
                 [1, 0, 0, -1j * np.exp(-1j * (phi_0 + phi_1))],
@@ -527,10 +516,6 @@ class AAMS(Operation):
 
     @staticmethod
     def compute_matrix(phi_0, phi_1, theta):
-        phi_0 = _cast_to_tf(phi_0)
-        phi_1 = _cast_to_tf(phi_1)
-        theta = _cast_to_tf(theta)
-
         return np.array(
             [
                 [
@@ -563,7 +548,3 @@ class AAMS(Operation):
     def adjoint(self):
         (phi_0, phi_1, theta) = self.parameters
         return AAMS(phi_0 + np.pi, phi_1, theta, wires=self.wires)
-
-
-def _cast_to_tf(val):
-    return qml.math.cast_like(val, 1j) if qml.math.get_interface(val) == "tensorflow" else val
