@@ -20,7 +20,7 @@ import numpy as np
 import pennylane as qml
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType
-from braket.circuits import FreeParameter, gates, noises, observables
+from braket.circuits import FreeParameter, Noise, gates, noises, observables
 from braket.circuits.result_types import (
     AdjointGradient,
     DensityMatrix,
@@ -151,12 +151,6 @@ testdata = [
     (qml.IsingYY, gates.YY, [0, 1], [np.pi]),
     (qml.IsingZZ, gates.ZZ, [0, 1], [np.pi]),
     (qml.AmplitudeDamping, noises.AmplitudeDamping, [0], [0.1]),
-    (
-        qml.GeneralizedAmplitudeDamping,
-        noises.GeneralizedAmplitudeDamping,
-        [0],
-        [0.1, 0.15],
-    ),
     (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1]),
     (qml.DepolarizingChannel, noises.Depolarizing, [0], [0.1]),
     (qml.BitFlip, noises.BitFlip, [0], [0.1]),
@@ -315,14 +309,6 @@ testdata_with_params = [
         ["alpha"],
         [FreeParameter("alpha")],
     ),
-    (
-        qml.GeneralizedAmplitudeDamping,
-        noises.GeneralizedAmplitudeDamping,
-        [0],
-        [0.1, 0.15],
-        ["p_000", "p_001"],
-        [FreeParameter("p_000"), FreeParameter("p_001")],
-    ),
     (qml.PhaseDamping, noises.PhaseDamping, [0], [0.1], ["a"], [FreeParameter("a")]),
     (
         qml.DepolarizingChannel,
@@ -386,7 +372,12 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
     pl_op = pl_cls(*params, wires=qubits)
     braket_gate = braket_cls(*params)
     assert translate_operation(pl_op) == braket_gate
-    if isinstance(pl_op, (GPi, GPi2, MS, AAMS, PRx)):
+    if isinstance(braket_gate, (Noise, gates.Unitary)):
+        assert (
+            _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
+            == pl_op.name
+        )
+    else:
         translated_back = _braket_to_pl[
             re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
         ]
@@ -396,11 +387,6 @@ def test_translate_operation(pl_cls, braket_cls, qubits, params):
             # PL MS and AAMS both get translated to Braket MS.
             # Braket MS gets translated to PL AAMS.
             else translated_back == "AAMS"
-        )
-    else:
-        assert (
-            _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
-            == pl_op.name
         )
 
 
@@ -418,7 +404,12 @@ def test_translate_operation_with_unique_params(
         translate_operation(pl_op, use_unique_params=True, param_names=pl_param_names)
         == braket_gate
     )
-    if isinstance(pl_op, (GPi, GPi2, MS, AAMS)):
+    if isinstance(braket_gate, (Noise, gates.Unitary)):
+        assert (
+            _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
+            == pl_op.name
+        )
+    else:
         translated_back = _braket_to_pl[
             re.match("^[a-z0-2]+", braket_gate.to_ir(qubits, ir_type=IRType.OPENQASM)).group(0)
         ]
@@ -429,11 +420,32 @@ def test_translate_operation_with_unique_params(
             # Braket MS gets translated to PL AAMS.
             else translated_back == "AAMS"
         )
-    else:
-        assert (
-            _braket_to_pl[braket_gate.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
-            == pl_op.name
-        )
+
+
+def test_generalized_amplitude_damping():
+    """Tests that GeneralizedAmplitudeDamping is translated correctly"""
+    qubits = [0]
+    pl_param_names = ["p_000", "p_001"]
+    pl_op = qml.GeneralizedAmplitudeDamping(0.1, 0.15, wires=qubits)
+    braket_op = noises.GeneralizedAmplitudeDamping(0.1, 0.85)
+    assert translate_operation(pl_op) == braket_op
+    assert (
+        _braket_to_pl[braket_op.to_ir(qubits).__class__.__name__.lower().replace("_", "")]
+        == pl_op.name
+    )
+    braket_op_parametrized = noises.GeneralizedAmplitudeDamping(
+        FreeParameter("p_000"), 1 - FreeParameter("p_001")
+    )
+    assert (
+        translate_operation(pl_op, use_unique_params=True, param_names=pl_param_names)
+        == braket_op_parametrized
+    )
+    assert (
+        _braket_to_pl[
+            braket_op_parametrized.to_ir(qubits).__class__.__name__.lower().replace("_", "")
+        ]
+        == pl_op.name
+    )
 
 
 def amplitude(p, t):

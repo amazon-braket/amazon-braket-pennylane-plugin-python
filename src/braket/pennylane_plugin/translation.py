@@ -319,7 +319,7 @@ def _(_: qml.AmplitudeDamping, parameters, device=None):
 @_translate_operation.register
 def _(_: qml.GeneralizedAmplitudeDamping, parameters, device=None):
     gamma = parameters[0]
-    probability = parameters[1]
+    probability = 1 - parameters[1]
     return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
 
 
