@@ -154,8 +154,8 @@ class TestHardwareApply:
         state = init_state(1)
         TestHardwareApply.assert_noise_op(op, dev, state, [0], tol, [prob])
 
-    @pytest.mark.parametrize("gamma", [0.0, 0.42])
     @pytest.mark.parametrize("prob", [0.0, 0.42])
+    @pytest.mark.parametrize("gamma", [0.0, 0.42])
     def test_generalized_amplitude_damping(self, init_state, dm_device, gamma, prob, tol):
         """Test parametrized GeneralizedAmplitudeDamping"""
         dev = dm_device(1)

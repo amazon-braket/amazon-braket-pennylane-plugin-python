@@ -239,8 +239,8 @@ def test_apply_unique_parameters():
             qml.RX(np.pi, wires=0),
             qml.RY(np.pi, wires=0),
             # note the gamma/p ordering doesn't affect the naming of the parameters below.
-            qml.GeneralizedAmplitudeDamping(gamma=0.1, p=0.9, wires=0),
-            qml.GeneralizedAmplitudeDamping(p=0.9, gamma=0.1, wires=0),
+            qml.GeneralizedAmplitudeDamping(gamma=0.1, p=0.2, wires=0),
+            qml.GeneralizedAmplitudeDamping(p=0.2, gamma=0.1, wires=0),
         ],
         use_unique_params=True,
     )
@@ -248,8 +248,8 @@ def test_apply_unique_parameters():
     expected = expected.ry(0, FreeParameter("p_1"))
 
     # Right now, the Braket SDK doesn't keep track of noise parameters
-    expected = expected.generalized_amplitude_damping(0, gamma=0.1, probability=0.9)
-    expected = expected.generalized_amplitude_damping(0, gamma=0.1, probability=0.9)
+    expected = expected.generalized_amplitude_damping(0, gamma=0.1, probability=0.8)
+    expected = expected.generalized_amplitude_damping(0, gamma=0.1, probability=0.8)
     assert circuit == expected
 
 
