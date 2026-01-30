@@ -1,4 +1,4 @@
-name: Check long description for PyPI
+name: Additional pull request checks
 
 on:
   pull_request:
@@ -6,20 +6,35 @@ on:
       - main
       - feature/**
 
-
 permissions:
   contents: read
 
 jobs:
-  twine-check:
-    name: Check long description
+  check-code-format:
+    name: Check code format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          pip install tox
+      - name: Run code format checks
+        run: |
+          tox -e linters_check
+
+  twine-check:
+    name: Check PyPI long description
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
       - name: Install wheel
         run: python -m pip install --user --upgrade wheel
       - name: Install twine
