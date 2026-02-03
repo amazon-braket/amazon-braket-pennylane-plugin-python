@@ -319,7 +319,7 @@ def _(_: qml.AmplitudeDamping, parameters, device=None):
 @_translate_operation.register
 def _(_: qml.GeneralizedAmplitudeDamping, parameters, device=None):
     gamma = parameters[0]
-    probability = parameters[1]
+    probability = 1 - parameters[1]
     return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
 
 
@@ -627,7 +627,11 @@ _one = np.array([[0, 0], [0, 1]])
 def _translate_observable(observable):
     match observable:
         case qml.Identity(wires=wires):
-            return observables.I(wires[0])
+            return (
+                observables.I(wires[0])
+                if len(wires) == 1
+                else observables.TensorProduct([observables.I(wire) for wire in wires])
+            )
         case qml.PauliX(wires=wires):
             return observables.X(wires[0])
         case qml.PauliY(wires=wires):

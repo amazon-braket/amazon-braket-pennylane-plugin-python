@@ -23,13 +23,13 @@ setup(
     name="amazon-braket-pennylane-plugin",
     version=version,
     license="Apache License 2.0",
-    python_requires=">= 3.10",
+    python_requires=">= 3.11",
     packages=find_namespace_packages(where="src", exclude=("test",)),
     package_dir={"": "src"},
     install_requires=[
         "amazon-braket-sdk>=1.97.0",
         "autoray>=0.6.11",
-        "pennylane>=0.42.0",
+        "pennylane>=0.44.0",
     ],
     entry_points={
         "pennylane.plugins": [
@@ -64,7 +64,6 @@ setup(
             "sphinxcontrib-apidoc",
             "tox",
             "torch>2",
-            "tensorflow>=2.16.1",
         ]
     },
     url="https://github.com/amazon-braket/amazon-braket-pennylane-plugin-python",
@@ -82,7 +81,6 @@ setup(
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",

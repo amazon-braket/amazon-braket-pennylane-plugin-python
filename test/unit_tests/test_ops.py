@@ -19,11 +19,9 @@ import numpy as np
 import pennylane as qml
 import pytest
 import scipy
-import tensorflow as tf
 from autograd import deriv
 from autograd import numpy as anp
 from braket.circuits import gates
-from numpy import float64
 
 from braket.pennylane_plugin import PSWAP, CPhaseShift00, CPhaseShift01, CPhaseShift10
 from braket.pennylane_plugin.ops import AAMS, MS, GPi, GPi2, PRx
@@ -69,22 +67,6 @@ def test_ops_parametrized(pl_op, braket_gate, angle):
 
 @pytest.mark.parametrize(
     "pl_op, braket_gate",
-    gates_2q_parametrized,
-)
-@pytest.mark.parametrize(
-    "angle", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
-)
-def test_ops_parametrized_tf(pl_op, braket_gate, angle):
-    """Tests that the matrices and decompositions of parametrized custom operations
-    are correct using tensorflow interface.
-    """
-    angles = [angle] * pl_op.num_params
-    pl_op.compute_matrix(*angles)
-    _assert_decomposition(pl_op, params=angles)
-
-
-@pytest.mark.parametrize(
-    "pl_op, braket_gate",
     gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
 )
 @pytest.mark.parametrize("angle_1", [(i + 1) * math.pi / 12 for i in range(12)])
@@ -94,27 +76,6 @@ def test_ops_parametrized_no_decomposition(pl_op, braket_gate, angle_1, angle_2,
     """Tests that the matrices and decompositions of parametrized custom operations are correct."""
     angles = [angle_1, angle_2, angle_3][: pl_op.num_params]
     assert np.allclose(pl_op.compute_matrix(*angles), braket_gate(*angles).to_matrix())
-
-
-@pytest.mark.parametrize(
-    "pl_op, braket_gate",
-    gates_1q_parametrized + gates_2q_2p_parametrized + gates_2q_3p_parametrized,
-)
-@pytest.mark.parametrize(
-    "angle_1", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
-)
-@pytest.mark.parametrize(
-    "angle_2", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(12)]
-)
-@pytest.mark.parametrize(
-    "angle_3", [tf.Variable(((i + 1) * math.pi / 12), dtype=float64) for i in range(6)]
-)
-def test_ops_parametrized_tf_no_decomposition(pl_op, braket_gate, angle_1, angle_2, angle_3):
-    """Tests that the matrices and decompositions of parametrized custom operations
-    are correct using tensorflow interface.
-    """
-    angles = [angle_1, angle_2, angle_3][: pl_op.num_params]
-    pl_op.compute_matrix(*angles)
 
 
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)

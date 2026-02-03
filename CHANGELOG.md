@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.34.0 (2026-01-30)
+
+### Deprecations and Removals
+
+ * Drop Python 3.10 and TensorFlow
+
+### Bug Fixes and Other Changes
+
+ * Use PL GeneralizedAmplitudeDamping convention
+
+## v1.33.7 (2026-01-26)
+
+### Bug Fixes and Other Changes
+
+ * Support multi-qubit identity observables
+
+### Documentation Changes
+
+ * Update docs badge to point to default version
+ * Remove PDF build from Read the Docs
+
 ## v1.33.6 (2025-11-10)
 
 ### Bug Fixes and Other Changes
