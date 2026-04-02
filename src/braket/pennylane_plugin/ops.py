@@ -93,13 +93,16 @@ class CPhaseShift00(Operation):
     num_params = 1
     num_wires = 2
     grad_method = "A"
-    parameter_frequencies = [(1,)]
 
     def generator(self):
         return qml.Projector(np.array([0, 0]), wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
+
+    @property
+    def parameter_frequencies(self) -> list[tuple[float | int]]:
+        return [(1,)]
 
     @staticmethod
     def compute_decomposition(phi, wires):
@@ -156,13 +159,16 @@ class CPhaseShift01(Operation):
     num_params = 1
     num_wires = 2
     grad_method = "A"
-    parameter_frequencies = [(1,)]
 
     def generator(self):
         return qml.Projector(np.array([0, 1]), wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
+
+    @property
+    def parameter_frequencies(self) -> list[tuple[float | int]]:
+        return [(1,)]
 
     @staticmethod
     def compute_decomposition(phi, wires):
@@ -217,13 +223,16 @@ class CPhaseShift10(Operation):
     num_params = 1
     num_wires = 2
     grad_method = "A"
-    parameter_frequencies = [(1,)]
 
     def generator(self):
         return qml.Projector(np.array([1, 0]), wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
+
+    @property
+    def parameter_frequencies(self) -> list[tuple[float | int]]:
+        return [(1,)]
 
     @staticmethod
     def compute_decomposition(phi, wires):

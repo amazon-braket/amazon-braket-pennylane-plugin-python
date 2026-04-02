@@ -910,7 +910,7 @@ def test_pl_to_braket_circuit_gradient_fails_with_invalid_observable():
         qml.CNOT(wires=[0, 1])
         qml.var(qml.PauliZ(0))
     with pytest.raises(
-        ValueError,
+        TypeError,
         match="Braket can only compute gradients for circuits with a single expectation"
         " observable, not a",
     ):
