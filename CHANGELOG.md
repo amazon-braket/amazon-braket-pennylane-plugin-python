@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.34.1 (2026-04-02)
+
+### Bug Fixes and Other Changes
+
+ * Update for new linter rules
+
 ## v1.34.0 (2026-01-30)
 
 ### Deprecations and Removals
