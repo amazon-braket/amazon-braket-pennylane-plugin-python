@@ -84,8 +84,6 @@ class BraketAhsDevice(QubitDevice):
     author = "Xanadu Inc."
     short_name = "braket_ahs_device"
 
-    operations = {"ParametrizedEvolution"}
-
     def __init__(
         self,
         wires: int | Iterable,
@@ -131,6 +129,10 @@ class BraketAhsDevice(QubitDevice):
 
         # use nanmean to ignore failed measurements in taking the average
         return np.nanmean(samples, axis=axis)
+
+    @property
+    def operations(self):
+        return frozenset({"ParametrizedEvolution"})
 
     @property
     def task(self):
@@ -228,7 +230,7 @@ class BraketAhsDevice(QubitDevice):
             if isinstance(o, MeasurementProcess):
                 # state-based measurements not supported
                 if not isinstance(o, SampleMeasurement):
-                    raise RuntimeError(
+                    raise TypeError(
                         f"Device only support sample-based measurement, but received observable {o}"
                     )
                 continue
@@ -258,13 +260,13 @@ class BraketAhsDevice(QubitDevice):
         ev_op = operations[0]  # only one!
 
         if not isinstance(ev_op.H, HardwareHamiltonian):
-            raise RuntimeError(
+            raise TypeError(
                 f"Expected a HardwareHamiltonian instance for interfacing with the device, but "
                 f"recieved {type(ev_op.H)}."
             )
 
         if not set(ev_op.wires) == set(self.wires):
-            raise RuntimeError(
+            raise ValueError(
                 f"Device contains wires {self.wires}, but received a `ParametrizedEvolution` "
                 f"operator working on wires {ev_op.wires}. Device wires must match wires of "
                 f"the evolution."
@@ -565,7 +567,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         device"""
         return self._device.run(ahs_program, shots=self.shots, steps=100)
 
-    def _validate_pulses(self, pulses: list[HardwarePulse]):  # noqa: C901
+    def _validate_pulses(self, pulses: list[HardwarePulse]):
         """Validate that all pulses are defined as expected by the device. This validation includes:
 
         * Verifying that a global drive is present
