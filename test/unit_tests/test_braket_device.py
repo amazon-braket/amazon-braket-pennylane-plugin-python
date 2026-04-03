@@ -1125,8 +1125,8 @@ def test_batch_execute_program_set_noncommuting():
         dev.batch_execute(circuits)
 
 
-@patch.object(AwsDevice, "run")
-def test_batch_execute_program_set_exceeds_max_executables(mock_run):
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
     """Test batch_execute falls back to individual programs when exceeding maximumExecutables"""
     custom_result = GateModelQuantumTaskResult.from_string(
         json.dumps(
@@ -1174,7 +1174,12 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
     task.result.return_value = custom_result
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
-    mock_run.return_value = task
+
+    # Mock the batch to return 101 results (one for each circuit)
+    task_batch = Mock()
+    task_batch.results.return_value = [custom_result] * 101
+    type(task_batch).tasks = PropertyMock(return_value=[task] * 101)
+    mock_run_batch.return_value = task_batch
 
     dev = _aws_device(wires=4, foo="bar", parallel=True, supports_program_sets=True)
 
@@ -1199,7 +1204,9 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
     )
 
     result = dev.batch_execute(circuits)
-    assert mock_run.call_count == 101
+    assert mock_run_batch.call_count == 1
+    call_args = mock_run_batch.call_args[0]
+    assert len(call_args[0]) == 101  # First argument is the list of circuits
     assert len(result) == 101
 
 
