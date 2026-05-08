@@ -481,24 +481,16 @@ def _(op: ParametrizedEvolution, _parameters, device):
             if pulse.amplitude == qml.pulse.constant:
                 amplitude = complex(op.parameters[callable_index])
                 callable_index += 1
-
-                def waveform(dt):
-                    return ConstantWaveform(pulse_length, amplitude)
-
+                waveform = lambda dt: ConstantWaveform(pulse_length, amplitude)  # noqa: B023
             else:
                 amplitude = partial(pulse.amplitude, op.parameters[callable_index])
                 callable_index += 1
-
-                def waveform(dt):
+                waveform = lambda dt: ArbitraryWaveform(
                     # Calculate amplitude for each time step and normalize
-                    amplitudes = onp.array([amplitude(t) for t in np.arange(start, end + dt, dt)])
-
-                    return ArbitraryWaveform(amplitudes)
-
+                    onp.array([amplitude(t) for t in np.arange(start, end + dt, dt)])  # noqa: B023
+                )
         else:
-
-            def waveform(dt):
-                return ConstantWaveform(pulse_length, pulse.amplitude)
+            waveform = lambda dt: ConstantWaveform(pulse_length, pulse.amplitude)  # noqa: B023
 
         if callable(pulse.phase):
             phase = float(op.parameters[callable_index])
@@ -553,7 +545,7 @@ def get_adjoint_gradient_result_type(
     return AdjointGradient(observable=braket_observable, target=targets, parameters=parameters)
 
 
-def translate_result_type(  # noqa: C901
+def translate_result_type(
     measurement: MeasurementProcess,
     targets: list[int] | None,
     supported_result_types: frozenset[str],

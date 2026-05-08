@@ -476,7 +476,7 @@ class TestBraketAhsDevice:
         ops = [ParametrizedEvolution(H, params, [0, 1.5])]
         obs = [qml.state()]
 
-        with pytest.raises(RuntimeError, match="only support sample-based measurement"):
+        with pytest.raises(TypeError, match="only support sample-based measurement"):
             dev.check_validity(ops, obs)
 
     @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
@@ -730,10 +730,10 @@ class TestBraketAhsDevice:
         dev1 = BraketLocalAhsDevice(wires=len(H.wires) - 1)
         dev2 = BraketLocalAhsDevice(wires=len(H.wires) + 1)
 
-        with pytest.raises(RuntimeError, match="Device wires must match wires of the evolution."):
+        with pytest.raises(ValueError, match="Device wires must match wires of the evolution."):
             dev1._validate_operations([ParametrizedEvolution(H, [], 1)])
 
-        with pytest.raises(RuntimeError, match="Device wires must match wires of the evolution."):
+        with pytest.raises(ValueError, match="Device wires must match wires of the evolution."):
             dev2._validate_operations([ParametrizedEvolution(H, [], 1)])
 
     def test_validate_operations_register_matches_wires(self):
@@ -757,7 +757,7 @@ class TestBraketAhsDevice:
         H1 = 2 * qml.PauliX(0) + f1 * qml.PauliY(1) + f2 * qml.PauliZ(2)
         op1 = qml.evolve(H1)
 
-        with pytest.raises(RuntimeError, match="Expected a HardwareHamiltonian instance"):
+        with pytest.raises(TypeError, match="Expected a HardwareHamiltonian instance"):
             dev_sim._validate_operations([op1])
 
     def test_validate_pulses_no_pulses(self, mock_aws_device):

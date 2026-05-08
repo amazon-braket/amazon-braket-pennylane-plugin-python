@@ -264,7 +264,7 @@ class BraketQubitDevice(QubitDevice):
         self,
         circuit: QuantumTape,
         compute_gradient: bool = False,
-        trainable_indices: frozenset[int] = None,
+        trainable_indices: frozenset[int] | None = None,
         *,
         add_observables: bool = True,
         **run_kwargs,
@@ -321,7 +321,7 @@ class BraketQubitDevice(QubitDevice):
         pl_measurements = circuit.measurements[0]
         pl_observable = flatten_observable(pl_measurements.obs)
         if not isinstance(pl_measurements, ExpectationMP):
-            raise ValueError(
+            raise TypeError(
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not a {type(pl_measurements)} measurement."
             )
@@ -374,7 +374,7 @@ class BraketQubitDevice(QubitDevice):
         results = []
         for mp in measurements:
             if not isinstance(mp, RETURN_TYPES):
-                raise QuantumFunctionError("Unsupported return type: {}".format(type(mp)))
+                raise QuantumFunctionError(f"Unsupported return type: {type(mp)}")
             results.append(
                 translate_result(
                     braket_result, mp.map_wires(self.wire_map), None, self._braket_result_types
@@ -538,7 +538,7 @@ class BraketQubitDevice(QubitDevice):
     def apply(
         self,
         operations: Sequence[Operation],
-        rotations: Sequence[Operation] = None,
+        rotations: Sequence[Operation] | None = None,
         use_unique_params: bool = False,
         *,
         trainable_indices: frozenset[int] | None = None,
@@ -603,7 +603,7 @@ class BraketQubitDevice(QubitDevice):
             ("braket_noise_" + noise_instr.noise.name).lower().replace("_", "")
             for noise_instr in self._noise_model._instructions
         ]
-        if not all([noise in supported_pragmas for noise in noise_pragmas]):
+        if not all(noise in supported_pragmas for noise in noise_pragmas):
             raise ValueError(
                 f"{self._device.name} does not support noise or the noise model includes noise "
                 + f"that is not supported by {self._device.name}."
@@ -719,7 +719,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         # We *can* do this without fear because grouping is only beneficial when
         # shots!=0, and (conveniently) AG is only supported when shots=0
         caps = self.capabilities()
-        return not ("provides_jacobian" in caps and caps["provides_jacobian"])
+        return not (caps.get("provides_jacobian"))
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         if self._can_run_as_program_set(len(braket_circuits)):
