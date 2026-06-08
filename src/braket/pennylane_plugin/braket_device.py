@@ -484,6 +484,23 @@ class BraketQubitDevice(QubitDevice):
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
+        # PennyLane >=0.45 no longer applies measurement-basis diagonalization
+        # automatically in the legacy device facade, so non-Z-basis Pauli observables
+        # (e.g. qml.expval(qml.Y(...)), qml.probs(op=qml.Y(...))) reach the plugin
+        # un-rotated. Diagonalize Pauli measurements here so both circuit construction
+        # and result post-processing operate on the same Z-basis-rewritten tape.
+        # The transform only handles Pauli-style observables; for other observables
+        # (Hermitian, Sum, LinearCombination, ...) we fall back to the original tape,
+        # which the existing translation path already handles correctly.
+        if (
+            not compute_gradient
+            and circuit.measurements
+            and not isinstance(circuit.measurements[0], MeasurementTransform)
+        ):
+            try:
+                [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
+            except (ValueError, NotImplementedError):
+                pass
         trainable = (
             BraketQubitDevice._get_trainable_parameters(circuit)
             if compute_gradient or self._parametrize_differentiable
