@@ -1124,13 +1124,7 @@ def test_batch_execute_program_set_parametrize_differentiable(mock_run):
     result = dev.batch_execute(circuits)
 
     braket_circuit1 = (
-        Circuit()
-        .h(0)
-        .cnot(0, 1)
-        .ry(0, FreeParameter("p_0"))
-        .rx(1, FreeParameter("p_1"))
-        .i(2)
-        .i(3)
+        Circuit().h(0).cnot(0, 1).ry(0, FreeParameter("p_0")).rx(1, FreeParameter("p_1")).i(2).i(3)
     )
     braket_circuit2 = Circuit().h(0).rx(0, FreeParameter("p_0")).cnot(0, 1).i(2).i(3)
     mock_run.assert_called_with(
@@ -1325,8 +1319,7 @@ def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
 
     submitted = mock_run_batch.call_args[0][0][0]
     assert any(
-        instr.operator.name == "Rx" and instr.target[0] == 0
-        for instr in submitted.instructions
+        instr.operator.name == "Rx" and instr.target[0] == 0 for instr in submitted.instructions
     ), (
         "Parallel batch_execute did not diagonalize qml.probs(op=PauliY(0)); "
         f"submitted instructions: {[i.operator.name for i in submitted.instructions]}"
