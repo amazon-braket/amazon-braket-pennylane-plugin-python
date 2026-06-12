@@ -100,6 +100,26 @@ class Shots(Enum):
     DEFAULT = auto()
 
 
+_PAULI_BASIS_OBSERVABLES = (qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.Identity)
+
+
+def _is_pauli_basis_observable(observable):
+    """Returns True if ``observable`` is composed only of Pauli, Hadamard, and Identity terms,
+    i.e., the observables that ``qml.transforms.diagonalize_measurements`` knows how to rotate
+    into the Z basis. Other observables (Hermitian, Projector, ...) are handled directly by
+    the existing translation path.
+    """
+    if observable is None:
+        return True
+    if isinstance(observable, _PAULI_BASIS_OBSERVABLES):
+        return True
+    if isinstance(observable, qml.ops.SymbolicOp):
+        return _is_pauli_basis_observable(observable.base)
+    if isinstance(observable, qml.ops.CompositeOp):
+        return all(_is_pauli_basis_observable(op) for op in observable.operands)
+    return False
+
+
 class BraketQubitDevice(QubitDevice):
     r"""Abstract Amazon Braket qubit device for PennyLane.
 
@@ -484,23 +504,13 @@ class BraketQubitDevice(QubitDevice):
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
-        # PennyLane >=0.45 no longer applies measurement-basis diagonalization
-        # automatically in the legacy device facade, so non-Z-basis Pauli observables
-        # (e.g. qml.expval(qml.Y(...)), qml.probs(op=qml.Y(...))) reach the plugin
-        # un-rotated. Diagonalize Pauli measurements here so both circuit construction
-        # and result post-processing operate on the same Z-basis-rewritten tape.
-        # The transform only handles Pauli-style observables; for other observables
-        # (Hermitian, Sum, LinearCombination, ...) we fall back to the original tape,
-        # which the existing translation path already handles correctly.
         if (
             not compute_gradient
             and circuit.measurements
             and not isinstance(circuit.measurements[0], MeasurementTransform)
+            and all(_is_pauli_basis_observable(m.obs) for m in circuit.measurements)
         ):
-            try:
-                [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
-            except (ValueError, NotImplementedError):
-                pass
+            [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
         trainable = (
             BraketQubitDevice._get_trainable_parameters(circuit)
             if compute_gradient or self._parametrize_differentiable
