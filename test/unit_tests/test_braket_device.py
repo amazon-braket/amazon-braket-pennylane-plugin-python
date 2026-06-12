@@ -339,11 +339,12 @@ def test_execute(mock_run):
         .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
         .rx(0, 0.432)
         .cnot(0, 1)
-        .i(2)
+        .ry(1, -np.pi / 2)
+        .rx(2, np.pi / 2)
         .i(3)
         .probability(target=[0])
-        .expectation(observable=observables.X(1))
-        .variance(observable=observables.Y(2))
+        .expectation(observable=observables.Z(1))
+        .variance(observable=observables.Z(2))
         .sample(observable=observables.Z(3))
     )
     mock_run.assert_called_with(
@@ -399,11 +400,12 @@ def test_execute_parametrize_differentiable(mock_run):
         # all parameters are automatically considered differentiable
         .rx(0, FreeParameter("p_1"))
         .cnot(0, 1)
-        .i(2)
+        .ry(1, FreeParameter("p_2"))
+        .rx(2, FreeParameter("p_3"))
         .i(3)
         .probability(target=[0])
-        .expectation(observable=observables.X(1))
-        .variance(observable=observables.Y(2))
+        .expectation(observable=observables.Z(1))
+        .variance(observable=observables.Z(2))
         .sample(observable=observables.Z(3))
     )
     mock_run.assert_called_with(
@@ -413,7 +415,7 @@ def test_execute_parametrize_differentiable(mock_run):
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         foo="bar",
-        inputs={"p_1": 0.432},
+        inputs={"p_1": 0.432, "p_2": -np.pi / 2, "p_3": np.pi / 2},
     )
 
 
@@ -1145,6 +1147,14 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
                         },
                         "value": 0.5,
                     },
+                    {
+                        "type": {
+                            "observable": ["z", "z"],
+                            "targets": [0, 1],
+                            "type": "expectation",
+                        },
+                        "value": 0.5,
+                    },
                 ],
                 "measuredQubits": [0, 1],
                 "taskMetadata": {
@@ -1587,6 +1597,14 @@ def test_execute_some_samples(mock_run):
                     },
                     {
                         "type": {
+                            "observable": ["z", "i"],
+                            "targets": [0, 1],
+                            "type": "sample",
+                        },
+                        "value": [1, -1, 1, 1],
+                    },
+                    {
+                        "type": {
                             "observable": ["z"],
                             "targets": [2],
                             "type": "expectation",
@@ -1914,8 +1932,25 @@ def test_local_qubit_execute(mock_run, shots, backend):
         qml.var(qml.PauliY(2))
         qml.sample(qml.PauliZ(3))
 
+    expected = (
+        Circuit()
+        .h(0)
+        .cnot(0, 1)
+        .ry(1, FreeParameter("p_0"))
+        .rx(2, FreeParameter("p_1"))
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=observables.Z(1))
+        .variance(observable=observables.Z(2))
+        .sample(observable=observables.Z(3))
+    )
     dev.execute(circuit)
-    mock_run.assert_called_with(CIRCUIT, shots=shots, foo="bar", inputs={})
+    mock_run.assert_called_with(
+        expected,
+        shots=shots,
+        foo="bar",
+        inputs={"p_0": -np.pi / 2, "p_1": np.pi / 2},
+    )
 
 
 def test_qpu_default_shots():
@@ -2092,13 +2127,14 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
             .cnot(0, 1)
             .rx(0, 0.432)
             .ry(0, 0.543)
-            .expectation(observable=observables.X(1)),
+            .ry(1, -np.pi / 2)
+            .expectation(observable=observables.Z(1)),
             2,
             {},
             [
                 {
                     "type": {
-                        "observable": ["x"],
+                        "observable": ["z"],
                         "targets": [1],
                         "type": "expectation",
                     },
@@ -2188,13 +2224,15 @@ def test_execute_and_gradients(
             .cnot(0, 1)
             .rx(0, 0.432)
             .ry(0, 0.543)
-            .variance(observable=observables.X(0) @ observables.Y(1)),
+            .ry(0, -np.pi / 2)
+            .rx(1, np.pi / 2)
+            .variance(observable=observables.Z(0) @ observables.Z(1)),
             2,
             {"p_1": 0.543},
             [
                 {
                     "type": {
-                        "observable": ["x", "y"],
+                        "observable": ["z", "z"],
                         "targets": [0, 1],
                         "type": "variance",
                     },
@@ -2544,6 +2582,26 @@ def expected_braket_circuit_with_noise():
     )
 
 
+@pytest.fixture
+def expected_braket_circuit_with_noise_diagonalized():
+    return (
+        Circuit()
+        .h(0)
+        .bit_flip(0, 0.05)
+        .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
+        .rx(0, 0.432)
+        .cnot(0, 1)
+        .two_qubit_depolarizing(0, 1, 0.10)
+        .ry(1, -np.pi / 2)
+        .rx(2, np.pi / 2)
+        .i(3)
+        .probability(target=[0])
+        .expectation(observable=observables.Z(1))
+        .variance(observable=observables.Z(2))
+        .sample(observable=observables.Z(3))
+    )
+
+
 @patch.object(AwsDevice, "run")
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 def test_execute_with_noise_model(
@@ -2551,7 +2609,7 @@ def test_execute_with_noise_model(
     mock_run,
     noise_model,
     pennylane_quantum_tape,
-    expected_braket_circuit_with_noise,
+    expected_braket_circuit_with_noise_diagonalized,
 ):
     mock_run.return_value = TASK
     mock_name.return_value = "dm1"
@@ -2566,7 +2624,7 @@ def test_execute_with_noise_model(
     assert dev.task == TASK
 
     mock_run.assert_called_with(
-        expected_braket_circuit_with_noise,
+        expected_braket_circuit_with_noise_diagonalized,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
