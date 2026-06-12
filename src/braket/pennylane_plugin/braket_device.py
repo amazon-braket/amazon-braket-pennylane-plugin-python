@@ -106,9 +106,9 @@ def _is_pauli_or_hadamard_observable(observable):
         return True
     if isinstance(observable, PAULI_AND_HADAMARD_OBS):
         return True
-    if isinstance(observable, qml.ops.SymbolicOp):
+    if isinstance(observable, qml.ops.SProd):
         return _is_pauli_or_hadamard_observable(observable.base)
-    if isinstance(observable, qml.ops.CompositeOp):
+    if isinstance(observable, qml.ops.Prod):
         return all(_is_pauli_or_hadamard_observable(op) for op in observable.operands)
     return False
 
@@ -501,7 +501,10 @@ class BraketQubitDevice(QubitDevice):
             not compute_gradient
             and circuit.measurements
             and not isinstance(circuit.measurements[0], MeasurementTransform)
-            and all(_is_pauli_or_hadamard_observable(m.obs) for m in circuit.measurements)
+            and all(
+                isinstance(m, MeasurementProcess) and _is_pauli_or_hadamard_observable(m.obs)
+                for m in circuit.measurements
+            )
         ):
             [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
         trainable = (
