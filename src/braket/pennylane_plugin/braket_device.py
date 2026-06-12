@@ -92,6 +92,7 @@ from ._version import __version__
 RETURN_TYPES = (ExpectationMP, VarianceMP, SampleMP, ProbabilityMP, StateMP, CountsMP)
 MIN_SIMULATOR_BILLED_MS = 3000
 OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
+PAULI_AND_HADAMARD_OBS = (qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.Identity)
 
 
 class Shots(Enum):
@@ -100,23 +101,15 @@ class Shots(Enum):
     DEFAULT = auto()
 
 
-_PAULI_BASIS_OBSERVABLES = (qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.Identity)
-
-
-def _is_pauli_basis_observable(observable):
-    """Returns True if ``observable`` is composed only of Pauli, Hadamard, and Identity terms,
-    i.e., the observables that ``qml.transforms.diagonalize_measurements`` knows how to rotate
-    into the Z basis. Other observables (Hermitian, Projector, ...) are handled directly by
-    the existing translation path.
-    """
+def _is_pauli_or_hadamard_observable(observable):
     if observable is None:
         return True
-    if isinstance(observable, _PAULI_BASIS_OBSERVABLES):
+    if isinstance(observable, PAULI_AND_HADAMARD_OBS):
         return True
     if isinstance(observable, qml.ops.SymbolicOp):
-        return _is_pauli_basis_observable(observable.base)
+        return _is_pauli_or_hadamard_observable(observable.base)
     if isinstance(observable, qml.ops.CompositeOp):
-        return all(_is_pauli_basis_observable(op) for op in observable.operands)
+        return all(_is_pauli_or_hadamard_observable(op) for op in observable.operands)
     return False
 
 
@@ -508,7 +501,7 @@ class BraketQubitDevice(QubitDevice):
             not compute_gradient
             and circuit.measurements
             and not isinstance(circuit.measurements[0], MeasurementTransform)
-            and all(_is_pauli_basis_observable(m.obs) for m in circuit.measurements)
+            and all(_is_pauli_or_hadamard_observable(m.obs) for m in circuit.measurements)
         ):
             [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
         trainable = (
