@@ -103,6 +103,19 @@ CIRCUIT = (
     .sample(observable=observables.Z(3))
 )
 
+CIRCUIT_DIAGONALIZED = (
+    Circuit()
+    .h(0)
+    .cnot(0, 1)
+    .ry(1, -np.pi / 2)
+    .rx(2, np.pi / 2)
+    .i(3)
+    .probability(target=[0])
+    .expectation(observable=observables.Z(1))
+    .variance(observable=observables.Z(2))
+    .sample(observable=observables.Z(3))
+)
+
 # Circuit with basis rotations for `CIRCUIT` when using program sets
 CIRCUIT_WITH_BASIS_ROTATION = (
     Circuit()
@@ -817,6 +830,16 @@ def test_pl_to_braket_circuit():
     assert braket_circuit_true == braket_circuit
 
 
+def test_pl_to_braket_circuit_no_observables_rejects_noncommuting():
+    dev = _aws_device(wires=1, foo="bar")
+    with QuantumTape() as tape:
+        qml.Hadamard(wires=0)
+        qml.expval(qml.PauliX(0))
+        qml.sample(qml.PauliY(0))
+    with pytest.raises(ValueError, match="mutually commute"):
+        dev._pl_to_braket_circuit(tape, add_observables=False)
+
+
 def test_pl_to_braket_circuit_compute_gradient():
     """Tests that a PennyLane circuit is correctly converted into a Braket circuit
     with a gradient and unique parameters when compute_gradient is True"""
@@ -1058,7 +1081,7 @@ def test_batch_execute_program_set(mock_run):
     circuits = [circuit, circuit]
     result = dev.batch_execute(circuits)
 
-    braket_circuit = Circuit().h(0).cnot(0, 1).i(2).i(3).ry(0, -anp.pi / 2).rx(1, anp.pi / 2)
+    braket_circuit = Circuit().h(0).cnot(0, 1).ry(0, -anp.pi / 2).rx(1, anp.pi / 2).i(2).i(3)
     mock_run.assert_called_with(
         ProgramSet([braket_circuit, braket_circuit]),
         s3_destination_folder=("foo", "bar"),
@@ -1100,10 +1123,21 @@ def test_batch_execute_program_set_parametrize_differentiable(mock_run):
     circuits = [circuit1, circuit2]
     result = dev.batch_execute(circuits)
 
-    braket_circuit1 = Circuit().h(0).cnot(0, 1).i(2).i(3).ry(0, -anp.pi / 2).rx(1, anp.pi / 2)
+    braket_circuit1 = (
+        Circuit()
+        .h(0)
+        .cnot(0, 1)
+        .ry(0, FreeParameter("p_0"))
+        .rx(1, FreeParameter("p_1"))
+        .i(2)
+        .i(3)
+    )
     braket_circuit2 = Circuit().h(0).rx(0, FreeParameter("p_0")).cnot(0, 1).i(2).i(3)
     mock_run.assert_called_with(
-        ProgramSet.zip([braket_circuit1, braket_circuit2], input_sets=[{}, {"p_0": 0.123}]),
+        ProgramSet.zip(
+            [braket_circuit1, braket_circuit2],
+            input_sets=[{"p_0": -anp.pi / 2, "p_1": anp.pi / 2}, {"p_0": 0.123}],
+        ),
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS * 2,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -1258,7 +1292,7 @@ def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
         )
 
     mock_run_batch.assert_called_with(
-        [CIRCUIT, CIRCUIT],
+        [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED],
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         max_parallel=None,
@@ -1267,6 +1301,35 @@ def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         inputs=[],
         foo="bar",
+    )
+
+
+@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
+@patch.object(AwsDevice, "run_batch")
+def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
+    mock_run_batch, mock_properties
+):
+    """parallel batch_execute should diagonalize non-Z-basis Pauli measurements so that
+    qml.probs(op=qml.PauliY(...)) returns Y-basis probabilities instead of Z-basis."""
+    mock_run_batch.return_value = TASK_BATCH
+    mock_action = Mock()
+    mock_action.action = {"braket.ir.openqasm.program": None}
+    mock_properties.return_value = mock_action
+    dev = _aws_device(wires=1, foo="bar", parallel=True)
+
+    with QuantumTape() as circuit:
+        qml.Hadamard(wires=0)
+        qml.probs(op=qml.PauliY(0))
+
+    dev.batch_execute([circuit])
+
+    submitted = mock_run_batch.call_args[0][0][0]
+    assert any(
+        instr.operator.name == "Rx" and instr.target[0] == 0
+        for instr in submitted.instructions
+    ), (
+        "Parallel batch_execute did not diagonalize qml.probs(op=PauliY(0)); "
+        f"submitted instructions: {[i.operator.name for i in submitted.instructions]}"
     )
 
 
@@ -1311,7 +1374,7 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
     if dev._supports_program_sets:
         expected_circuits = [CIRCUIT_WITH_BASIS_ROTATION, CIRCUIT_WITH_BASIS_ROTATION]
     else:
-        expected_circuits = [CIRCUIT, CIRCUIT]
+        expected_circuits = [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED]
 
     mock_run_batch.assert_called_with(
         expected_circuits,
@@ -1480,9 +1543,10 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch, mock_propertie
         .unitary([0], 1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]))
         .rx(0, FreeParameter("p_1"))
         .cnot(0, 1)
+        .ry(1, FreeParameter("p_2"))
         .i(2)
         .i(3)
-        .expectation(observable=observables.X(1))
+        .expectation(observable=observables.Z(1))
     )
 
     expected_2 = (
@@ -1505,7 +1569,7 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch, mock_propertie
         max_connections=AwsQuantumTaskBatch.MAX_CONNECTIONS_DEFAULT,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        inputs=[{"p_1": 0.432}, {"p_0": 0.123}],
+        inputs=[{"p_1": 0.432, "p_2": -np.pi / 2}, {"p_0": 0.123}],
         foo="bar",
     )
 
@@ -2893,7 +2957,7 @@ def test_batch_execute_with_noise_model(
     mock_run_batch,
     noise_model,
     pennylane_quantum_tape,
-    expected_braket_circuit_with_noise,
+    expected_braket_circuit_with_noise_diagonalized,
 ):
     NUM_CIRCUITS = 5
     mock_name.return_value = "dm1"
@@ -2911,7 +2975,7 @@ def test_batch_execute_with_noise_model(
     _ = dev.batch_execute([pennylane_quantum_tape] * NUM_CIRCUITS)
 
     mock_run_batch.assert_called_with(
-        [expected_braket_circuit_with_noise] * NUM_CIRCUITS,
+        [expected_braket_circuit_with_noise_diagonalized] * NUM_CIRCUITS,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,

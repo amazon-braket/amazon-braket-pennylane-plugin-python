@@ -233,6 +233,7 @@ class BraketQubitDevice(QubitDevice):
         all_trainable = []
         braket_circuits = []
         for circuit in circuits:
+            circuit = self._maybe_diagonalize_measurements(circuit)
             trainable = (
                 BraketQubitDevice._get_trainable_parameters(circuit)
                 if self._parametrize_differentiable
@@ -307,6 +308,20 @@ class BraketQubitDevice(QubitDevice):
                 braket_circuit += self.apply(diagonalizing_ops, apply_identities=False)
 
         return braket_circuit
+
+    @staticmethod
+    def _maybe_diagonalize_measurements(circuit, compute_gradient=False):
+        if (
+            not compute_gradient
+            and circuit.measurements
+            and not isinstance(circuit.measurements[0], MeasurementTransform)
+            and all(
+                isinstance(m, MeasurementProcess) and _is_pauli_or_hadamard_observable(m.obs)
+                for m in circuit.measurements
+            )
+        ):
+            [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
+        return circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
         """Adds the AdjointGradient result type to the braket_circuit with the first observable in
@@ -497,16 +512,7 @@ class BraketQubitDevice(QubitDevice):
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
-        if (
-            not compute_gradient
-            and circuit.measurements
-            and not isinstance(circuit.measurements[0], MeasurementTransform)
-            and all(
-                isinstance(m, MeasurementProcess) and _is_pauli_or_hadamard_observable(m.obs)
-                for m in circuit.measurements
-            )
-        ):
-            [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
+        circuit = self._maybe_diagonalize_measurements(circuit, compute_gradient=compute_gradient)
         trainable = (
             BraketQubitDevice._get_trainable_parameters(circuit)
             if compute_gradient or self._parametrize_differentiable
