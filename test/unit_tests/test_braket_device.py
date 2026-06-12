@@ -71,7 +71,11 @@ from braket.pennylane_plugin import (
     GPi2,
     __version__,
 )
-from braket.pennylane_plugin.braket_device import BraketQubitDevice, Shots
+from braket.pennylane_plugin.braket_device import (
+    BraketQubitDevice,
+    Shots,
+    _is_pauli_or_hadamard_observable,
+)
 
 SHOTS = 10000
 
@@ -1841,6 +1845,29 @@ def test_sample_fails():
     does_not_support = "Unsupported return type: <class 'pennylane.measurements.sample.SampleMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
         dev.execute(circuit)
+
+
+@pytest.mark.parametrize(
+    "observable, expected",
+    [
+        (None, True),
+        (qml.PauliX(0), True),
+        (qml.PauliY(0), True),
+        (qml.PauliZ(0), True),
+        (qml.Hadamard(0), True),
+        (qml.Identity(0), True),
+        (2 * qml.PauliY(0), True),
+        (-1.5 * qml.Hadamard(1), True),
+        (qml.PauliX(0) @ qml.PauliY(1), True),
+        (3 * (qml.PauliX(0) @ qml.PauliY(1)), True),
+        (qml.PauliX(0) + qml.PauliY(1), False),
+        (qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[0]), False),
+        (qml.Projector([0], wires=[0]), False),
+        (qml.PauliX(0) @ qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[1]), False),
+    ],
+)
+def test_is_pauli_or_hadamard_observable(observable, expected):
+    assert _is_pauli_or_hadamard_observable(observable) is expected
 
 
 def test_unsupported_return_type():
