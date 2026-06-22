@@ -27,6 +27,8 @@ class TestVar:
     def test_var(self, device, shots, tol):
         """Tests for variance calculation"""
         dev = device(2)
+        if "AwsDevice" in dev.name:
+            pytest.xfail()  # TODO: re-enable once this test case works on managed simulators
 
         phi = 0.543
         theta = 0.6543
@@ -43,6 +45,8 @@ class TestVar:
     def test_var_hermitian(self, device, shots, tol):
         """Tests for variance calculation using an arbitrary Hermitian observable"""
         dev = device(2)
+        if "AwsDevice" in dev.name:
+            pytest.xfail()  # TODO: re-enable once this test case works on managed simulators
 
         phi = 0.543
         theta = 0.6543

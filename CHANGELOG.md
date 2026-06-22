@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.34.2 (2026-06-18)
+
+### Bug Fixes and Other Changes
+
+ * diagonalize measurements in BraketQubitDevice (for pennylane>=0.45 compatibility)
+
 ## v1.34.1 (2026-04-02)
 
 ### Bug Fixes and Other Changes
