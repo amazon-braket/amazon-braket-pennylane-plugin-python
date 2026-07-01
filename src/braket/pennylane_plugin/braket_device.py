@@ -84,7 +84,11 @@ from braket.pennylane_plugin.translation import (
 )
 from braket.program_sets import ProgramSet
 from braket.simulator import BraketSimulator
-from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from braket.tasks import (
+    GateModelQuantumTaskResult,
+    ProgramSetQuantumTaskResult,
+    QuantumTask,
+)
 from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 
 from ._version import __version__
@@ -220,12 +224,6 @@ class BraketQubitDevice(QubitDevice):
 
     def batch_execute(self, circuits, **run_kwargs):
         if not self._parallel and not self._supports_program_sets:
-            return super().batch_execute(circuits)
-
-        if self._supports_program_sets and (
-            len(circuits)
-            > self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
-        ):
             return super().batch_execute(circuits)
 
         for circuit in circuits:
@@ -735,22 +733,41 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         caps = self.capabilities()
         return not (caps.get("provides_jacobian"))
 
+    def _run_program_set(
+        self, program_set: ProgramSet, shots_per_executable: int
+    ) -> ProgramSetQuantumTaskResult:
+        program_sets, index_map = program_set.split(
+            self._device.properties.action[DeviceActionType.OPENQASM_PROGRAM_SET].maximumExecutables
+        )
+        return ProgramSetQuantumTaskResult.merge(
+            [
+                self._device.run(
+                    sub_program_set,
+                    s3_destination_folder=self._s3_folder,
+                    shots=sub_program_set.total_executables * shots_per_executable,
+                    poll_timeout_seconds=self._poll_timeout_seconds,
+                    poll_interval_seconds=self._poll_interval_seconds,
+                    **self._run_kwargs,
+                ).result()
+                for sub_program_set in program_sets
+            ],
+            program_set,
+            index_map,
+        )
+
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         if self._supports_program_sets:
-            program_set = (
-                ProgramSet.zip(braket_circuits, input_sets=inputs)
-                if inputs
-                else ProgramSet(braket_circuits)
+            return self._braket_program_set_to_pl_result(
+                self._run_program_set(
+                    (
+                        ProgramSet.zip(braket_circuits, input_sets=inputs)
+                        if inputs
+                        else ProgramSet(braket_circuits)
+                    ),
+                    batch_shots,
+                ),
+                pl_circuits,
             )
-            task = self._device.run(
-                program_set,
-                s3_destination_folder=self._s3_folder,
-                shots=len(program_set) * batch_shots,
-                poll_timeout_seconds=self._poll_timeout_seconds,
-                poll_interval_seconds=self._poll_interval_seconds,
-                **self._run_kwargs,
-            )
-            return self._braket_program_set_to_pl_result(task.result(), pl_circuits)
         task_batch = self._device.run_batch(
             braket_circuits,
             s3_destination_folder=self._s3_folder,
@@ -794,16 +811,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         n_snapshots = len(snapshot_circuits)
         outcomes = np.zeros((n_snapshots, n_qubits))
         if self._supports_program_sets:
-            program_set = ProgramSet(snapshot_circuits)
-            task = self._device.run(
-                program_set,
-                s3_destination_folder=self._s3_folder,
-                shots=len(program_set),
-                poll_timeout_seconds=self._poll_timeout_seconds,
-                poll_interval_seconds=self._poll_interval_seconds,
-                **self._run_kwargs,
-            )
-            for t, result in enumerate(task.result()):
+            for t, result in enumerate(
+                self._run_program_set(ProgramSet(snapshot_circuits), shots_per_executable=1)
+            ):
                 outcomes[t] = np.array(result[0].measurements[0])[mapped_wires]
         elif self._parallel:
             task_batch = self._device.run_batch(
