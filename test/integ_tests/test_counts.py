@@ -51,8 +51,6 @@ class TestCounts:
         the correct values when specifying a target
         """
         dev = device(2)
-        if "AwsDevice" in dev.name:
-            pytest.xfail()  # TODO: re-enable once this test case works on managed simulators
 
         @qml.qnode(dev)
         def circuit():
@@ -73,8 +71,6 @@ class TestCounts:
         the correct values when specifying an observable
         """
         dev = device(2)
-        if "AwsDevice" in dev.name:
-            pytest.xfail()  # TODO: re-enable once this test case works on managed simulators
 
         @qml.qnode(dev)
         def circuit():
