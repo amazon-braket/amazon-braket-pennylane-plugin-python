@@ -225,6 +225,37 @@ PROGRAM_SET_RESULT = ProgramSetQuantumTaskResult.from_object(
 )
 
 
+def _make_program_set_result(num_programs):
+    """Builds a ProgramSetQuantumTaskResult with ``num_programs`` single-executable programs,
+    each returning the measurements in PROGRAM_RESULT."""
+    return ProgramSetQuantumTaskResult.from_object(
+        ProgramSetTaskResult(
+            **{
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.program_set_task_result",
+                    "version": "1",
+                },
+                "programResults": [PROGRAM_RESULT] * num_programs,
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.program_set_task_metadata",
+                        "version": "1",
+                    },
+                    "id": "arn:aws:braket:us-west-2:667256736152:quantum-task/bfebc86f-e4ed-4d6f-8131-addd1a49d6dc",  # noqa
+                    "deviceId": "arn:aws:braket:::device/quantum-simulator/amazon/sv1",
+                    "requestedShots": 20 * num_programs,
+                    "successfulShots": 20 * num_programs,
+                    "programMetadata": [{"executables": [{}]} for _ in range(num_programs)],
+                    "createdAt": "2024-10-15T19:06:58.986Z",
+                    "endedAt": "2024-10-15T19:07:00.382Z",
+                    "status": "COMPLETED",
+                    "totalFailedExecutables": 0,
+                },
+            }
+        )
+    )
+
+
 DEVICE_ARN = "baz"
 
 
@@ -1083,7 +1114,7 @@ def test_batch_execute_program_set(mock_run):
 
     braket_circuit = Circuit().h(0).cnot(0, 1).ry(0, -anp.pi / 2).rx(1, anp.pi / 2).i(2).i(3)
     mock_run.assert_called_with(
-        ProgramSet([braket_circuit, braket_circuit]),
+        ProgramSet([braket_circuit, braket_circuit], shots_per_executable=SHOTS),
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS * 2,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
@@ -1131,6 +1162,7 @@ def test_batch_execute_program_set_parametrize_differentiable(mock_run):
         ProgramSet.zip(
             [braket_circuit1, braket_circuit2],
             input_sets=[{"p_0": -anp.pi / 2, "p_1": anp.pi / 2}, {"p_0": 0.123}],
+            shots_per_executable=SHOTS,
         ),
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS * 2,
@@ -1159,73 +1191,28 @@ def test_batch_execute_program_set_noncommuting():
         dev.batch_execute(circuits)
 
 
-@patch.object(AwsDevice, "run")
-def test_batch_execute_program_set_exceeds_max_executables(mock_run):
-    """Test batch_execute falls back to individual programs when exceeding maximumExecutables"""
-    custom_result = GateModelQuantumTaskResult.from_string(
-        json.dumps(
-            {
-                "braketSchemaHeader": {
-                    "name": "braket.task_result.gate_model_task_result",
-                    "version": "1",
-                },
-                "measurements": [[0, 0], [1, 1], [0, 1], [1, 0]],
-                "resultTypes": [
-                    {
-                        "type": {
-                            "observable": ["x", "y"],
-                            "targets": [0, 1],
-                            "type": "expectation",
-                        },
-                        "value": 0.5,
-                    },
-                    {
-                        "type": {
-                            "observable": ["z", "z"],
-                            "targets": [0, 1],
-                            "type": "expectation",
-                        },
-                        "value": 0.5,
-                    },
-                ],
-                "measuredQubits": [0, 1],
-                "taskMetadata": {
-                    "braketSchemaHeader": {
-                        "name": "braket.task_result.task_metadata",
-                        "version": "1",
-                    },
-                    "id": "task_arn",
-                    "shots": 10000,
-                    "deviceId": "default",
-                },
-                "additionalMetadata": {
-                    "action": {
-                        "braketSchemaHeader": {
-                            "name": "braket.ir.openqasm.program",
-                            "version": "1",
-                        },
-                        "source": "qubit[2] q; h q[0]; cnot q[0], q[1]; measure q;",
-                    },
-                },
-            }
-        )
-    )
+def _program_set_run_batch_mock(program_sets, **kwargs):
+    """Builds a task batch whose results are one ProgramSetQuantumTaskResult per split program
+    set, each sized to that program set's number of executables."""
+    task_batch = Mock()
+    task_batch.results.return_value = [
+        _make_program_set_result(program_set.total_executables) for program_set in program_sets
+    ]
+    return task_batch
 
-    # Mock the task to return our custom result
-    task = Mock()
-    task.result.return_value = custom_result
-    type(task).id = PropertyMock(return_value="task_arn")
-    task.state.return_value = "COMPLETED"
-    mock_run.return_value = task
 
-    dev = _aws_device(wires=4, foo="bar", parallel=True, supports_program_sets=True)
+@patch.object(AwsDevice, "run_batch")
+def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
+    """Test batch_execute splits the program set and runs it as a batch when the number of
+    executables exceeds the device's maximumExecutables."""
+    mock_run_batch.side_effect = _program_set_run_batch_mock
 
-    # Verify the device properties are set correctly to ensure we hit the second condition
-    assert dev._parallel == True
-    assert dev._supports_program_sets == True
-    assert dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables == 100
+    dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
 
-    # Create 101 circuits (exceeds maximumExecutables of 100, defined in ACTION_PROPERTIES_PROGRAMSET)
+    assert dev._max_program_set_executables == 100
+
+    # Create 101 circuits, exceeding maximumExecutables of 100 (defined in
+    # ACTION_PROPERTIES_PROGRAMSET), so the program set is split into two tasks.
     circuits = []
     for _ in range(101):
         with QuantumTape() as circuit:
@@ -1235,14 +1222,140 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run):
         circuits.append(circuit)
 
     assert len(circuits) == 101
-    assert (
-        len(circuits)
-        > dev._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
-    )
+    assert len(circuits) > dev._max_program_set_executables
 
     result = dev.batch_execute(circuits)
-    assert mock_run.call_count == 101
+
+    # A single batch of two program sets: 100 executables in one, 1 in the other, each
+    # carrying shots_per_executable so the service computes its own total shots.
+    mock_run_batch.assert_called_once()
+    program_sets = mock_run_batch.call_args.args[0]
+    assert sorted(program_set.total_executables for program_set in program_sets) == [1, 100]
+    assert all(program_set.shots_per_executable == SHOTS for program_set in program_sets)
+    assert mock_run_batch.call_args.kwargs["shots"] == AwsDevice.DEFAULT_SHOTS_PROGRAM_SET
+
+    # The merged result preserves the shape of the original (unsplit) batch.
     assert len(result) == 101
+
+
+def _make_program_set_result_with_measurements(measurements):
+    """Builds a ProgramSetQuantumTaskResult with one single-executable, single-shot program per
+    entry in ``measurements``, where ``measurements[i]`` is the measured bitstring for program i."""
+    program_results = [
+        {
+            "braketSchemaHeader": {
+                "name": "braket.task_result.program_result",
+                "version": "1",
+            },
+            "executableResults": [
+                {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.program_set_executable_result",
+                        "version": "1",
+                    },
+                    "measurements": [measurement],
+                    "measuredQubits": list(range(len(measurement))),
+                    "inputsIndex": 0,
+                }
+            ],
+            "source": {
+                "braketSchemaHeader": {
+                    "name": "braket.ir.openqasm.program",
+                    "version": "1",
+                },
+                "source": "OPENQASM 3.0;",
+            },
+            "additionalMetadata": {
+                "simulatorMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.simulator_metadata",
+                        "version": "1",
+                    },
+                    "executionDuration": 50,
+                }
+            },
+        }
+        for measurement in measurements
+    ]
+    num_programs = len(measurements)
+    return ProgramSetQuantumTaskResult.from_object(
+        ProgramSetTaskResult(
+            **{
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.program_set_task_result",
+                    "version": "1",
+                },
+                "programResults": program_results,
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.program_set_task_metadata",
+                        "version": "1",
+                    },
+                    "id": "arn:aws:braket:us-west-2:667256736152:quantum-task/bfebc86f-e4ed-4d6f-8131-addd1a49d6dc",  # noqa
+                    "deviceId": "arn:aws:braket:::device/quantum-simulator/amazon/sv1",
+                    "requestedShots": num_programs,
+                    "successfulShots": num_programs,
+                    "programMetadata": [{"executables": [{}]} for _ in range(num_programs)],
+                    "createdAt": "2024-10-15T19:06:58.986Z",
+                    "endedAt": "2024-10-15T19:07:00.382Z",
+                    "status": "COMPLETED",
+                    "totalFailedExecutables": 0,
+                },
+            }
+        )
+    )
+
+
+@patch.object(AwsDevice, "run_batch")
+def test_run_snapshots_program_set_exceeds_max_executables(mock_run_batch):
+    """Test _run_snapshots splits the program set and runs it as a batch when the number of
+    snapshots exceeds the device's maximumExecutables, and that outcomes are merged back in the
+    original snapshot order."""
+    n_snapshots = 101
+    n_qubits = 7  # enough bits to uniquely encode each snapshot index in 0..100
+
+    def measurement_for(index):
+        # Big-endian bit encoding of the snapshot index, so each snapshot has a unique measurement.
+        return [(index >> (n_qubits - 1 - bit)) & 1 for bit in range(n_qubits)]
+
+    def run_batch_side_effect(program_sets, **kwargs):
+        # The split preserves order, so the executables across the returned program sets are a
+        # contiguous partition of the original snapshots. Encode each executable's original index
+        # into its measurement so the test can detect any reordering during merge.
+        task_batch = Mock()
+        results = []
+        offset = 0
+        for program_set in program_sets:
+            size = program_set.total_executables
+            results.append(
+                _make_program_set_result_with_measurements(
+                    [measurement_for(offset + i) for i in range(size)]
+                )
+            )
+            offset += size
+        task_batch.results.return_value = results
+        return task_batch
+
+    mock_run_batch.side_effect = run_batch_side_effect
+
+    dev = _aws_device(wires=n_qubits, foo="bar", parallel=False, supports_program_sets=True)
+    assert dev._max_program_set_executables == 100
+
+    # 101 snapshots exceeds maximumExecutables of 100, so the program set is split into two tasks.
+    snapshot_circuits = [Circuit().h(0).cnot(0, 1) for _ in range(n_snapshots)]
+    mapped_wires = np.arange(n_qubits)
+
+    outcomes = dev._run_snapshots(snapshot_circuits, n_qubits=n_qubits, mapped_wires=mapped_wires)
+
+    mock_run_batch.assert_called_once()
+    program_sets = mock_run_batch.call_args.args[0]
+    assert sorted(program_set.total_executables for program_set in program_sets) == [1, 100]
+
+    # One outcome per snapshot; each outcome must decode back to its original snapshot index,
+    # confirming the split results were merged back in the original order.
+    assert outcomes.shape == (n_snapshots, n_qubits)
+    expected = np.array([measurement_for(t) for t in range(n_snapshots)])
+    assert np.array_equal(outcomes, expected)
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
@@ -1364,7 +1477,7 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
             RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
-    if dev._supports_program_sets:
+    if dev._max_program_set_executables is not None:
         expected_circuits = [CIRCUIT_WITH_BASIS_ROTATION, CIRCUIT_WITH_BASIS_ROTATION]
     else:
         expected_circuits = [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED]

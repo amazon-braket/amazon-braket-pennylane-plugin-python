@@ -84,7 +84,11 @@ from braket.pennylane_plugin.translation import (
 )
 from braket.program_sets import ProgramSet
 from braket.simulator import BraketSimulator
-from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from braket.tasks import (
+    GateModelQuantumTaskResult,
+    ProgramSetQuantumTaskResult,
+    QuantumTask,
+)
 from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 
 from ._version import __version__
@@ -181,9 +185,11 @@ class BraketQubitDevice(QubitDevice):
         self._supported_obs = supported_observables(self._device, self.shots)
         self._check_supported_result_types()
         self._verbatim = verbatim
-        self._supports_program_sets = (
-            DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
+        self._max_program_set_executables = (
+            self._device.properties.action[DeviceActionType.OPENQASM_PROGRAM_SET].maximumExecutables
+            if DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
             and self._shots is not None
+            else None
         )
 
         if noise_model:
@@ -219,13 +225,7 @@ class BraketQubitDevice(QubitDevice):
         return self._parallel
 
     def batch_execute(self, circuits, **run_kwargs):
-        if not self._parallel and not self._supports_program_sets:
-            return super().batch_execute(circuits)
-
-        if self._supports_program_sets and (
-            len(circuits)
-            > self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
-        ):
+        if not self._parallel and self._max_program_set_executables is None:
             return super().batch_execute(circuits)
 
         for circuit in circuits:
@@ -244,7 +244,7 @@ class BraketQubitDevice(QubitDevice):
                 self._pl_to_braket_circuit(
                     circuit,
                     trainable_indices=frozenset(trainable.keys()),
-                    add_observables=not self._supports_program_sets,
+                    add_observables=self._max_program_set_executables is None,
                     **run_kwargs,
                 )
             )
@@ -735,22 +735,45 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         caps = self.capabilities()
         return not (caps.get("provides_jacobian"))
 
-    def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
-        if self._supports_program_sets:
-            program_set = (
-                ProgramSet.zip(braket_circuits, input_sets=inputs)
-                if inputs
-                else ProgramSet(braket_circuits)
-            )
-            task = self._device.run(
-                program_set,
+    def _run_program_set(self, program_set: ProgramSet) -> ProgramSetQuantumTaskResult:
+        program_sets, index_map = program_set.split(self._max_program_set_executables)
+        results = (
+            [
+                self._device.run(
+                    program_sets[0],
+                    s3_destination_folder=self._s3_folder,
+                    shots=program_sets[0].total_shots,
+                    poll_timeout_seconds=self._poll_timeout_seconds,
+                    poll_interval_seconds=self._poll_interval_seconds,
+                    **self._run_kwargs,
+                ).result()
+            ]
+            if len(program_sets) == 1
+            else self._device.run_batch(
+                program_sets,
                 s3_destination_folder=self._s3_folder,
-                shots=len(program_set) * batch_shots,
+                shots=AwsDevice.DEFAULT_SHOTS_PROGRAM_SET,
+                max_parallel=self._max_parallel,
+                max_connections=self._max_connections,
                 poll_timeout_seconds=self._poll_timeout_seconds,
                 poll_interval_seconds=self._poll_interval_seconds,
                 **self._run_kwargs,
+            ).results(fail_unsuccessful=True, max_retries=self._max_retries)
+        )
+        return ProgramSetQuantumTaskResult.merge(results, program_set, index_map)
+
+    def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
+        if self._max_program_set_executables is not None:
+            result = self._run_program_set(
+                ProgramSet.zip(
+                    braket_circuits,
+                    input_sets=inputs,
+                    shots_per_executable=batch_shots,
+                )
+                if inputs
+                else ProgramSet(braket_circuits, shots_per_executable=batch_shots)
             )
-            return self._braket_program_set_to_pl_result(task.result(), pl_circuits)
+            return self._braket_program_set_to_pl_result(result, pl_circuits)
         task_batch = self._device.run_batch(
             braket_circuits,
             s3_destination_folder=self._s3_folder,
@@ -793,17 +816,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
         n_snapshots = len(snapshot_circuits)
         outcomes = np.zeros((n_snapshots, n_qubits))
-        if self._supports_program_sets:
-            program_set = ProgramSet(snapshot_circuits)
-            task = self._device.run(
-                program_set,
-                s3_destination_folder=self._s3_folder,
-                shots=len(program_set),
-                poll_timeout_seconds=self._poll_timeout_seconds,
-                poll_interval_seconds=self._poll_interval_seconds,
-                **self._run_kwargs,
-            )
-            for t, result in enumerate(task.result()):
+        if self._max_program_set_executables is not None:
+            for t, result in enumerate(
+                self._run_program_set(ProgramSet(snapshot_circuits, shots_per_executable=1))
+            ):
                 outcomes[t] = np.array(result[0].measurements[0])[mapped_wires]
         elif self._parallel:
             task_batch = self._device.run_batch(
@@ -1144,7 +1160,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=shots, **run_kwargs)
         # TODO: Enable program sets once local simulator supports multiprocessing
         # for program set execution
-        self._supports_program_sets = False
+        self._max_program_set_executables = None
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         task_batch = self._device.run_batch(

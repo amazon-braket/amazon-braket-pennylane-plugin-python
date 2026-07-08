@@ -354,7 +354,7 @@ circs[0].h(1)
     [
         (False, circs, TASK, SHOTS, None, None, False),
         (True, circs, TASK_BATCH, 1, 10, 10, False),
-        (False, ProgramSet(circs), TASK_PROGRAM_SET, 1, None, None, True),
+        (False, ProgramSet(circs, shots_per_executable=1), TASK_PROGRAM_SET, 1, None, None, True),
     ],
 )
 def test_shadow_expval_aws_device(
@@ -479,7 +479,9 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        program_set_action = Mock()
+        program_set_action.maximumExecutables = 100
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = program_set_action
     type_mock.return_value = device_type
     dev = BraketAwsQubitDevice(
         wires=wires,
