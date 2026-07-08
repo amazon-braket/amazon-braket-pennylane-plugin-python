@@ -1209,11 +1209,7 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
 
     dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
 
-    assert dev._supports_program_sets == True
-    max_executables = dev._device.properties.action[
-        "braket.ir.openqasm.program_set"
-    ].maximumExecutables
-    assert max_executables == 100
+    assert dev._max_program_set_executables == 100
 
     # Create 101 circuits, exceeding maximumExecutables of 100 (defined in
     # ACTION_PROPERTIES_PROGRAMSET), so the program set is split into two tasks.
@@ -1226,7 +1222,7 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
         circuits.append(circuit)
 
     assert len(circuits) == 101
-    assert len(circuits) > max_executables
+    assert len(circuits) > dev._max_program_set_executables
 
     result = dev.batch_execute(circuits)
 
@@ -1343,10 +1339,7 @@ def test_run_snapshots_program_set_exceeds_max_executables(mock_run_batch):
     mock_run_batch.side_effect = run_batch_side_effect
 
     dev = _aws_device(wires=n_qubits, foo="bar", parallel=False, supports_program_sets=True)
-    max_executables = dev._device.properties.action[
-        "braket.ir.openqasm.program_set"
-    ].maximumExecutables
-    assert max_executables == 100
+    assert dev._max_program_set_executables == 100
 
     # 101 snapshots exceeds maximumExecutables of 100, so the program set is split into two tasks.
     snapshot_circuits = [Circuit().h(0).cnot(0, 1) for _ in range(n_snapshots)]
@@ -1484,7 +1477,7 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
             RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
-    if dev._supports_program_sets:
+    if dev._max_program_set_executables is not None:
         expected_circuits = [CIRCUIT_WITH_BASIS_ROTATION, CIRCUIT_WITH_BASIS_ROTATION]
     else:
         expected_circuits = [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED]

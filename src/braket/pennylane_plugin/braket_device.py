@@ -185,9 +185,11 @@ class BraketQubitDevice(QubitDevice):
         self._supported_obs = supported_observables(self._device, self.shots)
         self._check_supported_result_types()
         self._verbatim = verbatim
-        self._supports_program_sets = (
-            DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
+        self._max_program_set_executables = (
+            self._device.properties.action[DeviceActionType.OPENQASM_PROGRAM_SET].maximumExecutables
+            if DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
             and self._shots is not None
+            else None
         )
 
         if noise_model:
@@ -223,7 +225,7 @@ class BraketQubitDevice(QubitDevice):
         return self._parallel
 
     def batch_execute(self, circuits, **run_kwargs):
-        if not self._parallel and not self._supports_program_sets:
+        if not self._parallel and self._max_program_set_executables is None:
             return super().batch_execute(circuits)
 
         for circuit in circuits:
@@ -242,7 +244,7 @@ class BraketQubitDevice(QubitDevice):
                 self._pl_to_braket_circuit(
                     circuit,
                     trainable_indices=frozenset(trainable.keys()),
-                    add_observables=not self._supports_program_sets,
+                    add_observables=self._max_program_set_executables is None,
                     **run_kwargs,
                 )
             )
@@ -734,9 +736,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return not (caps.get("provides_jacobian"))
 
     def _run_program_set(self, program_set: ProgramSet) -> ProgramSetQuantumTaskResult:
-        program_sets, index_map = program_set.split(
-            self._device.properties.action[DeviceActionType.OPENQASM_PROGRAM_SET].maximumExecutables
-        )
+        program_sets, index_map = program_set.split(self._max_program_set_executables)
         results = (
             [
                 self._device.run(
@@ -763,7 +763,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         return ProgramSetQuantumTaskResult.merge(results, program_set, index_map)
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
-        if self._supports_program_sets:
+        if self._max_program_set_executables is not None:
             result = self._run_program_set(
                 ProgramSet.zip(
                     braket_circuits,
@@ -816,7 +816,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
         n_snapshots = len(snapshot_circuits)
         outcomes = np.zeros((n_snapshots, n_qubits))
-        if self._supports_program_sets:
+        if self._max_program_set_executables is not None:
             for t, result in enumerate(
                 self._run_program_set(ProgramSet(snapshot_circuits, shots_per_executable=1))
             ):
@@ -1160,7 +1160,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=shots, **run_kwargs)
         # TODO: Enable program sets once local simulator supports multiprocessing
         # for program set execution
-        self._supports_program_sets = False
+        self._max_program_set_executables = None
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         task_batch = self._device.run_batch(
