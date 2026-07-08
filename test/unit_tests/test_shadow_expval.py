@@ -354,7 +354,7 @@ circs[0].h(1)
     [
         (False, circs, TASK, SHOTS, None, None, False),
         (True, circs, TASK_BATCH, 1, 10, 10, False),
-        (False, ProgramSet(circs), TASK_PROGRAM_SET, 1, None, None, True),
+        (False, ProgramSet(circs, shots_per_executable=1), TASK_PROGRAM_SET, 1, None, None, True),
     ],
 )
 def test_shadow_expval_aws_device(
