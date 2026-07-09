@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.35.0 (2026-07-09)
+
+### Features
+
+ * Automatically split/merge large program sets
+
 ## v1.34.2 (2026-06-18)
 
 ### Bug Fixes and Other Changes
