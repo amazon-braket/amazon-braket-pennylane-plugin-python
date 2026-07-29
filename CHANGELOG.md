@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.35.1 (2026-07-29)
+
+### Bug Fixes and Other Changes
+
+ * replace pkg_resources usage
+
 ## v1.35.0 (2026-07-09)
 
 ### Features
