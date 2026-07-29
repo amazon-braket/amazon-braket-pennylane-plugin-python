@@ -13,13 +13,14 @@
 
 """Tests that plugin devices are accessible and integrate with PennyLane"""
 
+from importlib.metadata import entry_points
+
 import numpy as np
 import pennylane as qml
-import pkg_resources
 import pytest
 from conftest import shortname_and_backends
 
-ENTRY_POINTS = {entry.name: entry for entry in pkg_resources.iter_entry_points("pennylane.plugins")}
+ENTRY_POINTS = {entry.name: entry for entry in entry_points(group="pennylane.plugins")}
 
 
 class TestDeviceIntegration:
