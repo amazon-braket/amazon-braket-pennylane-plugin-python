@@ -11,13 +11,13 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-import pennylane as qml
+import pennylane as qp
 import pennylane.numpy as np
 import pytest
 
 seed = 42
 np.random.seed(seed)
-H = qml.PauliZ(0) @ qml.PauliZ(1)
+H = qp.PauliZ(0) @ qp.PauliZ(1)
 wires = 2
 
 
@@ -33,19 +33,19 @@ class TestShadowExpval:
                 "but parallel shadow_expval is currently broken"
             )
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def shadow_circuit(x):
-            qml.Hadamard(wires=0)
-            qml.CNOT(wires=[0, 1])
-            qml.RX(x, wires=0)
-            return qml.shadow_expval(H, seed=seed)
+            qp.Hadamard(wires=0)
+            qp.CNOT(wires=[0, 1])
+            qp.RX(x, wires=0)
+            return qp.shadow_expval(H, seed=seed)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit(x):
-            qml.Hadamard(wires=0)
-            qml.CNOT(wires=[0, 1])
-            qml.RX(x, wires=0)
-            return qml.expval(H)
+            qp.Hadamard(wires=0)
+            qp.CNOT(wires=[0, 1])
+            qp.RX(x, wires=0)
+            return qp.expval(H)
 
         x = np.array(1.2)
         shadow_e = shadow_circuit(x)

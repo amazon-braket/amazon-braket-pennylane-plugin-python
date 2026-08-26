@@ -14,7 +14,7 @@
 """Tests that gates are correctly applied in the plugin device"""
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 import pytest
 from pennylane.pulse.parametrized_evolution import ParametrizedEvolution
 from pennylane.pulse.rydberg import rydberg_drive, rydberg_interaction
@@ -100,18 +100,18 @@ class TestDeviceIntegration:
     def test_args_hardware(self):
         """Test that BraketAwsDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 2 required positional argument"):
-            qml.device("braket.aws.ahs")
+            qp.device("braket.aws.ahs")
 
     def test_args_local(self):
         """Test that BraketLocalDevice requires correct arguments"""
         with pytest.raises(TypeError, match="missing 1 required positional argument"):
-            qml.device("braket.local.ahs")
+            qp.device("braket.local.ahs")
 
     @staticmethod
     def _device(shortname, arn_nr, wires, shots=100):
         if arn_nr:
-            return qml.device(shortname, wires=wires, device_arn=arn_nr, shots=shots)
-        return qml.device(shortname, wires=wires, shots=shots)
+            return qp.device(shortname, wires=wires, device_arn=arn_nr, shots=shots)
+        return qp.device(shortname, wires=wires, shots=shots)
 
 
 class TestDeviceAttributes:
@@ -126,10 +126,10 @@ class TestDeviceAttributes:
         global_drive = rydberg_drive(2, 1, 2, wires=[0, 1, 2])
         ts = [0.0, 1.75]
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
             ParametrizedEvolution(H_i + global_drive, [], ts)
-            return qml.sample()
+            return qp.sample()
 
         res = circuit()
 
@@ -137,7 +137,7 @@ class TestDeviceAttributes:
 
     def test_local_device_settings(self):
         """Test that device settings dictionary stores the correct keys and values."""
-        dev = qml.device("braket.local.ahs", wires=2)
+        dev = qp.device("braket.local.ahs", wires=2)
         assert dev.settings == {"interaction_coeff": 862620}
 
 
@@ -151,14 +151,14 @@ class TestQnodeIntegration:
         or callables
         """
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         t = 1.13
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
             ParametrizedEvolution(H, params, t)
-            return qml.sample()
+            return qp.sample()
 
         circuit()
 
@@ -174,43 +174,43 @@ class TestQnodeIntegration:
         well as local detunings runs successfully for combinations of amplitude, phase, local
         detuning being constants or callables."""
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
         H += rydberg_drive(0, 0, local_detuning, local_wires)
         params += local_params
 
         t = 1.13
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
             ParametrizedEvolution(H, params, t)
-            return qml.sample()
+            return qp.sample()
 
         circuit()
 
     def test_qnode_shape_multimeasure(self):
         """Test that a qnode with multiple measurements has the correct shape"""
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         H = H_i + rydberg_drive(3, 2, 1, [0, 1, 2])
         measurements = (
-            qml.sample(wires=1),
-            qml.expval(qml.PauliZ(0)),
-            qml.var(qml.PauliZ(0)),
-            qml.probs(wires=[1, 2]),
-            qml.probs(op=qml.PauliZ(1)),
-            qml.sample(qml.PauliZ(2)),
+            qp.sample(wires=1),
+            qp.expval(qp.PauliZ(0)),
+            qp.var(qp.PauliZ(0)),
+            qp.probs(wires=[1, 2]),
+            qp.probs(op=qp.PauliZ(1)),
+            qp.sample(qp.PauliZ(2)),
         )
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
             ParametrizedEvolution(H, [], 1.8)
             return (
-                qml.sample(wires=1),
-                qml.expval(qml.PauliZ(0)),
-                qml.var(qml.PauliZ(0)),
-                qml.probs(wires=[1, 2]),
-                qml.probs(op=qml.PauliZ(1)),
-                qml.sample(qml.PauliZ(2)),
+                qp.sample(wires=1),
+                qp.expval(qp.PauliZ(0)),
+                qp.var(qp.PauliZ(0)),
+                qp.probs(wires=[1, 2]),
+                qp.probs(op=qp.PauliZ(1)),
+                qp.sample(qp.PauliZ(2)),
             )
 
         res = circuit()
@@ -220,7 +220,7 @@ class TestQnodeIntegration:
         expected_shape = (
             (mp.shape(shots=dev.shots.total_shots) for mp in measurements)
             if hasattr(dev, "target_device")
-            else (mp.shape(dev, qml.measurements.Shots(dev.shots)) for mp in measurements)
+            else (mp.shape(dev, qp.measurements.Shots(dev.shots)) for mp in measurements)
         )
 
         assert len(res) == len(measurements)
@@ -230,14 +230,14 @@ class TestQnodeIntegration:
         """Test that asking for the expectation value of an observable not in
         the computational basis raises an error"""
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         H = H_i + rydberg_drive(3, 2, 1, [0, 1, 2])
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
             ParametrizedEvolution(H, [], 1.8)
-            return qml.expval(qml.PauliX(0))
+            return qp.expval(qp.PauliX(0))
 
         with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
             circuit()
@@ -249,8 +249,8 @@ class TestQnodeIntegration:
         # code run to generate the array of exact results:
         # def exact(H, H_obj, t):
         #     psi0 = np.eye(2 ** len(H.wires))[0]
-        #     U_exact = jax.scipy.linalg.expm(-1j * t * qml.matrix(H([], 1)))
-        #     v = psi0 @ U_exact.conj().T @ qml.matrix(H_obj, wire_order=[0, 1, 2]) @ U_exact @ psi0
+        #     U_exact = jax.scipy.linalg.expm(-1j * t * qp.matrix(H([], 1)))
+        #     v = psi0 @ U_exact.conj().T @ qp.matrix(H_obj, wire_order=[0, 1, 2]) @ U_exact @ psi0
         #     return v
 
         # exact_result = np.array([exact(H, H_obj, _t) for _t in t])
@@ -411,20 +411,20 @@ class TestQnodeIntegration:
             ]
         )
 
-        ahs_local = qml.device("braket.local.ahs", wires=3)
+        ahs_local = qp.device("braket.local.ahs", wires=3)
 
         coordinates = [[0, 0], [0, 5], [5, 0]]
 
-        H_i = qml.pulse.rydberg_interaction(coordinates)
+        H_i = qp.pulse.rydberg_interaction(coordinates)
 
-        H = H_i + qml.pulse.rydberg_drive(3, 2, 4, [0, 1, 2])
+        H = H_i + qp.pulse.rydberg_drive(3, 2, 4, [0, 1, 2])
 
-        H_obj = qml.PauliZ(0)
+        H_obj = qp.PauliZ(0)
 
-        @qml.qnode(ahs_local)
+        @qp.qnode(ahs_local)
         def circuit(t):
             ParametrizedEvolution(H, [], t)
-            return qml.expval(H_obj)
+            return qp.expval(H_obj)
 
         t = np.linspace(0.05, 1.55, 151)
 
