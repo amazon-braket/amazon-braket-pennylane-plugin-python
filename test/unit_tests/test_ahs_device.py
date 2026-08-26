@@ -17,7 +17,7 @@ from functools import partial
 from unittest.mock import Mock
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 import pytest
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.ahs.atom_arrangement import AtomArrangement
@@ -447,7 +447,7 @@ class TestBraketAhsDevice:
         an unknown gate."""
 
         with pytest.raises(NotImplementedError):
-            dev_sim.check_validity([qml.PauliX(0)], [])
+            dev_sim.check_validity([qp.PauliX(0)], [])
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
     def test_check_validity_valid_circuit(self, H, params):
@@ -455,14 +455,14 @@ class TestBraketAhsDevice:
         observables are valid."""
         ops = [ParametrizedEvolution(H, params, [0, 1.5])]
         obs = [
-            qml.PauliZ(0),
-            qml.expval(qml.PauliZ(0)),
-            qml.var(qml.Identity(0)),
-            qml.sample(qml.PauliZ(0)),
-            qml.prod(qml.PauliZ(0), qml.Identity(1)),
-            qml.counts(),
+            qp.PauliZ(0),
+            qp.expval(qp.PauliZ(0)),
+            qp.var(qp.Identity(0)),
+            qp.sample(qp.PauliZ(0)),
+            qp.prod(qp.PauliZ(0), qp.Identity(1)),
+            qp.counts(),
         ]
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         dev.check_validity(ops, obs)
 
@@ -471,10 +471,10 @@ class TestBraketAhsDevice:
         """Tests that requesting a measurement other than a sample-based
         measurement raises an error"""
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         ops = [ParametrizedEvolution(H, params, [0, 1.5])]
-        obs = [qml.state()]
+        obs = [qp.state()]
 
         with pytest.raises(TypeError, match="only support sample-based measurement"):
             dev.check_validity(ops, obs)
@@ -553,7 +553,7 @@ class TestBraketAhsDevice:
         """Test that generate_samples creates a list of arrays with the expected shape for the
         task run"""
         ahs_program = dummy_ahs_program()
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
         # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
         # TODO: Remove else branch once minimum PennyLane is >=0.38
         dev = dev.target_device if hasattr(dev, "target_device") else dev
@@ -575,7 +575,7 @@ class TestBraketAhsDevice:
     def test_expval_handles_nan(self):
         """Test that expval takes the average ignoring NaN values"""
 
-        dev = qml.device("braket.local.ahs", wires=4, shots=4)
+        dev = qp.device("braket.local.ahs", wires=4, shots=4)
         # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
         # TODO: Remove else branch once minimum PennyLane is >=0.38
         dev = dev.target_device if hasattr(dev, "target_device") else dev
@@ -589,7 +589,7 @@ class TestBraketAhsDevice:
             ]
         )
 
-        res = dev.expval(qml.PauliZ(3))
+        res = dev.expval(qp.PauliZ(3))
 
         assert res != np.nan
 
@@ -597,13 +597,13 @@ class TestBraketAhsDevice:
         """Tests that if passed an Operator with no diagonalizing gates,
         a suitable error message is raised in _validate_measurement_basis"""
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         # DummyOp will continue having undefined diagonalizing gates as PL expands functionality
-        class DummyOp(qml.operation.Operator):
+        class DummyOp(qp.operation.Operator):
             pass
 
-        with pytest.raises(qml.operation.DiagGatesUndefinedError):
+        with pytest.raises(qp.operation.DiagGatesUndefinedError):
             DummyOp([0, 1]).diagonalizing_gates()
 
         with pytest.raises(
@@ -614,31 +614,31 @@ class TestBraketAhsDevice:
     @pytest.mark.parametrize(
         "observable, error_expected",
         [
-            (qml.PauliX(0), True),
-            (qml.PauliZ(0), False),
-            (qml.Projector([0], wires=[0]), False),
-            (qml.Projector(np.array([1.0, 1.0]) / np.sqrt(2), wires=[0]), True),
-            (qml.sum(qml.PauliZ(0), qml.PauliZ(0)), False),  # sum
-            (qml.sum(qml.PauliZ(0), qml.PauliY(0)), True),
-            (qml.s_prod(3, qml.PauliY(0)), True),  # scalar prod
-            (qml.s_prod(-1, qml.Projector([0], wires=[0])), False),
-            (qml.prod(qml.PauliZ(0), qml.PauliZ(1)), False),  # product
-            (qml.prod(qml.PauliY(2), qml.PauliX(1)), True),
-            (qml.exp(qml.PauliY(1), 2), True),  # exp
-            (qml.exp(qml.prod(qml.PauliZ(0), qml.Identity(1)), 3), False),
-            (qml.Hamiltonian([2, 3], [qml.PauliZ(0), qml.PauliZ(1)]), False),
-            (qml.Hamiltonian([2, 3], [qml.PauliZ(0), qml.PauliY(1)]), True),
+            (qp.PauliX(0), True),
+            (qp.PauliZ(0), False),
+            (qp.Projector([0], wires=[0]), False),
+            (qp.Projector(np.array([1.0, 1.0]) / np.sqrt(2), wires=[0]), True),
+            (qp.sum(qp.PauliZ(0), qp.PauliZ(0)), False),  # sum
+            (qp.sum(qp.PauliZ(0), qp.PauliY(0)), True),
+            (qp.s_prod(3, qp.PauliY(0)), True),  # scalar prod
+            (qp.s_prod(-1, qp.Projector([0], wires=[0])), False),
+            (qp.prod(qp.PauliZ(0), qp.PauliZ(1)), False),  # product
+            (qp.prod(qp.PauliY(2), qp.PauliX(1)), True),
+            (qp.exp(qp.PauliY(1), 2), True),  # exp
+            (qp.exp(qp.prod(qp.PauliZ(0), qp.Identity(1)), 3), False),
+            (qp.Hamiltonian([2, 3], [qp.PauliZ(0), qp.PauliZ(1)]), False),
+            (qp.Hamiltonian([2, 3], [qp.PauliZ(0), qp.PauliY(1)]), True),
             (
-                qml.sum(
-                    qml.prod(qml.PauliZ(0), qml.Projector([0], wires=[1])),
-                    qml.prod(qml.Projector([0], wires=[5]), qml.PauliZ(1)),
+                qp.sum(
+                    qp.prod(qp.PauliZ(0), qp.Projector([0], wires=[1])),
+                    qp.prod(qp.Projector([0], wires=[5]), qp.PauliZ(1)),
                 ),
                 False,
             ),  # sum of prods
             (
-                qml.sum(
-                    qml.prod(qml.PauliX(0), qml.Projector([0], wires=[1])),
-                    qml.prod(qml.Projector([0], wires=[5]), qml.PauliZ(1)),
+                qp.sum(
+                    qp.prod(qp.PauliX(0), qp.Projector([0], wires=[1])),
+                    qp.prod(qp.Projector([0], wires=[5]), qp.PauliZ(1)),
                 ),
                 True,
             ),
@@ -648,7 +648,7 @@ class TestBraketAhsDevice:
         """Tests that when given an Operator not in the Z basis, _validate_measurement_basis,
         fails with an error, but otherwise passes"""
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         if error_expected:
             with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
@@ -676,45 +676,43 @@ class TestBraketAhsDevice:
         edges = [[1, 2], [2, 3], [3, 1], [1, 0], [0, 4], [0, 5], [5, 6], [6, 7], [7, 5]]
 
         # nested operator of sums of Projectors and products of sums etc with several layers
-        H_edges = qml.Identity(wires=range(len(coords)))
+        H_edges = qp.Identity(wires=range(len(coords)))
         for ind_edge, edge in enumerate(edges):
-            H_edge = qml.prod(
-                qml.Projector([0], wires=[edge[0]]), qml.Projector([0], wires=[edge[1]])
+            H_edge = qp.prod(qp.Projector([0], wires=[edge[0]]), qp.Projector([0], wires=[edge[1]]))
+            H_edge += qp.prod(
+                qp.Projector([0], wires=[edge[0]]), qp.Projector([1], wires=[edge[1]])
             )
-            H_edge += qml.prod(
-                qml.Projector([0], wires=[edge[0]]), qml.Projector([1], wires=[edge[1]])
+            H_edge += qp.prod(
+                qp.Projector([1], wires=[edge[0]]), qp.Projector([0], wires=[edge[1]])
             )
-            H_edge += qml.prod(
-                qml.Projector([1], wires=[edge[0]]), qml.Projector([0], wires=[edge[1]])
-            )
-            H_edges = qml.prod(H_edges, H_edge)
+            H_edges = qp.prod(H_edges, H_edge)
 
         H_vertices = 0
         for i in range(len(coords)):
-            H_vertices += -1 * qml.Projector([1], wires=[i])
+            H_vertices += -1 * qp.Projector([1], wires=[i])
 
         # creates product of a Hamiltonian and the above H_edges operator
-        H_cost = qml.prod(H_vertices, H_edges)
+        H_cost = qp.prod(H_vertices, H_edges)
 
         # we expect the function to pass without raising an error
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
         dev._validate_measurement_basis(H_cost)
 
     def test_observable_not_in_z_basis_raises_error(self):
         """Test that measuring an observable not in
         the computational basis raises an error"""
 
-        dev = qml.device("braket.local.ahs", wires=3)
+        dev = qp.device("braket.local.ahs", wires=3)
 
         with pytest.raises(RuntimeError, match="can only measure in the Z basis"):
-            dev._validate_measurement_basis(qml.PauliX(0))
+            dev._validate_measurement_basis(qp.PauliX(0))
 
     def test_validate_operations_multiple_operators(self):
         """Test that an error is raised if there are multiple operators"""
 
         H1 = rydberg_drive(amp, f1, 2, wires=[0, 1, 2])
-        op1 = qml.evolve(H_i + H1)
-        op2 = qml.evolve(H_i + H1)
+        op1 = qp.evolve(H_i + H1)
+        op2 = qp.evolve(H_i + H1)
 
         with pytest.raises(
             NotImplementedError,
@@ -754,8 +752,8 @@ class TestBraketAhsDevice:
         """Test that an error is raised if the ParametrizedHamiltonian on the operator
         is not a HardwareHamiltonian and so does not contain pulse upload information"""
 
-        H1 = 2 * qml.PauliX(0) + f1 * qml.PauliY(1) + f2 * qml.PauliZ(2)
-        op1 = qml.evolve(H1)
+        H1 = 2 * qp.PauliX(0) + f1 * qp.PauliY(1) + f2 * qp.PauliZ(2)
+        op1 = qp.evolve(H1)
 
         with pytest.raises(TypeError, match="Expected a HardwareHamiltonian instance"):
             dev_sim._validate_operations([op1])

@@ -13,7 +13,7 @@
 
 """Tests for batch execution of jobs on AWS"""
 
-import pennylane as qml
+import pennylane as qp
 import pytest
 from braket.aws import AwsDevice
 from braket.devices import LocalSimulator
@@ -33,20 +33,20 @@ def test_batch_execution_of_gradient(device, shots, mocker):
 
     dev_braket._parallel = True
 
-    dev_default = qml.device("default.qubit", wires=qubits)
+    dev_default = qp.device("default.qubit", wires=qubits)
 
     def func(weights):
-        qml.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
-        return qml.expval(qml.PauliZ(0))
+        qp.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
+        return qp.expval(qp.PauliZ(0))
 
-    qnode_braket = qml.QNode(func, dev_braket, diff_method="parameter-shift")
-    qnode_default = qml.QNode(func, dev_default, diff_method="parameter-shift")
+    qnode_braket = qp.QNode(func, dev_braket, diff_method="parameter-shift")
+    qnode_default = qp.QNode(func, dev_default, diff_method="parameter-shift")
 
-    shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
+    shape = qp.templates.StronglyEntanglingLayers.shape(layers, qubits)
     weights = np.random.random(shape)
 
-    dfunc_braket = qml.grad(qnode_braket)
-    dfunc_default = qml.grad(qnode_default)
+    dfunc_braket = qp.grad(qnode_braket)
+    dfunc_default = qp.grad(qnode_default)
 
     if isinstance(dev_braket, BraketAwsQubitDevice):
         spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
@@ -60,7 +60,7 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     res_braket = dfunc_braket(weights)
     res_default = dfunc_default(weights)
 
-    if qml.version() >= "0.20.0":
+    if qp.version() >= "0.20.0":
         assert np.allclose(res_braket, res_default)
         spy1.assert_not_called()
         assert len(spy2.call_args_list) == 2
@@ -98,16 +98,16 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
 
     dev_braket._parallel = True
 
-    dev_default = qml.device("default.qubit", wires=qubits)
+    dev_default = qp.device("default.qubit", wires=qubits)
 
     def func(weights):
-        qml.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
-        return qml.expval(qml.PauliZ(0))
+        qp.templates.StronglyEntanglingLayers(weights, wires=range(qubits))
+        return qp.expval(qp.PauliZ(0))
 
-    qnode_braket = qml.QNode(func, dev_braket, interface="torch", diff_method="parameter-shift")
-    qnode_default = qml.QNode(func, dev_default, interface="torch", diff_method="parameter-shift")
+    qnode_braket = qp.QNode(func, dev_braket, interface="torch", diff_method="parameter-shift")
+    qnode_default = qp.QNode(func, dev_default, interface="torch", diff_method="parameter-shift")
 
-    shape = qml.templates.StronglyEntanglingLayers.shape(layers, qubits)
+    shape = qp.templates.StronglyEntanglingLayers.shape(layers, qubits)
     weights = np.random.random(shape)
     weights_braket = torch.tensor(weights, requires_grad=True)
     weights_default = torch.tensor(weights, requires_grad=True)
@@ -130,7 +130,7 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     res_braket = weights_braket.grad
     res_default = weights_default.grad
 
-    if qml.version() >= "0.20.0":
+    if qp.version() >= "0.20.0":
         assert np.allclose(res_braket, res_default)
         spy1.assert_not_called()
         assert len(spy2.call_args_list) == 2
