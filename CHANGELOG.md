@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.35.1.post0 (2026-08-26)
+
+### Documentation Changes
+
+ * Update `qml` to `qp`
+
 ## v1.35.1 (2026-07-29)
 
 ### Bug Fixes and Other Changes

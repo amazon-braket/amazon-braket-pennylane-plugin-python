@@ -410,10 +410,11 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         Used to enable initializing hardware-consistent Hamiltonians by saving
         all the values that would need to be passed, i.e.:
 
-            >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
-            >>> dev_pl = qml.device('default.qubit', wires=3)
+            >>> import pennylane as qp
+            >>> dev_remote = qp.device('braket.aws.ahs', wires=3)
+            >>> dev_pl = qp.device('default.qubit', wires=3)
             >>> settings = dev_remote.settings
-            >>> H_int = qml.pulse.rydberg.rydberg_interaction(coordinates, **settings)
+            >>> H_int = qp.pulse.rydberg.rydberg_interaction(coordinates, **settings)
 
         By passing the ``settings`` from the remote device to ``rydberg_interaction``, an
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
@@ -514,10 +515,11 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         Used to enable initializing hardware-consistent Hamiltonians by saving
         all the values that would need to be passed, i.e.:
 
-            >>> dev_remote = qml.device('braket.aws.ahs', wires=3)
-            >>> dev_pl = qml.device('default.qubit', wires=3)
+            >>> import pennylane as qp
+            >>> dev_remote = qp.device('braket.aws.ahs', wires=3)
+            >>> dev_pl = qp.device('default.qubit', wires=3)
             >>> settings = dev_remote.settings
-            >>> H_int = qml.pulse.rydberg.rydberg_interaction(coordinates, **settings)
+            >>> H_int = qp.pulse.rydberg.rydberg_interaction(coordinates, **settings)
 
         By passing the ``settings`` from the remote device to ``rydberg_interaction``, an
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.

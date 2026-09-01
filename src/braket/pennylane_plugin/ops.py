@@ -56,7 +56,7 @@ Code details
 """
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 from pennylane.operation import Operation
 
 
@@ -95,7 +95,7 @@ class CPhaseShift00(Operation):
     grad_method = "A"
 
     def generator(self):
-        return qml.Projector(np.array([0, 0]), wires=self.wires)
+        return qp.Projector(np.array([0, 0]), wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
@@ -107,20 +107,20 @@ class CPhaseShift00(Operation):
     @staticmethod
     def compute_decomposition(phi, wires):
         return [
-            qml.PauliX(wires[0]),
-            qml.PauliX(wires[1]),
-            qml.PhaseShift(phi / 2, wires=[wires[0]]),
-            qml.PhaseShift(phi / 2, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
-            qml.PhaseShift(-phi / 2, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
-            qml.PauliX(wires[1]),
-            qml.PauliX(wires[0]),
+            qp.PauliX(wires[0]),
+            qp.PauliX(wires[1]),
+            qp.PhaseShift(phi / 2, wires=[wires[0]]),
+            qp.PhaseShift(phi / 2, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
+            qp.PhaseShift(-phi / 2, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
+            qp.PauliX(wires[1]),
+            qp.PauliX(wires[0]),
         ]
 
     @staticmethod
     def compute_matrix(phi):
-        return qml.math.diag([qml.math.exp(1j * phi), 1, 1, 1])
+        return qp.math.diag([qp.math.exp(1j * phi), 1, 1, 1])
 
     def adjoint(self):
         (phi,) = self.parameters
@@ -161,7 +161,7 @@ class CPhaseShift01(Operation):
     grad_method = "A"
 
     def generator(self):
-        return qml.Projector(np.array([0, 1]), wires=self.wires)
+        return qp.Projector(np.array([0, 1]), wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
@@ -173,18 +173,18 @@ class CPhaseShift01(Operation):
     @staticmethod
     def compute_decomposition(phi, wires):
         return [
-            qml.PauliX(wires[0]),
-            qml.PhaseShift(phi / 2, wires=[wires[0]]),
-            qml.PhaseShift(phi / 2, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
-            qml.PhaseShift(-phi / 2, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
-            qml.PauliX(wires[0]),
+            qp.PauliX(wires[0]),
+            qp.PhaseShift(phi / 2, wires=[wires[0]]),
+            qp.PhaseShift(phi / 2, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
+            qp.PhaseShift(-phi / 2, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
+            qp.PauliX(wires[0]),
         ]
 
     @staticmethod
     def compute_matrix(phi):
-        return qml.math.diag([1, qml.math.exp(1j * phi), 1, 1])
+        return qp.math.diag([1, qp.math.exp(1j * phi), 1, 1])
 
     def adjoint(self):
         (phi,) = self.parameters
@@ -225,7 +225,7 @@ class CPhaseShift10(Operation):
     grad_method = "A"
 
     def generator(self):
-        return qml.Projector(np.array([1, 0]), wires=self.wires)
+        return qp.Projector(np.array([1, 0]), wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
@@ -237,18 +237,18 @@ class CPhaseShift10(Operation):
     @staticmethod
     def compute_decomposition(phi, wires):
         return [
-            qml.PauliX(wires[1]),
-            qml.PhaseShift(phi / 2, wires=[wires[0]]),
-            qml.PhaseShift(phi / 2, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
-            qml.PhaseShift(-phi / 2, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
-            qml.PauliX(wires[1]),
+            qp.PauliX(wires[1]),
+            qp.PhaseShift(phi / 2, wires=[wires[0]]),
+            qp.PhaseShift(phi / 2, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
+            qp.PhaseShift(-phi / 2, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
+            qp.PauliX(wires[1]),
         ]
 
     @staticmethod
     def compute_matrix(phi):
-        return qml.math.diag([1, 1, qml.math.exp(1j * phi), 1])
+        return qp.math.diag([1, 1, qp.math.exp(1j * phi), 1])
 
     def adjoint(self):
         (phi,) = self.parameters
@@ -343,15 +343,15 @@ class PSWAP(Operation):
     @staticmethod
     def compute_decomposition(phi, wires):
         return [
-            qml.SWAP(wires=wires),
-            qml.CNOT(wires=wires),
-            qml.PhaseShift(phi, wires=[wires[1]]),
-            qml.CNOT(wires=wires),
+            qp.SWAP(wires=wires),
+            qp.CNOT(wires=wires),
+            qp.PhaseShift(phi, wires=[wires[1]]),
+            qp.CNOT(wires=wires),
         ]
 
     @staticmethod
     def compute_matrix(phi):
-        return qml.math.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]
+        return qp.math.diag([1, np.exp(1j * phi), np.exp(1j * phi), 1])[[0, 2, 1, 3]]
 
     def adjoint(self):
         (phi,) = self.parameters

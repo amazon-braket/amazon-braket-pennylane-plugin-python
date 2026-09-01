@@ -42,7 +42,7 @@ from collections.abc import Iterable, Sequence
 from enum import Enum, auto
 
 import numpy as onp
-import pennylane as qml
+import pennylane as qp
 from pennylane import numpy as np
 from pennylane.devices import QubitDevice
 from pennylane.exceptions import QuantumFunctionError
@@ -95,8 +95,8 @@ from ._version import __version__
 
 RETURN_TYPES = (ExpectationMP, VarianceMP, SampleMP, ProbabilityMP, StateMP, CountsMP)
 MIN_SIMULATOR_BILLED_MS = 3000
-OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
-PAULI_AND_HADAMARD_OBS = (qml.PauliX, qml.PauliY, qml.PauliZ, qml.Hadamard, qml.Identity)
+OBS_LIST = (qp.PauliX, qp.PauliY, qp.PauliZ)
+PAULI_AND_HADAMARD_OBS = (qp.PauliX, qp.PauliY, qp.PauliZ, qp.Hadamard, qp.Identity)
 
 
 class Shots(Enum):
@@ -110,9 +110,9 @@ def _is_pauli_or_hadamard_observable(observable):
         return True
     if isinstance(observable, PAULI_AND_HADAMARD_OBS):
         return True
-    if isinstance(observable, qml.ops.SProd):
+    if isinstance(observable, qp.ops.SProd):
         return _is_pauli_or_hadamard_observable(observable.base)
-    if isinstance(observable, qml.ops.Prod):
+    if isinstance(observable, qp.ops.Prod):
         return all(_is_pauli_or_hadamard_observable(op) for op in observable.operands)
     return False
 
@@ -299,12 +299,12 @@ class BraketQubitDevice(QubitDevice):
                     for measurement in circuit.measurements
                     if measurement.obs is not None
                 ]
-                groups = qml.pauli.group_observables(observables, grouping_type="qwc")
+                groups = qp.pauli.group_observables(observables, grouping_type="qwc")
                 if len(groups) > 1:
                     raise ValueError(
                         f"Observables need to mutually commute, but found {len(groups)}: {groups}"
                     )
-                diagonalizing_ops = qml.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
+                diagonalizing_ops = qp.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
                 braket_circuit += self.apply(diagonalizing_ops, apply_identities=False)
 
         return braket_circuit
@@ -320,7 +320,7 @@ class BraketQubitDevice(QubitDevice):
                 for m in circuit.measurements
             )
         ):
-            [circuit], _ = qml.transforms.diagonalize_measurements(circuit)
+            [circuit], _ = qp.transforms.diagonalize_measurements(circuit)
         return circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
@@ -507,7 +507,7 @@ class BraketQubitDevice(QubitDevice):
 
     def shadow_expval(self, obs, circuit):
         bits, recipes = self.classical_shadow(obs, circuit)
-        shadow = qml.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
+        shadow = qp.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
         return shadow.expval(obs.H, obs.k)
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
@@ -569,7 +569,7 @@ class BraketQubitDevice(QubitDevice):
         for operation in operations + rotations:
             param_names = []
             for _ in operation.parameters:
-                if not isinstance(operation, qml.operation.Channel) and (
+                if not isinstance(operation, qp.operation.Channel) and (
                     param_index in trainable_indices or use_unique_params
                 ):
                     param_names.append(f"p_{param_index}")
@@ -873,16 +873,16 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         setting is a constant, and the value is within the frequency range for the relevant frame;
         if not, raise an error"""
 
-        # confirm all frequency values are constant (or the qml.pulse.constant function)
+        # confirm all frequency values are constant (or the qp.pulse.constant function)
         callable_freqs = [
             pulse.frequency
             for pulse in ev.H.pulses
-            if (callable(pulse.frequency) and pulse.frequency != qml.pulse.constant)
+            if (callable(pulse.frequency) and pulse.frequency != qp.pulse.constant)
         ]
 
         if callable_freqs:
             raise RuntimeError(
-                "Expected all frequencies to be constants or qml.pulse.constant, "
+                "Expected all frequencies to be constants or qp.pulse.constant, "
                 "but received callable(s)"
             )
 
@@ -890,13 +890,13 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         param_idx = 0
         for pulse in ev.H.pulses:
             freq = pulse.frequency
-            # track the index for parameters in case we need to evaluate qml.pulse.constant
+            # track the index for parameters in case we need to evaluate qp.pulse.constant
             if callable(pulse.amplitude):
                 param_idx += 1
             if callable(pulse.phase):
                 param_idx += 1
             if callable(pulse.frequency):
-                # if frequency is callable, its qml.pulse.constant and equal to its parameter
+                # if frequency is callable, its qp.pulse.constant and equal to its parameter
                 freq = ev.parameters[param_idx]
                 param_idx += 1
 
@@ -919,17 +919,16 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         # confirm frequencies are constant and within the permitted frequency range for the channel
         self._check_pulse_frequency_validity(ev)
 
-        # confirm all phase values are constant (or the qml.pulse.constant function)
+        # confirm all phase values are constant (or the qp.pulse.constant function)
         callable_phase = [
             pulse.phase
             for pulse in ev.H.pulses
-            if (callable(pulse.phase) and pulse.phase != qml.pulse.constant)
+            if (callable(pulse.phase) and pulse.phase != qp.pulse.constant)
         ]
 
         if callable_phase:
             raise RuntimeError(
-                "Expected all phases to be constants or qml.pulse.constant, "
-                "but received callable(s)"
+                "Expected all phases to be constants or qp.pulse.constant, but received callable(s)"
             )
 
         # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
@@ -966,7 +965,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         super().check_validity(queue, observables)
 
         for op in queue:
-            if isinstance(op, qml.pulse.ParametrizedEvolution):
+            if isinstance(op, qp.pulse.ParametrizedEvolution):
                 self._validate_pulse_parameters(op)
 
     def capabilities(self=None):
@@ -986,7 +985,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         for each circuit in circuits.
 
         The gradient is returned as a list of floats, 1 float for every instance
-        of a trainable parameter in a gate in the circuit. Functions like qml.grad or qml.jacobian
+        of a trainable parameter in a gate in the circuit. Functions like qp.grad or qp.jacobian
         then use that format to generate a per-parameter format.
         """
         res = []
@@ -1082,11 +1081,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         Used to enable initializing hardware-consistent Hamiltonians by returning
         values that would need to be passed, i.e.:
 
-            >>> dev_remote = qml.device('braket.aws.qubit',
+            >>> import pennylane as qp
+            >>> dev_remote = qp.device('braket.aws.qubit',
             >>>                          wires=8,
             >>>                          arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy')
             >>> pulse_settings = dev_remote.pulse_settings
-            >>> H_int = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
+            >>> H_int = qp.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
 
         By passing the ``pulse_settings`` from the remote device to ``transmon_interaction``, an
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.

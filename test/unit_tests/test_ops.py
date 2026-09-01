@@ -16,7 +16,7 @@ import math
 from unittest.mock import patch
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 import pytest
 import scipy
 from autograd import deriv
@@ -50,7 +50,7 @@ gates_2q_3p_parametrized = [
 gates_2q_non_parametrized = []  # Empty... For now!
 
 observables_1q = [
-    obs.compute_matrix() for obs in [qml.Hadamard, qml.Identity, qml.PauliX, qml.PauliY, qml.PauliZ]
+    obs.compute_matrix() for obs in [qp.Hadamard, qp.Identity, qp.PauliX, qp.PauliY, qp.PauliZ]
 ]
 observables_2q = [
     np.kron(obs1, obs2) for obs1, obs2 in itertools.product(observables_1q, observables_1q)
@@ -101,7 +101,7 @@ def test_param_shift_2q(pl_op, braket_gate, angle, observable):
     if op.grad_recipe[0]:
         shifts = op.grad_recipe[0]
     else:
-        orig_shifts = qml.gradients.generate_shift_rule(op.parameter_frequencies[0])
+        orig_shifts = qp.gradients.generate_shift_rule(op.parameter_frequencies[0])
         shifts = [[c, 1, s] for c, s in orig_shifts]
 
     summands = []
@@ -153,8 +153,8 @@ def _assert_decomposition(pl_op, params=None):
         covariant = list(range(next_index, next_index + len(gate_wires)))
 
         indices = contravariant + covariant
-        # `qml.matrix(gate)` as type-(len(contravariant), len(covariant)) tensor
-        gate_tensor = np.reshape(qml.matrix(gate), [2] * len(indices))
+        # `qp.matrix(gate)` as type-(len(contravariant), len(covariant)) tensor
+        gate_tensor = np.reshape(qp.matrix(gate), [2] * len(indices))
 
         contraction_parameters += [gate_tensor, indices]
         next_index += len(gate_wires)
@@ -183,7 +183,7 @@ def test_gate_adjoint_parametrized(pl_op, braket_gate, angle):
     angles = [angle] * pl_op.num_params
     op = pl_op(*angles, wires=range(num_wires))
     assert np.allclose(
-        np.dot(pl_op.compute_matrix(*angles), qml.matrix(pl_op.adjoint(op))),
+        np.dot(pl_op.compute_matrix(*angles), qp.matrix(pl_op.adjoint(op))),
         np.identity(2**num_wires),
     )
 
@@ -191,9 +191,7 @@ def test_gate_adjoint_parametrized(pl_op, braket_gate, angle):
 @pytest.mark.parametrize("pl_op, braket_gate", gates_2q_non_parametrized)
 def test_gate_adjoint_non_parametrized(pl_op, braket_gate):
     op = pl_op(wires=[0, 1])
-    assert np.allclose(
-        np.dot(pl_op.compute_matrix(), qml.matrix(pl_op.adjoint(op))), np.identity(4)
-    )
+    assert np.allclose(np.dot(pl_op.compute_matrix(), qp.matrix(pl_op.adjoint(op))), np.identity(4))
 
 
 @pytest.mark.parametrize(
@@ -204,6 +202,4 @@ def test_gate_adjoint_non_parametrized(pl_op, braket_gate):
 def test_gate_generator(pl_op, braket_gate, angle):
     op = pl_op(angle, wires=[0, 1])
     if op.name != "PSWAP":
-        assert np.allclose(
-            qml.matrix(op), scipy.linalg.expm(1j * angle * qml.matrix(op.generator()))
-        )
+        assert np.allclose(qp.matrix(op), scipy.linalg.expm(1j * angle * qp.matrix(op.generator())))

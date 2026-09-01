@@ -16,7 +16,7 @@ from functools import partial, reduce, singledispatch
 from typing import Any
 
 import numpy as onp
-import pennylane as qml
+import pennylane as qp
 from pennylane import numpy as np
 from pennylane.measurements import MeasurementProcess
 from pennylane.operation import Operation, Operator
@@ -179,20 +179,20 @@ def translate_operation(
             raise ValueError("Parameter names list must be equal to number of operation parameters")
         for param_name, param in zip(param_names, operation.parameters):
             # PennyLane passes any non-keyword argument in the operation.parameters list.
-            # In some cases, like the unitary gate or qml.QubitChannel (Kraus noise), these
+            # In some cases, like the unitary gate or qp.QubitChannel (Kraus noise), these
             # parameter can be matrices. Braket only supports parameterization of numeric parameters
             # (so far, these are all angle parameters), so non-numeric parameters are handled
             # separately.
             if param_name is not None:
                 new_param = FreeParameter(param_name)
-            elif isinstance(param, qml.numpy.tensor):
+            elif isinstance(param, qp.numpy.tensor):
                 new_param = param.numpy()
             else:
                 new_param = param
             parameters.append(new_param)
     else:
         parameters = [
-            p.numpy() if isinstance(p, qml.numpy.tensor) else p for p in operation.parameters
+            p.numpy() if isinstance(p, qp.numpy.tensor) else p for p in operation.parameters
         ]
     device = kwargs.get("device", None)
     return _translate_operation(operation, parameters, device)
@@ -206,155 +206,155 @@ def _translate_operation(operation: Operation, _parameters, device=None) -> Gate
 
 
 @_translate_operation.register
-def _(_: qml.Identity, _parameters, device=None):
+def _(_: qp.Identity, _parameters, device=None):
     return gates.I()
 
 
 @_translate_operation.register
-def _(_: qml.Hadamard, _parameters, device=None):
+def _(_: qp.Hadamard, _parameters, device=None):
     return gates.H()
 
 
 @_translate_operation.register
-def _(_: qml.PauliX, _parameters, device=None):
+def _(_: qp.PauliX, _parameters, device=None):
     return gates.X()
 
 
 @_translate_operation.register
-def _(_: qml.PauliY, _parameters, device=None):
+def _(_: qp.PauliY, _parameters, device=None):
     return gates.Y()
 
 
 @_translate_operation.register
-def _(_: qml.PauliZ, _parameters, device=None):
+def _(_: qp.PauliZ, _parameters, device=None):
     return gates.Z()
 
 
 @_translate_operation.register
-def _(_: qml.ECR, _parameters, device=None):
+def _(_: qp.ECR, _parameters, device=None):
     return gates.ECR()
 
 
 @_translate_operation.register
-def _(s: qml.S, _parameters, device=None):
+def _(s: qp.S, _parameters, device=None):
     return gates.S()
 
 
 @_translate_operation.register
-def _(sx: qml.SX, _parameters, device=None):
+def _(sx: qp.SX, _parameters, device=None):
     return gates.V()
 
 
 @_translate_operation.register
-def _(t: qml.T, _parameters, device=None):
+def _(t: qp.T, _parameters, device=None):
     return gates.T()
 
 
 @_translate_operation.register
-def _(_: qml.CNOT, _parameters, device=None):
+def _(_: qp.CNOT, _parameters, device=None):
     return gates.CNot()
 
 
 @_translate_operation.register
-def _(_: qml.CY, _parameters, device=None):
+def _(_: qp.CY, _parameters, device=None):
     return gates.CY()
 
 
 @_translate_operation.register
-def _(_: qml.CZ, _parameters, device=None):
+def _(_: qp.CZ, _parameters, device=None):
     return gates.CZ()
 
 
 @_translate_operation.register
-def _(_: qml.SWAP, _parameters, device=None):
+def _(_: qp.SWAP, _parameters, device=None):
     return gates.Swap()
 
 
 @_translate_operation.register
-def _(_: qml.CSWAP, _parameters, device=None):
+def _(_: qp.CSWAP, _parameters, device=None):
     return gates.CSwap()
 
 
 @_translate_operation.register
-def _(_: qml.Toffoli, _parameters, device=None):
+def _(_: qp.Toffoli, _parameters, device=None):
     return gates.CCNot()
 
 
 @_translate_operation.register
-def _(rx: qml.RX, parameters, device=None):
+def _(rx: qp.RX, parameters, device=None):
     phi = parameters[0]
     return gates.Rx(phi)
 
 
 @_translate_operation.register
-def _(ry: qml.RY, parameters, device=None):
+def _(ry: qp.RY, parameters, device=None):
     phi = parameters[0]
     return gates.Ry(phi)
 
 
 @_translate_operation.register
-def _(rz: qml.RZ, parameters, device=None):
+def _(rz: qp.RZ, parameters, device=None):
     phi = parameters[0]
     return gates.Rz(phi)
 
 
 @_translate_operation.register
-def _(phase_shift: qml.PhaseShift, parameters, device=None):
+def _(phase_shift: qp.PhaseShift, parameters, device=None):
     phi = parameters[0]
     return gates.PhaseShift(phi)
 
 
 @_translate_operation.register
-def _(qubit_unitary: qml.QubitUnitary, parameters, device=None):
+def _(qubit_unitary: qp.QubitUnitary, parameters, device=None):
     U = np.asarray(parameters[0])
     return gates.Unitary(U)
 
 
 @_translate_operation.register
-def _(_: qml.AmplitudeDamping, parameters, device=None):
+def _(_: qp.AmplitudeDamping, parameters, device=None):
     gamma = parameters[0]
     return noises.AmplitudeDamping(gamma)
 
 
 @_translate_operation.register
-def _(_: qml.GeneralizedAmplitudeDamping, parameters, device=None):
+def _(_: qp.GeneralizedAmplitudeDamping, parameters, device=None):
     gamma = parameters[0]
     probability = 1 - parameters[1]
     return noises.GeneralizedAmplitudeDamping(probability=probability, gamma=gamma)
 
 
 @_translate_operation.register
-def _(_: qml.PhaseDamping, parameters, device=None):
+def _(_: qp.PhaseDamping, parameters, device=None):
     gamma = parameters[0]
     return noises.PhaseDamping(gamma)
 
 
 @_translate_operation.register
-def _(_: qml.DepolarizingChannel, parameters, device=None):
+def _(_: qp.DepolarizingChannel, parameters, device=None):
     probability = parameters[0]
     return noises.Depolarizing(probability)
 
 
 @_translate_operation.register
-def _(_: qml.BitFlip, parameters, device=None):
+def _(_: qp.BitFlip, parameters, device=None):
     probability = parameters[0]
     return noises.BitFlip(probability)
 
 
 @_translate_operation.register
-def _(_: qml.PhaseFlip, parameters, device=None):
+def _(_: qp.PhaseFlip, parameters, device=None):
     probability = parameters[0]
     return noises.PhaseFlip(probability)
 
 
 @_translate_operation.register
-def _(_: qml.QubitChannel, parameters, device=None):
+def _(_: qp.QubitChannel, parameters, device=None):
     K_list = [np.asarray(matrix) for matrix in parameters]
     return noises.Kraus(K_list)
 
 
 @_translate_operation.register
-def _(c_phase_shift: qml.ControlledPhaseShift, parameters, device=None):
+def _(c_phase_shift: qp.ControlledPhaseShift, parameters, device=None):
     phi = parameters[0]
     return gates.CPhaseShift(phi)
 
@@ -378,7 +378,7 @@ def _(c_phase_shift_10: CPhaseShift10, parameters, device=None):
 
 
 @_translate_operation.register
-def _(iswap: qml.ISWAP, _parameters, device=None):
+def _(iswap: qp.ISWAP, _parameters, device=None):
     return gates.ISwap()
 
 
@@ -389,25 +389,25 @@ def _(pswap: PSWAP, parameters, device=None):
 
 
 @_translate_operation.register
-def _(xy: qml.IsingXY, parameters, device=None):
+def _(xy: qp.IsingXY, parameters, device=None):
     phi = parameters[0]
     return gates.XY(phi)
 
 
 @_translate_operation.register
-def _(xx: qml.IsingXX, parameters, device=None):
+def _(xx: qp.IsingXX, parameters, device=None):
     phi = parameters[0]
     return gates.XX(phi)
 
 
 @_translate_operation.register
-def _(yy: qml.IsingYY, parameters, device=None):
+def _(yy: qp.IsingYY, parameters, device=None):
     phi = parameters[0]
     return gates.YY(phi)
 
 
 @_translate_operation.register
-def _(zz: qml.IsingZZ, parameters, device=None):
+def _(zz: qp.IsingZZ, parameters, device=None):
     phi = parameters[0]
     return gates.ZZ(phi)
 
@@ -444,8 +444,8 @@ def _(ms: AAMS, parameters, device=None):
 
 
 @_translate_operation.register
-def _(adjoint: qml.ops.Adjoint, parameters, device=None):
-    if isinstance(adjoint.base, qml.ISWAP):
+def _(adjoint: qp.ops.Adjoint, parameters, device=None):
+    if isinstance(adjoint.base, qp.ISWAP):
         # gates.ISwap.adjoint() returns a different value
         return gates.PSwap(3 * np.pi / 2)
     base = _translate_operation(adjoint.base, parameters)
@@ -464,7 +464,7 @@ def _(op: ParametrizedEvolution, _parameters, device):
 
     # The driven wires aren't the same as `op.wires` as `op.wires` contains
     # all device wires due to interaction term.
-    pulse_wires = qml.wires.Wires.all_wires([pulse.wires for pulse in pulses])
+    pulse_wires = qp.wires.Wires.all_wires([pulse.wires for pulse in pulses])
     frames = {w: device.frames[f"q{w}_drive"] for w in pulse_wires}
 
     # take dt from first frame (all frames have identical dt)
@@ -478,7 +478,7 @@ def _(op: ParametrizedEvolution, _parameters, device):
     for pulse in pulses:
         # Create waveform for each pulse in `ParametrizedEvolution`
         if callable(pulse.amplitude):
-            if pulse.amplitude == qml.pulse.constant:
+            if pulse.amplitude == qp.pulse.constant:
                 amplitude = complex(op.parameters[callable_index])
                 callable_index += 1
                 waveform = lambda dt: ConstantWaveform(pulse_length, amplitude)  # noqa: B023
@@ -566,10 +566,10 @@ def translate_result_type(
     targets = targets or measurement.wires.tolist()
     observable = measurement.obs
 
-    if isinstance(measurement, qml.measurements.ProbabilityMP):
+    if isinstance(measurement, qp.measurements.ProbabilityMP):
         return Probability(targets)
 
-    if isinstance(measurement, qml.measurements.StateMP):
+    if isinstance(measurement, qp.measurements.StateMP):
         if not targets and "StateVector" in supported_result_types:
             return StateVector()
         elif "DensityMatrix" in supported_result_types:
@@ -577,34 +577,34 @@ def translate_result_type(
         raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
     if observable is None:
-        if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
+        if isinstance(measurement, qp.measurements.CountsMP) and not measurement.all_outcomes:
             return tuple(Sample(observables.Z(target)) for target in targets or measurement.wires)
         raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
     observable = flatten_observable(observable)
 
-    if isinstance(observable, qml.ops.LinearCombination):
-        if isinstance(measurement, qml.measurements.ExpectationMP):
+    if isinstance(observable, qp.ops.LinearCombination):
+        if isinstance(measurement, qp.measurements.ExpectationMP):
             return tuple(Expectation(_translate_observable(op)) for op in observable.terms()[1])
         raise NotImplementedError(
             f"Return type {type(measurement)} unsupported for LinearCombination"
         )
 
     braket_observable = _translate_observable(observable)
-    if isinstance(measurement, qml.measurements.ExpectationMP):
+    if isinstance(measurement, qp.measurements.ExpectationMP):
         return Expectation(braket_observable)
-    if isinstance(measurement, qml.measurements.VarianceMP):
+    if isinstance(measurement, qp.measurements.VarianceMP):
         return Variance(braket_observable)
-    if isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
+    if isinstance(measurement, qp.measurements.CountsMP) and not measurement.all_outcomes:
         return Sample(braket_observable)
-    if isinstance(measurement, qml.measurements.SampleMP):
+    if isinstance(measurement, qp.measurements.SampleMP):
         return Sample(braket_observable)
     raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
 
 
 def flatten_observable(observable):
-    if isinstance(observable, (qml.ops.CompositeOp, qml.ops.SProd)):
-        simplified = qml.ops.LinearCombination(*observable.terms()).simplify()
+    if isinstance(observable, (qp.ops.CompositeOp, qp.ops.SProd)):
+        simplified = qp.ops.LinearCombination(*observable.terms()).simplify()
         coeffs, _ = simplified.terms()
         if len(coeffs) > 1 or coeffs[0] != 1:
             return simplified
@@ -618,23 +618,23 @@ _one = np.array([[0, 0], [0, 1]])
 @singledispatch
 def _translate_observable(observable):
     match observable:
-        case qml.Identity(wires=wires):
+        case qp.Identity(wires=wires):
             return (
                 observables.I(wires[0])
                 if len(wires) == 1
                 else observables.TensorProduct([observables.I(wire) for wire in wires])
             )
-        case qml.PauliX(wires=wires):
+        case qp.PauliX(wires=wires):
             return observables.X(wires[0])
-        case qml.PauliY(wires=wires):
+        case qp.PauliY(wires=wires):
             return observables.Y(wires[0])
-        case qml.PauliZ(wires=wires):
+        case qp.PauliZ(wires=wires):
             return observables.Z(wires[0])
-        case qml.Hadamard(wires=wires):
+        case qp.Hadamard(wires=wires):
             return observables.H(wires[0])
-        case qml.Hermitian(wires=wires):
-            return observables.Hermitian(qml.matrix(observable), targets=wires)
-        case qml.Projector(parameters=parameters, wires=wires):
+        case qp.Hermitian(wires=wires):
+            return observables.Hermitian(qp.matrix(observable), targets=wires)
+        case qp.Projector(parameters=parameters, wires=wires):
             state = parameters[0]
             if len(state) == len(wires):  # state is a basis state
                 products = [_one if b else _zero for b in state]
@@ -644,18 +644,18 @@ def _translate_observable(observable):
                 return observables.TensorProduct(hermitians)
             # state is a state vector
             return observables.Hermitian(observable.matrix(), targets=wires)
-        case qml.ops.Prod(operands=operands):
+        case qp.ops.Prod(operands=operands):
             return reduce(
                 lambda x, y: x @ y, [_translate_observable(factor) for factor in operands]
             )
-        case qml.ops.SProd(base=base, scalar=scalar):
+        case qp.ops.SProd(base=base, scalar=scalar):
             return scalar * _translate_observable(base)
-        case qml.ops.Sum(operands=operands):
+        case qp.ops.Sum(operands=operands):
             return reduce(
                 lambda x, y: x + y, [_translate_observable(operator) for operator in operands]
             )
         case _:
-            raise qml.exceptions.DeviceError(f"Unsupported observable: {type(observable)}")
+            raise qp.exceptions.DeviceError(f"Unsupported observable: {type(observable)}")
 
 
 def translate_result(
@@ -697,7 +697,7 @@ def translate_result(
 
     targets = targets or measurement.wires.tolist()
     if (
-        isinstance(measurement, qml.measurements.CountsMP)
+        isinstance(measurement, qp.measurements.CountsMP)
         and not measurement.all_outcomes
         and observable is None
     ):
@@ -714,13 +714,13 @@ def translate_result(
 
     translated = translate_result_type(measurement, targets, supported_result_types)
     observable = flatten_observable(observable)
-    if isinstance(observable, qml.ops.LinearCombination):
+    if isinstance(observable, qp.ops.LinearCombination):
         coeffs, _ = observable.terms()
         return sum(
             coeff * braket_result.get_value_by_result_type(result_type)
             for coeff, result_type in zip(coeffs, translated)
         )
-    elif isinstance(measurement, qml.measurements.CountsMP) and not measurement.all_outcomes:
+    elif isinstance(measurement, qp.measurements.CountsMP) and not measurement.all_outcomes:
         return dict(Counter(braket_result.get_value_by_result_type(translated)))
     else:
         return braket_result.get_value_by_result_type(translated)

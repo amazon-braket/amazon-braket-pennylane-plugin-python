@@ -19,7 +19,7 @@ from unittest.mock import Mock, PropertyMock, patch
 
 import braket.ir as ir
 import numpy as anp
-import pennylane as qml
+import pennylane as qp
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask, AwsQuantumTaskBatch
 from braket.circuits import (
@@ -273,7 +273,7 @@ def test_reset():
 def test_apply():
     """Tests that the correct Braket gate is applied for each PennyLane operation."""
     dev = _aws_device(wires=2)
-    circuit = dev.apply([qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1])])
+    circuit = dev.apply([qp.Hadamard(wires=0), qp.CNOT(wires=[0, 1])])
     assert circuit == Circuit().h(0).cnot(0, 1)
 
 
@@ -282,13 +282,13 @@ def test_apply_unique_parameters():
     dev = _aws_device(wires=2)
     circuit = dev.apply(
         [
-            qml.Hadamard(wires=0),
-            qml.CNOT(wires=[0, 1]),
-            qml.RX(np.pi, wires=0),
-            qml.RY(np.pi, wires=0),
+            qp.Hadamard(wires=0),
+            qp.CNOT(wires=[0, 1]),
+            qp.RX(np.pi, wires=0),
+            qp.RY(np.pi, wires=0),
             # note the gamma/p ordering doesn't affect the naming of the parameters below.
-            qml.GeneralizedAmplitudeDamping(gamma=0.1, p=0.2, wires=0),
-            qml.GeneralizedAmplitudeDamping(p=0.2, gamma=0.1, wires=0),
+            qp.GeneralizedAmplitudeDamping(gamma=0.1, p=0.2, wires=0),
+            qp.GeneralizedAmplitudeDamping(p=0.2, gamma=0.1, wires=0),
         ],
         use_unique_params=True,
     )
@@ -305,11 +305,11 @@ def test_apply_unused_qubits():
     """Tests that the correct circuit is created when not all wires in the device are used."""
     dev = _aws_device(wires=4)
     operations = [
-        qml.Hadamard(wires=1),
-        qml.CNOT(wires=[1, 2]),
-        qml.RX(np.pi / 2, wires=2),
+        qp.Hadamard(wires=1),
+        qp.CNOT(wires=[1, 2]),
+        qp.RX(np.pi / 2, wires=2),
     ]
-    rotations = [qml.RY(np.pi, wires=1)]
+    rotations = [qp.RY(np.pi, wires=1)]
     circuit = dev.apply(operations, rotations)
 
     assert circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi / 2).ry(1, np.pi).i(0).i(3)
@@ -323,7 +323,7 @@ def test_apply_unsupported():
     mock_op.name = "foo"
     mock_op.parameters = []
 
-    operations = [qml.Hadamard(wires=0), qml.CNOT(wires=[0, 1]), mock_op]
+    operations = [qp.Hadamard(wires=0), qp.CNOT(wires=[0, 1]), mock_op]
     dev.apply(operations)
 
 
@@ -335,7 +335,7 @@ def test_apply_unwrap_tensor():
     a = anp.array(0.6)  # array
     b = np.array(0.5, requires_grad=True)  # tensor
 
-    operations = [qml.RY(a, wires=0), qml.RX(b, wires=[0])]
+    operations = [qp.RY(a, wires=0), qp.RX(b, wires=[0])]
     rotations = []
     circuit = dev.apply(operations, rotations)
 
@@ -349,14 +349,14 @@ def test_execute(mock_run):
     dev = _aws_device(wires=4, foo="bar")
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
-        qml.RX(0.432, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0])
-        qml.expval(qml.PauliX(1))
-        qml.var(qml.PauliY(2))
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qp.RX(0.432, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0])
+        qp.expval(qp.PauliX(1))
+        qp.var(qp.PauliY(2))
+        qp.sample(qp.PauliZ(3))
 
     # If the tape is constructed with a QNode, only the parameters marked requires_grad=True
     # will appear
@@ -412,14 +412,14 @@ def test_execute_parametrize_differentiable(mock_run):
     dev = _aws_device(wires=4, parametrize_differentiable=True, foo="bar")
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
-        qml.RX(0.432, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0])
-        qml.expval(qml.PauliX(1))
-        qml.var(qml.PauliY(2))
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qp.RX(0.432, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0])
+        qp.expval(qp.PauliX(1))
+        qp.var(qp.PauliY(2))
+        qp.sample(qp.PauliZ(3))
 
     results = dev._execute_legacy(circuit)
 
@@ -469,37 +469,36 @@ def test_execute_parametrize_differentiable(mock_run):
 
 CIRCUIT_1 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.CNOT(wires=[0, 1]),
-        qml.RX(0.432, wires=0),
-        qml.RY(0.543, wires=0),
+        qp.Hadamard(wires=0),
+        qp.CNOT(wires=[0, 1]),
+        qp.RX(0.432, wires=0),
+        qp.RY(0.543, wires=0),
     ],
-    measurements=[qml.expval(qml.PauliX(1))],
+    measurements=[qp.expval(qp.PauliX(1))],
 )
 CIRCUIT_1.trainable_params = [0]
 
 CIRCUIT_2 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.CNOT(wires=[0, 1]),
-        qml.RX(0.432, wires=0),
-        qml.RY(0.543, wires=0),
+        qp.Hadamard(wires=0),
+        qp.CNOT(wires=[0, 1]),
+        qp.RX(0.432, wires=0),
+        qp.RY(0.543, wires=0),
     ],
-    measurements=[qml.expval(2 * qml.PauliX(0) @ qml.PauliY(1))],
+    measurements=[qp.expval(2 * qp.PauliX(0) @ qp.PauliY(1))],
 )
 CIRCUIT_2.trainable_params = [0, 1]
 
 CIRCUIT_3 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.CNOT(wires=[0, 1]),
-        qml.RX(0.432, wires=0),
-        qml.RY(0.543, wires=0),
+        qp.Hadamard(wires=0),
+        qp.CNOT(wires=[0, 1]),
+        qp.RX(0.432, wires=0),
+        qp.RY(0.543, wires=0),
     ],
     measurements=[
-        qml.expval(
-            2 * qml.PauliX(0) @ qml.PauliY(1) @ qml.Identity(2)
-            + 0.75 * qml.PauliY(0) @ qml.PauliZ(1)
+        qp.expval(
+            2 * qp.PauliX(0) @ qp.PauliY(1) @ qp.Identity(2) + 0.75 * qp.PauliY(0) @ qp.PauliZ(1)
         ),
     ],
 )
@@ -507,39 +506,37 @@ CIRCUIT_3.trainable_params = [0, 1]
 
 CIRCUIT_4 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.CNOT(wires=[0, 1]),
-        qml.RX(0.432, wires=0),
-        qml.RY(0.543, wires=0),
+        qp.Hadamard(wires=0),
+        qp.CNOT(wires=[0, 1]),
+        qp.RX(0.432, wires=0),
+        qp.RY(0.543, wires=0),
     ],
-    measurements=[qml.expval(qml.PauliX(1))],
+    measurements=[qp.expval(qp.PauliX(1))],
 )
 CIRCUIT_4.trainable_params = []
 
 PARAM_5 = np.tensor(0.543, requires_grad=True)
 CIRCUIT_5 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.CNOT(wires=[0, 1]),
-        qml.RX(0.432, wires=0),
-        qml.RY(PARAM_5, wires=0),
+        qp.Hadamard(wires=0),
+        qp.CNOT(wires=[0, 1]),
+        qp.RX(0.432, wires=0),
+        qp.RY(PARAM_5, wires=0),
     ],
-    measurements=[qml.var(qml.PauliX(0) @ qml.PauliY(1))],
+    measurements=[qp.var(qp.PauliX(0) @ qp.PauliY(1))],
 )
 CIRCUIT_5.trainable_params = [1]
 
 PARAM_6 = np.tensor(0.432, requires_grad=True)
 CIRCUIT_6 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.QubitUnitary(
-            1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0
-        ),
-        qml.RX(PARAM_6, wires=0),
-        qml.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0),
-        qml.CNOT(wires=[0, 1]),
+        qp.Hadamard(wires=0),
+        qp.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0),
+        qp.RX(PARAM_6, wires=0),
+        qp.QubitUnitary(1 / np.sqrt(2) * anp.array([[1, 1], [1, -1]]), wires=0),
+        qp.CNOT(wires=[0, 1]),
     ],
-    measurements=[qml.expval(qml.PauliX(1))],
+    measurements=[qp.expval(qp.PauliX(1))],
 )
 
 
@@ -764,11 +761,11 @@ def test_execute_tracker(mock_run):
     dev = _aws_device(wires=4, foo="bar")
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.probs(wires=(0,))
+        qp.Hadamard(wires=0)
+        qp.probs(wires=(0,))
 
     callback = Mock()
-    with qml.Tracker(dev, callback=callback) as tracker:
+    with qp.Tracker(dev, callback=callback) as tracker:
         dev.execute(circuit)
         dev.execute(circuit)
         dev.execute(circuit)
@@ -843,10 +840,10 @@ def test_pl_to_braket_circuit():
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliZ(0))
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliZ(0))
 
     braket_circuit_true = (
         Circuit()
@@ -864,9 +861,9 @@ def test_pl_to_braket_circuit():
 def test_pl_to_braket_circuit_no_observables_rejects_noncommuting():
     dev = _aws_device(wires=1, foo="bar")
     with QuantumTape() as tape:
-        qml.Hadamard(wires=0)
-        qml.expval(qml.PauliX(0))
-        qml.sample(qml.PauliY(0))
+        qp.Hadamard(wires=0)
+        qp.expval(qp.PauliX(0))
+        qp.sample(qp.PauliY(0))
     with pytest.raises(ValueError, match="mutually commute"):
         dev._pl_to_braket_circuit(tape, add_observables=False)
 
@@ -877,10 +874,10 @@ def test_pl_to_braket_circuit_compute_gradient():
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliZ(0))
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliZ(0))
 
     expected_braket_circuit = (
         Circuit()
@@ -907,15 +904,15 @@ def test_pl_to_braket_circuit_compute_gradient_hamiltonian_tensor_product_terms(
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(
-            qml.Hamiltonian(
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(
+            qp.Hamiltonian(
                 (2, 3),
                 (
-                    qml.PauliX(wires=0) @ qml.PauliX(wires=1),
-                    qml.PauliY(wires=0) @ qml.PauliY(wires=1),
+                    qp.PauliX(wires=0) @ qp.PauliX(wires=1),
+                    qp.PauliY(wires=0) @ qp.PauliY(wires=1),
                 ),
             )
         )
@@ -946,11 +943,11 @@ def test_pl_to_braket_circuit_gradient_fails_with_multiple_observables():
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliZ(0))
-        qml.expval(qml.PauliZ(0))
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliZ(0))
+        qp.expval(qp.PauliZ(0))
     with pytest.raises(
         ValueError,
         match="Braket can only compute gradients for circuits with a single expectation"
@@ -965,10 +962,10 @@ def test_pl_to_braket_circuit_gradient_fails_with_invalid_observable():
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.var(qml.PauliZ(0))
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.var(qp.PauliZ(0))
     with pytest.raises(
         TypeError,
         match="Braket can only compute gradients for circuits with a single expectation"
@@ -982,10 +979,10 @@ def test_pl_to_braket_circuit_hamiltonian():
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.Hamiltonian((2, 3), (qml.PauliX(wires=0), qml.PauliY(wires=1))))
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.Hamiltonian((2, 3), (qp.PauliX(wires=0), qp.PauliY(wires=1))))
 
     braket_circuit_true = (
         Circuit()
@@ -1007,15 +1004,15 @@ def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
     dev = _aws_device(wires=2, foo="bar")
 
     with QuantumTape() as tape:
-        qml.RX(0.2, wires=0)
-        qml.RX(0.3, wires=1)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(
-            qml.Hamiltonian(
+        qp.RX(0.2, wires=0)
+        qp.RX(0.3, wires=1)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(
+            qp.Hamiltonian(
                 (2, 3),
                 (
-                    qml.PauliX(wires=0) @ qml.PauliX(wires=1),
-                    qml.PauliY(wires=0) @ qml.PauliY(wires=1),
+                    qp.PauliX(wires=0) @ qp.PauliX(wires=1),
+                    qp.PauliY(wires=0) @ qp.PauliY(wires=1),
                 ),
             )
         )
@@ -1042,7 +1039,7 @@ def test_parametrized_evolution_in_oqc_lucy_supported_ops():
 def test_bad_statistics():
     """Test if a QuantumFunctionError is raised for an invalid return type"""
     dev = _aws_device(wires=1, foo="bar")
-    tape = qml.tape.QuantumTape(measurements=[qml.classical_shadow(wires=[0])])
+    tape = qp.tape.QuantumTape(measurements=[qp.classical_shadow(wires=[0])])
     with pytest.raises(QuantumFunctionError, match="Unsupported return type:"):
         dev._statistics(None, tape.measurements)
 
@@ -1073,11 +1070,11 @@ def test_batch_execute_non_parallel_tracker(mock_run, mock_properties):
     dev = _aws_device(wires=2, foo="bar", parallel=False)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.probs(wires=(0,))
+        qp.Hadamard(wires=0)
+        qp.probs(wires=(0,))
 
     callback = Mock()
-    with qml.Tracker(dev, callback=callback) as tracker:
+    with qp.Tracker(dev, callback=callback) as tracker:
         dev.batch_execute([circuit, circuit])
     dev.batch_execute([circuit])
 
@@ -1105,9 +1102,9 @@ def test_batch_execute_program_set(mock_run):
     mock_run.return_value = task
     dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliX(0) @ qp.PauliY(1))
 
     circuits = [circuit, circuit]
     result = dev.batch_execute(circuits)
@@ -1141,15 +1138,15 @@ def test_batch_execute_program_set_parametrize_differentiable(mock_run):
     )
 
     with QuantumTape() as circuit1:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliX(0) @ qp.PauliY(1))
 
     with QuantumTape() as circuit2:
-        qml.Hadamard(wires=0)
-        qml.RX(0.123, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.sample(qml.PauliZ(0))
+        qp.Hadamard(wires=0)
+        qp.RX(0.123, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.sample(qp.PauliZ(0))
 
     circuits = [circuit1, circuit2]
     result = dev.batch_execute(circuits)
@@ -1181,10 +1178,10 @@ def test_batch_execute_program_set_noncommuting():
     """Test batch_execute correctly runs program sets when they are supported"""
     dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliX(0))
-        qml.sample(qml.PauliY(0))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliX(0))
+        qp.sample(qp.PauliY(0))
 
     circuits = [circuit, circuit]
     with pytest.raises(ValueError):
@@ -1216,9 +1213,9 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
     circuits = []
     for _ in range(101):
         with QuantumTape() as circuit:
-            qml.Hadamard(wires=0)
-            qml.CNOT(wires=[0, 1])
-            qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+            qp.Hadamard(wires=0)
+            qp.CNOT(wires=[0, 1])
+            qp.expval(qp.PauliX(0) @ qp.PauliY(1))
         circuits.append(circuit)
 
     assert len(circuits) == 101
@@ -1371,12 +1368,12 @@ def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
     assert dev.parallel is True
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0])
-        qml.expval(qml.PauliX(1))
-        qml.var(qml.PauliY(2))
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0])
+        qp.expval(qp.PauliX(1))
+        qp.var(qp.PauliY(2))
+        qp.sample(qp.PauliZ(3))
 
     circuits = [circuit, circuit]
     batch_results = dev.batch_execute(circuits)
@@ -1417,7 +1414,7 @@ def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
     mock_run_batch, mock_properties
 ):
     """parallel batch_execute should diagonalize non-Z-basis Pauli measurements so that
-    qml.probs(op=qml.PauliY(...)) returns Y-basis probabilities instead of Z-basis."""
+    qp.probs(op=qp.PauliY(...)) returns Y-basis probabilities instead of Z-basis."""
     mock_run_batch.return_value = TASK_BATCH
     mock_action = Mock()
     mock_action.action = {"braket.ir.openqasm.program": None}
@@ -1425,8 +1422,8 @@ def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
     dev = _aws_device(wires=1, foo="bar", parallel=True)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.probs(op=qml.PauliY(0))
+        qp.Hadamard(wires=0)
+        qp.probs(op=qp.PauliY(0))
 
     dev.batch_execute([circuit])
 
@@ -1434,7 +1431,7 @@ def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
     assert any(
         instr.operator.name == "Rx" and instr.target[0] == 0 for instr in submitted.instructions
     ), (
-        "Parallel batch_execute did not diagonalize qml.probs(op=PauliY(0)); "
+        "Parallel batch_execute did not diagonalize qp.probs(op=PauliY(0)); "
         f"submitted instructions: {[i.operator.name for i in submitted.instructions]}"
     )
 
@@ -1450,12 +1447,12 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
     assert dev.parallel is True
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0])
-        qml.expval(qml.PauliX(1))
-        qml.var(qml.PauliY(2))
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0])
+        qp.expval(qp.PauliX(1))
+        qp.var(qp.PauliY(2))
+        qp.sample(qp.PauliZ(3))
 
     circuits = [circuit, circuit]
     batch_results = dev.batch_execute(circuits)
@@ -1503,13 +1500,13 @@ def test_aws_device_batch_execute_parallel_tracker(mock_run_batch, mock_properti
     dev = _aws_device(wires=1, foo="bar", parallel=True)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.probs(wires=(0,))
+        qp.Hadamard(wires=0)
+        qp.probs(wires=(0,))
 
     circuits = [circuit, circuit]
 
     callback = Mock()
-    with qml.Tracker(dev, callback=callback) as tracker:
+    with qp.Tracker(dev, callback=callback) as tracker:
         dev.batch_execute(circuits)
     dev.batch_execute(circuits)
 
@@ -1537,13 +1534,13 @@ def test_local_sim_batch_execute_parallel_tracker(mock_run_batch):
     type(TASK_BATCH).unsuccessful = PropertyMock(return_value={})
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.probs(wires=(0,))
+        qp.Hadamard(wires=0)
+        qp.probs(wires=(0,))
 
     circuits = [circuit, circuit]
 
     callback = Mock()
-    with qml.Tracker(dev, callback=callback) as tracker:
+    with qp.Tracker(dev, callback=callback) as tracker:
         dev.batch_execute(circuits)
     dev.batch_execute(circuits)
 
@@ -1583,14 +1580,14 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch, mock_proper
     dev = _aws_device(wires=1, foo="bar", parallel=True)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.probs(wires=(0,))
+        qp.Hadamard(wires=0)
+        qp.probs(wires=(0,))
 
     circuits = [circuit, circuit]
 
     callback = Mock()
     try:
-        with qml.Tracker(dev, callback=callback) as tracker:
+        with qp.Tracker(dev, callback=callback) as tracker:
             dev.batch_execute(circuits)
         dev.batch_execute(circuits)
     except RuntimeError:
@@ -1631,17 +1628,17 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch, mock_propertie
     dev = _aws_device(wires=4, foo="bar", parametrize_differentiable=True, parallel=True)
 
     with QuantumTape() as circuit1:
-        qml.Hadamard(wires=0)
-        qml.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
-        qml.RX(0.432, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.expval(qml.PauliX(1))
+        qp.Hadamard(wires=0)
+        qp.QubitUnitary(1 / np.sqrt(2) * np.tensor([[1, 1], [1, -1]], requires_grad=True), wires=0)
+        qp.RX(0.432, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliX(1))
 
     with QuantumTape() as circuit2:
-        qml.Hadamard(wires=0)
-        qml.RX(0.123, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.RX(0.123, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.sample(qp.PauliZ(3))
 
     expected_1 = (
         Circuit()
@@ -1736,10 +1733,10 @@ def test_execute_all_samples(mock_run):
     dev = _aws_device(wires=3)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.sample(qml.Hadamard(0) @ qml.Identity(1))
-        qml.sample(qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.sample(qp.Hadamard(0) @ qp.Identity(1))
+        qp.sample(qp.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
 
     results = dev.execute(circuit)
 
@@ -1814,10 +1811,10 @@ def test_execute_some_samples(mock_run):
     dev = _aws_device(wires=3)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.sample(qml.Hadamard(0) @ qml.Identity(1))
-        qml.expval(qml.PauliZ(2))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.sample(qp.Hadamard(0) @ qp.Identity(1))
+        qp.expval(qp.PauliZ(2))
 
     results = dev.execute(circuit)
 
@@ -1851,7 +1848,7 @@ def test_execute_some_samples(mock_run):
         ),
         (
             2,
-            qml.PauliZ(0),
+            qp.PauliZ(0),
             None,
             [[0, 0], [1, 1], [0, 0], [1, 1]],
             Counter({"00": 2, "11": 2}),
@@ -1947,9 +1944,9 @@ def test_execute_counts(
     dev = _aws_device(wires=num_wires, shots=4)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.counts(op=op, wires=wires)
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.counts(op=op, wires=wires)
 
     results = dev.execute(circuit)
 
@@ -1961,9 +1958,9 @@ def test_counts_all_outcomes_fails():
     dev = _aws_device(wires=2, shots=4)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.counts(all_outcomes=True)
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.counts(all_outcomes=True)
 
     does_not_support = "Unsupported return type: <class 'pennylane.measurements.counts.CountsMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
@@ -1987,13 +1984,13 @@ def test_counts_without_observable_batch_execute(mock_run_batch):
 
     dev = BraketLocalQubitDevice(wires=2, shots=100, parallel=True)
 
-    @qml.qnode(dev)
+    @qp.qnode(dev)
     def bell_circuit():
-        qml.X(wires=0)
-        return qml.counts()
+        qp.X(wires=0)
+        return qp.counts()
 
     # Construct and execute tapes with batch_execute to trigger program sets
-    tape_generator = qml.workflow.construct_tape(bell_circuit)
+    tape_generator = qp.workflow.construct_tape(bell_circuit)
     tapes = [tape_generator() for _ in range(5)]
     results = dev.batch_execute(tapes)
 
@@ -2008,9 +2005,9 @@ def test_sample_fails():
     dev = _aws_device(wires=2, shots=4)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.sample()
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.sample()
 
     does_not_support = "Unsupported return type: <class 'pennylane.measurements.sample.SampleMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
@@ -2021,19 +2018,19 @@ def test_sample_fails():
     "observable, expected",
     [
         (None, True),
-        (qml.PauliX(0), True),
-        (qml.PauliY(0), True),
-        (qml.PauliZ(0), True),
-        (qml.Hadamard(0), True),
-        (qml.Identity(0), True),
-        (2 * qml.PauliY(0), True),
-        (-1.5 * qml.Hadamard(1), True),
-        (qml.PauliX(0) @ qml.PauliY(1), True),
-        (3 * (qml.PauliX(0) @ qml.PauliY(1)), True),
-        (qml.PauliX(0) + qml.PauliY(1), False),
-        (qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[0]), False),
-        (qml.Projector([0], wires=[0]), False),
-        (qml.PauliX(0) @ qml.Hermitian(np.array([[0, 1], [1, 0]]), wires=[1]), False),
+        (qp.PauliX(0), True),
+        (qp.PauliY(0), True),
+        (qp.PauliZ(0), True),
+        (qp.Hadamard(0), True),
+        (qp.Identity(0), True),
+        (2 * qp.PauliY(0), True),
+        (-1.5 * qp.Hadamard(1), True),
+        (qp.PauliX(0) @ qp.PauliY(1), True),
+        (3 * (qp.PauliX(0) @ qp.PauliY(1)), True),
+        (qp.PauliX(0) + qp.PauliY(1), False),
+        (qp.Hermitian(np.array([[0, 1], [1, 0]]), wires=[0]), False),
+        (qp.Projector([0], wires=[0]), False),
+        (qp.PauliX(0) @ qp.Hermitian(np.array([[0, 1], [1, 0]]), wires=[1]), False),
     ],
 )
 def test_is_pauli_or_hadamard_observable(observable, expected):
@@ -2045,11 +2042,11 @@ def test_unsupported_return_type():
     dev = _aws_device(wires=2, shots=4)
 
     mock_measurement = Mock()
-    mock_measurement.obs = qml.PauliZ(0)
-    mock_measurement.wires = qml.wires.Wires([0])
+    mock_measurement.obs = qp.PauliZ(0)
+    mock_measurement.wires = qp.wires.Wires([0])
     mock_measurement.map_wires.return_value = mock_measurement
 
-    tape = qml.tape.QuantumTape(measurements=[mock_measurement])
+    tape = qp.tape.QuantumTape(measurements=[mock_measurement])
 
     does_not_support = "Unsupported return type: <class 'unittest.mock.Mock'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
@@ -2122,12 +2119,12 @@ def test_local_qubit_execute(mock_run, shots, backend):
     dev = BraketLocalQubitDevice(wires=4, backend=backend, shots=shots, foo="bar")
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0])
-        qml.expval(qml.PauliX(1))
-        qml.var(qml.PauliY(2))
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0])
+        qp.expval(qp.PauliX(1))
+        qp.var(qp.PauliY(2))
+        qp.sample(qp.PauliZ(3))
 
     expected = (
         Circuit()
@@ -2175,7 +2172,7 @@ def test_wires():
     wires = ["A", 0, "B", -1]
     dev = _aws_device(wires=wires, device_type=AwsDeviceType.SIMULATOR, shots=None)
 
-    ops = [qml.RX(0.1, wires="A"), qml.CNOT(wires=[0, "B"]), qml.RY(0.3, wires=-1)]
+    ops = [qp.RX(0.1, wires="A"), qp.CNOT(wires=[0, "B"]), qp.RY(0.3, wires=-1)]
     target_wires = [[0], [1, 2], [3]]
     circ = dev.apply(ops)
 
@@ -2210,29 +2207,29 @@ def test_projection():
     p_10 = np.sin(thetas[0] / 2) ** 2 * np.cos(thetas[1] / 2) ** 2
 
     def f(thetas, **kwargs):
-        [qml.RY(thetas[i], wires=i) for i in range(wires)]
+        [qp.RY(thetas[i], wires=i) for i in range(wires)]
 
-    projector_01_bs = qml.Projector([0, 1], wires=range(wires))
-    projector_01_sv = qml.Projector([0, 1, 0, 0], wires=range(wires))
-    projector_10_bs = qml.Projector([1, 0], wires=range(wires))
-    projector_10_sv = qml.Projector([0, 0, 1, 0], wires=range(wires))
+    projector_01_bs = qp.Projector([0, 1], wires=range(wires))
+    projector_01_sv = qp.Projector([0, 1, 0, 0], wires=range(wires))
+    projector_10_bs = qp.Projector([1, 0], wires=range(wires))
+    projector_10_sv = qp.Projector([0, 0, 1, 0], wires=range(wires))
 
     projectors = [projector_01_bs, projector_01_sv, projector_10_bs, projector_10_sv]
     expected = [p_01, p_01, p_10, p_10]
 
-    @qml.qnode(dev)
+    @qp.qnode(dev)
     def qnode(thetas, measure_type, observable):
         f(thetas)
         return measure_type(observable)
 
     for proj, exp in zip(projectors, expected):
-        expval = qnode(thetas, qml.expval, proj)
+        expval = qnode(thetas, qp.expval, proj)
         assert np.allclose(expval, exp)
 
-        var = qnode(thetas, qml.var, proj)
+        var = qnode(thetas, qp.var, proj)
         assert np.allclose(var, exp - exp**2)
 
-        samples = qnode(thetas, qml.sample, proj, shots=100).tolist()
+        samples = qnode(thetas, qp.sample, proj, shots=100).tolist()
         assert set(samples) == {0, 1}
 
 
@@ -2242,9 +2239,9 @@ def test_none_device():
     dev = DummyLocalQubitDevice(wires=2, device=None, shots=1000)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0, 1])
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0, 1])
     dev.execute(circuit)
 
 
@@ -2255,9 +2252,9 @@ def test_run_task_unimplemented():
     dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0, 1])
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0, 1])
     dev.execute(circuit)
 
 
@@ -2267,9 +2264,9 @@ def test_run_batch_task_unimplemented():
     dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000, parallel=True)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0, 1])
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0, 1])
 
     with pytest.raises(NotImplementedError):
         dev.batch_execute([circuit, circuit])
@@ -2749,14 +2746,14 @@ def test_invalide_aws_device_for_noise_model(name_mock, device_name, noise_model
 @pytest.fixture
 def pennylane_quantum_tape():
     with QuantumTape() as tape:
-        qml.Hadamard(wires=0)
-        qml.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
-        qml.RX(0.432, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.probs(wires=[0])
-        qml.expval(qml.PauliX(1))
-        qml.var(qml.PauliY(2))
-        qml.sample(qml.PauliZ(3))
+        qp.Hadamard(wires=0)
+        qp.QubitUnitary(1 / np.sqrt(2) * np.array([[1, 1], [1, -1]]), wires=0)
+        qp.RX(0.432, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.probs(wires=[0])
+        qp.expval(qp.PauliX(1))
+        qp.var(qp.PauliY(2))
+        qp.sample(qp.PauliZ(3))
     return tape
 
 
@@ -2949,7 +2946,7 @@ class TestPulseValidation:
 
         spy = mocker.spy(dev, "_validate_pulse_parameters")
 
-        H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
+        H = qp.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
 
         # one call
@@ -2957,34 +2954,34 @@ class TestPulseValidation:
         spy.assert_called_once_with(op)
 
     def test_callable_phase_raises_error(self):
-        """Test that a callable phase (other than qml.pulse.constant) raises an error"""
+        """Test that a callable phase (other than qp.pulse.constant) raises an error"""
         dev = get_oqc_device()
 
         def f1(p, t):
             return p * t
 
-        H = qml.pulse.transmon_drive(0.2, f1, 4.3, wires=[0])
+        H = qp.pulse.transmon_drive(0.2, f1, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [3], t=10)
 
         with pytest.raises(RuntimeError, match="Expected all phases to be constants"):
             dev._validate_pulse_parameters(op)
 
     def test_callable_frequency_raises_error(self):
-        """Test that a callable frequency (other than qml.pulse.constant) raises an error"""
+        """Test that a callable frequency (other than qp.pulse.constant) raises an error"""
 
         dev = get_oqc_device()
 
         def f1(p, t):
             return p * t
 
-        H = qml.pulse.transmon_drive(0.2, 0, f1, wires=[0])
+        H = qp.pulse.transmon_drive(0.2, 0, f1, wires=[0])
         op = ParametrizedEvolution(H, [3], t=10)
 
         with pytest.raises(RuntimeError, match="Expected all frequencies to be constants"):
             dev._check_pulse_frequency_validity(op)
 
     def test_constant_callable_phase_passes_validation(self):
-        """Test that the qml.pulse.constant function is an acceptable value for phase,
+        """Test that the qp.pulse.constant function is an acceptable value for phase,
         i.e. that no error is raised in validation"""
 
         dev = get_oqc_device()
@@ -2992,13 +2989,13 @@ class TestPulseValidation:
         def f1(p, t):
             return p[0] * t + p[1]
 
-        H = qml.pulse.transmon_drive(f1, qml.pulse.constant, 4.3, wires=[0])
+        H = qp.pulse.transmon_drive(f1, qp.pulse.constant, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [[1.2, 2.2], 3], t=10)
 
         dev._validate_pulse_parameters(op)
 
     def test_constant_callable_frequency_passes_validation(self):
-        """Test that the qml.pulse.constant function is an acceptable value for frequency,
+        """Test that the qp.pulse.constant function is an acceptable value for frequency,
         i.e. no error is raised in validation"""
 
         dev = get_oqc_device()
@@ -3006,7 +3003,7 @@ class TestPulseValidation:
         def f1(p, t):
             return p[0] * t + p[1]
 
-        H = qml.pulse.transmon_drive(f1, 0, qml.pulse.constant, wires=[0])
+        H = qp.pulse.transmon_drive(f1, 0, qp.pulse.constant, wires=[0])
         op = ParametrizedEvolution(H, [[0, 1], 4.5], t=10)
 
         dev._check_pulse_frequency_validity(op)
@@ -3018,7 +3015,7 @@ class TestPulseValidation:
 
         dev = get_oqc_device()
 
-        H = qml.pulse.transmon_drive(0.2, 0, 9, wires=[0])
+        H = qp.pulse.transmon_drive(0.2, 0, 9, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
 
         with pytest.raises(RuntimeError, match="Frequency range for wire"):
@@ -3029,11 +3026,11 @@ class TestPulseValidation:
 
     def test_constant_callable_frequency_out_of_range_raises_error(self):
         """Test that a frequency outside the acceptable frequency range of the channel
-        raises an error when the frequency is defined via qml.pulse.constant and a passed
+        raises an error when the frequency is defined via qp.pulse.constant and a passed
         parameter"""
         dev = get_oqc_device()
 
-        H = qml.pulse.transmon_drive(0.2, 0, qml.pulse.constant, wires=[0])
+        H = qp.pulse.transmon_drive(0.2, 0, qp.pulse.constant, wires=[0])
         op = ParametrizedEvolution(H, [2.5], t=10)
 
         with pytest.raises(RuntimeError, match="Frequency range for wire"):
@@ -3044,8 +3041,8 @@ class TestPulseValidation:
         pulses on a single qubit simultaneously raises an error"""
         dev = get_oqc_device()
 
-        H = qml.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
-        H += qml.pulse.transmon_drive(0.5, 0, 4.1, wires=[0])
+        H = qp.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
+        H += qp.pulse.transmon_drive(0.5, 0, 4.1, wires=[0])
         op = ParametrizedEvolution(H, [3], t=10)
 
         with pytest.raises(RuntimeError, match="Multiple waveforms assigned to wire"):
@@ -3121,13 +3118,13 @@ def test_native(mock_run, mock_properties, device_type):
         native_gate_set=["GPI", "GPI2", "MS"],
     )
 
-    @qml.qnode(dev)
+    @qp.qnode(dev)
     def circuit(a):
         GPi(a[0], 0)
         GPi2(a[0], 0)
         MS(a[0], a[1], (0, 1))
         AAMS(a[0], a[1], a[2], (0, 1))
-        return qml.expval(qml.PauliZ(wires=1))
+        return qp.expval(qp.PauliZ(wires=1))
 
     x = np.array([0.76, 0.45, 1.5707963267948966], requires_grad=True)
     circuit(x)
