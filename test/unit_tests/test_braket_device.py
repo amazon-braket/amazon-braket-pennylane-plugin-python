@@ -1124,13 +1124,8 @@ def test_batch_execute_program_set(mock_run):
 
 
 def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
-    """Regression test for pennylane-plugin issue #333 (and sdk issue #1316).
-
-    With multiple single-qubit expectations on distinct wires, each expval must reflect its
-    own qubit's measurements. Previously the program-set result handler passed
-    ``wire_order=measurement.wires`` (a single wire) while the sample array spans all measured
-    qubits, so every per-qubit expval collapsed to wire 0's value.
-    """
+    """With multiple single-qubit expectations on distinct wires, each expval must reflect its
+    own qubit's measurements."""
     program_result = {
         "braketSchemaHeader": {
             "name": "braket.task_result.program_result",
@@ -1202,7 +1197,7 @@ def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
     result = dev._braket_program_set_to_pl_result(ps_result, [circuit])
 
     assert len(result) == 1
-    # wire 0 -> +1, wire 1 -> -1. The pre-fix bug returned (+1, +1).
+    # wire 0 -> +1, wire 1 -> -1
     assert result[0][0] == 1.0
     assert result[0][1] == -1.0
 
