@@ -436,12 +436,17 @@ class BraketQubitDevice(QubitDevice):
         results = []
         for program_result, circuit in zip(program_set_result, circuits):
             # Only one executable per program
-            measurements = program_result[0].measurements
+            measured_entry = program_result[0]
+            measurements = measured_entry.measurements
+            # wire_order must span all measured qubits so each measurement selects its column
+            wire_order = measured_entry.measured_qubits
 
             # Program sets require shots > 0,
             # so the circuit's measurements are guaranteed to be SampleMeasurements
             executable_results = [
-                measurement.process_samples(measurements, wire_order=measurement.wires)
+                measurement.map_wires(self.wire_map).process_samples(
+                    measurements, wire_order=wire_order
+                )
                 for measurement in circuit.measurements
             ]
             results.append(

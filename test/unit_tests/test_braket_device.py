@@ -1123,6 +1123,90 @@ def test_batch_execute_program_set(mock_run):
     assert result[1] == 0.6
 
 
+def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
+    """Regression test for pennylane-plugin issue #333 (and sdk issue #1316).
+
+    With multiple single-qubit expectations on distinct wires, each expval must reflect its
+    own qubit's measurements. Previously the program-set result handler passed
+    ``wire_order=measurement.wires`` (a single wire) while the sample array spans all measured
+    qubits, so every per-qubit expval collapsed to wire 0's value.
+    """
+    program_result = {
+        "braketSchemaHeader": {
+            "name": "braket.task_result.program_result",
+            "version": "1",
+        },
+        "executableResults": [
+            {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.program_set_executable_result",
+                    "version": "1",
+                },
+                # wire 0 always 0 (<Z> = +1); wire 1 always 1 (<Z> = -1)
+                "measurements": [[0, 1]] * 10,
+                "measuredQubits": [0, 1],
+                "inputsIndex": 0,
+            }
+        ],
+        "source": {
+            "braketSchemaHeader": {
+                "name": "braket.ir.openqasm.program",
+                "version": "1",
+            },
+            "source": "OPENQASM 3.0;",
+        },
+        "additionalMetadata": {
+            "simulatorMetadata": {
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.simulator_metadata",
+                    "version": "1",
+                },
+                "executionDuration": 50,
+            }
+        },
+    }
+    ps_result = ProgramSetQuantumTaskResult.from_object(
+        ProgramSetTaskResult(
+            **{
+                "braketSchemaHeader": {
+                    "name": "braket.task_result.program_set_task_result",
+                    "version": "1",
+                },
+                "programResults": [program_result],
+                "taskMetadata": {
+                    "braketSchemaHeader": {
+                        "name": "braket.task_result.program_set_task_metadata",
+                        "version": "1",
+                    },
+                    "id": "arn:aws:braket:us-west-2:667256736152:quantum-task/abc",
+                    "deviceId": "arn:aws:braket:::device/quantum-simulator/amazon/sv1",
+                    "requestedShots": 10,
+                    "successfulShots": 10,
+                    "programMetadata": [{"executables": [{}]}],
+                    "createdAt": "2024-10-15T19:06:58.986Z",
+                    "endedAt": "2024-10-15T19:07:00.382Z",
+                    "status": "COMPLETED",
+                    "totalFailedExecutables": 0,
+                },
+            }
+        )
+    )
+
+    dev = _aws_device(wires=2, parallel=False, supports_program_sets=True)
+    with QuantumTape() as circuit:
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.expval(qp.PauliZ(0))
+        qp.expval(qp.PauliZ(1))
+
+    result = dev._braket_program_set_to_pl_result(ps_result, [circuit])
+
+    assert len(result) == 1
+    # wire 0 -> +1, wire 1 -> -1. The pre-fix bug returned (+1, +1).
+    assert result[0][0] == 1.0
+    assert result[0][1] == -1.0
+
+
 @patch.object(AwsDevice, "run")
 def test_batch_execute_program_set_parametrize_differentiable(mock_run):
     """Test batch_execute correctly runs program sets with trainable parameters"""
