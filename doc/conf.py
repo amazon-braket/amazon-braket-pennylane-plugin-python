@@ -43,7 +43,6 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
-    "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx_automodapi.automodapi",
@@ -51,6 +50,7 @@ extensions = [
 
 autosummary_generate = True
 autosummary_imported_members = False
+automodapi_inheritance_diagram = False
 automodapi_toctreedirnm = "code/api"
 automodsumm_inherited_members = True
 numpydoc_show_class_members = False
@@ -312,9 +312,6 @@ texinfo_documents = [
 
 # the order in which autodoc lists the documented members
 autodoc_member_order = "bysource"
-
-# inheritance_diagram graphviz attributes
-inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
 
 # autodoc_default_flags = ['members']
 autosummary_generate = True
