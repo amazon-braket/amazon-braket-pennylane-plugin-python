@@ -47,6 +47,7 @@ from device_property_jsons import (
 )
 from pennylane import measurements
 from pennylane import numpy as pnp
+from pennylane.exceptions import DeviceError
 from pennylane.pulse import ParametrizedEvolution, transmon_drive
 from pennylane.wires import Wires
 
@@ -844,10 +845,10 @@ def test_translate_result_type_unsupported_obs():
 def test_translate_result_type_probs_observable():
     """Tests if a DeviceError is raised by translate_result_type for a Probability return type
     with an observable attached"""
-    mp = qml.probs(op=qml.X(wires=0))
+    mp = qp.probs(op=qp.X(wires=0))
 
     with pytest.raises(
-        qml.DeviceError, match="Probability result type not supported for observables"
+        DeviceError, match="Probability result type not supported for observables"
     ):
         translate_result_type(mp, [0], frozenset())
 
