@@ -973,7 +973,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             if isinstance(op, qp.pulse.ParametrizedEvolution):
                 self._validate_pulse_parameters(op)
 
-    def capabilities(self=None):
+    def capabilities(self=None):  # noqa: RUF077
         """Add support for AG on sv1"""
         # normally, we'd just call super().capabilities() here, but super()
         # resolution doesn't work when you override a classmethod with an instance method
