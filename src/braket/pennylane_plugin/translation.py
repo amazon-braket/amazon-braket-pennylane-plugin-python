@@ -18,6 +18,7 @@ from typing import Any
 import numpy as onp
 import pennylane as qp
 from pennylane import numpy as np
+from pennylane.exceptions import DeviceError
 from pennylane.measurements import MeasurementProcess
 from pennylane.operation import Operation, Operator
 from pennylane.pulse import ParametrizedEvolution
@@ -568,7 +569,7 @@ def translate_result_type(
 
     if isinstance(measurement, qp.measurements.ProbabilityMP):
         if observable and observable.diagonalizing_gates():
-            raise qp.DeviceError("Probability result type not supported for observables")
+            raise DeviceError("Probability result type not supported for observables")
         return Probability(targets)
 
     if isinstance(measurement, qp.measurements.StateMP):
