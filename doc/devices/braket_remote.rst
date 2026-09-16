@@ -15,9 +15,9 @@ you have access to the remote Braket device in PennyLane.
 
 Instantiate an AWS device that communicates with the Braket service like this:
 
->>> import pennylane as qml
+>>> import pennylane as qp
 >>> s3 = ("my-bucket", "my-prefix")
->>> remote_device = qml.device("braket.aws.qubit", device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1", s3_destination_folder=s3, wires=2)
+>>> remote_device = qp.device("braket.aws.qubit", device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1", s3_destination_folder=s3, wires=2)
 
 In this example, the string ``arn:aws:braket:::device/quantum-simulator/amazon/sv1`` is the ARN that identifies the SV1 device. Other supported devices and their ARNs can be found in the `Amazon Braket Developer Guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-devices.html>`_.
 Note that the plugin works with digital (qubit) gate-based devices only.
@@ -28,13 +28,13 @@ For example:
 
 .. code-block:: python
 
-    @qml.qnode(remote_device)
+    @qp.qnode(remote_device)
     def circuit(x, y, z):
-        qml.RZ(z, wires=[0])
-        qml.RY(y, wires=[0])
-        qml.RX(x, wires=[0])
-        qml.CNOT(wires=[0, 1])
-        return qml.expval(qml.PauliZ(0)), qml.var(qml.PauliZ(1))
+        qp.RZ(z, wires=[0])
+        qp.RY(y, wires=[0])
+        qp.RX(x, wires=[0])
+        qp.CNOT(wires=[0, 1])
+        return qp.expval(qp.PauliZ(0)), qp.var(qp.PauliZ(1))
 
 When executed, the circuit performs the computation on the Amazon Braket service.
 
@@ -47,7 +47,7 @@ Enabling the parallel execution of multiple circuits
 Where supported by the backend of the Amazon Braket service, the remote device can be used to execute multiple
 quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parallel=True`` argument:
 
->>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True)
+>>> remote_device = qp.device('braket.aws.qubit', [... ,] parallel=True)
 
 The details of the parallelization scheme depend on the PennyLane version you use, as well as your AWS account specifications.
 
@@ -57,7 +57,7 @@ lead to significant speedups of your optimization pipeline.
 
 The maximum number of circuits that can be executed in parallel is specified by the ``max_parallel`` argument.
 
->>> remote_device = qml.device('braket.aws.qubit', [... ,] parallel=True, max_parallel=20)
+>>> remote_device = qp.device('braket.aws.qubit', [... ,] parallel=True, max_parallel=20)
 
 Make sure that this number is not larger than the maximum number of concurrent tasks allowed for your account on the backend you choose. See the `Braket developer guide <https://docs.aws.amazon.com/braket/latest/developerguide/braket-quotas.html>`_ for more details.
 
@@ -104,39 +104,39 @@ Pulse Programming
 ~~~~~~~~~~~~~~~~~
 
 The PennyLane-Braket plugin provides pulse-level control for the OQC Lucy QPU through PennyLane's `ParametrizedEvolution <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
-operation. Compatible pulse Hamiltonians can be defined using the `qml.pulse.transmon_drive <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_drive.html>`_
-function and used to create ``ParametrizedEvolution``'s using `qml.evolve <https://docs.pennylane.ai/en/stable/code/api/pennylane.evolve.html>`_:
+operation. Compatible pulse Hamiltonians can be defined using the `qp.pulse.transmon_drive <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_drive.html>`_
+function and used to create ``ParametrizedEvolution``'s using `qp.evolve <https://docs.pennylane.ai/en/stable/code/api/pennylane.evolve.html>`_:
 
 .. code-block:: python
 
     duration = 15
     def amp(p, t):
-        return qml.pulse.pwc(duration)(p, t)
+        return qp.pulse.pwc(duration)(p, t)
 
-    dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+    dev = qp.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
 
-    drive = qml.pulse.transmon.transmon_drive(amplitude=amp, phase=0, freq=4.8, wires=[0])
+    drive = qp.pulse.transmon.transmon_drive(amplitude=amp, phase=0, freq=4.8, wires=[0])
 
-    @qml.qnode(dev)
+    @qp.qnode(dev)
     def circuit(params, t):
-        qml.evolve(drive)(params, t)
-        return qml.expval(qml.PauliZ(wires=0))
+        qp.evolve(drive)(params, t)
+        return qp.expval(qp.PauliZ(wires=0))
 
-Note that the ``freq`` argument of ``qml.pulse.transmon_drive`` is specified in GHz, and for
+Note that the ``freq`` argument of ``qp.pulse.transmon_drive`` is specified in GHz, and for
 hardware upload the amplitude will be interpreted as an output power for control hardware in volts.
 The ``phase`` must be specified in radians.
 
 The pulse settings for the device can be obtained using the ``pulse_settings`` property. These settings can be used to describe the transmon
-interaction Hamiltonian using `qml.pulse.transmon_interaction <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_interaction.html>`_:
+interaction Hamiltonian using `qp.pulse.transmon_interaction <https://docs.pennylane.ai/en/latest/code/api/pennylane.pulse.transmon_interaction.html>`_:
 
     .. code-block:: python
 
-        dev = qml.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
+        dev = qp.device("braket.aws.qubit", wires=8, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
         pulse_settings = dev.pulse_settings
         couplings = [0.01]*len(connections)
-        H = qml.pulse.transmon_interaction(**pulse_settings, coupling=couplings)
+        H = qp.pulse.transmon_interaction(**pulse_settings, coupling=couplings)
 
-By passing ``pulse_settings`` from the remote device to ``qml.pulse.transmon_interaction``, an ``H`` Hamiltonian term is created using
+By passing ``pulse_settings`` from the remote device to ``qp.pulse.transmon_interaction``, an ``H`` Hamiltonian term is created using
 the constants specific to the hardware. This is relevant for simulating the hardware in PennyLane on the ``default.qubit`` device.
 
 Note that the user must supply coupling coefficients, as these are not available from the hardware backend. On the order of 10 MHz
@@ -149,5 +149,5 @@ Currently, PennyLane will compute grouping indices for QAOA Hamiltonians and use
 
 .. code-block:: python
 
-    cost_h, mixer_h = qml.qaoa.max_clique(g, constrained=False)
-    cost_h = qml.Hamiltonian(cost_h.coeffs, cost_h.ops)
+    cost_h, mixer_h = qp.qaoa.max_clique(g, constrained=False)
+    cost_h = qp.Hamiltonian(cost_h.coeffs, cost_h.ops)

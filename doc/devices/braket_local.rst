@@ -17,11 +17,11 @@ To instantiate the local Braket simulator, simply use:
 
 .. code-block:: python
 
-    import pennylane as qml
-    device_local = qml.device("braket.local.qubit", wires=2) # local state vector simulator
-    # device_local = qml.device("braket.local.qubit", backend="default", wires=2) # local state vector simulator
-    # device_local = qml.device("braket.local.qubit", backend="braket_sv", wires=2) # local state vector simulator
-    # device_local = qml.device("braket.local.qubit", backend="braket_dm", wires=2) # local state vector simulator
+    import pennylane as qp
+    device_local = qp.device("braket.local.qubit", wires=2) # local state vector simulator
+    # device_local = qp.device("braket.local.qubit", backend="default", wires=2) # local state vector simulator
+    # device_local = qp.device("braket.local.qubit", backend="braket_sv", wires=2) # local state vector simulator
+    # device_local = qp.device("braket.local.qubit", backend="braket_dm", wires=2) # local state vector simulator
 
 You can define and evaluate quantum nodes with these devices just as you would with any other PennyLane device.
 
@@ -29,13 +29,13 @@ For example:
 
 .. code-block:: python
 
-    @qml.qnode(device_local)
+    @qp.qnode(device_local)
     def circuit(x, y, z):
-        qml.RZ(z, wires=[0])
-        qml.RY(y, wires=[0])
-        qml.RX(x, wires=[0])
-        qml.CNOT(wires=[0, 1])
-        return qml.expval(qml.PauliZ(0)), qml.var(qml.PauliZ(1))
+        qp.RZ(z, wires=[0])
+        qp.RY(y, wires=[0])
+        qp.RX(x, wires=[0])
+        qp.CNOT(wires=[0, 1])
+        return qp.expval(qp.PauliZ(0)), qp.var(qp.PauliZ(1))
 
 When executed, the circuit will perform the computation on the local machine.
 
@@ -48,7 +48,7 @@ Enabling the parallel execution of multiple circuits
 Where supported by the backend of the local simulator, the local device can be used to execute multiple
 quantum circuits in parallel. To unlock this feature, instantiate the device using the ``parallel=True`` argument:
 
->>> local_device = qml.device('braket.local.qubit', [... ,] parallel=True)
+>>> local_device = qp.device('braket.local.qubit', [... ,] parallel=True)
 
 The details of the parallelization scheme depend on the PennyLane version you use, as well as the specific local simulator
 backend you use.
@@ -59,7 +59,7 @@ lead to significant speedups of your optimization pipeline.
 
 The maximum number of circuits that can be executed in parallel is specified by the ``max_parallel`` argument.
 
->>> local_device = qml.device('braket.local.qubit', [... ,] parallel=True, max_parallel=20)
+>>> local_device = qp.device('braket.local.qubit', [... ,] parallel=True, max_parallel=20)
 
 If ``max_parallel`` is not specified, the local simulator backend will use its own default. Each parallel execution
 will use additional memory, so be careful not to set ``max_parallel`` so high that you run out of memory on your local

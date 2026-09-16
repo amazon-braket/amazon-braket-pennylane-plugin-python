@@ -17,7 +17,7 @@ from unittest import mock
 from unittest.mock import Mock, PropertyMock, patch
 
 import braket.ir as ir
-import pennylane as qml
+import pennylane as qp
 import pytest
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
@@ -311,23 +311,23 @@ def test_only_one_operator_in_shadow_expval():
     """Tests that the correct circuit is created when not all wires in the device are used."""
     dev = _aws_device(wires=2)
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.RX(0.432, wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.shadow_expval(qml.PauliX(1))
-        qml.probs(wires=[0, 1])
+        qp.Hadamard(wires=0)
+        qp.RX(0.432, wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.shadow_expval(qp.PauliX(1))
+        qp.probs(wires=[0, 1])
 
     dev.execute(circuit)
 
 
 CIRCUIT_1 = QuantumScript(
     ops=[
-        qml.Hadamard(wires=0),
-        qml.CNOT(wires=[0, 1]),
-        qml.RX(0.432, wires=0),
-        qml.RY(0.543, wires=0),
+        qp.Hadamard(wires=0),
+        qp.CNOT(wires=[0, 1]),
+        qp.RX(0.432, wires=0),
+        qp.RY(0.543, wires=0),
     ],
-    measurements=[qml.shadow_expval(qml.PauliX(1), seed=SEED)],
+    measurements=[qp.shadow_expval(qp.PauliX(1), seed=SEED)],
 )
 CIRCUIT_1.trainable_params = [0]
 
@@ -354,7 +354,7 @@ circs[0].h(1)
     [
         (False, circs, TASK, SHOTS, None, None, False),
         (True, circs, TASK_BATCH, 1, 10, 10, False),
-        (False, ProgramSet(circs), TASK_PROGRAM_SET, 1, None, None, True),
+        (False, ProgramSet(circs, shots_per_executable=1), TASK_PROGRAM_SET, 1, None, None, True),
     ],
 )
 def test_shadow_expval_aws_device(
@@ -479,7 +479,9 @@ def _aws_device(
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
     if supports_program_sets:
-        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = action_properties
+        program_set_action = Mock()
+        program_set_action.maximumExecutables = 100
+        properties_mock.action[DeviceActionType.OPENQASM_PROGRAM_SET] = program_set_action
     type_mock.return_value = device_type
     dev = BraketAwsQubitDevice(
         wires=wires,
@@ -575,9 +577,9 @@ def test_run_snapshots_not_implemented():
     dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
-        qml.shadow_expval(qml.PauliX(1))
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.shadow_expval(qp.PauliX(1))
 
     dev.execute(circuit)
 
@@ -595,12 +597,12 @@ def test_shadows_parallel_tracker(mock_run_batch, mock_properties):
     dev = _aws_device(wires=2, foo="bar", parallel=True, shots=SHOTS)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.Hadamard(wires=1)
-        qml.shadow_expval(qml.PauliX(1))
+        qp.Hadamard(wires=0)
+        qp.Hadamard(wires=1)
+        qp.shadow_expval(qp.PauliX(1))
 
     callback = Mock()
-    with qml.Tracker(dev, callback=callback) as tracker:
+    with qp.Tracker(dev, callback=callback) as tracker:
         dev.execute(circuit)
     dev.execute(circuit)
 
@@ -644,8 +646,8 @@ def test_non_shadow_expval_transform():
     dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
 
     with QuantumTape() as circuit:
-        qml.Hadamard(wires=0)
-        qml.CNOT(wires=[0, 1])
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
         dummy_measurement_transform()
 
     dev.execute(circuit)

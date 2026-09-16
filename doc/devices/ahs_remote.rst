@@ -23,9 +23,9 @@ you have access to the remote AHS device in PennyLane.
 
 Instantiate an AWS device that communicates with the hardware like this:
 
->>> import pennylane as qml
+>>> import pennylane as qp
 >>> device_arn = "arn:aws:braket:us-east-1::device/qpu/quera/Aquila"
->>> remote_device = qml.device("braket.aws.ahs", device_arn=device_arn, wires=3)
+>>> remote_device = qp.device("braket.aws.ahs", device_arn=device_arn, wires=3)
 
 This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator based on a hardware-compatible `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html>`_.
@@ -60,7 +60,7 @@ interaction term for the Hamiltonian:
     # number of coordinate pairs must match number of device wires
     coordinates = [[0, 0], [0, 5], [5, 0]]
 
-    H_interaction = qml.pulse.rydberg_interaction(coordinates)
+    H_interaction = qp.pulse.rydberg_interaction(coordinates)
 
 Creating a global drive
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,10 +73,10 @@ Here we define a global drive with time dependent amplitude and detuning, with p
 
     from jax import numpy as jnp
 
-    # gaussian amplitude function (qml.pulse.rect enforces 0 at start and end for hardware)
+    # gaussian amplitude function (qp.pulse.rect enforces 0 at start and end for hardware)
     def amp_fn(p, t):
         f = p[0] * jnp.exp(-(t - p[1])**2 / (2 * p[2]**2))
-        return qml.pulse.rect(f, windows=[0.1, 1.7])(p, t)
+        return qp.pulse.rect(f, windows=[0.1, 1.7])(p, t)
 
 
     # defining a linear detuning
@@ -84,7 +84,7 @@ Here we define a global drive with time dependent amplitude and detuning, with p
         return p * t
 
     # creating a global drive on all wires
-    H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn, wires=[0, 1, 2])
+    H_global = qp.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn, wires=[0, 1, 2])
 
 
 Creating and executing the circuit
@@ -95,10 +95,10 @@ and execute a circuit to run the pulse program on the hardware:
 
 .. code-block:: python
 
-    @qml.qnode(remote_device)
+    @qp.qnode(remote_device)
     def circuit(amp_params, det_params):
-        qml.evolve(H_interaction + H_global)([amp_params, det_params], t=1.75)
-        return qml.sample()
+        qp.evolve(H_interaction + H_global)([amp_params, det_params], t=1.75)
+        return qp.sample()
 
 When executed, the circuit performs the computation on the hardware.
 

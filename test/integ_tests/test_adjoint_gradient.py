@@ -16,7 +16,7 @@
 import math
 import random
 
-import pennylane as qml
+import pennylane as qp
 import pytest
 from pennylane import numpy as np
 
@@ -24,18 +24,18 @@ ABS_TOLERANCE = 1e-5
 
 
 def adj_grad_test_helper(device, circuit, parameters):
-    @qml.qnode(device, diff_method="device")
+    @qp.qnode(device, diff_method="device")
     def circuit_braket_ag(*parameters):
         return circuit(*parameters)
 
     # pl uses braket gradient calculation by default! so we have to specify
     # pl's parameter shift method
-    @qml.qnode(device, diff_method="parameter-shift")
+    @qp.qnode(device, diff_method="parameter-shift")
     def circuit_with_pl(*parameters):
         return circuit(*parameters)
 
-    braket_grad = qml.grad(circuit_braket_ag)(*parameters)
-    pl_grad = qml.grad(circuit_with_pl)(*parameters)
+    braket_grad = qp.grad(circuit_braket_ag)(*parameters)
+    pl_grad = qp.grad(circuit_with_pl)(*parameters)
 
     assert len(braket_grad)
     # assert grad isn't all zeros
@@ -43,8 +43,8 @@ def adj_grad_test_helper(device, circuit, parameters):
         [not math.isclose(derivative, 0, abs_tol=ABS_TOLERANCE) for derivative in pl_grad]
     ).any()
     assert np.allclose(braket_grad, pl_grad)
-    braket_jac = qml.jacobian(circuit_braket_ag)(*parameters)
-    pl_jac = qml.jacobian(circuit_with_pl)(*parameters)
+    braket_jac = qp.jacobian(circuit_braket_ag)(*parameters)
+    pl_jac = qp.jacobian(circuit_with_pl)(*parameters)
     # assert jac isn't all zeros
     assert len(braket_jac)
     assert np.array(
@@ -59,11 +59,11 @@ class TestAdjointGradient:
         dev = on_demand_sv_device(2)
 
         def circuit(x, y, z):
-            qml.RX(x, wires=0)
-            qml.RY(y, wires=1)
-            qml.CNOT(wires=[0, 1])
-            qml.RX(z, wires=1)
-            return qml.expval(qml.PauliZ(1))
+            qp.RX(x, wires=0)
+            qp.RY(y, wires=1)
+            qp.CNOT(wires=[0, 1])
+            qp.RX(z, wires=1)
+            return qp.expval(qp.PauliZ(1))
 
         x = np.array(0.1, requires_grad=False)
         y = np.array(0.2, requires_grad=True)
@@ -88,14 +88,14 @@ class TestAdjointGradient:
                 rand_val = random.randint(0, 2)
                 rand_param = random.choice(x)
                 if rand_val == 0:
-                    qml.RX(rand_param, wires=i)
+                    qp.RX(rand_param, wires=i)
                 elif rand_val == 1:
-                    qml.RY(rand_param, wires=i)
+                    qp.RY(rand_param, wires=i)
                 else:
-                    qml.RZ(rand_param, wires=i)
+                    qp.RZ(rand_param, wires=i)
                 if random.randint(0, 3) == 0:
                     # cnot i with some random other qubit
-                    qml.CNOT(
+                    qp.CNOT(
                         wires=[
                             i,
                             random.choice([j for j in range(num_qubits) if i != j]),
@@ -107,12 +107,12 @@ class TestAdjointGradient:
                 rand_val = random.randint(0, 2)
                 qubit = random.randrange(num_qubits)
                 if rand_val == 0:
-                    qml.RX(x[i], wires=qubit)
+                    qp.RX(x[i], wires=qubit)
                 elif rand_val == 1:
-                    qml.RY(x[i], wires=qubit)
+                    qp.RY(x[i], wires=qubit)
                 else:
-                    qml.RZ(x[i], wires=qubit)
-            return qml.expval(qml.PauliZ(1))
+                    qp.RZ(x[i], wires=qubit)
+            return qp.expval(qp.PauliZ(1))
 
         # x = [.1,.2,....]
         x = np.array([i / 10 for i in range(num_params)], requires_grad=True)
@@ -121,20 +121,20 @@ class TestAdjointGradient:
         adj_grad_test_helper(dev, circuit, [x])
 
     # this test runs on sv1, dm1, and the local simulator to validate that
-    # calls to qml.grad() without a specified diff_method succeed
+    # calls to qp.grad() without a specified diff_method succeed
     def test_default_diff_method(self, device):
         dev = device(2)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit(x, y, z):
-            qml.RX(x, wires=0)
-            qml.RY(y, wires=1)
-            qml.CNOT(wires=[0, 1])
-            qml.RX(z, wires=1)
-            return qml.expval(qml.PauliZ(1))
+            qp.RX(x, wires=0)
+            qp.RY(y, wires=1)
+            qp.CNOT(wires=[0, 1])
+            qp.RX(z, wires=1)
+            return qp.expval(qp.PauliZ(1))
 
         x = np.array(0.1, requires_grad=False)
         y = np.array(0.2, requires_grad=True)
         z = np.array(0.3, requires_grad=True)
 
-        qml.grad(circuit)(x, y, z)
+        qp.grad(circuit)(x, y, z)

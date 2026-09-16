@@ -1,5 +1,62 @@
 # Changelog
 
+## v1.35.1.post1 (2026-09-02)
+
+### Documentation Changes
+
+ * add llms.txt generation
+
+## v1.35.1.post0 (2026-08-26)
+
+### Documentation Changes
+
+ * Update `qml` to `qp`
+
+## v1.35.1 (2026-07-29)
+
+### Bug Fixes and Other Changes
+
+ * replace pkg_resources usage
+
+## v1.35.0 (2026-07-09)
+
+### Features
+
+ * Automatically split/merge large program sets
+
+## v1.34.2 (2026-06-18)
+
+### Bug Fixes and Other Changes
+
+ * diagonalize measurements in BraketQubitDevice (for pennylane>=0.45 compatibility)
+
+## v1.34.1 (2026-04-02)
+
+### Bug Fixes and Other Changes
+
+ * Update for new linter rules
+
+## v1.34.0 (2026-01-30)
+
+### Deprecations and Removals
+
+ * Drop Python 3.10 and TensorFlow
+
+### Bug Fixes and Other Changes
+
+ * Use PL GeneralizedAmplitudeDamping convention
+
+## v1.33.7 (2026-01-26)
+
+### Bug Fixes and Other Changes
+
+ * Support multi-qubit identity observables
+
+### Documentation Changes
+
+ * Update docs badge to point to default version
+ * Remove PDF build from Read the Docs
+
 ## v1.33.6 (2025-11-10)
 
 ### Bug Fixes and Other Changes

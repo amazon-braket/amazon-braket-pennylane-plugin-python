@@ -42,7 +42,7 @@ from collections.abc import Iterable, Sequence
 from enum import Enum, auto
 
 import numpy as onp
-import pennylane as qml
+import pennylane as qp
 from pennylane import numpy as np
 from pennylane.devices import QubitDevice
 from pennylane.exceptions import QuantumFunctionError
@@ -84,20 +84,37 @@ from braket.pennylane_plugin.translation import (
 )
 from braket.program_sets import ProgramSet
 from braket.simulator import BraketSimulator
-from braket.tasks import GateModelQuantumTaskResult, QuantumTask
+from braket.tasks import (
+    GateModelQuantumTaskResult,
+    ProgramSetQuantumTaskResult,
+    QuantumTask,
+)
 from braket.tasks.local_quantum_task_batch import LocalQuantumTaskBatch
 
 from ._version import __version__
 
 RETURN_TYPES = (ExpectationMP, VarianceMP, SampleMP, ProbabilityMP, StateMP, CountsMP)
 MIN_SIMULATOR_BILLED_MS = 3000
-OBS_LIST = (qml.PauliX, qml.PauliY, qml.PauliZ)
+OBS_LIST = (qp.PauliX, qp.PauliY, qp.PauliZ)
+PAULI_AND_HADAMARD_OBS = (qp.PauliX, qp.PauliY, qp.PauliZ, qp.Hadamard, qp.Identity)
 
 
 class Shots(Enum):
     """Used to specify the default number of shots in BraketAwsQubitDevice"""
 
     DEFAULT = auto()
+
+
+def _is_pauli_or_hadamard_observable(observable):
+    if observable is None:
+        return True
+    if isinstance(observable, PAULI_AND_HADAMARD_OBS):
+        return True
+    if isinstance(observable, qp.ops.SProd):
+        return _is_pauli_or_hadamard_observable(observable.base)
+    if isinstance(observable, qp.ops.Prod):
+        return all(_is_pauli_or_hadamard_observable(op) for op in observable.operands)
+    return False
 
 
 class BraketQubitDevice(QubitDevice):
@@ -168,9 +185,11 @@ class BraketQubitDevice(QubitDevice):
         self._supported_obs = supported_observables(self._device, self.shots)
         self._check_supported_result_types()
         self._verbatim = verbatim
-        self._supports_program_sets = (
-            DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
+        self._max_program_set_executables = (
+            self._device.properties.action[DeviceActionType.OPENQASM_PROGRAM_SET].maximumExecutables
+            if DeviceActionType.OPENQASM_PROGRAM_SET in self._device.properties.action
             and self._shots is not None
+            else None
         )
 
         if noise_model:
@@ -206,13 +225,7 @@ class BraketQubitDevice(QubitDevice):
         return self._parallel
 
     def batch_execute(self, circuits, **run_kwargs):
-        if not self._parallel and not self._supports_program_sets:
-            return super().batch_execute(circuits)
-
-        if self._supports_program_sets and (
-            len(circuits)
-            > self._device.properties.action["braket.ir.openqasm.program_set"].maximumExecutables
-        ):
+        if not self._parallel and self._max_program_set_executables is None:
             return super().batch_execute(circuits)
 
         for circuit in circuits:
@@ -220,6 +233,7 @@ class BraketQubitDevice(QubitDevice):
         all_trainable = []
         braket_circuits = []
         for circuit in circuits:
+            circuit = self._maybe_diagonalize_measurements(circuit)
             trainable = (
                 BraketQubitDevice._get_trainable_parameters(circuit)
                 if self._parametrize_differentiable
@@ -230,7 +244,7 @@ class BraketQubitDevice(QubitDevice):
                 self._pl_to_braket_circuit(
                     circuit,
                     trainable_indices=frozenset(trainable.keys()),
-                    add_observables=not self._supports_program_sets,
+                    add_observables=self._max_program_set_executables is None,
                     **run_kwargs,
                 )
             )
@@ -249,7 +263,7 @@ class BraketQubitDevice(QubitDevice):
         self,
         circuit: QuantumTape,
         compute_gradient: bool = False,
-        trainable_indices: frozenset[int] = None,
+        trainable_indices: frozenset[int] | None = None,
         *,
         add_observables: bool = True,
         **run_kwargs,
@@ -285,15 +299,29 @@ class BraketQubitDevice(QubitDevice):
                     for measurement in circuit.measurements
                     if measurement.obs is not None
                 ]
-                groups = qml.pauli.group_observables(observables, grouping_type="qwc")
+                groups = qp.pauli.group_observables(observables, grouping_type="qwc")
                 if len(groups) > 1:
                     raise ValueError(
                         f"Observables need to mutually commute, but found {len(groups)}: {groups}"
                     )
-                diagonalizing_ops = qml.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
+                diagonalizing_ops = qp.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
                 braket_circuit += self.apply(diagonalizing_ops, apply_identities=False)
 
         return braket_circuit
+
+    @staticmethod
+    def _maybe_diagonalize_measurements(circuit, compute_gradient=False):
+        if (
+            not compute_gradient
+            and circuit.measurements
+            and not isinstance(circuit.measurements[0], MeasurementTransform)
+            and all(
+                isinstance(m, MeasurementProcess) and _is_pauli_or_hadamard_observable(m.obs)
+                for m in circuit.measurements
+            )
+        ):
+            [circuit], _ = qp.transforms.diagonalize_measurements(circuit)
+        return circuit
 
     def _apply_gradient_result_type(self, circuit, braket_circuit):
         """Adds the AdjointGradient result type to the braket_circuit with the first observable in
@@ -306,7 +334,7 @@ class BraketQubitDevice(QubitDevice):
         pl_measurements = circuit.measurements[0]
         pl_observable = flatten_observable(pl_measurements.obs)
         if not isinstance(pl_measurements, ExpectationMP):
-            raise ValueError(
+            raise TypeError(
                 f"Braket can only compute gradients for circuits with a single expectation"
                 f" observable, not a {type(pl_measurements)} measurement."
             )
@@ -359,7 +387,7 @@ class BraketQubitDevice(QubitDevice):
         results = []
         for mp in measurements:
             if not isinstance(mp, RETURN_TYPES):
-                raise QuantumFunctionError("Unsupported return type: {}".format(type(mp)))
+                raise QuantumFunctionError(f"Unsupported return type: {type(mp)}")
             results.append(
                 translate_result(
                     braket_result, mp.map_wires(self.wire_map), None, self._braket_result_types
@@ -479,11 +507,12 @@ class BraketQubitDevice(QubitDevice):
 
     def shadow_expval(self, obs, circuit):
         bits, recipes = self.classical_shadow(obs, circuit)
-        shadow = qml.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
+        shadow = qp.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
         return shadow.expval(obs.H, obs.k)
 
     def execute(self, circuit: QuantumTape, compute_gradient=False, **run_kwargs) -> np.ndarray:
         self.check_validity(circuit.operations, circuit.observables)
+        circuit = self._maybe_diagonalize_measurements(circuit, compute_gradient=compute_gradient)
         trainable = (
             BraketQubitDevice._get_trainable_parameters(circuit)
             if compute_gradient or self._parametrize_differentiable
@@ -523,7 +552,7 @@ class BraketQubitDevice(QubitDevice):
     def apply(
         self,
         operations: Sequence[Operation],
-        rotations: Sequence[Operation] = None,
+        rotations: Sequence[Operation] | None = None,
         use_unique_params: bool = False,
         *,
         trainable_indices: frozenset[int] | None = None,
@@ -540,7 +569,7 @@ class BraketQubitDevice(QubitDevice):
         for operation in operations + rotations:
             param_names = []
             for _ in operation.parameters:
-                if not isinstance(operation, qml.operation.Channel) and (
+                if not isinstance(operation, qp.operation.Channel) and (
                     param_index in trainable_indices or use_unique_params
                 ):
                     param_names.append(f"p_{param_index}")
@@ -588,7 +617,7 @@ class BraketQubitDevice(QubitDevice):
             ("braket_noise_" + noise_instr.noise.name).lower().replace("_", "")
             for noise_instr in self._noise_model._instructions
         ]
-        if not all([noise in supported_pragmas for noise in noise_pragmas]):
+        if not all(noise in supported_pragmas for noise in noise_pragmas):
             raise ValueError(
                 f"{self._device.name} does not support noise or the noise model includes noise "
                 + f"that is not supported by {self._device.name}."
@@ -704,24 +733,47 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         # We *can* do this without fear because grouping is only beneficial when
         # shots!=0, and (conveniently) AG is only supported when shots=0
         caps = self.capabilities()
-        return not ("provides_jacobian" in caps and caps["provides_jacobian"])
+        return not (caps.get("provides_jacobian"))
 
-    def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
-        if self._supports_program_sets:
-            program_set = (
-                ProgramSet.zip(braket_circuits, input_sets=inputs)
-                if inputs
-                else ProgramSet(braket_circuits)
-            )
-            task = self._device.run(
-                program_set,
+    def _run_program_set(self, program_set: ProgramSet) -> ProgramSetQuantumTaskResult:
+        program_sets, index_map = program_set.split(self._max_program_set_executables)
+        results = (
+            [
+                self._device.run(
+                    program_sets[0],
+                    s3_destination_folder=self._s3_folder,
+                    shots=program_sets[0].total_shots,
+                    poll_timeout_seconds=self._poll_timeout_seconds,
+                    poll_interval_seconds=self._poll_interval_seconds,
+                    **self._run_kwargs,
+                ).result()
+            ]
+            if len(program_sets) == 1
+            else self._device.run_batch(
+                program_sets,
                 s3_destination_folder=self._s3_folder,
-                shots=len(program_set) * batch_shots,
+                shots=AwsDevice.DEFAULT_SHOTS_PROGRAM_SET,
+                max_parallel=self._max_parallel,
+                max_connections=self._max_connections,
                 poll_timeout_seconds=self._poll_timeout_seconds,
                 poll_interval_seconds=self._poll_interval_seconds,
                 **self._run_kwargs,
+            ).results(fail_unsuccessful=True, max_retries=self._max_retries)
+        )
+        return ProgramSetQuantumTaskResult.merge(results, program_set, index_map)
+
+    def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
+        if self._max_program_set_executables is not None:
+            result = self._run_program_set(
+                ProgramSet.zip(
+                    braket_circuits,
+                    input_sets=inputs,
+                    shots_per_executable=batch_shots,
+                )
+                if inputs
+                else ProgramSet(braket_circuits, shots_per_executable=batch_shots)
             )
-            return self._braket_program_set_to_pl_result(task.result(), pl_circuits)
+            return self._braket_program_set_to_pl_result(result, pl_circuits)
         task_batch = self._device.run_batch(
             braket_circuits,
             s3_destination_folder=self._s3_folder,
@@ -764,17 +816,10 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     def _run_snapshots(self, snapshot_circuits, n_qubits, mapped_wires):
         n_snapshots = len(snapshot_circuits)
         outcomes = np.zeros((n_snapshots, n_qubits))
-        if self._supports_program_sets:
-            program_set = ProgramSet(snapshot_circuits)
-            task = self._device.run(
-                program_set,
-                s3_destination_folder=self._s3_folder,
-                shots=len(program_set),
-                poll_timeout_seconds=self._poll_timeout_seconds,
-                poll_interval_seconds=self._poll_interval_seconds,
-                **self._run_kwargs,
-            )
-            for t, result in enumerate(task.result()):
+        if self._max_program_set_executables is not None:
+            for t, result in enumerate(
+                self._run_program_set(ProgramSet(snapshot_circuits, shots_per_executable=1))
+            ):
                 outcomes[t] = np.array(result[0].measurements[0])[mapped_wires]
         elif self._parallel:
             task_batch = self._device.run_batch(
@@ -828,16 +873,16 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         setting is a constant, and the value is within the frequency range for the relevant frame;
         if not, raise an error"""
 
-        # confirm all frequency values are constant (or the qml.pulse.constant function)
+        # confirm all frequency values are constant (or the qp.pulse.constant function)
         callable_freqs = [
             pulse.frequency
             for pulse in ev.H.pulses
-            if (callable(pulse.frequency) and pulse.frequency != qml.pulse.constant)
+            if (callable(pulse.frequency) and pulse.frequency != qp.pulse.constant)
         ]
 
         if callable_freqs:
             raise RuntimeError(
-                "Expected all frequencies to be constants or qml.pulse.constant, "
+                "Expected all frequencies to be constants or qp.pulse.constant, "
                 "but received callable(s)"
             )
 
@@ -845,13 +890,13 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         param_idx = 0
         for pulse in ev.H.pulses:
             freq = pulse.frequency
-            # track the index for parameters in case we need to evaluate qml.pulse.constant
+            # track the index for parameters in case we need to evaluate qp.pulse.constant
             if callable(pulse.amplitude):
                 param_idx += 1
             if callable(pulse.phase):
                 param_idx += 1
             if callable(pulse.frequency):
-                # if frequency is callable, its qml.pulse.constant and equal to its parameter
+                # if frequency is callable, its qp.pulse.constant and equal to its parameter
                 freq = ev.parameters[param_idx]
                 param_idx += 1
 
@@ -874,17 +919,16 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         # confirm frequencies are constant and within the permitted frequency range for the channel
         self._check_pulse_frequency_validity(ev)
 
-        # confirm all phase values are constant (or the qml.pulse.constant function)
+        # confirm all phase values are constant (or the qp.pulse.constant function)
         callable_phase = [
             pulse.phase
             for pulse in ev.H.pulses
-            if (callable(pulse.phase) and pulse.phase != qml.pulse.constant)
+            if (callable(pulse.phase) and pulse.phase != qp.pulse.constant)
         ]
 
         if callable_phase:
             raise RuntimeError(
-                "Expected all phases to be constants or qml.pulse.constant, "
-                "but received callable(s)"
+                "Expected all phases to be constants or qp.pulse.constant, but received callable(s)"
             )
 
         # ensure each ParametrizedEvolution/PulseGate contains at most one waveform per frame/wire
@@ -921,7 +965,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         super().check_validity(queue, observables)
 
         for op in queue:
-            if isinstance(op, qml.pulse.ParametrizedEvolution):
+            if isinstance(op, qp.pulse.ParametrizedEvolution):
                 self._validate_pulse_parameters(op)
 
     def capabilities(self=None):
@@ -941,7 +985,7 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         for each circuit in circuits.
 
         The gradient is returned as a list of floats, 1 float for every instance
-        of a trainable parameter in a gate in the circuit. Functions like qml.grad or qml.jacobian
+        of a trainable parameter in a gate in the circuit. Functions like qp.grad or qp.jacobian
         then use that format to generate a per-parameter format.
         """
         res = []
@@ -1037,11 +1081,12 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         Used to enable initializing hardware-consistent Hamiltonians by returning
         values that would need to be passed, i.e.:
 
-            >>> dev_remote = qml.device('braket.aws.qubit',
+            >>> import pennylane as qp
+            >>> dev_remote = qp.device('braket.aws.qubit',
             >>>                          wires=8,
             >>>                          arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy')
             >>> pulse_settings = dev_remote.pulse_settings
-            >>> H_int = qml.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
+            >>> H_int = qp.pulse.transmon_interaction(**pulse_settings, coupling=0.02)
 
         By passing the ``pulse_settings`` from the remote device to ``transmon_interaction``, an
         ``H_int`` Hamiltonian term is created using the constants specific to the hardware.
@@ -1115,7 +1160,7 @@ class BraketLocalQubitDevice(BraketQubitDevice):
         super().__init__(wires, device, shots=shots, **run_kwargs)
         # TODO: Enable program sets once local simulator supports multiprocessing
         # for program set execution
-        self._supports_program_sets = False
+        self._max_program_set_executables = None
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         task_batch = self._device.run_batch(

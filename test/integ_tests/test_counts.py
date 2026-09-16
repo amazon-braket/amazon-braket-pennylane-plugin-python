@@ -14,7 +14,7 @@
 """Tests that counts are correctly computed in the plugin device"""
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 import pytest
 
 np.random.seed(42)
@@ -30,10 +30,10 @@ class TestCounts:
         """
         dev = device(2)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(np.pi / 3, wires=0)
-            return qml.counts()
+            qp.RX(np.pi / 3, wires=0)
+            return qp.counts()
 
         result = circuit().item()
 
@@ -52,10 +52,10 @@ class TestCounts:
         """
         dev = device(2)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(np.pi / 3, wires=0)
-            return qml.counts(wires=[0])
+            qp.RX(np.pi / 3, wires=0)
+            return qp.counts(wires=[0])
 
         result = circuit().item()
 
@@ -72,10 +72,10 @@ class TestCounts:
         """
         dev = device(2)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(np.pi / 3, wires=0)
-            return qml.counts(op=qml.PauliZ(wires=[0]))
+            qp.RX(np.pi / 3, wires=0)
+            return qp.counts(op=qp.PauliZ(wires=[0]))
 
         result = circuit().item()
 

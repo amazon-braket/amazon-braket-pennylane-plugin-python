@@ -178,7 +178,19 @@ RESULT = GateModelQuantumTaskResult.from_string(
                     "value": 0.0,
                 },
                 {
+                    "type": {
+                        "observable": ["z"],
+                        "targets": [1],
+                        "type": "expectation",
+                    },
+                    "value": 0.0,
+                },
+                {
                     "type": {"observable": ["y"], "targets": [2], "type": "variance"},
+                    "value": 0.1,
+                },
+                {
+                    "type": {"observable": ["z"], "targets": [2], "type": "variance"},
                     "value": 0.1,
                 },
                 {

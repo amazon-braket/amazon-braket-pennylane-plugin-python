@@ -13,7 +13,7 @@
 
 """Tests that expectation values are correctly computed in the plugin device"""
 
-import pennylane as qml
+import pennylane as qp
 import pytest
 from conftest import A
 from pennylane import numpy as np
@@ -32,12 +32,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return [qml.expval(qml.Identity(i)) for i in range(2)]
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return [qp.expval(qp.Identity(i)) for i in range(2)]
 
         assert np.allclose(circuit(), np.array([1, 1]), **tol)
 
@@ -48,12 +48,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return [qml.expval(qml.PauliZ(i)) for i in range(2)]
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return [qp.expval(qp.PauliZ(i)) for i in range(2)]
 
         assert np.allclose(circuit(), np.array([np.cos(theta), np.cos(theta) * np.cos(phi)]), **tol)
 
@@ -64,12 +64,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RY(theta, wires=[0])
-            qml.RY(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return [qml.expval(qml.PauliX(i)) for i in range(2)]
+            qp.RY(theta, wires=[0])
+            qp.RY(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return [qp.expval(qp.PauliX(i)) for i in range(2)]
 
         assert np.allclose(circuit(), np.array([np.sin(theta) * np.sin(phi), np.sin(phi)]), **tol)
 
@@ -80,12 +80,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return [qml.expval(qml.PauliY(i)) for i in range(2)]
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return [qp.expval(qp.PauliY(i)) for i in range(2)]
 
         assert np.allclose(circuit(), np.array([0, -np.cos(theta) * np.sin(phi)]), **tol)
 
@@ -96,12 +96,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RY(theta, wires=[0])
-            qml.RY(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return [qml.expval(qml.Hadamard(i)) for i in range(2)]
+            qp.RY(theta, wires=[0])
+            qp.RY(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return [qp.expval(qp.Hadamard(i)) for i in range(2)]
 
         expected = np.array(
             [
@@ -118,12 +118,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RY(theta, wires=[0])
-            qml.RY(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return [qml.expval(qml.Hermitian(A, i)) for i in range(2)]
+            qp.RY(theta, wires=[0])
+            qp.RY(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return [qp.expval(qp.Hermitian(A, i)) for i in range(2)]
 
         a = A[0, 0]
         re_b = A[0, 1].real
@@ -149,12 +149,12 @@ class TestExpval:
             ]
         )
 
-        @qml.qnode(dev, diff_method="parameter-shift")
+        @qp.qnode(dev, diff_method="parameter-shift")
         def circuit():
-            qml.RY(theta, wires=[0])
-            qml.RY(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return qml.expval(qml.Hermitian(A, [0, 1]))
+            qp.RY(theta, wires=[0])
+            qp.RY(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return qp.expval(qp.Hermitian(A, [0, 1]))
 
         # below is the analytic expectation value for this circuit with arbitrary
         # Hermitian observable A
@@ -174,12 +174,12 @@ class TestExpval:
         theta = 0.432
         phi = 0.123
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.CNOT(wires=[0, 1])
-            return qml.expval(qml.Hamiltonian((2, 3), (qml.PauliZ(0), qml.PauliY(1))))
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.CNOT(wires=[0, 1])
+            return qp.expval(qp.Hamiltonian((2, 3), (qp.PauliZ(0), qp.PauliY(1))))
 
         assert np.allclose(circuit(), 2 * np.cos(theta) - 3 * np.cos(theta) * np.sin(phi), **tol)
 
@@ -188,22 +188,22 @@ class TestExpval:
         interface when some of the arguments are tensors with requires_grad=False"""
 
         dev1 = device(1)
-        dev2 = qml.device("default.qubit", wires=1)
+        dev2 = qp.device("default.qubit", wires=1)
 
         if not dev1.analytic:
             pytest.skip("This test is designed to work in analytic mode")
 
         def circuit(x, y):
-            qml.RX(x[0], wires=0)
-            qml.Rot(*x[1:], wires=0)
-            qml.RY(y[0], wires=0)
-            return qml.expval(qml.PauliZ(0))
+            qp.RX(x[0], wires=0)
+            qp.Rot(*x[1:], wires=0)
+            qp.RY(y[0], wires=0)
+            return qp.expval(qp.PauliZ(0))
 
         x = np.array([0.1, 0.2, 0.3, 0.4], requires_grad=False)
         y = np.array([0.5], requires_grad=True)
 
-        qnode1 = qml.QNode(circuit, dev1, interface="autograd")
-        qnode2 = qml.QNode(circuit, dev2, interface="autograd")
+        qnode1 = qp.QNode(circuit, dev1, interface="autograd")
+        qnode2 = qp.QNode(circuit, dev2, interface="autograd")
 
         r1 = qnode1(x, y)
         r2 = qnode2(x, y)
@@ -223,14 +223,14 @@ class TestTensorExpval:
         phi = 0.123
         varphi = -0.543
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.RX(varphi, wires=[2])
-            qml.CNOT(wires=[0, 1])
-            qml.CNOT(wires=[1, 2])
-            return qml.expval(qml.PauliX(0) @ qml.PauliY(2))
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.RX(varphi, wires=[2])
+            qp.CNOT(wires=[0, 1])
+            qp.CNOT(wires=[1, 2])
+            return qp.expval(qp.PauliX(0) @ qp.PauliY(2))
 
         assert np.allclose(circuit(), np.sin(theta) * np.sin(phi) * np.sin(varphi), **tol)
 
@@ -242,22 +242,20 @@ class TestTensorExpval:
         phi = 0.123
         varphi = -0.543
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.RX(varphi, wires=[2])
-            qml.CNOT(wires=[0, 1])
-            qml.CNOT(wires=[1, 2])
-            return qml.expval(
-                qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
-            )
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.RX(varphi, wires=[2])
+            qp.CNOT(wires=[0, 1])
+            qp.CNOT(wires=[1, 2])
+            return qp.expval(qp.PauliZ(wires=[0]) @ qp.Hadamard(wires=[1]) @ qp.PauliY(wires=[2]))
 
         expected = -(np.cos(varphi) * np.sin(phi) + np.sin(varphi) * np.cos(theta)) / np.sqrt(2)
         assert np.allclose(circuit(), expected, **tol)
 
     def test_hermitian(self, device, shots, tol):
-        """Test that a tensor product involving qml.Hermitian works correctly"""
+        """Test that a tensor product involving qp.Hermitian works correctly"""
         dev = device(3)
 
         theta = 0.432
@@ -272,14 +270,14 @@ class TestTensorExpval:
             ]
         )
 
-        @qml.qnode(dev, diff_method="parameter-shift")
+        @qp.qnode(dev, diff_method="parameter-shift")
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.RX(varphi, wires=[2])
-            qml.CNOT(wires=[0, 1])
-            qml.CNOT(wires=[1, 2])
-            return qml.expval(qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2]))
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.RX(varphi, wires=[2])
+            qp.CNOT(wires=[0, 1])
+            qp.CNOT(wires=[1, 2])
+            return qp.expval(qp.PauliZ(wires=[0]) @ qp.Hermitian(A, wires=[1, 2]))
 
         expected = 0.5 * (
             -6 * np.cos(theta) * (np.cos(varphi) + 1)

@@ -14,7 +14,7 @@
 """Tests that samples are correctly computed in the plugin device"""
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 import pytest
 
 np.random.seed(42)
@@ -30,10 +30,10 @@ class TestSample:
         """
         dev = device(1)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(np.pi / 4, wires=0)
-            return qml.sample(qml.PauliZ(wires=[0]))
+            qp.RX(np.pi / 4, wires=0)
+            return qp.sample(qp.PauliZ(wires=[0]))
 
         # The sample should only contain 1 and -1
         assert np.allclose(circuit() ** 2, 1, **tol)
@@ -47,10 +47,10 @@ class TestSample:
         theta = 0.543
         A = np.array([[1, 2j], [-2j, 0]])
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=0)
-            return qml.sample(qml.Hermitian(A, wires=[0]))
+            qp.RX(theta, wires=0)
+            return qp.sample(qp.Hermitian(A, wires=[0]))
 
         result = circuit()
 
@@ -80,12 +80,12 @@ class TestSample:
             ]
         )
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=0)
-            qml.RY(2 * theta, wires=1)
-            qml.CNOT(wires=[0, 1])
-            return qml.sample(qml.Hermitian(A, wires=[0, 1]))
+            qp.RX(theta, wires=0)
+            qp.RY(2 * theta, wires=1)
+            qp.CNOT(wires=[0, 1])
+            return qp.sample(qp.Hermitian(A, wires=[0, 1]))
 
         result = circuit()
 
@@ -118,14 +118,14 @@ class TestTensorSample:
         phi = 0.123
         varphi = -0.543
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.RX(varphi, wires=[2])
-            qml.CNOT(wires=[0, 1])
-            qml.CNOT(wires=[1, 2])
-            return qml.sample(qml.PauliX(0) @ qml.PauliY(2))
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.RX(varphi, wires=[2])
+            qp.CNOT(wires=[0, 1])
+            qp.CNOT(wires=[1, 2])
+            return qp.sample(qp.PauliX(0) @ qp.PauliY(2))
 
         result = circuit()
 
@@ -153,16 +153,14 @@ class TestTensorSample:
         phi = 0.123
         varphi = -0.543
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.RX(varphi, wires=[2])
-            qml.CNOT(wires=[0, 1])
-            qml.CNOT(wires=[1, 2])
-            return qml.sample(
-                qml.PauliZ(wires=[0]) @ qml.Hadamard(wires=[1]) @ qml.PauliY(wires=[2])
-            )
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.RX(varphi, wires=[2])
+            qp.CNOT(wires=[0, 1])
+            qp.CNOT(wires=[1, 2])
+            return qp.sample(qp.PauliZ(wires=[0]) @ qp.Hadamard(wires=[1]) @ qp.PauliY(wires=[2]))
 
         result = circuit()
 
@@ -181,7 +179,7 @@ class TestTensorSample:
         assert np.allclose(np.var(result), expected, **tol)
 
     def test_hermitian(self, device, shots, tol):
-        """Test that a tensor product involving qml.Hermitian works correctly"""
+        """Test that a tensor product involving qp.Hermitian works correctly"""
         dev = device(3)
 
         theta = 0.432
@@ -196,14 +194,14 @@ class TestTensorSample:
             ]
         )
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.RX(theta, wires=[0])
-            qml.RX(phi, wires=[1])
-            qml.RX(varphi, wires=[2])
-            qml.CNOT(wires=[0, 1])
-            qml.CNOT(wires=[1, 2])
-            return qml.sample(qml.PauliZ(wires=[0]) @ qml.Hermitian(A, wires=[1, 2]))
+            qp.RX(theta, wires=[0])
+            qp.RX(phi, wires=[1])
+            qp.RX(varphi, wires=[2])
+            qp.CNOT(wires=[0, 1])
+            qp.CNOT(wires=[1, 2])
+            return qp.sample(qp.PauliZ(wires=[0]) @ qp.Hermitian(A, wires=[1, 2]))
 
         result = circuit()
 

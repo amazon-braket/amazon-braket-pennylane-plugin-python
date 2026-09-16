@@ -24,8 +24,8 @@ To instantiate the local Braket simulator, simply use:
 
 .. code-block:: python
 
-    import pennylane as qml
-    device_local = qml.device("braket.local.ahs", wires=2)
+    import pennylane as qp
+    device_local = qp.device("braket.local.ahs", wires=2)
 
 This device can be used with a QNode within PennyLane. It accepts circuits with a single `ParametrizedEvolution <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedEvolution.html>`_
 operator based on a `ParametrizedHamiltonian <https://docs.pennylane.ai/en/stable/code/api/pennylane.pulse.ParametrizedHamiltonian.html>`_ compatible with the simulated hardware.
@@ -59,7 +59,7 @@ interaction term for the Hamiltonian:
     # number of coordinate pairs must match number of device wires
     coordinates = [[0, 0], [0, 5]]  
 
-    H_interaction = qml.pulse.rydberg_interaction(coordinates)
+    H_interaction = qp.pulse.rydberg_interaction(coordinates)
 
 Creating a drive
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,10 +71,10 @@ they must all have the same time-dependent envelope, but can have different, pos
 
     from jax import numpy as jnp
 
-    # gaussian amplitude function (qml.pulse.rect enforces 0 at start and end for hardware)
+    # gaussian amplitude function (qp.pulse.rect enforces 0 at start and end for hardware)
     def amp_fn(p, t):
         f = p[0] * jnp.exp(-(t - p[1])**2 / (2 * p[2]**2))
-        return qml.pulse.rect(f, windows=[0.1, 1.7])(p, t)
+        return qp.pulse.rect(f, windows=[0.1, 1.7])(p, t)
 
     # defining a linear detuning
     def det_fn_global(p, t):
@@ -84,12 +84,12 @@ they must all have the same time-dependent envelope, but can have different, pos
         return p * t**2
 
     # creating a global drive on all wires
-    H_global = qml.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn_global, wires=[0, 1])
+    H_global = qp.pulse.rydberg_drive(amplitude=amp_fn, phase=0, detuning=det_fn_global, wires=[0, 1])
 
     # creating local drives
     # note only local detuning is currently supported, so amplitude and phase are set to 0
-    H_local0 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[0])
-    H_local1 = qml.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[1])
+    H_local0 = qp.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[0])
+    H_local1 = qp.pulse.rydberg_drive(amplitude=0, phase=0, detuning = det_fn_local, wires=[1])
 
     # full hamiltonian
     H = H_interaction + H_global + H_local0 + H_local1
@@ -100,10 +100,10 @@ Executing an AHS program
 
 .. code-block:: python
 
-    @qml.qnode(device_local)
+    @qp.qnode(device_local)
     def circuit(params):
-        qml.evolve(H)(params, t=1.5)
-        return qml.sample()
+        qp.evolve(H)(params, t=1.5)
+        return qp.sample()
 
     # amp_fn expects p to contain 3 parameters
     amp_params = [2.5, 1, 0.3]

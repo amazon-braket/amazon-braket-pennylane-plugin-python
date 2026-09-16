@@ -14,7 +14,7 @@
 """Tests that samples are correctly computed in the plugin device"""
 
 import numpy as np
-import pennylane as qml
+import pennylane as qp
 import pytest
 
 np.random.seed(42)
@@ -29,11 +29,11 @@ class TestState:
         dev = local_device(1)
         supports_sv = "StateVector" in dev._braket_result_types
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.Hadamard(wires=0)
-            qml.T(wires=0)
-            return qml.state()
+            qp.Hadamard(wires=0)
+            qp.T(wires=0)
+            return qp.state()
 
         output = circuit()
         expected_sv = np.array([np.sqrt(0.5), 0.5 + 0.5j])
@@ -46,12 +46,12 @@ class TestState:
         """Tests if the correct reduced density matrix is returned"""
         dev = local_device(2)
 
-        @qml.qnode(dev)
+        @qp.qnode(dev)
         def circuit():
-            qml.Hadamard(wires=0)
-            qml.CNOT(wires=[0, 1])
-            qml.CRX(np.pi / 2, wires=[0, 1])
-            return qml.density_matrix(wires=[0])
+            qp.Hadamard(wires=0)
+            qp.CNOT(wires=[0, 1])
+            qp.CRX(np.pi / 2, wires=[0, 1])
+            return qp.density_matrix(wires=[0])
 
         output = circuit()
         expected_dm = np.array([[0.5, 1j / np.sqrt(8)], [-1j / np.sqrt(8), 0.5]])
