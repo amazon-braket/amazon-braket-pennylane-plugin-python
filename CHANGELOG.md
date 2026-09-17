@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.35.2 (2026-09-17)
+
+### Bug Fixes and Other Changes
+
+ * use correct wire order for program set expectation values
+
+### Documentation Changes
+
+ * Remove broken inheritance diagram
+
 ## v1.35.1.post1 (2026-09-02)
 
 ### Documentation Changes
