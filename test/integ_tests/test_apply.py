@@ -117,14 +117,12 @@ class TestHardwareApply:
         """Test PauliX application"""
         dev = device(2)
         state = init_state(2)
-        dev.pre_measure()
         TestHardwareApply.assert_op_and_inverse(op, dev, state, [0, 1], tol, [theta])
 
     @pytest.mark.parametrize("op", three_qubit)
     def test_three_qubit_no_parameters(self, init_state, device, op, tol):
         dev = device(3)
         state = init_state(3)
-        dev.pre_measure()
         TestHardwareApply.assert_op_and_inverse(op, dev, state, [0, 1, 2], tol, [])
 
     @pytest.mark.parametrize("mat", [U, U2])

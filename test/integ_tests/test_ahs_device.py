@@ -74,11 +74,10 @@ def test_initialization(arn_nr, name):
 
     assert dev._device.name == name
     assert dev.short_name == "braket.aws.ahs"
-    assert dev.shots == 11
+    assert dev.shots.total_shots == 11
     assert dev.ahs_program is None
     assert dev.result is None
-    assert dev.pennylane_requires == ">=0.30.0"
-    assert dev.operations == {"ParametrizedEvolution"}
+    assert set(dev.capabilities.operations) == {"ParametrizedEvolution"}
 
 
 class TestDeviceIntegration:
@@ -88,11 +87,8 @@ class TestDeviceIntegration:
     def test_load_device(self, shortname, arn_nr, backend_name):
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(shortname, arn_nr, wires=2)
-        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
-        dev = dev.target_device if hasattr(dev, "target_device") else dev
-        assert dev.num_wires == 2
-        assert dev.shots == 100
+        assert len(dev.wires) == 2
+        assert dev.shots.total_shots == 100
         assert dev.short_name == shortname
 
         assert dev._device.name == backend_name
@@ -121,7 +117,7 @@ class TestDeviceAttributes:
     def test_setting_shots(self, shots):
         """Test that setting shots changes number of shots from default (100)"""
         dev = BraketLocalAhsDevice(wires=3, shots=shots)
-        assert dev.shots == shots
+        assert dev.shots.total_shots == shots
 
         global_drive = rydberg_drive(2, 1, 2, wires=[0, 1, 2])
         ts = [0.0, 1.75]
@@ -215,12 +211,9 @@ class TestQnodeIntegration:
 
         res = circuit()
 
-        # PennyLane 0.38+ changes the signature of `shape`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
         expected_shape = (
-            (mp.shape(shots=dev.shots.total_shots) for mp in measurements)
-            if hasattr(dev, "target_device")
-            else (mp.shape(dev, qp.measurements.Shots(dev.shots)) for mp in measurements)
+            mp.shape(shots=dev.shots.total_shots, num_device_wires=len(dev.wires))
+            for mp in measurements
         )
 
         assert len(res) == len(measurements)
