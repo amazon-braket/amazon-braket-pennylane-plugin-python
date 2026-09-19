@@ -37,18 +37,32 @@ from collections.abc import Iterable
 from enum import Enum, auto
 
 import numpy as np
-from pennylane._version import __version__
-from pennylane.devices import QubitDevice
-from pennylane.measurements import MeasurementProcess, SampleMeasurement
+import pennylane as qp
+from pennylane.devices import Device as PennyLaneDevice
+from pennylane.devices import DeviceCapabilities, ExecutionConfig
+from pennylane.devices.capabilities import ExecutionCondition, OperatorProperties
+from pennylane.devices.modifiers import single_tape_support
+from pennylane.devices.preprocess import null_postprocessing
+from pennylane.exceptions import DeviceError
+from pennylane.measurements import (
+    ExpectationMP,
+    MeasurementProcess,
+    SampleMP,
+    VarianceMP,
+)
 from pennylane.ops import CompositeOp
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.pulse.hardware_hamiltonian import HardwareHamiltonian, HardwarePulse
+from pennylane.tape import QuantumScript
+from pennylane.transforms.core import TransformProgram
 
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.aws import AwsDevice, AwsQuantumTask, AwsSession
-from braket.devices import Device, LocalSimulator
+from braket.devices import Device as BraketDevice
+from braket.devices import LocalSimulator
 from braket.tasks.local_quantum_task import LocalQuantumTask
 
+from ._version import __version__
 from .ahs_translation import (
     _create_register,
     _create_valid_local_detunings,
@@ -66,7 +80,23 @@ class Shots(Enum):
     DEFAULT = auto()
 
 
-class BraketAhsDevice(QubitDevice):
+@qp.transform
+def _validate_ahs_circuit(tape: QuantumScript, device: "BraketAhsDevice"):
+    if len(tape.operations) != 1:
+        raise NotImplementedError(
+            "AHS circuits require exactly one ParametrizedEvolution operation."
+        )
+    if isinstance(tape.operations[0], ParametrizedEvolution):
+        device._validate_evolution(tape.operations[0])
+        device._validate_pulses(tape.operations[0].H.pulses)
+    for measurement in tape.measurements:
+        if measurement.obs is not None:
+            device._validate_measurement_basis(measurement.obs)
+    return (tape,), null_postprocessing
+
+
+@single_tape_support
+class BraketAhsDevice(PennyLaneDevice):
     """Abstract Amazon Braket device for analog Hamiltonian simulation with PennyLane.
 
     Args:
@@ -79,7 +109,6 @@ class BraketAhsDevice(QubitDevice):
     """
 
     name = "Braket AHS PennyLane plugin"
-    pennylane_requires = ">=0.30.0"
     version = __version__
     author = "Xanadu Inc."
     short_name = "braket_ahs_device"
@@ -87,7 +116,7 @@ class BraketAhsDevice(QubitDevice):
     def __init__(
         self,
         wires: int | Iterable,
-        device: Device,
+        device: BraketDevice,
         *,
         shots: int | Shots = Shots.DEFAULT,
     ):
@@ -106,8 +135,78 @@ class BraketAhsDevice(QubitDevice):
         self._pulses = None
         self._ahs_program = None
         self._task = None
+        self._samples = None
+        finite_shots_only = [ExecutionCondition.FINITE_SHOTS_ONLY]
+        self.capabilities = DeviceCapabilities(
+            operations={"ParametrizedEvolution": OperatorProperties(conditions=finite_shots_only)},
+            observables={
+                name: OperatorProperties(conditions=finite_shots_only)
+                for name in (
+                    "Exp",
+                    "Identity",
+                    "LinearCombination",
+                    "PauliZ",
+                    "Prod",
+                    "Projector",
+                    "SProd",
+                    "Sum",
+                )
+            },
+            measurement_processes=dict.fromkeys(
+                {"CountsMP", "ExpectationMP", "ProbabilityMP", "SampleMP", "VarianceMP"},
+                finite_shots_only,
+            ),
+            supported_mcm_methods=["deferred"],
+        )
 
-    def apply(self, operations: list[ParametrizedEvolution], **kwargs):
+    def preprocess_transforms(
+        self, execution_config: ExecutionConfig | None = None
+    ) -> TransformProgram:
+        program = super().preprocess_transforms(execution_config)
+        ahs_transforms = TransformProgram()
+        ahs_transforms.add_transform(_validate_ahs_circuit, device=self)
+        program.insert(0, ahs_transforms[0])
+        return program
+
+    def execute(
+        self,
+        circuits: Iterable[QuantumScript],
+        execution_config: ExecutionConfig | None = None,
+    ) -> tuple:
+        circuits = tuple(circuits)
+        results = tuple(self._execute_circuit(circuit) for circuit in circuits)
+        if self.tracker.active:
+            self.tracker.update(batches=1, batch_len=len(circuits))
+            self.tracker.record()
+        return results
+
+    def _execute_circuit(self, circuit: QuantumScript):
+        if not circuit.shots:
+            raise DeviceError(f"{self.name} requires finite shots.")
+        if circuit.shots.has_partitioned_shots:
+            raise DeviceError(f"{self.name} does not support shot vectors.")
+
+        shot_count = circuit.shots.total_shots
+        self.apply(circuit.operations, shots=shot_count)
+        self._samples = self._generate_samples()
+        results = tuple(
+            self._process_measurement(measurement, self._samples)
+            for measurement in circuit.measurements
+        )
+        result = results[0] if len(results) == 1 else results
+
+        if self.tracker.active:
+            self.tracker.update(executions=1, shots=shot_count)
+            self.tracker.record()
+        return result
+
+    def apply(
+        self,
+        operations: list[ParametrizedEvolution],
+        *,
+        shots: int | None = None,
+        **kwargs,
+    ):
         """Convert the pulse operation to an AHS program and run on the connected device
 
         Args:
@@ -117,22 +216,17 @@ class BraketAhsDevice(QubitDevice):
         ev_op = operations[0]  # only one!
 
         ahs_program = self.create_ahs_program(ev_op)
-        self._task = self._run_task(ahs_program)
+        shot_count = shots if shots is not None else self.shots.total_shots
+        self._task = self._run_task(ahs_program, shots=shot_count)
 
-    def expval(self, observable, shot_range=None, bin_size=None):
-        # estimate the ev
-        samples = self.sample(observable, shot_range=shot_range, bin_size=bin_size)
-
-        # With broadcasting, we want to take the mean over axis 1, which is the -1st/-2nd with/
-        # without bin_size. Without broadcasting, axis 0 is the -1st/-2nd with/without bin_size
-        axis = -1 if bin_size is None else -2
-
-        # use nanmean to ignore failed measurements in taking the average
-        return np.nanmean(samples, axis=axis)
-
-    @property
-    def operations(self):
-        return frozenset({"ParametrizedEvolution"})
+    def _process_measurement(self, measurement: MeasurementProcess, samples):
+        if isinstance(measurement, ExpectationMP):
+            measured = SampleMP(obs=measurement.obs).process_samples(samples, wire_order=self.wires)
+            return np.nanmean(measured)
+        if isinstance(measurement, VarianceMP):
+            measured = SampleMP(obs=measurement.obs).process_samples(samples, wire_order=self.wires)
+            return np.nanvar(measured)
+        return measurement.process_samples(samples, wire_order=self.wires)
 
     @property
     def task(self):
@@ -152,7 +246,7 @@ class BraketAhsDevice(QubitDevice):
             return self._task.result()
         return None
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int | None = None):
         """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
@@ -197,85 +291,34 @@ class BraketAhsDevice(QubitDevice):
 
         return ahs_program
 
-    def generate_samples(self):
+    def _generate_samples(self):
         r"""Returns the computational basis samples measured for all wires.
 
         Returns:
-             array[complex]: array of samples in the shape ``(dev.shots, dev.num_wires)``
+             array[complex]: array of samples in the shape ``(shots, len(dev.wires))``
         """
         return np.array([translate_ahs_shot_result(res) for res in self.result.measurements])
 
-    def check_validity(self, queue, observables):
-        """Checks whether the operations and observables in queue are all supported by the device.
-
-        Args:
-            queue (Iterable[~.operation.Operation]): quantum operation objects which are intended
-                to be applied on the device
-            observables (Iterable[~.operation.Operator]): observables which are intended
-                to be evaluated on the device
-
-        Raises:
-            Exception: if there are operations in the queue or observables that the device does
-                not support
-        """
-        # Validate operations
-        self._validate_operations(queue)
-
-        # Validate pulses
-        pulses = queue[0].H.pulses
-        self._validate_pulses(pulses)
-
-        # Validate observables
-        for o in observables:
-            if isinstance(o, MeasurementProcess):
-                # state-based measurements not supported
-                if not isinstance(o, SampleMeasurement):
-                    raise TypeError(
-                        f"Device only support sample-based measurement, but received observable {o}"
-                    )
-                continue
-            self._validate_measurement_basis(o)
-
-    def _validate_operations(self, operations: list[ParametrizedEvolution]):
-        """Confirms that the list of operations provided contains a single ParametrizedEvolution
-        from a HardwareHamiltonian with only a single, global pulse
-
-        Args:
-            operations(list[ParametrizedEvolution]): a list containing a single
-                ParametrizedEvolution operator
-        """
-
-        if not np.all([op.name in self.operations for op in operations]):
-            raise NotImplementedError(
-                f"Device {self.short_name} expected only operations "
-                f"{self.operations} but received {operations}."
-            )
-
-        if len(operations) > 1:
-            raise NotImplementedError(
-                f"Support for multiple ParametrizedEvolution operators in a single circuit is "
-                f"not yet implemented. Received {len(operations)} operators."
-            )
-
-        ev_op = operations[0]  # only one!
-
-        if not isinstance(ev_op.H, HardwareHamiltonian):
+    def _validate_evolution(self, evolution: ParametrizedEvolution):
+        """Validate the hardware Hamiltonian and register of an AHS evolution."""
+        if not isinstance(evolution.H, HardwareHamiltonian):
             raise TypeError(
                 f"Expected a HardwareHamiltonian instance for interfacing with the device, but "
-                f"recieved {type(ev_op.H)}."
+                f"recieved {type(evolution.H)}."
             )
 
-        if not set(ev_op.wires) == set(self.wires):
+        if not set(evolution.wires) == set(self.wires):
             raise ValueError(
                 f"Device contains wires {self.wires}, but received a `ParametrizedEvolution` "
-                f"operator working on wires {ev_op.wires}. Device wires must match wires of "
+                f"operator working on wires {evolution.wires}. Device wires must match wires of "
                 f"the evolution."
             )
 
-        if len(ev_op.H.settings.register) != len(self.wires):
+        if len(evolution.H.settings.register) != len(self.wires):
             raise RuntimeError(
-                f"The defined interaction term has register {ev_op.H.settings.register} of length "
-                f"{len(ev_op.H.settings.register)}, which does not match the number of wires on "
+                f"The defined interaction term has register {evolution.H.settings.register} "
+                f"of length {len(evolution.H.settings.register)}, which does not match the number "
+                f"of wires on "
                 f"the device ({len(self.wires)})"
             )
 
@@ -304,22 +347,16 @@ class BraketAhsDevice(QubitDevice):
             )
 
     def _validate_measurement_basis(self, observable):
-        """Confirm that all elements of the observable are in the measurement basis,
-        and otherwise raise an error"""
-
-        # if the observable is a composite of other operations,
-        # loop through those and evaluate individually
+        """Validate that an observable can be measured in the computational basis."""
         if isinstance(observable, CompositeOp):
-            for op in observable.operands:
-                self._validate_measurement_basis(op)
-
+            for operand in observable.operands:
+                self._validate_measurement_basis(operand)
         elif not observable.has_diagonalizing_gates:
             raise RuntimeError(
                 f"Received observable {observable} with no diagonalizing gates; "
-                f"cannot determine basis"
+                "cannot determine basis"
             )
         elif observable.diagonalizing_gates():
-            # if diagonalizing gates are not empty (i.e. `[]`), raise an error
             raise RuntimeError(
                 f"{self.short_name} can only measure in the Z basis, "
                 f"but received observable {observable}"
@@ -374,7 +411,7 @@ class BraketAwsAhsDevice(BraketAhsDevice):
         operators in PennyLane.
     """
 
-    name = "Braket Device for AHS in PennyLane"
+    name = "braket.aws.ahs"
     short_name = "braket.aws.ahs"
 
     def __init__(
@@ -448,13 +485,14 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
         return ahs_program_discretized
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int | None = None):
         """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
+        shot_count = shots if shots is not None else self.shots.total_shots
         task = self._device.run(
             ahs_program,
             s3_destination_folder=self._s3_folder,
-            shots=self.shots,
+            shots=shot_count,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
         )
@@ -496,7 +534,7 @@ class BraketLocalAhsDevice(BraketAhsDevice):
         operators in PennyLane.
     """
 
-    name = "Braket LocalSimulator for AHS in PennyLane"
+    name = "braket.local.ahs"
     short_name = "braket.local.ahs"
 
     def __init__(
@@ -564,10 +602,13 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         return ahs_program
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation) -> LocalQuantumTask:
+    def _run_task(
+        self, ahs_program: AnalogHamiltonianSimulation, shots: int | None = None
+    ) -> LocalQuantumTask:
         """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
-        return self._device.run(ahs_program, shots=self.shots, steps=100)
+        shot_count = shots if shots is not None else self.shots.total_shots
+        return self._device.run(ahs_program, shots=shot_count, steps=100)
 
     def _validate_pulses(self, pulses: list[HardwarePulse]):
         """Validate that all pulses are defined as expected by the device. This validation includes:

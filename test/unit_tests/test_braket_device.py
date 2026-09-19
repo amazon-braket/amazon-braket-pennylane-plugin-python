@@ -46,18 +46,18 @@ from braket.task_result import ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
 from device_property_jsons import (
     ACTION_PROPERTIES,
+    ACTION_PROPERTIES_NO_ADJOINT,
     ACTION_PROPERTIES_PROGRAMSET,
     ACTION_PROPERTIES_DM_DEVICE,
     ACTION_PROPERTIES_NATIVE,
-    ACTION_PROPERTIES_NO_ADJOINT,
     GATE_MODEL_RESULT,
     OQC_PARADIGM_PROPERTIES,
     OQC_PULSE_PROPERTIES_ALL_FRAMES,
     RESULT,
 )
 from pennylane import numpy as np
-from pennylane.devices import QubitDevice
-from pennylane.exceptions import QuantumFunctionError
+from pennylane.devices import Device, ExecutionConfig
+from pennylane.exceptions import DeviceError, QuantumFunctionError
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
 
@@ -78,6 +78,12 @@ from braket.pennylane_plugin.braket_device import (
 )
 
 SHOTS = 10000
+
+
+def _execute_with_device_shots(dev, circuits):
+    """Execute test circuits using the device's configured shots."""
+    return dev.execute(tuple(circuit.copy(shots=dev.shots) for circuit in circuits))
+
 
 TASK = Mock()
 TASK.result.return_value = RESULT
@@ -259,17 +265,6 @@ def _make_program_set_result(num_programs):
 DEVICE_ARN = "baz"
 
 
-def test_reset():
-    """Tests that the members of the device are cleared on reset."""
-    dev = _aws_device(wires=2)
-    dev._circuit = CIRCUIT
-    dev._task = TASK
-
-    dev.reset()
-    assert dev.circuit is None
-    assert dev.task is None
-
-
 def test_apply():
     """Tests that the correct Braket gate is applied for each PennyLane operation."""
     dev = _aws_device(wires=2)
@@ -362,7 +357,7 @@ def test_execute(mock_run):
     # will appear
     circuit._trainable_params = [0]
 
-    results = dev.execute(circuit)
+    results = dev.execute(circuit.copy(shots=dev.shots))
 
     assert np.allclose(
         results[0],
@@ -395,6 +390,7 @@ def test_execute(mock_run):
         .variance(observable=observables.Z(2))
         .sample(observable=observables.Z(3))
     )
+    assert dev.circuit == EXPECTED_CIRC
     mock_run.assert_called_with(
         EXPECTED_CIRC,
         s3_destination_folder=("foo", "bar"),
@@ -421,7 +417,7 @@ def test_execute_parametrize_differentiable(mock_run):
         qp.var(qp.PauliY(2))
         qp.sample(qp.PauliZ(3))
 
-    results = dev._execute_legacy(circuit)
+    results = dev.execute(circuit.copy(shots=dev.shots))
 
     assert np.allclose(
         results[0],
@@ -664,7 +660,9 @@ def test_execute_with_gradient(
     mock_run.return_value = task
     dev = _aws_device(wires=wires, foo="bar", shots=0, device_type=AwsDeviceType.SIMULATOR)
 
-    results = dev.execute(pl_circ, compute_gradient=True)
+    results, jacs = dev.execute_and_compute_derivatives(
+        (pl_circ,), ExecutionConfig(gradient_method="device")
+    )
 
     assert dev.task == task
 
@@ -678,7 +676,7 @@ def test_execute_with_gradient(
         inputs=expected_inputs,
     )
     assert (results[0] == expected_pl_result[0][0]).all()
-    assert (results[1] == expected_pl_result[0][1]).all()
+    assert (jacs[0] == expected_pl_result[0][1]).all()
 
 
 @patch.object(AwsDevice, "run")
@@ -737,7 +735,9 @@ def test_execute_with_gradient_no_op_math(
     mock_run.return_value = task
     dev = _aws_device(wires=wires, foo="bar", shots=0, device_type=AwsDeviceType.SIMULATOR)
 
-    results = dev.execute(pl_circ, compute_gradient=True)
+    results, jacs = dev.execute_and_compute_derivatives(
+        (pl_circ,), ExecutionConfig(gradient_method="device")
+    )
 
     assert dev.task == task
 
@@ -751,7 +751,7 @@ def test_execute_with_gradient_no_op_math(
         inputs=expected_inputs,
     )
     assert (results[0] == expected_pl_result[0][0]).all()
-    assert (results[1] == expected_pl_result[0][1]).all()
+    assert (jacs[0] == expected_pl_result[0][1]).all()
 
 
 @patch.object(AwsDevice, "run")
@@ -765,22 +765,19 @@ def test_execute_tracker(mock_run):
         qp.probs(wires=(0,))
 
     callback = Mock()
+    circuit = circuit.copy(shots=dev.shots)
     with qp.Tracker(dev, callback=callback) as tracker:
         dev.execute(circuit)
         dev.execute(circuit)
         dev.execute(circuit)
     dev.execute(circuit)
 
-    latest = {
-        "executions": 1,
-        "shots": SHOTS,
-        "braket_task_id": "task_arn",
-        "braket_simulator_ms": 1234,
-        "braket_simulator_billed_ms": 3000,
-    }
+    latest = {"batches": 1, "batch_len": 1}
     history = {
         "executions": [1, 1, 1],
         "shots": [SHOTS, SHOTS, SHOTS],
+        "batches": [1, 1, 1],
+        "batch_len": [1, 1, 1],
         "braket_task_id": ["task_arn", "task_arn", "task_arn"],
         "braket_simulator_ms": [1234, 1234],
         "braket_simulator_billed_ms": [3000, 3000],
@@ -788,6 +785,8 @@ def test_execute_tracker(mock_run):
     totals = {
         "executions": 3,
         "shots": 3 * SHOTS,
+        "batches": 3,
+        "batch_len": 3,
         "braket_simulator_ms": 2468,
         "braket_simulator_billed_ms": 6000,
     }
@@ -804,35 +803,6 @@ def _aws_device_mock_init(self, *args, **kwargs):
     self._name = "name"
     # The _properties will be set by the properties mock
     return None
-
-
-@patch.object(AwsDevice, "__init__", _aws_device_mock_init)
-@patch.object(AwsDevice, "aws_session", new_callable=mock.PropertyMock)
-@patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
-@patch.object(AwsDevice, "properties")
-@pytest.mark.parametrize(
-    "action_props, shots, expected_use_grouping",
-    [
-        (ACTION_PROPERTIES_NO_ADJOINT, 0, True),
-        (ACTION_PROPERTIES, 10, True),
-        # Should be disabled only when AdjGrad is present and shots = 0
-        (ACTION_PROPERTIES, 0, False),
-    ],
-)
-def test_use_grouping(
-    properties_mock, type_mock, session_mock, action_props, shots, expected_use_grouping
-):
-    """Tests that grouping is enabled except when AdjointGradient is present"""
-    properties_mock.action = {DeviceActionType.OPENQASM: action_props}
-    properties_mock.return_value.action.return_value = {DeviceActionType.OPENQASM: action_props}
-    type_mock.return_value = AwsDeviceType.SIMULATOR
-    device = BraketAwsQubitDevice(
-        wires=1,
-        device_arn=DEVICE_ARN,
-        aws_session=Mock(),
-        shots=shots,
-    )
-    assert device.use_grouping == expected_use_grouping
 
 
 def test_pl_to_braket_circuit():
@@ -1033,7 +1003,7 @@ def test_pl_to_braket_circuit_hamiltonian_tensor_product_terms():
 
 def test_parametrized_evolution_in_oqc_lucy_supported_ops():
     dev = _aws_device(wires=2, device_arn="arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy")
-    assert "ParametrizedEvolution" in dev.operations
+    assert dev.capabilities.supports_operation("ParametrizedEvolution")
 
 
 def test_bad_statistics():
@@ -1045,23 +1015,39 @@ def test_bad_statistics():
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
-def test_batch_execute_non_parallel(mock_properties, monkeypatch):
-    """Test if the batch_execute() method simply calls the inherited method if parallel=False"""
+def test_batch_execution_non_parallel(mock_properties, monkeypatch):
+    """Test that current batch execution falls back to one circuit at a time."""
     mock_action = Mock()
     mock_action.action = {"braket.ir.openqasm.program": None}
     mock_properties.return_value = mock_action
     dev = _aws_device(wires=2, foo="bar", parallel=False)
     assert dev.parallel is False
 
+    circuit = QuantumScript(shots=dev.shots)
     with monkeypatch.context() as m:
-        m.setattr(QubitDevice, "batch_execute", lambda self, circuits: 1967)
-        res = dev.batch_execute([])
-        assert res == 1967
+        m.setattr(dev, "_execute_circuit", lambda _: 1967)
+        assert dev.execute((circuit,)) == (1967,)
+
+
+def test_execute_empty_batch():
+    """An empty batch has no work or results."""
+    dev = _aws_device(wires=2)
+
+    assert dev.execute(()) == ()
+
+
+def test_execute_rejects_shot_vectors():
+    """Braket tasks do not support PennyLane shot vectors."""
+    dev = _aws_device(wires=2)
+    circuit = QuantumScript([], [qp.sample(wires=0)], shots=[1, 2])
+
+    with pytest.raises(DeviceError, match="does not support shot vectors"):
+        dev.execute(circuit)
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run")
-def test_batch_execute_non_parallel_tracker(mock_run, mock_properties):
+def test_batch_execution_non_parallel_tracker(mock_run, mock_properties):
     """Tests tracking for a non-parallel batch"""
     mock_run.return_value = TASK
     mock_action = Mock()
@@ -1075,8 +1061,8 @@ def test_batch_execute_non_parallel_tracker(mock_run, mock_properties):
 
     callback = Mock()
     with qp.Tracker(dev, callback=callback) as tracker:
-        dev.batch_execute([circuit, circuit])
-    dev.batch_execute([circuit])
+        _execute_with_device_shots(dev, [circuit, circuit])
+    _execute_with_device_shots(dev, [circuit])
 
     latest = {"batches": 1, "batch_len": 2}
     history = {
@@ -1095,8 +1081,8 @@ def test_batch_execute_non_parallel_tracker(mock_run, mock_properties):
 
 
 @patch.object(AwsDevice, "run")
-def test_batch_execute_program_set(mock_run):
-    """Test batch_execute correctly runs program sets when they are supported"""
+def test_batch_execution_program_set(mock_run):
+    """Test that batch execution uses program sets when they are supported."""
     task = Mock()
     task.result.return_value = PROGRAM_SET_RESULT
     mock_run.return_value = task
@@ -1107,7 +1093,7 @@ def test_batch_execute_program_set(mock_run):
         qp.expval(qp.PauliX(0) @ qp.PauliY(1))
 
     circuits = [circuit, circuit]
-    result = dev.batch_execute(circuits)
+    result = _execute_with_device_shots(dev, circuits)
 
     braket_circuit = Circuit().h(0).cnot(0, 1).ry(0, -anp.pi / 2).rx(1, anp.pi / 2).i(2).i(3)
     mock_run.assert_called_with(
@@ -1203,8 +1189,8 @@ def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
 
 
 @patch.object(AwsDevice, "run")
-def test_batch_execute_program_set_parametrize_differentiable(mock_run):
-    """Test batch_execute correctly runs program sets with trainable parameters"""
+def test_batch_execution_program_set_parametrize_differentiable(mock_run):
+    """Test that batch execution uses program sets with trainable parameters."""
     task = Mock()
     task.result.return_value = PROGRAM_SET_RESULT
     mock_run.return_value = task
@@ -1228,7 +1214,8 @@ def test_batch_execute_program_set_parametrize_differentiable(mock_run):
         qp.sample(qp.PauliZ(0))
 
     circuits = [circuit1, circuit2]
-    result = dev.batch_execute(circuits)
+    with qp.Tracker(dev) as tracker:
+        result = _execute_with_device_shots(dev, circuits)
 
     braket_circuit1 = (
         Circuit().h(0).cnot(0, 1).ry(0, FreeParameter("p_0")).rx(1, FreeParameter("p_1")).i(2).i(3)
@@ -1251,10 +1238,16 @@ def test_batch_execute_program_set_parametrize_differentiable(mock_run):
     assert (
         result[1] == [1, 1, -1, 1, -1, 1, -1, -1, -1, 1, -1, 1, 1, -1, -1, -1, -1, 1, -1, 1]
     ).all()
+    assert tracker.totals == {
+        "batches": 1,
+        "batch_len": 2,
+        "executions": 2,
+        "shots": 2 * SHOTS,
+    }
 
 
-def test_batch_execute_program_set_noncommuting():
-    """Test batch_execute correctly runs program sets when they are supported"""
+def test_batch_execution_program_set_noncommuting():
+    """Test that noncommuting measurements cannot be executed in one program set."""
     dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
     with QuantumTape() as circuit:
         qp.Hadamard(wires=0)
@@ -1264,7 +1257,7 @@ def test_batch_execute_program_set_noncommuting():
 
     circuits = [circuit, circuit]
     with pytest.raises(ValueError):
-        dev.batch_execute(circuits)
+        _execute_with_device_shots(dev, circuits)
 
 
 def _program_set_run_batch_mock(program_sets, **kwargs):
@@ -1278,8 +1271,8 @@ def _program_set_run_batch_mock(program_sets, **kwargs):
 
 
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
-    """Test batch_execute splits the program set and runs it as a batch when the number of
+def test_batch_execution_program_set_exceeds_max_executables(mock_run_batch):
+    """Test that batch execution splits the program set when the number of
     executables exceeds the device's maximumExecutables."""
     mock_run_batch.side_effect = _program_set_run_batch_mock
 
@@ -1300,7 +1293,7 @@ def test_batch_execute_program_set_exceeds_max_executables(mock_run_batch):
     assert len(circuits) == 101
     assert len(circuits) > dev._max_program_set_executables
 
-    result = dev.batch_execute(circuits)
+    result = _execute_with_device_shots(dev, circuits)
 
     # A single batch of two program sets: 100 executables in one, 1 in the other, each
     # carrying shots_per_executable so the service computes its own total shots.
@@ -1436,9 +1429,8 @@ def test_run_snapshots_program_set_exceeds_max_executables(mock_run_batch):
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
-def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
-    """Test batch_execute(parallel=True) correctly calls batch
-    execution methods for AwsDevices in Braket SDK"""
+def test_aws_device_batch_execution_parallel(mock_run_batch, mock_properties):
+    """Test that ``execute()`` uses ``AwsDevice.run_batch()`` when parallel execution is enabled."""
     mock_run_batch.return_value = TASK_BATCH
     mock_action = Mock()
     mock_action.action = {"braket.ir.openqasm.program": None}
@@ -1455,7 +1447,7 @@ def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
         qp.sample(qp.PauliZ(3))
 
     circuits = [circuit, circuit]
-    batch_results = dev.batch_execute(circuits)
+    batch_results = _execute_with_device_shots(dev, circuits)
     for results in batch_results:
         assert np.allclose(
             results[0],
@@ -1489,10 +1481,10 @@ def test_aws_device_batch_execute_parallel(mock_run_batch, mock_properties):
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
-def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
+def test_aws_device_batch_execution_parallel_diagonalizes_non_z_pauli(
     mock_run_batch, mock_properties
 ):
-    """parallel batch_execute should diagonalize non-Z-basis Pauli measurements so that
+    """Parallel batch execution should diagonalize non-Z-basis Pauli measurements so that
     qp.probs(op=qp.PauliY(...)) returns Y-basis probabilities instead of Z-basis."""
     mock_run_batch.return_value = TASK_BATCH
     mock_action = Mock()
@@ -1504,21 +1496,20 @@ def test_aws_device_batch_execute_parallel_diagonalizes_non_z_pauli(
         qp.Hadamard(wires=0)
         qp.probs(op=qp.PauliY(0))
 
-    dev.batch_execute([circuit])
+    _execute_with_device_shots(dev, [circuit])
 
     submitted = mock_run_batch.call_args[0][0][0]
     assert any(
         instr.operator.name == "Rx" and instr.target[0] == 0 for instr in submitted.instructions
     ), (
-        "Parallel batch_execute did not diagonalize qp.probs(op=PauliY(0)); "
+        "Parallel batch execution did not diagonalize qp.probs(op=PauliY(0)); "
         f"submitted instructions: {[i.operator.name for i in submitted.instructions]}"
     )
 
 
 @patch.object(LocalSimulator, "run_batch")
-def test_local_sim_batch_execute_parallel(mock_run_batch):
-    """Test batch_execute(parallel=True) correctly calls
-    batch execution methods for LocalSimulators in Braket SDK"""
+def test_local_sim_batch_execution_parallel(mock_run_batch):
+    """Test that ``execute()`` uses ``LocalSimulator.run_batch()`` in parallel mode."""
     mock_run_batch.return_value = TASK_BATCH
     dev = BraketLocalQubitDevice(
         wires=4, shots=SHOTS, parallel=True, parametrize_differentiable=False
@@ -1534,7 +1525,7 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
         qp.sample(qp.PauliZ(3))
 
     circuits = [circuit, circuit]
-    batch_results = dev.batch_execute(circuits)
+    batch_results = _execute_with_device_shots(dev, circuits)
     for results in batch_results:
         assert np.allclose(
             results[0],
@@ -1553,13 +1544,8 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
             RESULT.get_value_by_result_type(result_types.Sample(observable=observables.Z(3))),
         )
 
-    if dev._max_program_set_executables is not None:
-        expected_circuits = [CIRCUIT_WITH_BASIS_ROTATION, CIRCUIT_WITH_BASIS_ROTATION]
-    else:
-        expected_circuits = [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED]
-
     mock_run_batch.assert_called_with(
-        expected_circuits,
+        [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED],
         shots=SHOTS,
         max_parallel=None,
         inputs=[],
@@ -1568,7 +1554,7 @@ def test_local_sim_batch_execute_parallel(mock_run_batch):
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
-def test_aws_device_batch_execute_parallel_tracker(mock_run_batch, mock_properties):
+def test_aws_device_batch_execution_parallel_tracker(mock_run_batch, mock_properties):
     """Asserts tracker updates during parallel execution for AWS devices"""
 
     mock_run_batch.return_value = TASK_BATCH
@@ -1586,17 +1572,18 @@ def test_aws_device_batch_execute_parallel_tracker(mock_run_batch, mock_properti
 
     callback = Mock()
     with qp.Tracker(dev, callback=callback) as tracker:
-        dev.batch_execute(circuits)
-    dev.batch_execute(circuits)
+        _execute_with_device_shots(dev, circuits)
+    _execute_with_device_shots(dev, circuits)
 
-    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    latest = {"batches": 1, "batch_len": 2, "executions": 2, "shots": 2 * SHOTS}
     history = {
         "batches": [1],
+        "batch_len": [2],
         "executions": [2],
         "shots": [2 * SHOTS],
         "braket_task_id": ["task_arn", "task_arn"],
     }
-    totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    totals = {"batches": 1, "batch_len": 2, "executions": 2, "shots": 2 * SHOTS}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
@@ -1605,7 +1592,7 @@ def test_aws_device_batch_execute_parallel_tracker(mock_run_batch, mock_properti
 
 
 @patch.object(LocalSimulator, "run_batch")
-def test_local_sim_batch_execute_parallel_tracker(mock_run_batch):
+def test_local_sim_batch_execution_parallel_tracker(mock_run_batch):
     """Asserts tracker updates during parallel execution for local simulators"""
 
     mock_run_batch.return_value = TASK_BATCH
@@ -1620,17 +1607,18 @@ def test_local_sim_batch_execute_parallel_tracker(mock_run_batch):
 
     callback = Mock()
     with qp.Tracker(dev, callback=callback) as tracker:
-        dev.batch_execute(circuits)
-    dev.batch_execute(circuits)
+        _execute_with_device_shots(dev, circuits)
+    _execute_with_device_shots(dev, circuits)
 
-    latest = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    latest = {"batches": 1, "batch_len": 2, "executions": 2, "shots": 2 * SHOTS}
     history = {
         "batches": [1],
+        "batch_len": [2],
         "executions": [2],
         "shots": [2 * SHOTS],
         "braket_task_id": ["task_arn", "task_arn"],
     }
-    totals = {"batches": 1, "executions": 2, "shots": 2 * SHOTS}
+    totals = {"batches": 1, "batch_len": 2, "executions": 2, "shots": 2 * SHOTS}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
@@ -1640,7 +1628,7 @@ def test_local_sim_batch_execute_parallel_tracker(mock_run_batch):
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch, mock_properties):
+def test_batch_execution_partial_fail_parallel_tracker(mock_run_batch, mock_properties):
     """Asserts tracker updates during a partial failure of parallel execution"""
 
     FAIL_TASK = Mock()
@@ -1667,14 +1655,15 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch, mock_proper
     callback = Mock()
     try:
         with qp.Tracker(dev, callback=callback) as tracker:
-            dev.batch_execute(circuits)
-        dev.batch_execute(circuits)
+            _execute_with_device_shots(dev, circuits)
+        _execute_with_device_shots(dev, circuits)
     except RuntimeError:
         pass
 
-    latest = {"batches": 1, "executions": 1, "shots": 1 * SHOTS}
+    latest = {"batches": 1, "batch_len": 2, "executions": 1, "shots": 1 * SHOTS}
     history = {
         "batches": [1],
+        "batch_len": [2],
         "executions": [1],
         "shots": [1 * SHOTS],
         "braket_task_id": ["task_arn"],
@@ -1684,6 +1673,7 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch, mock_proper
     }
     totals = {
         "batches": 1,
+        "batch_len": 2,
         "executions": 1,
         "shots": 1 * SHOTS,
         "braket_simulator_ms": 1234,
@@ -1698,8 +1688,8 @@ def test_batch_execute_partial_fail_parallel_tracker(mock_run_batch, mock_proper
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "run_batch")
-def test_batch_execute_parametrize_differentiable(mock_run_batch, mock_properties):
-    """Test batch_execute(parallel=True) correctly calls batch execution methods in Braket SDK"""
+def test_batch_execution_parametrize_differentiable(mock_run_batch, mock_properties):
+    """Test parallel batch execution with trainable parameters."""
     mock_run_batch.return_value = TASK_BATCH
     mock_action = Mock()
     mock_action.action = {"braket.ir.openqasm.program": None}
@@ -1742,7 +1732,7 @@ def test_batch_execute_parametrize_differentiable(mock_run_batch, mock_propertie
     )
 
     circuits = [circuit1, circuit2]
-    dev.batch_execute(circuits)
+    _execute_with_device_shots(dev, circuits)
     mock_run_batch.assert_called_with(
         [expected_1, expected_2],
         s3_destination_folder=("foo", "bar"),
@@ -1817,7 +1807,7 @@ def test_execute_all_samples(mock_run):
         qp.sample(qp.Hadamard(0) @ qp.Identity(1))
         qp.sample(qp.Hermitian(np.array([[0, 1], [1, 0]]), wires=[2]))
 
-    results = dev.execute(circuit)
+    results = dev.execute(circuit.copy(shots=dev.shots))
 
     assert len(results) == 2
     assert results[0].shape == (4,)
@@ -1895,7 +1885,7 @@ def test_execute_some_samples(mock_run):
         qp.sample(qp.Hadamard(0) @ qp.Identity(1))
         qp.expval(qp.PauliZ(2))
 
-    results = dev.execute(circuit)
+    results = dev.execute(circuit.copy(shots=dev.shots))
 
     assert len(results) == 2
     assert results[0].shape == (4,)
@@ -2027,7 +2017,7 @@ def test_execute_counts(
         qp.CNOT(wires=[0, 1])
         qp.counts(op=op, wires=wires)
 
-    results = dev.execute(circuit)
+    results = dev.execute(circuit.copy(shots=dev.shots))
 
     assert results == expected_result
 
@@ -2043,12 +2033,12 @@ def test_counts_all_outcomes_fails():
 
     does_not_support = "Unsupported return type: <class 'pennylane.measurements.counts.CountsMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
-        dev.execute(circuit)
+        dev.execute(circuit.copy(shots=dev.shots))
 
 
 @patch.object(LocalSimulator, "run_batch")
-def test_counts_without_observable_batch_execute(mock_run_batch):
-    """Tests batch execution without observable works correctly"""
+def test_counts_without_observable_batch_execution(mock_run_batch):
+    """Test batch execution for counts without an observable."""
     task_batch = Mock()
     task_batch.unsuccessful = {}
     mock_results = []
@@ -2068,10 +2058,10 @@ def test_counts_without_observable_batch_execute(mock_run_batch):
         qp.X(wires=0)
         return qp.counts()
 
-    # Construct and execute tapes with batch_execute to trigger program sets
+    # Construct and execute a batch of tapes to trigger program sets.
     tape_generator = qp.workflow.construct_tape(bell_circuit)
     tapes = [tape_generator() for _ in range(5)]
-    results = dev.batch_execute(tapes)
+    results = _execute_with_device_shots(dev, tapes)
 
     assert len(results) == 5
     for result in results:
@@ -2090,7 +2080,7 @@ def test_sample_fails():
 
     does_not_support = "Unsupported return type: <class 'pennylane.measurements.sample.SampleMP'>"
     with pytest.raises(NotImplementedError, match=does_not_support):
-        dev.execute(circuit)
+        dev.execute(circuit.copy(shots=dev.shots))
 
 
 @pytest.mark.parametrize(
@@ -2127,9 +2117,9 @@ def test_unsupported_return_type():
 
     tape = qp.tape.QuantumTape(measurements=[mock_measurement])
 
-    does_not_support = "Unsupported return type: <class 'unittest.mock.Mock'>"
-    with pytest.raises(NotImplementedError, match=does_not_support):
-        dev.execute(tape)
+    with pytest.raises(DeviceError, match="not accepted"):
+        program, _ = dev.preprocess()
+        program((tape.copy(shots=dev.shots),))
 
 
 @patch.object(AwsDevice, "type", new_callable=mock.PropertyMock)
@@ -2147,46 +2137,40 @@ def test_non_circuit_device(name_mock, type_mock):
 def test_simulator_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=Shots.DEFAULT)
-    assert dev.shots is None
-    assert dev.analytic
+    assert dev.shots.total_shots is None
 
 
 def test_simulator_0_shots():
     """Tests that simulator devices are analytic if ``shots`` is zero"""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
-    assert dev.shots is None
-    assert dev.analytic
+    assert dev.shots.total_shots is None
 
 
 def test_simulator_none_shots():
     """Tests that simulator devices are analytic if ``shots`` is None"""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=None)
-    assert dev.shots is None
-    assert dev.analytic
+    assert dev.shots.total_shots is None
 
 
 @pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
 def test_local_default_shots(backend):
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
     dev = BraketLocalQubitDevice(wires=2, backend=backend)
-    assert dev.shots is None
-    assert dev.analytic
+    assert dev.shots.total_shots is None
 
 
 @pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
 def test_local_zero_shots(backend):
     """Test that the local simulator device is analytic if ``shots=0``"""
     dev = BraketLocalQubitDevice(wires=2, backend=backend, shots=0)
-    assert dev.shots is None
-    assert dev.analytic
+    assert dev.shots.total_shots is None
 
 
 @pytest.mark.parametrize("backend", ["default", "braket_sv", "braket_dm"])
 def test_local_none_shots(backend):
     """Tests that the simulator devices are analytic if ``shots`` is specified to be `None`."""
     dev = BraketLocalQubitDevice(wires=2, backend=backend, shots=None)
-    assert dev.shots is None
-    assert dev.analytic
+    assert dev.shots.total_shots is None
 
 
 @patch.object(LocalSimulator, "run")
@@ -2203,7 +2187,8 @@ def test_local_qubit_execute(mock_run, shots, backend):
         qp.probs(wires=[0])
         qp.expval(qp.PauliX(1))
         qp.var(qp.PauliY(2))
-        qp.sample(qp.PauliZ(3))
+        if shots:
+            qp.sample(qp.PauliZ(3))
 
     expected = (
         Circuit()
@@ -2215,8 +2200,11 @@ def test_local_qubit_execute(mock_run, shots, backend):
         .probability(target=[0])
         .expectation(observable=observables.Z(1))
         .variance(observable=observables.Z(2))
-        .sample(observable=observables.Z(3))
     )
+    if shots:
+        expected.sample(observable=observables.Z(3))
+
+    circuit = circuit.copy(shots=dev.shots)
     dev.execute(circuit)
     mock_run.assert_called_with(
         expected,
@@ -2229,8 +2217,7 @@ def test_local_qubit_execute(mock_run, shots, backend):
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
     dev = _aws_device(wires=2, shots=Shots.DEFAULT)
-    assert dev.shots == AwsDevice.DEFAULT_SHOTS_QPU
-    assert not dev.analytic
+    assert dev.shots.total_shots == AwsDevice.DEFAULT_SHOTS_QPU
 
 
 @pytest.mark.xfail(raises=ValueError)
@@ -2273,7 +2260,22 @@ def test_supported_ops_set(monkeypatch):
             lambda x, verbatim=False: test_ops,
         )
         dev = _aws_device(wires=2)
-        assert dev.operations == test_ops
+        assert set(dev.capabilities.operations) == set(test_ops)
+
+
+def test_capabilities_are_filtered_by_shots():
+    """Test that shot-dependent observables and measurements are discoverable."""
+    dev = _aws_device(wires=2)
+
+    analytic = dev.capabilities.filter(finite_shots=False)
+    finite_shots = dev.capabilities.filter(finite_shots=True)
+
+    assert "Sum" in analytic.observables
+    assert "Sum" not in finite_shots.observables
+    assert "StateMP" in analytic.measurement_processes
+    assert "StateMP" not in finite_shots.measurement_processes
+    assert "SampleMP" not in analytic.measurement_processes
+    assert "SampleMP" in finite_shots.measurement_processes
 
 
 def test_projection():
@@ -2348,7 +2350,7 @@ def test_run_batch_task_unimplemented():
         qp.probs(wires=[0, 1])
 
     with pytest.raises(NotImplementedError):
-        dev.batch_execute([circuit, circuit])
+        _execute_with_device_shots(dev, [circuit, circuit])
 
 
 @patch("braket.pennylane_plugin.braket_device.AwsDevice")
@@ -2445,7 +2447,7 @@ def test_add_braket_user_agent_invoked(aws_device_mock):
         ),
     ],
 )
-def test_execute_and_gradients(
+def test_execute_and_compute_derivatives(
     mock_run,
     pl_circ,
     expected_braket_circ,
@@ -2467,7 +2469,9 @@ def test_execute_and_gradients(
         device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
     )
 
-    results, jacs = dev.execute_and_gradients([pl_circ])
+    results, jacs = dev.execute_and_compute_derivatives(
+        (pl_circ,), ExecutionConfig(gradient_method="device")
+    )
 
     assert dev.task == task
     mock_run.assert_called_with(
@@ -2485,114 +2489,142 @@ def test_execute_and_gradients(
     assert (jacs == expected_pl_result[1]).all()
 
 
-@patch("braket.pennylane_plugin.braket_device.param_shift")
-@patch.object(AwsDevice, "run")
-@pytest.mark.parametrize(
-    "pl_circ, expected_braket_circ, wires, expected_inputs, result_types, expected_pl_result",
-    [
-        (
-            CIRCUIT_5,
-            Circuit()
-            .h(0)
-            .cnot(0, 1)
-            .rx(0, 0.432)
-            .ry(0, 0.543)
-            .ry(0, -np.pi / 2)
-            .rx(1, np.pi / 2)
-            .variance(observable=observables.Z(0) @ observables.Z(1)),
-            2,
-            {"p_1": 0.543},
-            [
-                {
-                    "type": {
-                        "observable": ["z", "z"],
-                        "targets": [0, 1],
-                        "type": "variance",
-                    },
-                    "value": 0.0,
-                }
-            ],
-            [np.tensor([0]), np.tensor([0])],
-        ),
-    ],
-)
-def test_execute_and_gradients_non_adjoint(
-    mock_run,
-    mock_param_shift,
-    pl_circ,
-    expected_braket_circ,
-    wires,
-    expected_inputs,
-    result_types,
-    expected_pl_result,
-):
-    task = Mock()
-    type(task).id = PropertyMock(return_value="task_arn")
-    task.state.return_value = "COMPLETED"
-    task.result.return_value = get_test_result_object(rts=result_types)
-    mock_run.return_value = task
-
-    grad = [1, 2]
-    mock_param_shift.return_value = [pl_circ, pl_circ], lambda x: grad
-
+def test_supports_derivatives_rejects_non_adjoint_measurements():
+    """Variance measurements fall back to PennyLane gradient transforms."""
     dev = _aws_device(
-        wires=wires,
+        wires=2,
         foo="bar",
         shots=0,
         device_type=AwsDeviceType.SIMULATOR,
         device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
     )
 
-    results, jacs = dev.execute_and_gradients([pl_circ])
-    assert dev.task == task
-    mock_run.assert_called_with(
-        expected_braket_circ,
-        s3_destination_folder=("foo", "bar"),
-        shots=0,
-        poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
-        poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        foo="bar",
-        inputs={},
+    config = ExecutionConfig(gradient_method="device")
+    assert not dev.supports_derivatives(config, CIRCUIT_5)
+
+
+def test_current_device_api():
+    dev = _aws_device(wires=2)
+    assert isinstance(dev, Device)
+    assert dev.capabilities.operations
+    assert dev.preprocess()[0]
+
+
+def test_aws_specific_methods_belong_to_aws_device():
+    """Only the AWS device implements AWS-specific execution methods."""
+    aws_only_methods = {
+        "setup_execution_config",
+        "supports_derivatives",
+        "execute_and_compute_derivatives",
+        "compute_derivatives",
+        "_adjoint_jacobian_processing",
+        "_run_program_set",
+        "_check_pulse_frequency_validity",
+        "_validate_pulse_parameters",
+        "_is_single_qubit_01_frame",
+        "_is_single_qubit_12_frame",
+        "_get_frames",
+        "pulse_settings",
+    }
+
+    assert aws_only_methods.isdisjoint(BraketQubitDevice.__dict__)
+    assert aws_only_methods <= BraketAwsQubitDevice.__dict__.keys()
+    preserved_base_methods = {
+        "_apply_gradient_result_type",
+        "_braket_to_pl_result",
+        "_braket_program_set_to_pl_result",
+        "_tracking_data",
+    }
+    assert preserved_base_methods <= BraketQubitDevice.__dict__.keys()
+    assert preserved_base_methods.isdisjoint(BraketAwsQubitDevice.__dict__)
+
+
+def test_tracking_data_includes_billing():
+    """The shared result processing includes simulator billing metadata when present."""
+    expected = {
+        "braket_task_id": "task_arn",
+        "braket_simulator_ms": 1234,
+        "braket_simulator_billed_ms": 3000,
+    }
+    assert BraketQubitDevice._tracking_data(SIM_TASK) == expected
+    assert BraketAwsQubitDevice._tracking_data(SIM_TASK) == expected
+
+
+def test_preprocess_decomposes_initial_state_preparation():
+    """Initial state-preparation operations are expanded into supported gates."""
+    dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    circuit = QuantumScript(
+        [qp.BasisState(np.array([1]), wires=0)],
+        [qp.expval(qp.PauliZ(0))],
     )
 
-    # assert results & jacs are right
-    assert (results == expected_pl_result[0]).all()
-    assert np.allclose(jacs[0][0], grad[0])
-    assert np.allclose(jacs[0][1], grad[1])
-    assert len(jacs[0]) == len(grad)
+    processed, _ = dev.preprocess()[0]((circuit,))
+
+    assert processed[0].operations
+    assert all(
+        dev.capabilities.supports_operation(operation.name) for operation in processed[0].operations
+    )
 
 
-def test_capabilities_class_and_instance_method():
-    class_caps = BraketAwsQubitDevice.capabilities()
-    instance_caps = _aws_device(wires=2).capabilities()
-    expected_caps = {
-        "model": "qubit",
-        "supports_broadcasting": False,
-        "supports_finite_shots": True,
-        "supports_tensor_observables": True,
-        "returns_probs": True,
-    }
-    assert class_caps == expected_caps
-    # the instance should not have provides_jacobian, even though AdjointGradient is in the
-    # supported result types, because shots != 0
-    assert instance_caps == expected_caps
+def test_adjoint_execution_config_and_preprocessing():
+    """The current API selects Braket's adjoint execution hooks and analytic preprocessing."""
+    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
+
+    config = dev.setup_execution_config(ExecutionConfig(gradient_method="adjoint"))
+    assert config.use_device_gradient is True
+    assert config.grad_on_execution is True
+    assert config.use_device_jacobian_product is False
+
+    explicit = dev.setup_execution_config(
+        ExecutionConfig(
+            gradient_method="device",
+            use_device_gradient=False,
+            grad_on_execution=False,
+            use_device_jacobian_product=True,
+        )
+    )
+    assert explicit.use_device_gradient is False
+    assert explicit.grad_on_execution is False
+    assert explicit.use_device_jacobian_product is True
+
+    program = dev.preprocess_transforms(ExecutionConfig(gradient_method="adjoint"))
+    assert program[-1].tape_transform.__name__ == "no_sampling"
 
 
-def test_capabilities_adjoint_shots_0():
-    instance_caps = _aws_device(
-        wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0
-    ).capabilities()
-    expected_caps = {
-        "model": "qubit",
-        "supports_broadcasting": False,
-        "supports_finite_shots": True,
-        "supports_tensor_observables": True,
-        "returns_probs": True,
-        # the instance should have provides_jacobian because AdjointGradient is in the
-        # supported result types and shots == 0
-        "provides_jacobian": True,
-    }
-    assert instance_caps == expected_caps
+def test_compute_derivatives_returns_jacobians(monkeypatch):
+    """The derivative-only API returns the Jacobian half of combined execution."""
+    dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    circuit = QuantumScript([], [qp.expval(qp.PauliZ(0))])
+    combined = Mock(return_value=(("result",), ("jacobian",)))
+    monkeypatch.setattr(dev, "execute_and_compute_derivatives", combined)
+
+    assert dev.compute_derivatives((circuit,)) == ("jacobian",)
+
+
+def test_adjoint_jacobian_processing_shapes():
+    """Scalar and multi-measurement Jacobians use PennyLane's expected nesting."""
+    scalar = BraketAwsQubitDevice._adjoint_jacobian_processing(np.array(0.5))
+    matrix = BraketAwsQubitDevice._adjoint_jacobian_processing(np.array([[1.0, 2.0], [3.0, 4.0]]))
+
+    assert scalar == np.array(0.5)
+    assert matrix == ((np.array(1.0), np.array(2.0)), (np.array(3.0), np.array(4.0)))
+
+
+def test_supports_derivatives_for_analytic_expectation():
+    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    circuit = QuantumScript([qp.RX(0.2, wires=0)], [qp.expval(qp.PauliZ(0))], shots=None)
+    config = ExecutionConfig(gradient_method="device")
+
+    assert dev.supports_derivatives(config, circuit)
+    assert not dev.supports_derivatives(config, circuit.copy(shots=10))
+
+    dev_without_adjoint = _aws_device(
+        wires=2,
+        device_type=AwsDeviceType.SIMULATOR,
+        shots=0,
+        action_properties=ACTION_PROPERTIES_NO_ADJOINT,
+    )
+    assert not dev_without_adjoint.supports_derivatives()
 
 
 class DummyLocalQubitDevice(BraketQubitDevice):
@@ -2892,7 +2924,7 @@ def test_execute_with_noise_model(
         noise_model=noise_model,
         action_properties=ACTION_PROPERTIES_DM_DEVICE,
     )
-    _ = dev.execute(pennylane_quantum_tape)
+    _ = dev.execute(pennylane_quantum_tape.copy(shots=dev.shots))
 
     assert dev.task == TASK
 
@@ -3017,9 +3049,8 @@ def get_oqc_device():
 
 
 class TestPulseValidation:
-    def test_that_check_validity_calls_pulse_validation_function(self, mocker):
-        """Test that check_validity calls _validate_pulse_parameters if the
-        queue contains a ParametrizedEvolution"""
+    def test_that_preprocess_calls_pulse_validation_function(self, mocker):
+        """Test that preprocessing validates ParametrizedEvolution pulses."""
 
         dev = get_oqc_device()
 
@@ -3028,8 +3059,9 @@ class TestPulseValidation:
         H = qp.pulse.transmon_drive(0.2, 0, 4.3, wires=[0])
         op = ParametrizedEvolution(H, [], t=10)
 
-        # one call
-        dev.check_validity([op], [])
+        tape = QuantumScript([op], [qp.expval(qp.PauliZ(0))], shots=dev.shots)
+        program, _ = dev.preprocess()
+        program((tape,))
         spy.assert_called_once_with(op)
 
     def test_callable_phase_raises_error(self):
@@ -3132,7 +3164,7 @@ class TestPulseValidation:
 @patch.object(AwsDevice, "name", new_callable=mock.PropertyMock)
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
 @patch.object(BraketAwsQubitDevice, "_braket_to_pl_result")
-def test_batch_execute_with_noise_model(
+def test_batch_execution_with_noise_model(
     mock_to_result,
     mock_properties,
     mock_name,
@@ -3154,7 +3186,7 @@ def test_batch_execute_with_noise_model(
         parallel=True,
     )
 
-    _ = dev.batch_execute([pennylane_quantum_tape] * NUM_CIRCUITS)
+    _ = _execute_with_device_shots(dev, [pennylane_quantum_tape] * NUM_CIRCUITS)
 
     mock_run_batch.assert_called_with(
         [expected_braket_circuit_with_noise_diagonalized] * NUM_CIRCUITS,

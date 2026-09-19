@@ -190,7 +190,7 @@ class TestExpval:
         dev1 = device(1)
         dev2 = qp.device("default.qubit", wires=1)
 
-        if not dev1.analytic:
+        if dev1.shots:
             pytest.skip("This test is designed to work in analytic mode")
 
         def circuit(x, y):

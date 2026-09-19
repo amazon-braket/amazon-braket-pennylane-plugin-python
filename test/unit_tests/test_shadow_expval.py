@@ -32,6 +32,7 @@ from braket.simulator import BraketSimulator
 from braket.task_result import GateModelTaskResult, ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
 from pennylane.measurements import MeasurementTransform
+from pennylane.exceptions import DeviceError
 from pennylane.tape import QuantumScript, QuantumTape
 from pennylane.wires import Wires
 
@@ -317,7 +318,7 @@ def test_only_one_operator_in_shadow_expval():
         qp.shadow_expval(qp.PauliX(1))
         qp.probs(wires=[0, 1])
 
-    dev.execute(circuit)
+    dev.execute(circuit.copy(shots=dev.shots))
 
 
 CIRCUIT_1 = QuantumScript(
@@ -328,6 +329,7 @@ CIRCUIT_1 = QuantumScript(
         qp.RY(0.543, wires=0),
     ],
     measurements=[qp.shadow_expval(qp.PauliX(1), seed=SEED)],
+    shots=SHOTS,
 )
 CIRCUIT_1.trainable_params = [0]
 
@@ -491,8 +493,6 @@ def _aws_device(
         shots=shots,
         **kwargs,
     )
-    # needed by the BraketAwsQubitDevice.capabilities function
-    dev._device._arn = device_arn
     return dev
 
 
@@ -581,7 +581,7 @@ def test_run_snapshots_not_implemented():
         qp.CNOT(wires=[0, 1])
         qp.shadow_expval(qp.PauliX(1))
 
-    dev.execute(circuit)
+    dev.execute(circuit.copy(shots=dev.shots))
 
 
 @patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
@@ -602,18 +602,25 @@ def test_shadows_parallel_tracker(mock_run_batch, mock_properties):
         qp.shadow_expval(qp.PauliX(1))
 
     callback = Mock()
+    circuit = circuit.copy(shots=dev.shots)
     with qp.Tracker(dev, callback=callback) as tracker:
         dev.execute(circuit)
     dev.execute(circuit)
 
-    latest = {"batches": 1, "executions": SHOTS, "shots": SHOTS}
+    latest = {"batches": 1, "batch_len": 1}
     history = {
-        "batches": [1],
+        "batches": [1, 1],
+        "batch_len": [1],
         "executions": [SHOTS],
         "shots": [SHOTS],
         "braket_task_id": ["task_arn", "task_arn"],
     }
-    totals = {"batches": 1, "executions": SHOTS, "shots": SHOTS}
+    totals = {
+        "batches": 2,
+        "batch_len": 1,
+        "executions": SHOTS,
+        "shots": SHOTS,
+    }
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals
@@ -639,9 +646,8 @@ def dummy_measurement_transform():
     return DummyMeasurementTransform()
 
 
-@pytest.mark.xfail(raises=RuntimeError)
 def test_non_shadow_expval_transform():
-    """Tests that an error is thrown when the circuit has an unsupported MeasurementTransform"""
+    """Tests that preprocessing rejects an unsupported measurement transform."""
     dummy = DummyCircuitSimulator()
     dev = DummyLocalQubitDevice(wires=2, device=dummy, shots=1000)
 
@@ -650,4 +656,6 @@ def test_non_shadow_expval_transform():
         qp.CNOT(wires=[0, 1])
         dummy_measurement_transform()
 
-    dev.execute(circuit)
+    with pytest.raises(DeviceError, match="not accepted"):
+        program, _ = dev.preprocess()
+        program((circuit.copy(shots=dev.shots),))

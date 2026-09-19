@@ -19,6 +19,7 @@ from unittest.mock import Mock
 import numpy as np
 import pennylane as qp
 import pytest
+from pennylane.exceptions import DeviceError
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.driving_field import DrivingField
@@ -139,6 +140,12 @@ HAMILTONIANS_AND_PARAMS = [
 DEV_ATTRIBUTES = [(BraketAwsAhsDevice, "Aquila", "braket.aws.ahs")]
 
 dev_sim = BraketLocalAhsDevice(wires=3, shots=17)
+
+
+def _preprocess(dev, operations, measurements):
+    tape = qp.tape.QuantumScript(operations, measurements, shots=dev.shots)
+    program, _ = dev.preprocess()
+    return program((tape,))
 
 
 PARADIGM_PROPERTIES = QueraAhsParadigmProperties.parse_raw_schema(
@@ -361,11 +368,14 @@ class TestBraketAhsDevice:
 
         assert dev._device.name == "RydbergAtomSimulator"
         assert dev.short_name == "braket.local.ahs"
-        assert dev.shots == 11
+        assert dev.shots.total_shots == 11
         assert dev.ahs_program is None
         assert dev.result is None
-        assert dev.pennylane_requires == ">=0.30.0"
-        assert dev.operations == {"ParametrizedEvolution"}
+        assert set(dev.capabilities.operations) == {"ParametrizedEvolution"}
+        assert not dev.capabilities.filter(finite_shots=False).operations
+        assert set(dev.capabilities.filter(finite_shots=True).operations) == {
+            "ParametrizedEvolution"
+        }
 
     def test_settings(self):
         dev = dev_sim
@@ -388,7 +398,7 @@ class TestBraketAhsDevice:
     def test_setting_shots(self, dev_cls, shots):
         """Test that setting shots changes number of shots from default (100)"""
         dev = dev_cls(wires=3, shots=shots)
-        assert dev.shots == shots
+        assert dev.shots.total_shots == shots
 
     @pytest.mark.parametrize("shots", [0, None])
     def test_no_shots_raises_error(self, shots):
@@ -435,49 +445,86 @@ class TestBraketAhsDevice:
         assert dev.result is not None
         assert dev.task is not None
         assert dev.task == dev._task
-        assert len(dev.result.measurements) == dev.shots
+        assert len(dev.result.measurements) == dev.shots.total_shots
         assert len(dev.result.measurements[0].pre_sequence) == len(dev.wires)
 
         assert isinstance(dev.ahs_program, AnalogHamiltonianSimulation)
         assert dev.ahs_program.register == dev.register
         assert dev.ahs_program.hamiltonian.amplitude.time_series.times()[-1] == t * 1e-6
 
-    def test_check_validity_unsupported_op(self):
-        """Tests that check_validity() throws NotImplementedError when it encounters
-        an unknown gate."""
-
-        with pytest.raises(NotImplementedError):
-            dev_sim.check_validity([qp.PauliX(0)], [])
+    def test_preprocess_rejects_unsupported_op(self):
+        """Tests that preprocessing rejects an unsupported operation."""
+        with pytest.raises(DeviceError):
+            _preprocess(dev_sim, [qp.PauliX(0)], [qp.sample()])
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
-    def test_check_validity_valid_circuit(self, H, params):
-        """Tests that check_validity() doesn't raise any errors when the operations and
-        observables are valid."""
+    def test_preprocess_valid_circuit(self, H, params):
+        """Tests that preprocessing accepts valid operations and measurements."""
         ops = [ParametrizedEvolution(H, params, [0, 1.5])]
-        obs = [
-            qp.PauliZ(0),
+        measurements = [
             qp.expval(qp.PauliZ(0)),
             qp.var(qp.Identity(0)),
             qp.sample(qp.PauliZ(0)),
-            qp.prod(qp.PauliZ(0), qp.Identity(1)),
             qp.counts(),
         ]
         dev = qp.device("braket.local.ahs", wires=3)
 
-        dev.check_validity(ops, obs)
+        _preprocess(dev, ops, measurements)
 
     @pytest.mark.parametrize("H, params", HAMILTONIANS_AND_PARAMS)
-    def test_check_validity_raises_error_for_state_based_measurement(self, H, params):
-        """Tests that requesting a measurement other than a sample-based
-        measurement raises an error"""
-
+    def test_preprocess_rejects_state_measurement(self, H, params):
+        """Tests that preprocessing rejects state measurements."""
         dev = qp.device("braket.local.ahs", wires=3)
-
         ops = [ParametrizedEvolution(H, params, [0, 1.5])]
-        obs = [qp.state()]
 
-        with pytest.raises(TypeError, match="only support sample-based measurement"):
-            dev.check_validity(ops, obs)
+        with pytest.raises(DeviceError):
+            _preprocess(dev, ops, [qp.state()])
+
+    def test_execute_current_api(self, monkeypatch):
+        """Execute batches, multiple measurements, and tracking through the current API."""
+        dev = BraketLocalAhsDevice(wires=2, shots=4)
+        samples = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+        apply = Mock()
+        monkeypatch.setattr(dev, "apply", apply)
+        monkeypatch.setattr(dev, "_generate_samples", lambda: samples)
+
+        single_measurement = qp.tape.QuantumScript([], [qp.expval(qp.PauliZ(0))], shots=4)
+        multiple_measurements = qp.tape.QuantumScript(
+            [],
+            [qp.var(qp.PauliZ(0)), qp.sample(wires=1)],
+            shots=4,
+        )
+
+        with qp.Tracker(dev) as tracker:
+            results = dev.execute((single_measurement, multiple_measurements))
+
+        assert np.allclose(results[0], 0)
+        assert np.allclose(results[1][0], 1)
+        assert np.array_equal(results[1][1], samples[:, 1, None])
+        assert tracker.totals == {
+            "batches": 1,
+            "batch_len": 2,
+            "executions": 2,
+            "shots": 8,
+        }
+        assert apply.call_count == 2
+
+        assert np.allclose(dev.execute(single_measurement), 0)
+
+    @pytest.mark.parametrize(
+        "shots, message",
+        [
+            (None, "requires finite shots"),
+            ([1, 2], "does not support shot vectors"),
+        ],
+    )
+    def test_execute_rejects_unsupported_shots(self, shots, message):
+        """Direct execution enforces the AHS shot requirements."""
+        dev = BraketLocalAhsDevice(wires=2, shots=4)
+        circuit = qp.tape.QuantumScript([], [qp.sample(wires=0)], shots=shots)
+
+        with pytest.raises(DeviceError, match=message):
+            dev.execute(circuit)
 
     @pytest.mark.parametrize("hamiltonian, params", HAMILTONIANS_AND_PARAMS)
     def test_create_ahs_program(self, hamiltonian, params):
@@ -550,15 +597,12 @@ class TestBraketAhsDevice:
             assert np.allclose([pulse.frequency * 2 * np.pi * 1e6 for t in amp_time], det_vals)
 
     def test_generate_samples(self):
-        """Test that generate_samples creates a list of arrays with the expected shape for the
+        """Test that sample generation creates a list of arrays with the expected shape for the
         task run"""
         ahs_program = dummy_ahs_program()
         dev = qp.device("braket.local.ahs", wires=3)
-        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
-        dev = dev.target_device if hasattr(dev, "target_device") else dev
 
-        # checked in _validate_operations in the full pipeline
+        # checked in _validate_evolution in the full pipeline
         # since these are created manually for the unit test elsewhere in the file,
         # we confirm the values used for the test are valid here
         assert len(ahs_program.register.coordinate_list(0)) == len(dev.wires)
@@ -566,19 +610,16 @@ class TestBraketAhsDevice:
         task = dev._run_task(ahs_program)
         dev._task = task
 
-        samples = dev.generate_samples()
+        samples = dev._generate_samples()
 
         assert len(samples) == 1000
         assert len(samples[0]) == len(dev.wires)
         assert isinstance(samples[0], np.ndarray)
 
-    def test_expval_handles_nan(self):
-        """Test that expval takes the average ignoring NaN values"""
+    def test_process_expval_handles_nan(self):
+        """Test that expectation processing takes the average while ignoring NaN values."""
 
         dev = qp.device("braket.local.ahs", wires=4, shots=4)
-        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
-        dev = dev.target_device if hasattr(dev, "target_device") else dev
 
         dev._samples = np.array(
             [
@@ -589,9 +630,9 @@ class TestBraketAhsDevice:
             ]
         )
 
-        res = dev.expval(qp.PauliZ(3))
+        res = dev._process_measurement(qp.expval(qp.PauliZ(3)), dev._samples)
 
-        assert res != np.nan
+        assert not np.isnan(res)
 
     def test_no_diagonalzing_gates_raises_error(self):
         """Tests that if passed an Operator with no diagonalizing gates,
@@ -716,9 +757,9 @@ class TestBraketAhsDevice:
 
         with pytest.raises(
             NotImplementedError,
-            match="Support for multiple ParametrizedEvolution operators",
+            match="exactly one ParametrizedEvolution",
         ):
-            dev_sim._validate_operations([op1, op2])
+            _preprocess(dev_sim, [op1, op2], [qp.sample()])
 
     def test_validate_operations_wires_match_device(self):
         """Test that an error is raised if the wires on the Hamiltonian
@@ -729,10 +770,10 @@ class TestBraketAhsDevice:
         dev2 = BraketLocalAhsDevice(wires=len(H.wires) + 1)
 
         with pytest.raises(ValueError, match="Device wires must match wires of the evolution."):
-            dev1._validate_operations([ParametrizedEvolution(H, [], 1)])
+            dev1._validate_evolution(ParametrizedEvolution(H, [], 1))
 
         with pytest.raises(ValueError, match="Device wires must match wires of the evolution."):
-            dev2._validate_operations([ParametrizedEvolution(H, [], 1)])
+            dev2._validate_evolution(ParametrizedEvolution(H, [], 1))
 
     def test_validate_operations_register_matches_wires(self):
         """Test that en error is raised in the length of the register doesn't match
@@ -746,7 +787,7 @@ class TestBraketAhsDevice:
         dev = BraketLocalAhsDevice(wires=4)
 
         with pytest.raises(RuntimeError, match="The defined interaction term has register"):
-            dev._validate_operations([ParametrizedEvolution(H, [], 1)])
+            dev._validate_evolution(ParametrizedEvolution(H, [], 1))
 
     def test_validate_operations_not_hardware_hamiltonian(self):
         """Test that an error is raised if the ParametrizedHamiltonian on the operator
@@ -756,7 +797,7 @@ class TestBraketAhsDevice:
         op1 = qp.evolve(H1)
 
         with pytest.raises(TypeError, match="Expected a HardwareHamiltonian instance"):
-            dev_sim._validate_operations([op1])
+            dev_sim._validate_evolution(op1)
 
     def test_validate_pulses_no_pulses(self, mock_aws_device):
         """Test that _validate_pulses raises an error if there are no pulses saved
@@ -1221,11 +1262,10 @@ class TestBraketAwsAhsDevice:
         dev = mock_aws_device()
 
         assert dev._s3_folder == ("foo", "bar")
-        assert dev.shots == 17
+        assert dev.shots.total_shots == 17
         assert dev.ahs_program is None
         assert dev.result is None
-        assert dev.pennylane_requires == ">=0.30.0"
-        assert dev.operations == {"ParametrizedEvolution"}
+        assert set(dev.capabilities.operations) == {"ParametrizedEvolution"}
         assert dev.short_name == "braket.aws.ahs"
 
     def test_hardware_capabilities(self, mock_aws_device):
