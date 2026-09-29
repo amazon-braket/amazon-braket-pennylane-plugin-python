@@ -81,7 +81,7 @@ the device's supported operations, run
 
 .. code-block:: python
 
-    dev.operations
+    dev.capabilities.operations
 
 In addition to those `provided by PennyLane <https://pennylane.readthedocs.io/en/stable/introduction/operations.html#qubit-operations>`_,
 the PennyLane-Braket plugin provides the following framework-specific operations, which can be imported
@@ -96,4 +96,3 @@ from :mod:`braket.pennylane_plugin.ops <.ops>`:
     braket.pennylane_plugin.GPi2
     braket.pennylane_plugin.MS
     braket.pennylane_plugin.PRx
-

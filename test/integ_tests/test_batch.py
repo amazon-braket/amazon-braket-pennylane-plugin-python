@@ -49,36 +49,22 @@ def test_batch_execution_of_gradient(device, shots, mocker):
     dfunc_default = qp.grad(qnode_default)
 
     if isinstance(dev_braket, BraketAwsQubitDevice):
-        spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
-        spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
-        spy3 = mocker.spy(AwsDevice, "run_batch")
+        execute_spy = mocker.spy(BraketAwsQubitDevice, "execute")
+        backend_batch_spy = mocker.spy(AwsDevice, "run_batch")
     elif isinstance(dev_braket, BraketLocalQubitDevice):
-        spy1 = mocker.spy(BraketLocalQubitDevice, "execute")
-        spy2 = mocker.spy(BraketLocalQubitDevice, "batch_execute")
-        spy3 = mocker.spy(LocalSimulator, "run_batch")
+        execute_spy = mocker.spy(BraketLocalQubitDevice, "execute")
+        backend_batch_spy = mocker.spy(LocalSimulator, "run_batch")
 
     res_braket = dfunc_braket(weights)
     res_default = dfunc_default(weights)
 
-    if qp.version() >= "0.20.0":
-        assert np.allclose(res_braket, res_default)
-        spy1.assert_not_called()
-        assert len(spy2.call_args_list) == 2
-        assert len(spy3.call_args_list) == 2
+    assert np.allclose(res_braket, res_default)
+    assert len(execute_spy.call_args_list) == 2
+    assert len(backend_batch_spy.call_args_list) == 2
 
-        expected_circuits = qubits * layers * 3 * 2
-        assert len(spy2.call_args_list[0][0][1]) == 1  # First batch_execute called for forward pass
-        assert (
-            len(spy2.call_args_list[1][0][1]) == expected_circuits
-        )  # Then called for backward pass
-    else:
-        assert np.allclose(res_braket, res_default)
-        spy1.assert_called_once()  # For a forward pass
-        spy2.assert_called_once()
-        spy3.assert_called_once()
-
-        expected_circuits = qubits * layers * 3 * 2
-        assert len(spy2.call_args_list[0][0][1]) == expected_circuits
+    expected_circuits = qubits * layers * 3 * 2
+    assert len(execute_spy.call_args_list[0][0][1]) == 1
+    assert len(execute_spy.call_args_list[1][0][1]) == expected_circuits
 
 
 @pytest.mark.parametrize("shots", [None])
@@ -113,13 +99,11 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     weights_default = torch.tensor(weights, requires_grad=True)
 
     if isinstance(dev_braket, BraketAwsQubitDevice):
-        spy1 = mocker.spy(BraketAwsQubitDevice, "execute")
-        spy2 = mocker.spy(BraketAwsQubitDevice, "batch_execute")
-        spy3 = mocker.spy(AwsDevice, "run_batch")
+        execute_spy = mocker.spy(BraketAwsQubitDevice, "execute")
+        backend_batch_spy = mocker.spy(AwsDevice, "run_batch")
     elif isinstance(dev_braket, BraketLocalQubitDevice):
-        spy1 = mocker.spy(BraketLocalQubitDevice, "execute")
-        spy2 = mocker.spy(BraketLocalQubitDevice, "batch_execute")
-        spy3 = mocker.spy(LocalSimulator, "run_batch")
+        execute_spy = mocker.spy(BraketLocalQubitDevice, "execute")
+        backend_batch_spy = mocker.spy(LocalSimulator, "run_batch")
 
     out_braket = qnode_braket(weights_braket)
     out_default = qnode_default(weights_default)
@@ -130,22 +114,10 @@ def test_batch_execution_of_gradient_torch(device, shots, mocker):
     res_braket = weights_braket.grad
     res_default = weights_default.grad
 
-    if qp.version() >= "0.20.0":
-        assert np.allclose(res_braket, res_default)
-        spy1.assert_not_called()
-        assert len(spy2.call_args_list) == 2
-        assert len(spy3.call_args_list) == 2
+    assert np.allclose(res_braket, res_default)
+    assert len(execute_spy.call_args_list) == 2
+    assert len(backend_batch_spy.call_args_list) == 2
 
-        expected_circuits = qubits * layers * 3 * 2
-        assert len(spy2.call_args_list[0][0][1]) == 1  # First batch_execute called for forward pass
-        assert (
-            len(spy2.call_args_list[1][0][1]) == expected_circuits
-        )  # Then called for backward pass
-    else:
-        assert np.allclose(res_braket, res_default)
-        spy1.assert_called_once()  # For a forward pass
-        spy2.assert_called_once()
-        spy3.assert_called_once()
-
-        expected_circuits = qubits * layers * 3 * 2
-        assert len(spy2.call_args_list[0][0][1]) == expected_circuits
+    expected_circuits = qubits * layers * 3 * 2
+    assert len(execute_spy.call_args_list[0][0][1]) == 1
+    assert len(execute_spy.call_args_list[1][0][1]) == expected_circuits

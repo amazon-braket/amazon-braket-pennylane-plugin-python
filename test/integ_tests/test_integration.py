@@ -30,11 +30,8 @@ class TestDeviceIntegration:
     def test_load_device(self, d, extra_kwargs):
         """Test that the device loads correctly"""
         dev = TestDeviceIntegration._device(d, 2, extra_kwargs)
-        # PennyLane 0.38+ wraps the device in a `LegacyDeviceFacade`
-        # TODO: Remove else branch once minimum PennyLane is >=0.38
-        dev = dev.target_device if hasattr(dev, "target_device") else dev
-        assert dev.num_wires == 2
-        assert dev.shots is None
+        assert len(dev.wires) == 2
+        assert dev.shots.total_shots is None
         assert dev.short_name == d[0]
 
     def test_args_aws(self):
@@ -51,7 +48,7 @@ class TestDeviceIntegration:
     @pytest.mark.parametrize("shots", [None, 8192])
     def test_one_qubit_circuit(self, shots, d, tol, extra_kwargs):
         """Test that devices provide correct result for a simple circuit"""
-        dev = TestDeviceIntegration._device(d, 1, extra_kwargs)
+        dev = TestDeviceIntegration._device(d, 1, extra_kwargs, shots=shots)
 
         a = 0.543
         b = 0.123
@@ -68,7 +65,12 @@ class TestDeviceIntegration:
         assert np.allclose(circuit(a, b, c), np.cos(a) * np.sin(b), **tol)
 
     @staticmethod
-    def _device(shortname_and_backend, wires, extra_kwargs):
+    def _device(shortname_and_backend, wires, extra_kwargs, shots=None):
         device_name, backend = shortname_and_backend
         device_class = ENTRY_POINTS[device_name].load()
-        return qp.device(device_name, wires=wires, **extra_kwargs(device_class, backend))
+        return qp.device(
+            device_name,
+            wires=wires,
+            shots=shots,
+            **extra_kwargs(device_class, backend),
+        )
