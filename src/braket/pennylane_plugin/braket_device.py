@@ -285,6 +285,7 @@ class BraketQubitDevice(PennyLaneDevice):
         for transform in program:
             if transform.tape_transform is decompose.tape_transform:
                 transform.kwargs["skip_initial_state_prep"] = False
+                transform.kwargs["num_work_wires"] = 0
         return program
 
     def execute(

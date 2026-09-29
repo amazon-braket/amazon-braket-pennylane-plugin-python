@@ -2566,6 +2566,28 @@ def test_preprocess_decomposes_initial_state_preparation():
     )
 
 
+@pytest.mark.parametrize("device_wires", [4, 5])
+@pytest.mark.parametrize("shots", [None, 100])
+def test_preprocess_disables_dynamic_work_wire_allocation(device_wires, shots):
+    """Graph decomposition uses no ancillas, even when the device has spare wires."""
+    dev = BraketLocalQubitDevice(wires=device_wires)
+    operations = [qp.X(2), qp.X(3), qp.Y(2), qp.SWAP([2, 3])]
+    circuit = QuantumScript(
+        [qp.Select(operations, control=[0, 1])],
+        [qp.probs(wires=[0, 1, 2, 3])],
+        shots=shots,
+    )
+    program, _ = dev.preprocess()
+
+    with qp.decomposition.toggle_graph_ctx(True):
+        processed, _ = program((circuit,))
+
+    assert set(processed[0].wires) == set(circuit.wires)
+    assert all(
+        dev.capabilities.supports_operation(operation.name) for operation in processed[0].operations
+    )
+
+
 def test_adjoint_execution_config_and_preprocessing():
     """The current API selects Braket's adjoint execution hooks and analytic preprocessing."""
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
