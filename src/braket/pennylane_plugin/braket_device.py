@@ -122,7 +122,6 @@ class Shots(Enum):
 
 @qp.transform
 def _split_measurements_for_braket(tape: QuantumScript):
-    """Preserve lone analytic measurements and group others in a qubit-wise commuting basis."""
     if not tape.shots and len(tape.measurements) == 1:
         return (tape,), null_postprocessing
     return qp.transforms.split_non_commuting(tape, grouping_strategy="qwc")
@@ -203,6 +202,8 @@ class BraketQubitDevice(PennyLaneDevice):
             raise ValueError(f"Device {device.name} does not support verbatim circuits")
 
         super().__init__(wires=wires, shots=shots or None)
+        # Braket qubits are consecutive integers, regardless of the user's wire labels
+        self._wire_map = dict(zip(self.wires, range(len(self.wires))))
         self._device = device
         self._parallel = parallel
         self._max_parallel = max_parallel
@@ -260,13 +261,7 @@ class BraketQubitDevice(PennyLaneDevice):
         if noise_model:
             self._validate_noise_model_support()
 
-    @property
-    def _wire_map(self) -> dict:
-        """Map user-provided wire labels to consecutive Braket qubit indices."""
-        return dict(zip(self.wires, range(len(self.wires))))
-
     def _map_wires(self, wires) -> Wires:
-        """Map PennyLane wire labels to consecutive Braket qubit indices."""
         return Wires(wires).map(self._wire_map)
 
     @property
@@ -364,7 +359,6 @@ class BraketQubitDevice(PennyLaneDevice):
         trainable_indices: frozenset[int] | None = None,
         *,
         add_observables: bool = True,
-        **run_kwargs,
     ):
         """Converts a PennyLane circuit to a Braket circuit"""
         braket_circuit = self.apply(
@@ -372,7 +366,6 @@ class BraketQubitDevice(PennyLaneDevice):
             rotations=None,  # Diagonalizing gates are applied in Braket SDK
             use_unique_params=False,
             trainable_indices=trainable_indices,
-            **run_kwargs,
         )
         if self._verbatim:
             braket_circuit = Circuit().add_verbatim_box(braket_circuit)
@@ -595,9 +588,7 @@ class BraketQubitDevice(PennyLaneDevice):
         shadow = qp.shadows.ClassicalShadow(bits, recipes, wire_map=obs.wires.tolist())
         return shadow.expval(obs.H, obs.k)
 
-    def _execute_circuit(
-        self, circuit: QuantumScript, compute_gradient: bool = False, **run_kwargs
-    ):
+    def _execute_circuit(self, circuit: QuantumScript, compute_gradient: bool = False):
         if circuit.shots.has_partitioned_shots:
             raise DeviceError(f"{self.name} does not support shot vectors.")
         circuit = self._maybe_diagonalize_measurements(circuit, compute_gradient=compute_gradient)
@@ -610,7 +601,6 @@ class BraketQubitDevice(PennyLaneDevice):
             circuit,
             compute_gradient=compute_gradient,
             trainable_indices=frozenset(trainable.keys()),
-            **run_kwargs,
         )
         measurement = circuit.measurements[0]
         if not isinstance(measurement, MeasurementTransform):
@@ -934,7 +924,8 @@ class BraketAwsQubitDevice(BraketQubitDevice):
                         self.tracker.update(**tracking_data)
                     total_executions = len(task_batch.tasks) - len(task_batch.unsuccessful)
                     total_shots = total_executions
-                    self.tracker.update(batches=1, executions=total_executions, shots=total_shots)
+                    # execute() records the batch, so only executions are recorded here
+                    self.tracker.update(executions=total_executions, shots=total_shots)
                     self.tracker.record()
 
             for t in range(n_snapshots):
@@ -1105,15 +1096,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     @staticmethod
     def _adjoint_jacobian_processing(jacobian):
+        # Braket only differentiates a single expectation value, so the Jacobian is at most 1D
         jacobian = np.squeeze(jacobian)
         if jacobian.ndim == 0:
             return np.asarray(jacobian)
-        if jacobian.ndim == 1:
-            return tuple(np.asarray(value) for value in jacobian)
-        return tuple(
-            tuple(np.asarray(value) for value in measurement_jacobian)
-            for measurement_jacobian in jacobian
-        )
+        return tuple(np.asarray(value) for value in jacobian)
 
     def _is_single_qubit_01_frame(self, f_string, wire=None):
         """Defines the condition for selecting frames addressing the qubit (01)
@@ -1218,6 +1205,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             "wires": wires,
             "anharmonicity": anharmonicity,
         }
+
+
+# Overrides are not wrapped by the modifier applied to the base class, so reapply it to
+# cover the derivative methods defined here.
+single_tape_support(BraketAwsQubitDevice)
 
 
 class BraketLocalQubitDevice(BraketQubitDevice):

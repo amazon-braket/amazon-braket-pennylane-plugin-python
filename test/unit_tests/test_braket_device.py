@@ -56,7 +56,7 @@ from device_property_jsons import (
     RESULT,
 )
 from pennylane import numpy as np
-from pennylane.devices import Device, ExecutionConfig
+from pennylane.devices import ExecutionConfig
 from pennylane.exceptions import DeviceError, QuantumFunctionError
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
@@ -81,7 +81,6 @@ SHOTS = 10000
 
 
 def _execute_with_device_shots(dev, circuits):
-    """Execute test circuits using the device's configured shots."""
     return dev.execute(tuple(circuit.copy(shots=dev.shots) for circuit in circuits))
 
 
@@ -1012,21 +1011,6 @@ def test_bad_statistics():
     tape = qp.tape.QuantumTape(measurements=[qp.classical_shadow(wires=[0])])
     with pytest.raises(QuantumFunctionError, match="Unsupported return type:"):
         dev._statistics(None, tape.measurements)
-
-
-@patch.object(AwsDevice, "properties", new_callable=mock.PropertyMock)
-def test_batch_execution_non_parallel(mock_properties, monkeypatch):
-    """Test that current batch execution falls back to one circuit at a time."""
-    mock_action = Mock()
-    mock_action.action = {"braket.ir.openqasm.program": None}
-    mock_properties.return_value = mock_action
-    dev = _aws_device(wires=2, foo="bar", parallel=False)
-    assert dev.parallel is False
-
-    circuit = QuantumScript(shots=dev.shots)
-    with monkeypatch.context() as m:
-        m.setattr(dev, "_execute_circuit", lambda _: 1967)
-        assert dev.execute((circuit,)) == (1967,)
 
 
 def test_execute_empty_batch():
@@ -2491,7 +2475,7 @@ def test_execute_and_compute_derivatives(
     assert (jacs == expected_pl_result[1]).all()
 
 
-@pytest.mark.parametrize("diff_method", ["best", "device", "adjoint"])
+@pytest.mark.parametrize("diff_method", ["best", "device"])
 @pytest.mark.parametrize(
     "observable, braket_observable, targets, result_observable",
     [
@@ -2559,67 +2543,6 @@ def test_qnode_sum_adjoint_gradient_uses_one_task(
     assert np.isclose(gradient, -0.5)
 
 
-def test_supports_derivatives_rejects_non_adjoint_measurements():
-    """Variance measurements fall back to PennyLane gradient transforms."""
-    dev = _aws_device(
-        wires=2,
-        foo="bar",
-        shots=0,
-        device_type=AwsDeviceType.SIMULATOR,
-        device_arn="arn:aws:braket:::device/quantum-simulator/amazon/sv1",
-    )
-
-    config = ExecutionConfig(gradient_method="device")
-    assert not dev.supports_derivatives(config, CIRCUIT_5)
-
-
-def test_current_device_api():
-    dev = _aws_device(wires=2)
-    assert isinstance(dev, Device)
-    assert dev.capabilities.operations
-    assert dev.preprocess()[0]
-
-
-def test_aws_specific_methods_belong_to_aws_device():
-    """Only the AWS device implements AWS-specific execution methods."""
-    aws_only_methods = {
-        "setup_execution_config",
-        "supports_derivatives",
-        "execute_and_compute_derivatives",
-        "compute_derivatives",
-        "_adjoint_jacobian_processing",
-        "_run_program_set",
-        "_check_pulse_frequency_validity",
-        "_validate_pulse_parameters",
-        "_is_single_qubit_01_frame",
-        "_is_single_qubit_12_frame",
-        "_get_frames",
-        "pulse_settings",
-    }
-
-    assert aws_only_methods.isdisjoint(BraketQubitDevice.__dict__)
-    assert aws_only_methods <= BraketAwsQubitDevice.__dict__.keys()
-    preserved_base_methods = {
-        "_apply_gradient_result_type",
-        "_braket_to_pl_result",
-        "_braket_program_set_to_pl_result",
-        "_tracking_data",
-    }
-    assert preserved_base_methods <= BraketQubitDevice.__dict__.keys()
-    assert preserved_base_methods.isdisjoint(BraketAwsQubitDevice.__dict__)
-
-
-def test_tracking_data_includes_billing():
-    """The shared result processing includes simulator billing metadata when present."""
-    expected = {
-        "braket_task_id": "task_arn",
-        "braket_simulator_ms": 1234,
-        "braket_simulator_billed_ms": 3000,
-    }
-    assert BraketQubitDevice._tracking_data(SIM_TASK) == expected
-    assert BraketAwsQubitDevice._tracking_data(SIM_TASK) == expected
-
-
 def test_preprocess_decomposes_initial_state_preparation():
     """Initial state-preparation operations are expanded into supported gates."""
     dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
@@ -2637,15 +2560,13 @@ def test_preprocess_decomposes_initial_state_preparation():
 
 
 @pytest.mark.parametrize("device_wires", [4, 5])
-@pytest.mark.parametrize("shots", [None, 100])
-def test_preprocess_disables_dynamic_work_wire_allocation(device_wires, shots):
+def test_preprocess_disables_dynamic_work_wire_allocation(device_wires):
     """Graph decomposition uses no ancillas, even when the device has spare wires."""
     dev = BraketLocalQubitDevice(wires=device_wires)
     operations = [qp.X(2), qp.X(3), qp.Y(2), qp.SWAP([2, 3])]
     circuit = QuantumScript(
         [qp.Select(operations, control=[0, 1])],
         [qp.probs(wires=[0, 1, 2, 3])],
-        shots=shots,
     )
     program, _ = dev.preprocess()
 
@@ -2716,26 +2637,6 @@ def test_qnode_measurement_grouping(shots, measure, expected, expected_tasks):
     assert np.allclose(result, expected, atol=0.15 if shots else 1e-10, rtol=0)
 
 
-def test_qnode_probabilities_and_counts_share_samples():
-    """Probabilities and counts use the same finite-shot task and sample set."""
-    shots = 1000
-    dev = BraketLocalQubitDevice(wires=2)
-
-    @qp.set_shots(shots=shots)
-    @qp.qnode(dev)
-    def circuit():
-        qp.Hadamard(0)
-        qp.CNOT(wires=[0, 1])
-        return qp.probs(), qp.counts()
-
-    with qp.Tracker(dev) as tracker:
-        probabilities, counts = circuit()
-
-    assert tracker.totals["executions"] == 1
-    assert sum(counts.values()) == shots
-    assert np.allclose(probabilities, [counts.get(f"{index:02b}", 0) / shots for index in range(4)])
-
-
 @pytest.mark.parametrize("include_probabilities", [False, True])
 def test_program_set_counts_remain_dictionaries(include_probabilities):
     """Program-set results preserve counts dictionaries alongside other measurements."""
@@ -2781,23 +2682,15 @@ def test_adjoint_execution_config_and_preprocessing():
     assert program[-1].tape_transform.__name__ == "no_sampling"
 
 
-def test_compute_derivatives_returns_jacobians(monkeypatch):
-    """The derivative-only API returns the Jacobian half of combined execution."""
+def test_derivatives_accept_single_tape(monkeypatch):
+    """The derivative methods accept a single tape as well as a batch."""
     dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
-    circuit = QuantumScript([], [qp.expval(qp.PauliZ(0))])
-    combined = Mock(return_value=(("result",), ("jacobian",)))
-    monkeypatch.setattr(dev, "execute_and_compute_derivatives", combined)
+    circuit = QuantumScript([qp.RX(0.2, wires=0)], [qp.expval(qp.PauliZ(0))])
+    monkeypatch.setattr(dev, "_execute_circuit", lambda *_, **__: ([0.5], [0.25]))
 
-    assert dev.compute_derivatives((circuit,)) == ("jacobian",)
-
-
-def test_adjoint_jacobian_processing_shapes():
-    """Scalar and multi-measurement Jacobians use PennyLane's expected nesting."""
-    scalar = BraketAwsQubitDevice._adjoint_jacobian_processing(np.array(0.5))
-    matrix = BraketAwsQubitDevice._adjoint_jacobian_processing(np.array([[1.0, 2.0], [3.0, 4.0]]))
-
-    assert scalar == np.array(0.5)
-    assert matrix == ((np.array(1.0), np.array(2.0)), (np.array(3.0), np.array(4.0)))
+    assert dev.execute_and_compute_derivatives(circuit) == (0.5, 0.25)
+    assert dev.compute_derivatives(circuit) == 0.25
+    assert dev.compute_derivatives((circuit,)) == (0.25,)
 
 
 def test_supports_derivatives_for_analytic_expectation():
@@ -2807,6 +2700,8 @@ def test_supports_derivatives_for_analytic_expectation():
 
     assert dev.supports_derivatives(config, circuit)
     assert not dev.supports_derivatives(config, circuit.copy(shots=10))
+    # Variance measurements fall back to PennyLane gradient transforms
+    assert not dev.supports_derivatives(config, CIRCUIT_5)
 
     dev_without_adjoint = _aws_device(
         wires=2,

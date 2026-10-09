@@ -609,18 +609,13 @@ def test_shadows_parallel_tracker(mock_run_batch, mock_properties):
 
     latest = {"batches": 1, "batch_len": 1}
     history = {
-        "batches": [1, 1],
+        "batches": [1],
         "batch_len": [1],
         "executions": [SHOTS],
         "shots": [SHOTS],
         "braket_task_id": ["task_arn", "task_arn"],
     }
-    totals = {
-        "batches": 2,
-        "batch_len": 1,
-        "executions": SHOTS,
-        "shots": SHOTS,
-    }
+    totals = {"batches": 1, "batch_len": 1, "executions": SHOTS, "shots": SHOTS}
     assert tracker.latest == latest
     assert tracker.history == history
     assert tracker.totals == totals

@@ -212,12 +212,13 @@ class BraketAhsDevice(PennyLaneDevice):
         Args:
             operations(list[ParametrizedEvolution]): a list containing a single
                 ParametrizedEvolution operator
+            shots(int | None): the number of shots to run; defaults to the device's shots
         """
         ev_op = operations[0]  # only one!
 
         ahs_program = self.create_ahs_program(ev_op)
         shot_count = shots if shots is not None else self.shots.total_shots
-        self._task = self._run_task(ahs_program, shots=shot_count)
+        self._task = self._run_task(ahs_program, shot_count)
 
     def _process_measurement(self, measurement: MeasurementProcess, samples):
         if isinstance(measurement, ExpectationMP):
@@ -246,7 +247,7 @@ class BraketAhsDevice(PennyLaneDevice):
             return self._task.result()
         return None
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int | None = None):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int):
         """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
         raise NotImplementedError("Running a task not implemented for the base class")
@@ -300,7 +301,6 @@ class BraketAhsDevice(PennyLaneDevice):
         return np.array([translate_ahs_shot_result(res) for res in self.result.measurements])
 
     def _validate_evolution(self, evolution: ParametrizedEvolution):
-        """Validate the hardware Hamiltonian and register of an AHS evolution."""
         if not isinstance(evolution.H, HardwareHamiltonian):
             raise TypeError(
                 f"Expected a HardwareHamiltonian instance for interfacing with the device, but "
@@ -485,14 +485,13 @@ class BraketAwsAhsDevice(BraketAhsDevice):
 
         return ahs_program_discretized
 
-    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int | None = None):
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int):
         """Run and return a task executing the AnalogHamiltonianSimulation program on
         the device"""
-        shot_count = shots if shots is not None else self.shots.total_shots
         task = self._device.run(
             ahs_program,
             s3_destination_folder=self._s3_folder,
-            shots=shot_count,
+            shots=shots,
             poll_timeout_seconds=self._poll_timeout_seconds,
             poll_interval_seconds=self._poll_interval_seconds,
         )
@@ -602,13 +601,10 @@ class BraketLocalAhsDevice(BraketAhsDevice):
 
         return ahs_program
 
-    def _run_task(
-        self, ahs_program: AnalogHamiltonianSimulation, shots: int | None = None
-    ) -> LocalQuantumTask:
+    def _run_task(self, ahs_program: AnalogHamiltonianSimulation, shots: int) -> LocalQuantumTask:
         """Run and return a task executing the AnalogHamiltonianSimulation program on the
         device"""
-        shot_count = shots if shots is not None else self.shots.total_shots
-        return self._device.run(ahs_program, shots=shot_count, steps=100)
+        return self._device.run(ahs_program, shots=shots, steps=100)
 
     def _validate_pulses(self, pulses: list[HardwarePulse]):
         """Validate that all pulses are defined as expected by the device. This validation includes:

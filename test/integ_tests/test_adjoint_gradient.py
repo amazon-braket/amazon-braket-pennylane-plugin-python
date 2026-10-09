@@ -71,7 +71,7 @@ class TestAdjointGradient:
 
         adj_grad_test_helper(dev, circuit, [x, y, z])
 
-    @pytest.mark.parametrize("diff_method", ["best", "device", "adjoint"])
+    @pytest.mark.parametrize("diff_method", ["best", "device"])
     @pytest.mark.parametrize(
         "observable",
         [

@@ -390,7 +390,7 @@ class TestBraketAhsDevice:
         dev = BraketAhsDevice(wires=2, device=None)
         ahs_program = dummy_ahs_program()
         with pytest.raises(NotImplementedError, match="not implemented for the base class"):
-            dev._run_task(ahs_program)
+            dev._run_task(ahs_program, 100)
 
     @pytest.mark.parametrize(
         "dev_cls, shots", [(BraketLocalAhsDevice, 1000), (BraketLocalAhsDevice, 2)]
@@ -607,7 +607,7 @@ class TestBraketAhsDevice:
         # we confirm the values used for the test are valid here
         assert len(ahs_program.register.coordinate_list(0)) == len(dev.wires)
 
-        task = dev._run_task(ahs_program)
+        task = dev._run_task(ahs_program, dev.shots.total_shots)
         dev._task = task
 
         samples = dev._generate_samples()
@@ -1043,7 +1043,7 @@ class TestLocalAhsDevice:
         equal to the number of shots."""
         ahs_program = dummy_ahs_program()
 
-        task = dev_sim._run_task(ahs_program)
+        task = dev_sim._run_task(ahs_program, dev_sim.shots.total_shots)
 
         assert isinstance(task, LocalQuantumTask)
         assert len(task.result().measurements) == 17  # dev_sim takes 17 shots
@@ -1429,6 +1429,6 @@ class TestBraketAwsAhsDevice:
         dev = mock_aws_device()
         ahs_program = dummy_ahs_program()
 
-        task = dev._run_task(ahs_program)
+        task = dev._run_task(ahs_program, dev.shots.total_shots)
 
         assert isinstance(task, AwsQuantumTask)
