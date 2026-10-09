@@ -121,6 +121,14 @@ class Shots(Enum):
 
 
 @qp.transform
+def _split_measurements_for_braket(tape: QuantumScript):
+    """Preserve lone analytic measurements and group others in a qubit-wise commuting basis."""
+    if not tape.shots and len(tape.measurements) == 1:
+        return (tape,), null_postprocessing
+    return qp.transforms.split_non_commuting(tape, grouping_strategy="qwc")
+
+
+@qp.transform
 def _validate_braket_pulses(tape: QuantumScript, device: "BraketAwsQubitDevice"):
     for operation in tape.operations:
         if isinstance(operation, qp.pulse.ParametrizedEvolution):
@@ -140,7 +148,6 @@ def _is_pauli_or_hadamard_observable(observable):
     return False
 
 
-@single_tape_support
 class BraketQubitDevice(PennyLaneDevice):
     r"""Abstract Amazon Braket qubit device for PennyLane.
 
@@ -282,10 +289,12 @@ class BraketQubitDevice(PennyLaneDevice):
     ) -> TransformProgram:
         execution_config = execution_config or ExecutionConfig()
         program = super().preprocess_transforms(execution_config)
-        for transform in program:
+        split_index = 0
+        for index, transform in enumerate(program):
             if transform.tape_transform is decompose.tape_transform:
-                transform.kwargs["skip_initial_state_prep"] = False
-                transform.kwargs["num_work_wires"] = 0
+                transform.kwargs.update(skip_initial_state_prep=False, num_work_wires=0)
+                split_index = index + 1
+        program.insert(split_index, _split_measurements_for_braket)
         return program
 
     def execute(
@@ -503,9 +512,11 @@ class BraketQubitDevice(PennyLaneDevice):
         # Assuming that the braket device doesn't have native parameter broadcasting
         # Assuming that the braket device doesn't support shot vectors.
         # Otherwise, we may need additional nesting
-        if len(circuit.measurements) == 1:
-            return onp.array(results).squeeze()
-        return tuple(onp.array(result).squeeze() for result in results)
+        results = tuple(
+            result if isinstance(result, dict) else onp.array(result).squeeze()
+            for result in results
+        )
+        return results[0] if len(circuit.measurements) == 1 else results
 
     def _braket_program_set_to_pl_result(self, program_set_result, circuits):
         results = []
@@ -513,16 +524,17 @@ class BraketQubitDevice(PennyLaneDevice):
             measured_entry = program_result[0]
             measurements = measured_entry.measurements
             wire_order = measured_entry.measured_qubits
-            executable_results = [
-                measurement.map_wires(self._wire_map).process_samples(
-                    measurements, wire_order=wire_order
+            executable_results = tuple(
+                result if isinstance(result, dict) else onp.array(result).squeeze()
+                for result in (
+                    measurement.map_wires(self._wire_map).process_samples(
+                        measurements, wire_order=wire_order
+                    )
+                    for measurement in circuit.measurements
                 )
-                for measurement in circuit.measurements
-            ]
+            )
             results.append(
-                onp.array(executable_results).squeeze()
-                if len(circuit.measurements) == 1
-                else tuple(onp.array(result).squeeze() for result in executable_results)
+                executable_results[0] if len(circuit.measurements) == 1 else executable_results
             )
         return results
 
@@ -718,6 +730,10 @@ class BraketQubitDevice(PennyLaneDevice):
                 if isinstance(param_np, numbers.Number):
                     trainable[trainable_indices[i]] = param_np
         return trainable
+
+
+# Apply in place so the modifier's return annotation does not hide the class's type.
+single_tape_support(BraketQubitDevice)
 
 
 class BraketAwsQubitDevice(BraketQubitDevice):

@@ -2019,6 +2019,7 @@ def test_execute_counts(
 
     results = dev.execute(circuit.copy(shots=dev.shots))
 
+    assert isinstance(results, dict)
     assert results == expected_result
 
 
@@ -2065,7 +2066,8 @@ def test_counts_without_observable_batch_execution(mock_run_batch):
 
     assert len(results) == 5
     for result in results:
-        assert result.item() == {"10": 100}
+        assert isinstance(result, dict)
+        assert result == {"10": 100}
     mock_run_batch.assert_called_once()
 
 
@@ -2489,6 +2491,74 @@ def test_execute_and_compute_derivatives(
     assert (jacs == expected_pl_result[1]).all()
 
 
+@pytest.mark.parametrize("diff_method", ["best", "device", "adjoint"])
+@pytest.mark.parametrize(
+    "observable, braket_observable, targets, result_observable",
+    [
+        pytest.param(
+            qp.Z(0) + qp.Z(1),
+            observables.Z(0) + observables.Z(1),
+            [[0], [1]],
+            "z() + z()",
+            id="disjoint",
+        ),
+        pytest.param(
+            qp.Z(0) + qp.Z(0) @ qp.Z(1),
+            observables.Z(0) + observables.Z(0) @ observables.Z(1),
+            [[0], [0, 1]],
+            "z() + z() @ z()",
+            id="overlapping",
+        ),
+        pytest.param(
+            qp.X(0) + qp.Z(1),
+            observables.X(0) + observables.Z(1),
+            [[0], [1]],
+            "x() + z()",
+            id="different-bases",
+        ),
+    ],
+)
+@patch.object(AwsDevice, "run")
+def test_qnode_sum_adjoint_gradient_uses_one_task(
+    mock_run, observable, braket_observable, targets, result_observable, diff_method
+):
+    """Full QNode preprocessing preserves a sum in a single AdjointGradient result type."""
+    task = Mock()
+    type(task).id = PropertyMock(return_value="task_arn")
+    task.state.return_value = "COMPLETED"
+    task.result.return_value = get_test_result_object(
+        rts=[
+            {
+                "type": {
+                    "observable": result_observable,
+                    "targets": targets,
+                    "parameters": ["p_0"],
+                    "type": "adjoint_gradient",
+                },
+                "value": {"gradient": {"p_0": -0.5}, "expectation": 1.5},
+            }
+        ]
+    )
+    mock_run.return_value = task
+    dev = _aws_device(wires=2, shots=0, device_type=AwsDeviceType.SIMULATOR)
+
+    @qp.qnode(dev, diff_method=diff_method)
+    def circuit(x):
+        qp.RX(x, wires=0)
+        qp.CNOT(wires=[0, 1])
+        return qp.expval(observable)
+
+    gradient = qp.grad(circuit)(np.array(0.4, requires_grad=True))
+
+    mock_run.assert_called_once()
+    submitted = mock_run.call_args.args[0]
+    expected = Circuit().adjoint_gradient(
+        observable=braket_observable, target=targets, parameters=["p_0"]
+    )
+    assert submitted.result_types == expected.result_types
+    assert np.isclose(gradient, -0.5)
+
+
 def test_supports_derivatives_rejects_non_adjoint_measurements():
     """Variance measurements fall back to PennyLane gradient transforms."""
     dev = _aws_device(
@@ -2586,6 +2656,104 @@ def test_preprocess_disables_dynamic_work_wire_allocation(device_wires, shots):
     assert all(
         dev.capabilities.supports_operation(operation.name) for operation in processed[0].operations
     )
+
+
+@pytest.mark.parametrize(
+    "shots, measure, expected, expected_tasks",
+    [
+        pytest.param(
+            None,
+            lambda: qp.expval(qp.Z(0) + qp.Z(1) + qp.Z(0) @ qp.Z(1)),
+            2 * np.cos(0.3) + 1,
+            1,
+            id="analytic-sum",
+        ),
+        pytest.param(
+            1000,
+            lambda: qp.expval(qp.Z(0) + qp.Z(1) + qp.Z(0) @ qp.Z(1)),
+            2 * np.cos(0.3) + 1,
+            1,
+            id="finite-shot-sum",
+        ),
+        pytest.param(
+            1000,
+            lambda: (qp.expval(qp.Z(0)), qp.expval(qp.Z(0) @ qp.Z(1)), qp.expval(qp.Z(1))),
+            (np.cos(0.3), 1, np.cos(0.3)),
+            1,
+            id="overlapping-commuting",
+        ),
+        pytest.param(
+            1000,
+            lambda: (qp.expval(qp.Z(0)), qp.expval(qp.X(0))),
+            (np.cos(0.3), 0),
+            2,
+            id="finite-shot-noncommuting",
+        ),
+        pytest.param(
+            None,
+            lambda: (qp.expval(qp.Z(0)), qp.expval(qp.X(1)), qp.expval(qp.Z(0) @ qp.Z(1))),
+            (np.cos(0.3), 0, 1),
+            2,
+            id="analytic-multiple-bases",
+        ),
+    ],
+)
+def test_qnode_measurement_grouping(shots, measure, expected, expected_tasks):
+    """Compatible measurements share a task; incompatible measurement bases remain separate."""
+    dev = BraketLocalQubitDevice(wires=2)
+
+    @qp.set_shots(shots=shots)
+    @qp.qnode(dev)
+    def circuit():
+        qp.RY(0.3, wires=0)
+        qp.CNOT(wires=[0, 1])
+        return measure()
+
+    with qp.Tracker(dev) as tracker:
+        result = circuit()
+
+    assert tracker.totals["executions"] == expected_tasks
+    assert np.allclose(result, expected, atol=0.15 if shots else 1e-10, rtol=0)
+
+
+def test_qnode_probabilities_and_counts_share_samples():
+    """Probabilities and counts use the same finite-shot task and sample set."""
+    shots = 1000
+    dev = BraketLocalQubitDevice(wires=2)
+
+    @qp.set_shots(shots=shots)
+    @qp.qnode(dev)
+    def circuit():
+        qp.Hadamard(0)
+        qp.CNOT(wires=[0, 1])
+        return qp.probs(), qp.counts()
+
+    with qp.Tracker(dev) as tracker:
+        probabilities, counts = circuit()
+
+    assert tracker.totals["executions"] == 1
+    assert sum(counts.values()) == shots
+    assert np.allclose(probabilities, [counts.get(f"{index:02b}", 0) / shots for index in range(4)])
+
+
+@pytest.mark.parametrize("include_probabilities", [False, True])
+def test_program_set_counts_remain_dictionaries(include_probabilities):
+    """Program-set results preserve counts dictionaries alongside other measurements."""
+    dev = _aws_device(wires=2, shots=1, supports_program_sets=True)
+    measurements = [qp.probs()] if include_probabilities else []
+    measurements.append(qp.counts())
+    circuit = QuantumScript(measurements=measurements, shots=1)
+    braket_result = _make_program_set_result_with_measurements([[0, 1]])
+
+    result = dev._braket_program_set_to_pl_result(braket_result, [circuit])[0]
+
+    if include_probabilities:
+        probabilities, counts = result
+        assert np.allclose(probabilities, [0, 1, 0, 0])
+    else:
+        counts = result
+    assert isinstance(counts, dict)
+    assert counts == {"01": 1}
 
 
 def test_adjoint_execution_config_and_preprocessing():
