@@ -246,7 +246,8 @@ class BraketQubitDevice(PennyLaneDevice):
                 for name in analytic_observables | finite_shot_observables
             },
             measurement_processes=measurement_processes,
-            overlapping_observables=False,
+            overlapping_observables=True,
+            non_commuting_observables=True,
             supported_mcm_methods=["deferred"],
         )
         self._verbatim = verbatim
