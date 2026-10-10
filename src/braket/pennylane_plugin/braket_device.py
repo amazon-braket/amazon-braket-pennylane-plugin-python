@@ -429,8 +429,13 @@ class BraketQubitDevice(QubitDevice):
         # Assuming that the braket device doesn't support shot vectors.
         # Otherwise, we may need additional nesting
         if len(circuit.measurements) == 1:
+            if isinstance(circuit.measurements[0], CountsMP):
+                return results[0]
             return onp.array(results).squeeze()
-        return tuple(onp.array(result).squeeze() for result in results)
+        return tuple(
+            result if isinstance(measurement, CountsMP) else onp.array(result).squeeze()
+            for measurement, result in zip(circuit.measurements, results)
+        )
 
     def _braket_program_set_to_pl_result(self, program_set_result, circuits):
         results = []
