@@ -2075,7 +2075,7 @@ def test_counts_without_observable_batch_execute(mock_run_batch):
 
     assert len(results) == 5
     for result in results:
-        assert result.item() == {"10": 100}
+        assert result == {"10": 100}
     mock_run_batch.assert_called_once()
 
 
@@ -3223,3 +3223,18 @@ def test_native(mock_run, mock_properties, device_type):
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         inputs={},
     )
+
+
+def test_counts_returns_dict_for_local_qubit_device():
+    dev = BraketLocalQubitDevice(wires=2, shots=20)
+
+    @qp.qnode(dev)
+    def circuit():
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        return qp.counts(wires=[0, 1])
+
+    result = circuit()
+
+    assert isinstance(result, dict)
+    assert sum(result.values()) == 20
