@@ -27,13 +27,18 @@ from braket.device_schema.openqasm_device_action_properties import (
 )
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
-from braket.program_sets import ProgramSet
 from braket.simulator import BraketSimulator
 from braket.task_result import GateModelTaskResult, ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
 from pennylane.measurements import MeasurementTransform
 from pennylane.tape import QuantumScript, QuantumTape
 from pennylane.wires import Wires
+from program_assertions import (
+    assert_program_called_with,
+    assert_program_set_called_with,
+    assert_programs_called_with,
+    assert_same_program,
+)
 
 from braket.pennylane_plugin import BraketAwsQubitDevice, BraketLocalQubitDevice
 from braket.pennylane_plugin.braket_device import BraketQubitDevice
@@ -354,7 +359,7 @@ circs[0].h(1)
     [
         (False, circs, TASK, SHOTS, None, None, False),
         (True, circs, TASK_BATCH, 1, 10, 10, False),
-        (False, ProgramSet(circs, shots_per_executable=1), TASK_PROGRAM_SET, 1, None, None, True),
+        (False, circs, TASK_PROGRAM_SET, 1, None, None, True),
     ],
 )
 def test_shadow_expval_aws_device(
@@ -391,7 +396,8 @@ def test_shadow_expval_aws_device(
     # assert results are right
     assert res == expected_pl_result[0]
     if parallel:
-        mock_runner.assert_called_with(
+        assert_programs_called_with(
+            mock_runner,
             expected_braket_task_spec,
             s3_destination_folder=("foo", "bar"),
             shots=1,
@@ -401,7 +407,9 @@ def test_shadow_expval_aws_device(
             foo="bar",
         )
     elif supports_program_sets:
-        mock_runner.assert_called_with(
+        # One snapshot per executable, and the task asks for the total shots across them
+        assert_program_set_called_with(
+            mock_runner,
             expected_braket_task_spec,
             s3_destination_folder=("foo", "bar"),
             shots=2,
@@ -411,16 +419,19 @@ def test_shadow_expval_aws_device(
             foo="bar",
         )
     else:
-        for c in expected_braket_task_spec:
-            mock_runner.assert_any_call(
-                c,
-                s3_destination_folder=("foo", "bar"),
-                shots=1,
+        # One task per snapshot, submitted in snapshot order
+        assert len(mock_runner.call_args_list) == len(expected_braket_task_spec)
+        for call, c in zip(mock_runner.call_args_list, expected_braket_task_spec):
+            (program,), call_kwargs = call
+            assert_same_program(program, c)
+            assert call_kwargs == {
+                "s3_destination_folder": ("foo", "bar"),
+                "shots": 1,
                 **kwargs,
-                poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
-                poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-                foo="bar",
-            )
+                "poll_timeout_seconds": AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
+                "poll_interval_seconds": AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
+                "foo": "bar",
+            }
 
 
 @patch.object(LocalSimulator, "run")
@@ -450,7 +461,8 @@ def test_shadow_expval_local(
     assert mock_run.call_count == SHOTS
     # assert results are right
     assert res == expected_pl_result[0]
-    mock_run.assert_called_with(
+    assert_program_called_with(
+        mock_run,
         expected_braket_circ,
         shots=1,
         foo="bar",
