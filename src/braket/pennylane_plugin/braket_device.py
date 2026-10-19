@@ -35,6 +35,7 @@ Code details
 
 import collections
 import numbers
+import warnings
 from collections.abc import Iterable, Sequence
 from dataclasses import replace
 
@@ -110,6 +111,10 @@ RETURN_TYPES = (
     CountsMP,
 )
 MIN_SIMULATOR_BILLED_MS = 3000
+_PARAM_SHIFT_FALLBACK_WARNING = (
+    "This circuit cannot be differentiated with the adjoint method. "
+    "Falling back to the parameter-shift method."
+)
 OBS_LIST = (qp.PauliX, qp.PauliY, qp.PauliZ)
 PAULI_AND_HADAMARD_OBS = (qp.PauliX, qp.PauliY, qp.PauliZ, qp.Hadamard, qp.Identity)
 
@@ -325,10 +330,11 @@ class BraketQubitDevice(PennyLaneDevice):
         return results
 
     def _execute_batch(self, circuits: Sequence[QuantumScript]):
+        # Results are read using the diagonalized measurements that are submitted to Braket
+        circuits = [self._maybe_diagonalize_measurements(circuit) for circuit in circuits]
         all_trainable = []
         braket_circuits = []
         for circuit in circuits:
-            circuit = self._maybe_diagonalize_measurements(circuit)
             trainable = (
                 BraketQubitDevice._get_trainable_parameters(circuit)
                 if self._parametrize_differentiable
@@ -796,7 +802,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         else:
             num_shots = shots
 
-        super().__init__(wires, device, shots=num_shots, **run_kwargs)
+        super().__init__(
+            wires, device, shots=None if shots == Shots.DEFAULT else num_shots, **run_kwargs
+        )
+        if shots == Shots.DEFAULT:
+            self._shots = qp.measurements.Shots(num_shots or None)
         self._s3_folder = s3_destination_folder
         self._poll_timeout_seconds = poll_timeout_seconds
         self._poll_interval_seconds = poll_interval_seconds
@@ -1036,6 +1046,18 @@ class BraketAwsQubitDevice(BraketQubitDevice):
     ) -> ExecutionConfig:
         config = super().setup_execution_config(config, circuit)
 
+        if config.gradient_method == "device" and not self.supports_derivatives(
+            replace(config, gradient_method="adjoint"), circuit
+        ):
+            warnings.warn(_PARAM_SHIFT_FALLBACK_WARNING, stacklevel=2)
+            return replace(
+                config,
+                gradient_method=qp.gradients.param_shift,
+                use_device_gradient=False,
+                grad_on_execution=False,
+                use_device_jacobian_product=False,
+            )
+
         if config.gradient_method not in {"device", "adjoint"}:
             return config
 
@@ -1053,12 +1075,15 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         execution_config: ExecutionConfig | None = None,
         circuit: QuantumScript | None = None,
     ) -> bool:
+        if execution_config is not None:
+            if (
+                execution_config.gradient_method not in {"best", "device", "adjoint"}
+                or execution_config.derivative_order != 1
+            ):
+                return False
+            if execution_config.gradient_method == "device":
+                return True
         if "AdjointGradient" not in self._braket_result_types:
-            return False
-        if execution_config is not None and (
-            execution_config.gradient_method not in {"best", "device", "adjoint"}
-            or execution_config.derivative_order != 1
-        ):
             return False
         if circuit is None:
             return True
@@ -1080,6 +1105,18 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             if not circuit.trainable_params:
                 results.append(self._execute_circuit(circuit))
                 jacobians.append(np.asarray([]))
+                continue
+            # The execution config is resolved from the first circuit of a batch, so the
+            # remaining circuits may still need to fall back for a "device" request
+            if not self.supports_derivatives(circuit=circuit):
+                if execution_config is None or execution_config.gradient_method != "device":
+                    raise QuantumFunctionError(
+                        f"Device {self} does not support adjoint with requested circuit."
+                    )
+                warnings.warn(_PARAM_SHIFT_FALLBACK_WARNING, stacklevel=2)
+                gradient_circuits, postprocessing = qp.gradients.param_shift(circuit)
+                results.append(self._execute_circuit(circuit))
+                jacobians.append(postprocessing(self.execute(gradient_circuits)))
                 continue
             forward, jacobian = self._execute_circuit(circuit, compute_gradient=True)
             results.append(np.asarray(forward).squeeze())

@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 import json
+import warnings
 from dataclasses import dataclass
 from functools import partial
 from unittest.mock import Mock
@@ -19,7 +20,7 @@ from unittest.mock import Mock
 import numpy as np
 import pennylane as qp
 import pytest
-from pennylane.exceptions import DeviceError
+from pennylane.exceptions import DeviceError, PennyLaneDeprecationWarning
 from braket.ahs.analog_hamiltonian_simulation import AnalogHamiltonianSimulation
 from braket.ahs.atom_arrangement import AtomArrangement
 from braket.ahs.driving_field import DrivingField
@@ -42,6 +43,7 @@ from braket.pennylane_plugin.ahs_device import (
     BraketAhsDevice,
     BraketAwsAhsDevice,
     BraketLocalAhsDevice,
+    Shots,
 )
 from braket.pennylane_plugin.ahs_translation import (
     _convert_to_time_series,
@@ -383,6 +385,19 @@ class TestBraketAhsDevice:
         assert "interaction_coeff" in dev.settings.keys()
         assert len(dev.settings.keys()) == 1
         assert dev.settings["interaction_coeff"] == 862620
+
+    @pytest.mark.parametrize("device_kind", ["local", "aws"])
+    def test_default_shots_do_not_warn(self, mock_aws_device, device_kind):
+        """Plugin-selected finite-shot defaults do not warn users who did not set shots."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", PennyLaneDeprecationWarning)
+            dev = (
+                qp.device("braket.local.ahs", wires=3)
+                if device_kind == "local"
+                else mock_aws_device(shots=Shots.DEFAULT)
+            )
+
+        assert dev.shots.total_shots == AwsDevice.DEFAULT_SHOTS_QPU
 
     def test_run_task_not_implemented(self):
         """Test that the _run_task method raises a NotImplemented error in the base class"""

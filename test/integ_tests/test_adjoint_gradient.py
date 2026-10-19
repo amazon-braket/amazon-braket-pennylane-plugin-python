@@ -101,6 +101,21 @@ class TestAdjointGradient:
         assert tracker.totals["executions"] == 1
         assert np.allclose(gradient, qp.grad(reference_qnode)(x), atol=ABS_TOLERANCE, rtol=0)
 
+    def test_device_gradient_variance_falls_back(self, on_demand_sv_device):
+        """An explicit device-gradient request retains the legacy variance fallback."""
+        dev = on_demand_sv_device(1)
+
+        @qp.qnode(dev, diff_method="device")
+        def circuit(x):
+            qp.RX(x, wires=0)
+            return qp.var(qp.Z(0))
+
+        x = np.array(0.4, requires_grad=True)
+        with pytest.warns(UserWarning, match="Falling back to the parameter-shift"):
+            gradient = qp.grad(circuit)(x)
+
+        assert np.allclose(gradient, np.sin(2 * x), atol=ABS_TOLERANCE, rtol=0)
+
     def test_grad_large_circuit(self, on_demand_sv_device):
         num_qubits = 8
         # having > 10 parameterized gates is important; we've

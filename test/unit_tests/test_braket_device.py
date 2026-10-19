@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 import json
+import warnings
 from collections import Counter
 from typing import Any
 from unittest import mock
@@ -57,7 +58,7 @@ from device_property_jsons import (
 )
 from pennylane import numpy as np
 from pennylane.devices import ExecutionConfig
-from pennylane.exceptions import DeviceError, QuantumFunctionError
+from pennylane.exceptions import DeviceError, PennyLaneDeprecationWarning, QuantumFunctionError
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
 
@@ -1491,6 +1492,24 @@ def test_aws_device_batch_execution_parallel_diagonalizes_non_z_pauli(
     )
 
 
+@pytest.mark.parametrize("shots", [None, 100])
+@patch.object(LocalSimulator, "run_batch")
+def test_parallel_batch_reads_diagonalized_results(mock_run_batch, shots):
+    """Parallel results are read using the diagonalized measurements that were submitted."""
+    simulator = LocalSimulator()
+    mock_run_batch.side_effect = lambda circuits, shots, inputs, **kwargs: Mock(
+        results=Mock(
+            return_value=[
+                simulator.run(c, shots=shots, inputs=i).result() for c, i in zip(circuits, inputs)
+            ]
+        )
+    )
+    dev = BraketLocalQubitDevice(wires=1, parallel=True)
+    circuit = QuantumScript([qp.Hadamard(wires=0)], [qp.expval(qp.X(0))], shots=shots)
+
+    assert np.allclose(dev.execute((circuit, circuit)), [1, 1])
+
+
 @patch.object(LocalSimulator, "run_batch")
 def test_local_sim_batch_execution_parallel(mock_run_batch):
     """Test that ``execute()`` uses ``LocalSimulator.run_batch()`` in parallel mode."""
@@ -2122,7 +2141,9 @@ def test_non_circuit_device(name_mock, type_mock):
 
 def test_simulator_default_shots():
     """Tests that simulator devices are analytic if ``shots`` is not supplied"""
-    dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=Shots.DEFAULT)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", PennyLaneDeprecationWarning)
+        dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=Shots.DEFAULT)
     assert dev.shots.total_shots is None
 
 
@@ -2202,7 +2223,9 @@ def test_local_qubit_execute(mock_run, shots, backend):
 
 def test_qpu_default_shots():
     """Tests that QPU devices have the right default value for ``shots``"""
-    dev = _aws_device(wires=2, shots=Shots.DEFAULT)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", PennyLaneDeprecationWarning)
+        dev = _aws_device(wires=2, shots=Shots.DEFAULT)
     assert dev.shots.total_shots == AwsDevice.DEFAULT_SHOTS_QPU
 
 
@@ -2583,13 +2606,6 @@ def test_preprocess_disables_dynamic_work_wire_allocation(device_wires):
     "shots, measure, expected, expected_tasks",
     [
         pytest.param(
-            None,
-            lambda: qp.expval(qp.Z(0) + qp.Z(1) + qp.Z(0) @ qp.Z(1)),
-            2 * np.cos(0.3) + 1,
-            1,
-            id="analytic-sum",
-        ),
-        pytest.param(
             1000,
             lambda: qp.expval(qp.Z(0) + qp.Z(1) + qp.Z(0) @ qp.Z(1)),
             2 * np.cos(0.3) + 1,
@@ -2693,15 +2709,20 @@ def test_derivatives_accept_single_tape(monkeypatch):
     assert dev.compute_derivatives((circuit,)) == (0.25,)
 
 
-def test_supports_derivatives_for_analytic_expectation():
+@pytest.mark.parametrize(
+    "gradient_method, derivative_order",
+    [("best", 1), ("adjoint", 1), ("device", 1), ("backprop", 1), ("device", 2)],
+)
+def test_supports_derivatives_for_analytic_expectation(gradient_method, derivative_order):
     dev = _aws_device(wires=2, device_type=AwsDeviceType.SIMULATOR, shots=0)
     circuit = QuantumScript([qp.RX(0.2, wires=0)], [qp.expval(qp.PauliZ(0))], shots=None)
-    config = ExecutionConfig(gradient_method="device")
+    config = ExecutionConfig(gradient_method=gradient_method, derivative_order=derivative_order)
 
-    assert dev.supports_derivatives(config, circuit)
-    assert not dev.supports_derivatives(config, circuit.copy(shots=10))
-    # Variance measurements fall back to PennyLane gradient transforms
-    assert not dev.supports_derivatives(config, CIRCUIT_5)
+    expected_adjoint = gradient_method in {"best", "adjoint", "device"} and derivative_order == 1
+    expected_fallback = gradient_method == "device" and derivative_order == 1
+    assert dev.supports_derivatives(config, circuit) is expected_adjoint
+    assert dev.supports_derivatives(config, circuit.copy(shots=10)) is expected_fallback
+    assert dev.supports_derivatives(config, CIRCUIT_5) is expected_fallback
 
     dev_without_adjoint = _aws_device(
         wires=2,
@@ -2710,6 +2731,152 @@ def test_supports_derivatives_for_analytic_expectation():
         action_properties=ACTION_PROPERTIES_NO_ADJOINT,
     )
     assert not dev_without_adjoint.supports_derivatives()
+    assert dev_without_adjoint.supports_derivatives(config, circuit) is expected_fallback
+
+
+@pytest.mark.parametrize(
+    "measure",
+    [
+        pytest.param(lambda: qp.var(qp.Z(0)), id="variance"),
+        pytest.param(lambda: qp.probs(wires=0), id="probabilities"),
+        pytest.param(lambda: (qp.expval(qp.Z(0)), qp.var(qp.Z(0))), id="multiple-measurements"),
+    ],
+)
+def test_qnode_device_gradient_falls_back_to_parameter_shift(monkeypatch, measure):
+    """Unsupported adjoint measurements keep their parameter-shift gradients and result shapes."""
+    dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    simulator = BraketLocalQubitDevice(wires=1)
+    monkeypatch.setattr(dev, "_run_task", simulator._run_task)
+
+    def circuit(x):
+        qp.RX(x[0], wires=0)
+        qp.RY(x[1], wires=0)
+        return measure()
+
+    qnode = qp.QNode(circuit, dev, diff_method="device")
+    reference = qp.QNode(
+        circuit, qp.device("default.qubit", wires=1), diff_method="parameter-shift"
+    )
+    x = np.array([0.4, 0.2], requires_grad=True)
+
+    with pytest.warns(UserWarning, match="Falling back to the parameter-shift"):
+        jacobian = qp.jacobian(lambda params: np.array(qnode(params)))(x)
+
+    expected = qp.jacobian(lambda params: np.array(reference(params)))(x)
+    assert jacobian.shape == expected.shape
+    assert np.allclose(jacobian, expected)
+
+
+def test_device_gradient_fallback_execution_config():
+    """PennyLane runs the fallback transform instead of calling Braket's adjoint hooks."""
+    dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    circuit = QuantumScript([qp.RX(0.4, wires=0)], [qp.var(qp.Z(0))])
+
+    with pytest.warns(UserWarning, match="Falling back to the parameter-shift"):
+        config = dev.setup_execution_config(ExecutionConfig(gradient_method="device"), circuit)
+
+    assert config.gradient_method is qp.gradients.param_shift
+    assert config.use_device_gradient is False
+    assert config.grad_on_execution is False
+    assert config.use_device_jacobian_product is False
+
+
+@pytest.mark.parametrize(
+    "shots, action_properties",
+    [
+        pytest.param(10000, ACTION_PROPERTIES, id="finite-shots"),
+        pytest.param(None, ACTION_PROPERTIES_NO_ADJOINT, id="backend-without-adjoint"),
+    ],
+)
+def test_device_gradient_fallback_without_native_adjoint(monkeypatch, shots, action_properties):
+    """The fallback does not require analytic shots or a backend with AdjointGradient."""
+    dev = _aws_device(
+        wires=1,
+        device_type=AwsDeviceType.SIMULATOR,
+        shots=0,
+        action_properties=action_properties,
+    )
+    simulator = BraketLocalQubitDevice(wires=1)
+    monkeypatch.setattr(dev, "_run_task", simulator._run_task)
+
+    @qp.set_shots(shots=shots)
+    @qp.qnode(dev, diff_method="device")
+    def circuit(x):
+        qp.RX(x, wires=0)
+        return qp.expval(qp.Z(0))
+
+    x = np.array(0.4, requires_grad=True)
+    with pytest.warns(UserWarning, match="Falling back to the parameter-shift"):
+        gradient = qp.grad(circuit)(x)
+
+    assert np.isclose(gradient, -np.sin(x), atol=0.05 if shots else 1e-10, rtol=0)
+
+
+def test_execute_and_compute_derivatives_falls_back_per_circuit(monkeypatch):
+    """Circuits in a batch that Braket cannot differentiate fall back to parameter-shift."""
+    dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    adjoint_task = Mock()
+    adjoint_task.result.return_value = get_test_result_object(
+        rts=[
+            {
+                "type": {
+                    "observable": "z()",
+                    "targets": [[0]],
+                    "parameters": ["p_0"],
+                    "type": "adjoint_gradient",
+                },
+                "value": {"gradient": {"p_0": -0.5}, "expectation": 1.5},
+            }
+        ]
+    )
+    simulator = BraketLocalQubitDevice(wires=1)
+
+    def run_task(circuit, inputs=None, shots=0):
+        if any(isinstance(rt, result_types.AdjointGradient) for rt in circuit.result_types):
+            return adjoint_task
+        return simulator._run_task(circuit, inputs=inputs, shots=shots)
+
+    monkeypatch.setattr(dev, "_run_task", run_task)
+    expval_circuit = QuantumScript([qp.RX(0.4, wires=0)], [qp.expval(qp.Z(0))])
+    var_circuit = QuantumScript([qp.RX(0.4, wires=0)], [qp.var(qp.Z(0))])
+
+    with pytest.warns(UserWarning, match="Falling back to the parameter-shift"):
+        results, jacobians = dev.execute_and_compute_derivatives(
+            (expval_circuit, var_circuit), ExecutionConfig(gradient_method="device")
+        )
+
+    assert np.isclose(results[0], 1.5)
+    assert np.isclose(jacobians[0], -0.5)
+    assert np.isclose(results[1], np.sin(0.4) ** 2)
+    assert np.isclose(jacobians[1], np.sin(0.8))
+
+
+@pytest.mark.parametrize("variance_first", [False, True])
+def test_explicit_adjoint_batch_does_not_fall_back(monkeypatch, variance_first):
+    """Explicit adjoint rejects unsupported measurements regardless of the batch order."""
+    dev = _aws_device(wires=1, device_type=AwsDeviceType.SIMULATOR, shots=0)
+    simulator = BraketLocalQubitDevice(wires=1)
+
+    def execute_circuit(circuit, compute_gradient=False):
+        if compute_gradient:
+            return [np.cos(0.4)], [-np.sin(0.4)]
+        return simulator._execute_circuit(circuit)
+
+    monkeypatch.setattr(dev, "_execute_circuit", execute_circuit)
+    x = np.array(0.4, requires_grad=True)
+    circuits = (
+        QuantumScript([qp.RX(x, wires=0)], [qp.expval(qp.Z(0))]),
+        QuantumScript([qp.RX(x, wires=0)], [qp.var(qp.Z(0))]),
+    )
+    if variance_first:
+        circuits = circuits[::-1]
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        with pytest.raises(QuantumFunctionError, match="does not support adjoint"):
+            qp.execute(circuits, dev, diff_method="adjoint", interface="autograd")
+
+    assert not any("Falling back to the parameter-shift" in str(w.message) for w in recorded)
 
 
 class DummyLocalQubitDevice(BraketQubitDevice):

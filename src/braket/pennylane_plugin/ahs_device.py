@@ -128,7 +128,9 @@ class BraketAhsDevice(PennyLaneDevice):
         else:
             num_shots = shots
 
-        super().__init__(wires=wires, shots=num_shots)
+        super().__init__(wires=wires, shots=None if shots == Shots.DEFAULT else num_shots)
+        if shots == Shots.DEFAULT:
+            self._shots = qp.measurements.Shots(num_shots)
 
         self._device = device
         self._register = None
