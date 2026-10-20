@@ -395,6 +395,20 @@ class BraketQubitDevice(QubitDevice):
             )
         return results
 
+    @staticmethod
+    def _to_pl_return(measurements, results):
+        """Converts per-measurement results to the PennyLane return value.
+        Counts stay plain dicts; every other result becomes a squeezed array."""
+
+        def convert(measurement, result):
+            if isinstance(measurement, CountsMP):
+                return result
+            return onp.array(result).squeeze()
+
+        if len(measurements) == 1:
+            return convert(measurements[0], results[0])
+        return tuple(convert(m, r) for m, r in zip(measurements, results))
+
     def _braket_to_pl_result(self, braket_result, circuit):
         """Calculates the PennyLane results from a Braket task result. A PennyLane circuit
         also determines the output observables."""
@@ -428,14 +442,7 @@ class BraketQubitDevice(QubitDevice):
         # Assuming that the braket device doesn't have native parameter broadcasting
         # Assuming that the braket device doesn't support shot vectors.
         # Otherwise, we may need additional nesting
-        if len(circuit.measurements) == 1:
-            if isinstance(circuit.measurements[0], CountsMP):
-                return results[0]
-            return onp.array(results).squeeze()
-        return tuple(
-            result if isinstance(measurement, CountsMP) else onp.array(result).squeeze()
-            for measurement, result in zip(circuit.measurements, results)
-        )
+        return self._to_pl_return(circuit.measurements, results)
 
     def _braket_program_set_to_pl_result(self, program_set_result, circuits):
         results = []
@@ -454,11 +461,7 @@ class BraketQubitDevice(QubitDevice):
                 )
                 for measurement in circuit.measurements
             ]
-            results.append(
-                onp.array(executable_results).squeeze()
-                if len(circuit.measurements) == 1
-                else tuple(onp.array(result).squeeze() for result in executable_results)
-            )
+            results.append(self._to_pl_return(circuit.measurements, executable_results))
         return results
 
     @staticmethod

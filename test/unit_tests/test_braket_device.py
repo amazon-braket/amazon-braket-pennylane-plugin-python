@@ -1122,6 +1122,25 @@ def test_batch_execute_program_set(mock_run):
     assert result[0] == 0.6
     assert result[1] == 0.6
 
+@patch.object(AwsDevice, "run")
+def test_batch_execute_program_set_counts_returns_dict(mock_run):
+    """Counts on the program set path must be plain dicts, not 0-d arrays."""
+    task = Mock()
+    task.result.return_value = PROGRAM_SET_RESULT
+    mock_run.return_value = task
+    dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
+    with QuantumTape() as circuit:
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        qp.counts(wires=[0, 1])
+
+    result = dev.batch_execute([circuit, circuit])
+
+    assert len(result) == 2
+    for r in result:
+        assert isinstance(r, dict)
+        assert r == {"00": 7, "01": 2, "10": 2, "11": 9}
+
 
 def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
     """With multiple single-qubit expectations on distinct wires, each expval must reflect its
@@ -2075,6 +2094,7 @@ def test_counts_without_observable_batch_execute(mock_run_batch):
 
     assert len(results) == 5
     for result in results:
+        assert isinstance(result, dict)
         assert result == {"10": 100}
     mock_run_batch.assert_called_once()
 
