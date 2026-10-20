@@ -816,6 +816,14 @@ def test_translate_result_type_density_matrix_partial():
     assert braket_result_type == braket_result_type_calculated
 
 
+def test_translate_result_type_density_matrix_unimplemented():
+    """A density-matrix measurement requires Braket density-matrix support."""
+    mp = qp.density_matrix(wires=[0])
+
+    with pytest.raises(NotImplementedError, match="Unsupported return type"):
+        translate_result_type(mp, [0], frozenset())
+
+
 def test_translate_result_type_state_unimplemented():
     """Tests if a NotImplementedError is raised by translate_result_type when a PennyLane state
     return type is converted while not supported by the device"""
@@ -831,6 +839,18 @@ def test_translate_result_type_unsupported_return():
 
     with pytest.raises(NotImplementedError, match="Unsupported return type"):
         translate_result_type(tape.measurements[0], [0], frozenset())
+
+
+def test_translate_result_type_unsupported_observable_measurement():
+    """An otherwise valid observable still requires a supported measurement process."""
+
+    class UnsupportedMeasurement(qp.measurements.MeasurementProcess):
+        pass
+
+    measurement = UnsupportedMeasurement(obs=qp.PauliZ(0))
+
+    with pytest.raises(NotImplementedError, match="Unsupported return type"):
+        translate_result_type(measurement, [0], frozenset())
 
 
 def test_translate_result_type_unsupported_obs():

@@ -159,8 +159,8 @@ def translate_ahs_shot_result(res: ShotResult):
     successfully initialized, and 0 otherwise. The post_sequence is 1 if an atom in the
     ground state was measured, and 0 otherwise. Comparison of pre_sequence and post_sequence
     reveals one of 4 possible outcomes. The first two (initial measurement of 0) indicate a
-    failure to initialize correctly, and will yeild a NaN result. The second two are
-    measurements of the excited and ground state repsectively, and yield 1 and 0.
+    failure to initialize correctly, and will yield a NaN result. The second two are
+    measurements of the excited and ground state respectively, and yield 1 and 0.
 
     0 --> 0: NaN - Atom failed to be placed (no atom in the ground state either before or after)
     0 --> 1: NaN - Atom failed to be placed (but was recaptured, or something else odd happened)
