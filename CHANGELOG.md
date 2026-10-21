@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.36.0 (2026-10-21)
+
+### Features
+
+ * Update to new `Device` API
+
 ## v1.35.2 (2026-09-17)
 
 ### Bug Fixes and Other Changes
