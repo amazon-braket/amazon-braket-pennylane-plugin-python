@@ -1094,6 +1094,26 @@ def test_batch_execution_program_set(mock_run):
     assert result[1] == 0.6
 
 
+@patch.object(AwsDevice, "run")
+def test_batch_execute_program_set_counts_returns_dict(mock_run):
+    """Counts on the program set path must be plain dicts, not 0-d arrays."""
+    task = Mock()
+    task.result.return_value = PROGRAM_SET_RESULT
+    mock_run.return_value = task
+    dev = _aws_device(wires=4, foo="bar", parallel=False, supports_program_sets=True)
+    circuit = QuantumScript(
+        [qp.Hadamard(wires=0), qp.CNOT(wires=[0, 1])],
+        [qp.counts(wires=[0, 1])],
+    )
+
+    result = _execute_with_device_shots(dev, [circuit, circuit])
+
+    assert len(result) == 2
+    for r in result:
+        assert isinstance(r, dict)
+        assert r == {"00": 7, "01": 2, "10": 2, "11": 9}
+
+
 def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
     """With multiple single-qubit expectations on distinct wires, each expval must reflect its
     own qubit's measurements."""
@@ -3507,3 +3527,18 @@ def test_native(mock_run, mock_properties, device_type):
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         inputs={},
     )
+
+
+def test_counts_returns_dict_for_local_qubit_device():
+    dev = BraketLocalQubitDevice(wires=2, shots=20)
+
+    @qp.qnode(dev)
+    def circuit():
+        qp.Hadamard(wires=0)
+        qp.CNOT(wires=[0, 1])
+        return qp.counts(wires=[0, 1])
+
+    result = circuit()
+
+    assert isinstance(result, dict)
+    assert sum(result.values()) == 20

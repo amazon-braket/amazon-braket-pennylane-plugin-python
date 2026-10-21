@@ -496,6 +496,20 @@ class BraketQubitDevice(PennyLaneDevice):
             )
         return results
 
+    @staticmethod
+    def _to_pl_return(measurements, results):
+        """Converts per-measurement results to the PennyLane return value.
+        Counts stay plain dicts; every other result becomes a squeezed array."""
+
+        def convert(measurement, result):
+            if isinstance(measurement, CountsMP):
+                return result
+            return onp.array(result).squeeze()
+
+        if len(measurements) == 1:
+            return convert(measurements[0], results[0])
+        return tuple(convert(m, r) for m, r in zip(measurements, results))
+
     def _braket_to_pl_result(self, braket_result, circuit):
         """Calculates the PennyLane results from a Braket task result. A PennyLane circuit
         also determines the output observables."""
@@ -511,11 +525,7 @@ class BraketQubitDevice(PennyLaneDevice):
         # Assuming that the braket device doesn't have native parameter broadcasting
         # Assuming that the braket device doesn't support shot vectors.
         # Otherwise, we may need additional nesting
-        results = tuple(
-            result if isinstance(result, dict) else onp.array(result).squeeze()
-            for result in results
-        )
-        return results[0] if len(circuit.measurements) == 1 else results
+        return self._to_pl_return(circuit.measurements, results)
 
     def _braket_program_set_to_pl_result(self, program_set_result, circuits):
         results = []
@@ -523,18 +533,13 @@ class BraketQubitDevice(PennyLaneDevice):
             measured_entry = program_result[0]
             measurements = measured_entry.measurements
             wire_order = measured_entry.measured_qubits
-            executable_results = tuple(
-                result if isinstance(result, dict) else onp.array(result).squeeze()
-                for result in (
-                    measurement.map_wires(self._wire_map).process_samples(
-                        measurements, wire_order=wire_order
-                    )
-                    for measurement in circuit.measurements
+            executable_results = [
+                measurement.map_wires(self._wire_map).process_samples(
+                    measurements, wire_order=wire_order
                 )
-            )
-            results.append(
-                executable_results[0] if len(circuit.measurements) == 1 else executable_results
-            )
+                for measurement in circuit.measurements
+            ]
+            results.append(self._to_pl_return(circuit.measurements, executable_results))
         return results
 
     @staticmethod
