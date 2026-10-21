@@ -71,6 +71,51 @@ class TestAdjointGradient:
 
         adj_grad_test_helper(dev, circuit, [x, y, z])
 
+    @pytest.mark.parametrize("diff_method", ["best", "device"])
+    @pytest.mark.parametrize(
+        "observable",
+        [
+            pytest.param(qp.Z(0) + qp.Z(1), id="disjoint"),
+            pytest.param(qp.Z(0) + qp.Z(0) @ qp.Z(1), id="overlapping"),
+            pytest.param(qp.X(0) + qp.Z(1), id="different-bases"),
+        ],
+    )
+    def test_grad_sum_uses_one_task(self, on_demand_sv_device, observable, diff_method):
+        """A full QNode differentiates an entire analytic sum in one SV1 task."""
+        dev = on_demand_sv_device(2)
+
+        def circuit(x):
+            qp.RX(x, wires=0)
+            qp.CNOT(wires=[0, 1])
+            return qp.expval(observable)
+
+        braket_qnode = qp.QNode(circuit, dev, diff_method=diff_method)
+        reference_qnode = qp.QNode(
+            circuit, qp.device("default.qubit", wires=2), diff_method="parameter-shift"
+        )
+        x = np.array(0.4, requires_grad=True)
+
+        with qp.Tracker(dev) as tracker:
+            gradient = qp.grad(braket_qnode)(x)
+
+        assert tracker.totals["executions"] == 1
+        assert np.allclose(gradient, qp.grad(reference_qnode)(x), atol=ABS_TOLERANCE, rtol=0)
+
+    def test_device_gradient_variance_falls_back(self, on_demand_sv_device):
+        """An explicit device-gradient request retains the legacy variance fallback."""
+        dev = on_demand_sv_device(1)
+
+        @qp.qnode(dev, diff_method="device")
+        def circuit(x):
+            qp.RX(x, wires=0)
+            return qp.var(qp.Z(0))
+
+        x = np.array(0.4, requires_grad=True)
+        with pytest.warns(UserWarning, match="Falling back to the parameter-shift"):
+            gradient = qp.grad(circuit)(x)
+
+        assert np.allclose(gradient, np.sin(2 * x), atol=ABS_TOLERANCE, rtol=0)
+
     def test_grad_large_circuit(self, on_demand_sv_device):
         num_qubits = 8
         # having > 10 parameterized gates is important; we've

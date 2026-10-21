@@ -35,8 +35,9 @@ class TestCounts:
             qp.RX(np.pi / 3, wires=0)
             return qp.counts()
 
-        result = circuit().item()
+        result = circuit()
 
+        assert isinstance(result, dict)
         # The sample should only contain 00 and 10
         assert "00" in result
         assert "10" in result
@@ -57,8 +58,9 @@ class TestCounts:
             qp.RX(np.pi / 3, wires=0)
             return qp.counts(wires=[0])
 
-        result = circuit().item()
+        result = circuit()
 
+        assert isinstance(result, dict)
         # The sample should only contain 00 and 10
         assert "0" in result
         assert "1" in result
@@ -77,8 +79,9 @@ class TestCounts:
             qp.RX(np.pi / 3, wires=0)
             return qp.counts(op=qp.PauliZ(wires=[0]))
 
-        result = circuit().item()
+        result = circuit()
 
+        assert isinstance(result, dict)
         # The sample should only contain 00 and 10
         assert -1 in result
         assert 1 in result

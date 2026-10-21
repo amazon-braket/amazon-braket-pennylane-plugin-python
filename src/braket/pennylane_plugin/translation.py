@@ -569,8 +569,13 @@ def translate_result_type(
     if isinstance(measurement, qp.measurements.ProbabilityMP):
         return Probability(targets)
 
+    if isinstance(measurement, qp.measurements.DensityMatrixMP):
+        if "DensityMatrix" in supported_result_types:
+            return DensityMatrix(targets)
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
+
     if isinstance(measurement, qp.measurements.StateMP):
-        if not targets and "StateVector" in supported_result_types:
+        if "StateVector" in supported_result_types:
             return StateVector()
         elif "DensityMatrix" in supported_result_types:
             return DensityMatrix(targets)
