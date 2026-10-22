@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.36.1 (2026-10-22)
+
+### Bug Fixes and Other Changes
+
+ * return dict from qml.counts on braket.local.qubit
+
 ## v1.36.0 (2026-10-21)
 
 ### Features
