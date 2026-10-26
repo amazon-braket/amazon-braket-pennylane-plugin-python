@@ -249,6 +249,11 @@ def test_execution_does_not_construct_sdk_circuits():
     assert dev.circuit == expected.to_ir()
 
 
+def test_multi_wire_identity_acts_on_each_qubit():
+    program = to_openqasm([(qp.Identity([0, 1]), [])], wire_map={0: 0, 1: 1})
+    assert "i q[0];\ni q[1];" in program.source
+
+
 def test_empty_program_is_rejected():
     with pytest.raises(ValueError, match="at least one non-zero-qubit gate"):
         to_openqasm([], wire_map={})

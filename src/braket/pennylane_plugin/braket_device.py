@@ -121,8 +121,8 @@ OBS_LIST = (qp.PauliX, qp.PauliY, qp.PauliZ)
 PAULI_AND_HADAMARD_OBS = (qp.PauliX, qp.PauliY, qp.PauliZ, qp.Hadamard, qp.Identity)
 
 # Run options that the SDK applies the same way to circuits, OpenQASM programs and program sets.
-# Other options, such as device_parameters, disable_qubit_rewiring and gate_definitions, may only
-# take effect for circuits, so they keep the SDK's circuit path.
+# Other options, such as device_parameters, disable_qubit_rewiring and gate_definitions, are
+# applied differently or not at all to programs, so they keep the SDK's circuit path.
 _PROGRAM_SAFE_AWS_RUN_OPTIONS = frozenset(
     {"tags", "quiet", "reservation_arn", "experimental_capabilities", "logger"}
 )
@@ -393,7 +393,6 @@ class BraketQubitDevice(PennyLaneDevice):
         )
 
     def _requires_circuit(self, circuit: QuantumScript) -> bool:
-        # Noise models and pulse gates are only applied by the SDK's circuit path
         return self._noise_model is not None or any(
             isinstance(operation, qp.pulse.ParametrizedEvolution)
             for operation in circuit.operations
@@ -662,7 +661,6 @@ class BraketQubitDevice(PennyLaneDevice):
             for t in range(n_snapshots)
         ]
 
-        # Snapshots are not verbatim, so _run_snapshots can read the outcomes in qubit order
         translate = self.apply if self._requires_circuit(circuit) else self._operations_to_openqasm
         snapshot_circuits = [
             translate(
@@ -788,7 +786,6 @@ class BraketQubitDevice(PennyLaneDevice):
         param_index = 0
         indices = trainable_indices or frozenset()
         for batch in (operations, rotations or ()):
-            # Rotation parameter indices follow the circuit's operation parameters.
             for operation in batch:
                 param_names = []
                 for _ in operation.parameters:
@@ -935,7 +932,6 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._max_retries = max_retries
 
     def _requires_circuit(self, circuit: QuantumScript) -> bool:
-        # Other run options may only take effect for circuits
         if not self._run_kwargs.keys() <= _PROGRAM_SAFE_AWS_RUN_OPTIONS:
             return True
         return super()._requires_circuit(circuit)
@@ -1017,11 +1013,9 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     @staticmethod
     def _bind_program_set_inputs(specification, input_set):
-        # Bindings need at least one input
         if not input_set:
             return specification
         if isinstance(specification, Program):
-            # Program sets take a list of values for each input
             return Program(
                 source=specification.source,
                 inputs={name: [value] for name, value in input_set.items()},

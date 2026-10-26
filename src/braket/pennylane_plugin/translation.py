@@ -277,8 +277,6 @@ def _result_types_to_openqasm(
     supported_result_types: Collection[str],
     properties: OpenQASMSerializationProperties,
 ) -> list[str]:
-    """Serializes the result types that ``translate_result_type`` translates a measurement on
-    device qubits to."""
     qubits = [int(wire) for wire in measurement.wires]
     targets = ", ".join(properties.format_target(qubit) for qubit in qubits) or "all"
     observable = measurement.obs
@@ -337,8 +335,6 @@ def _adjoint_gradient_to_openqasm(
     wire_map: Mapping[Hashable, int],
     properties: OpenQASMSerializationProperties,
 ) -> str:
-    """Serializes the adjoint gradient result type that ``get_adjoint_gradient_result_type``
-    creates for a circuit's measurements."""
     if len(measurements) != 1:
         raise ValueError(
             f"Braket can only compute gradients for circuits with a single expectation"
@@ -365,8 +361,6 @@ def _observable_to_openqasm(
     qubit: Callable[[Hashable], int],
     properties: OpenQASMSerializationProperties,
 ) -> str:
-    """Serializes an observable as the observable that ``_translate_observable`` translates it
-    to, where ``qubit`` gives the device qubit of each of its wires."""
     terms = _observable_terms(observable, qubit, properties)
     serialized = " + ".join(
         f"{coefficient} * {' @ '.join(factors)}" if coefficient != 1 else " @ ".join(factors)
@@ -380,8 +374,6 @@ def _observable_terms(
     qubit: Callable[[Hashable], int],
     properties: OpenQASMSerializationProperties,
 ) -> list[tuple[Any, list[str]]]:
-    """Returns the coefficient and the tensor product factors of each term of an observable.
-    Observables other than sums have a single term."""
     match observable:
         case qp.Identity(wires=wires):
             return [(1, [f"i({properties.format_target(qubit(wire))})" for wire in wires])]
@@ -456,8 +448,6 @@ def _operation_statements(
     qubits: dict[int, None],
     parameters: set[str],
 ):
-    """Yields the statement of each operation, adding the qubits and free parameters that it
-    uses to ``qubits`` and ``parameters``."""
     for operation, param_names in operations:
         targets = [wire_map[wire] for wire in operation.wires]
         qubits.update(dict.fromkeys(targets))
@@ -480,18 +470,17 @@ def _operation_to_openqasm(
     parameters = _parameters(operation, param_names)
     qubits = ", ".join(properties.format_target(int(target)) for target in targets)
     match operation:
+        case qp.Identity():
+            return "\n".join(f"i {properties.format_target(int(target))};" for target in targets)
         case qp.QubitUnitary():
             return f"#pragma braket unitary({_format_matrix(parameters[0])}) {qubits}"
         case qp.QubitChannel():
             matrices = ", ".join(_format_matrix(matrix) for matrix in parameters)
             return f"#pragma braket noise kraus({matrices}) {qubits}"
         case qp.GeneralizedAmplitudeDamping():
-            # Braket takes the probability of the excited state
             parameters = [parameters[0], 1 - parameters[1]]
         case MS():
-            # Braket's MS gate takes the AAMS rotation angle, which is pi / 2 for MS
             parameters = [*parameters, np.pi / 2]
-    # Noise parameters are serialized as given rather than as angles
     if isinstance(operation, qp.operation.Channel):
         return f"#pragma braket noise {name}({', '.join(map(str, parameters))}) {qubits}"
     if parameters:
@@ -507,7 +496,6 @@ def _parameters(operation: Operation, param_names: Sequence[str | None]) -> list
 
 
 def _free_parameters(operation: Operation, param_names: Sequence[str | None]):
-    """Yields the names of the free parameters that an operation's parameters use."""
     for name, value in zip(param_names, operation.parameters, strict=True):
         if name is not None:
             yield name
@@ -518,7 +506,6 @@ def _free_parameters(operation: Operation, param_names: Sequence[str | None]):
 def _format_angle(angle: str | FreeParameterExpression | float) -> str:
     if isinstance(angle, str):
         return angle
-    # Braket gates cast numeric angles to floats
     return str(angle) if isinstance(angle, FreeParameterExpression) else str(float(angle))
 
 

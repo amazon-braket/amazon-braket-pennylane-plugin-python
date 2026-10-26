@@ -2618,7 +2618,12 @@ def test_qnode_sum_adjoint_gradient_uses_one_task(
     expected = Circuit().adjoint_gradient(
         observable=braket_observable, target=targets, parameters=["p_0"]
     )
-    assert openqasm_source(submitted).splitlines()[-1] == expected.to_ir().source.splitlines()[-1]
+    submitted_results = [
+        line
+        for line in openqasm_source(submitted).splitlines()
+        if line.startswith("#pragma braket result")
+    ]
+    assert submitted_results == expected.to_ir().source.splitlines()[-1:]
     assert np.isclose(gradient, -0.5)
 
 
