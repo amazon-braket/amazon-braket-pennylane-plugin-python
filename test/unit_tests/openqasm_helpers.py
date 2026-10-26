@@ -13,17 +13,9 @@
 
 """SDK reference serialization for execution tests."""
 
-import pytest
-
 from braket.circuits import Circuit
 from braket.ir.openqasm import Program
-from braket.pennylane_plugin.braket_device import _PROGRAM_SAFE_AWS_RUN_OPTIONS
 from braket.program_sets import ProgramSet
-
-# Unknown run options keep the SDK's circuit path; allowlisted ones allow OpenQASM programs
-AWS_RUN_KWARGS = pytest.mark.parametrize(
-    "run_kwargs", [{"foo": "bar"}, {"tags": {"foo": "bar"}}], ids=["circuits", "programs"]
-)
 
 
 def sorted_declarations(program):
@@ -49,20 +41,5 @@ def as_openqasm(specification):
     return specification
 
 
-def as_submitted(specification, run_kwargs):
-    """What an AWS device submits for ``specification`` with the given run options."""
-    if run_kwargs.keys() <= _PROGRAM_SAFE_AWS_RUN_OPTIONS:
-        return as_openqasm(specification)
-    return specification
-
-
 def openqasm_source(specification):
     return as_openqasm(specification).source
-
-
-def result_pragmas(specification):
-    return [
-        line
-        for line in openqasm_source(specification).splitlines()
-        if line.startswith("#pragma braket result")
-    ]

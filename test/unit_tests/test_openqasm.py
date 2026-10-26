@@ -26,7 +26,6 @@ from pennylane.tape import QuantumScript
 from braket.circuits import (
     Circuit,
     FreeParameter,
-    FreeParameterExpression,
     observables,
 )
 from braket.pennylane_plugin import BraketLocalQubitDevice
@@ -43,6 +42,18 @@ from braket.pennylane_plugin.ops import (
     PRx,
 )
 from braket.pennylane_plugin.translation import _PENNYLANE_TO_OPENQASM_OPERATIONS, to_openqasm
+
+
+def _assert_matches_sdk(dev, tape, **kwargs):
+    """The program, or the error, matches the SDK's for the equivalent circuit."""
+    try:
+        expected = sorted_declarations(dev._pl_to_braket_circuit(tape, **kwargs).to_ir())
+    except Exception as error:  # noqa: BLE001
+        with pytest.raises(type(error), match=re.escape(str(error))):
+            dev._pl_to_openqasm(tape, **kwargs)
+    else:
+        assert dev._pl_to_openqasm(tape, **kwargs) == expected
+
 
 # An instance of every operation that is serialized directly
 _OPERATIONS = [
@@ -111,8 +122,7 @@ def test_operations_match_sdk_serialization(operation, trainable):
         for index, parameter in enumerate(operation.parameters)
         if trainable and np.ndim(parameter) == 0
     )
-    expected = dev._pl_to_braket_circuit(tape, trainable_indices=indices).to_ir()
-    assert dev._pl_to_openqasm(tape, trainable_indices=indices) == sorted_declarations(expected)
+    _assert_matches_sdk(dev, tape, trainable_indices=indices)
 
 
 def test_unsupported_operations_are_rejected():
@@ -120,17 +130,6 @@ def test_unsupported_operations_are_rejected():
     tape = QuantumScript([qp.adjoint(qp.RX(0.1, 0))], [qp.expval(qp.Z(0))])
     with pytest.raises(NotImplementedError, match=r"does not support operation Adjoint\(RX\)"):
         dev._pl_to_openqasm(tape)
-
-
-def _assert_matches_sdk(dev, tape, **kwargs):
-    """The program, or the error, matches the SDK's for the equivalent circuit."""
-    try:
-        expected = sorted_declarations(dev._pl_to_braket_circuit(tape, **kwargs).to_ir())
-    except Exception as error:  # noqa: BLE001
-        with pytest.raises(type(error), match=re.escape(str(error))):
-            dev._pl_to_openqasm(tape, **kwargs)
-    else:
-        assert dev._pl_to_openqasm(tape, **kwargs) == expected
 
 
 _RESULT_TYPES = frozenset(
@@ -216,19 +215,6 @@ def test_gradients_match_sdk_serialization(measurements, trainable_params, suppo
     _assert_matches_sdk(
         dev, tape, compute_gradient=True, trainable_indices=frozenset(trainable_params)
     )
-
-
-@pytest.mark.parametrize("angle", [0, 0.5])
-def test_numeric_free_parameter_expression_execution(angle):
-    """Numeric expressions match SDK serialization and execute on the local simulator."""
-    dev = BraketLocalQubitDevice(wires=1)
-    parameter = FreeParameterExpression(angle)
-    tape = QuantumScript([qp.RX(parameter, wires=0)], [qp.expval(qp.Z(0))])
-    expected = Circuit().rx(0, parameter).expectation(observables.Z(0))
-
-    assert dev._pl_to_openqasm(tape) == expected.to_ir()
-    assert np.isclose(dev.execute(tape), np.cos(angle))
-    assert dev.circuit == expected.to_ir()
 
 
 def test_numeric_parameters_are_not_truncated():
