@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 import json
+import logging
 import warnings
 from collections import Counter
 from typing import Any
@@ -41,7 +42,9 @@ from braket.device_schema.pulse.pulse_device_action_properties_v1 import (
 )
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
-from braket.program_sets import ProgramSet
+from braket.ir.openqasm import Program
+from braket.program_sets import CircuitBinding, ProgramSet
+from braket.pulse import Frame, Port
 from braket.simulator import BraketSimulator
 from braket.task_result import ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
@@ -61,6 +64,13 @@ from pennylane.devices import ExecutionConfig
 from pennylane.exceptions import DeviceError, PennyLaneDeprecationWarning, QuantumFunctionError
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
+from openqasm_helpers import (
+    AWS_RUN_KWARGS,
+    as_openqasm,
+    as_submitted,
+    openqasm_source,
+    result_pragmas,
+)
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import (
@@ -305,9 +315,15 @@ def test_apply_unused_qubits():
         qp.RX(np.pi / 2, wires=2),
     ]
     rotations = [qp.RY(np.pi, wires=1)]
-    circuit = dev.apply(operations, rotations)
+    circuit = dev.apply(operations, rotations, trainable_indices=frozenset({0, 1}))
 
-    assert circuit == Circuit().h(1).cnot(1, 2).rx(2, np.pi / 2).ry(1, np.pi).i(0).i(3)
+    expected = (
+        Circuit().h(1).cnot(1, 2).rx(2, FreeParameter("p_0")).ry(1, FreeParameter("p_1")).i(0).i(3)
+    )
+    assert circuit == expected
+    assert circuit.make_bound_circuit({"p_0": 0.1, "p_1": 0.2}) == (
+        Circuit().h(1).cnot(1, 2).rx(2, 0.1).ry(1, 0.2).i(0).i(3)
+    )
 
 
 @pytest.mark.xfail(raises=NotImplementedError)
@@ -336,6 +352,34 @@ def test_apply_unwrap_tensor():
 
     angles = [op.operator.angle for op in circuit.instructions]
     assert not any([isinstance(angle, np.tensor) for angle in angles])
+
+
+@pytest.mark.parametrize(
+    "run_kwargs, submits_programs",
+    [
+        ({}, True),
+        ({"tags": {"foo": "bar"}}, True),
+        ({"quiet": True}, True),
+        ({"reservation_arn": "arn:aws:braket:us-west-2:123456789012:reservation/foo"}, True),
+        ({"experimental_capabilities": "ALL"}, True),
+        ({"logger": logging.getLogger("braket")}, True),
+        ({"device_parameters": {"errorMitigation": []}}, False),
+        ({"disable_qubit_rewiring": True}, False),
+        ({"disable_qubit_rewiring": False}, False),
+        ({"gate_definitions": {}}, False),
+        ({"foo": "bar"}, False),
+        ({"tags": {"foo": "bar"}, "quiet": True}, True),
+        ({"tags": {"foo": "bar"}, "device_parameters": {"errorMitigation": []}}, False),
+    ],
+)
+def test_aws_run_options_choose_task_type(run_kwargs, submits_programs):
+    """Only run options that the SDK applies to every task type allow OpenQASM programs."""
+    dev = _aws_device(wires=2, **run_kwargs)
+    tape = QuantumScript([qp.Hadamard(0), qp.CNOT([0, 1])], [qp.expval(qp.Z(1))])
+    specification = dev._translate_circuit(tape)
+    assert isinstance(specification, Program if submits_programs else Circuit)
+    if not submits_programs:
+        assert specification == Circuit().h(0).cnot(0, 1).expectation(observables.Z(1))
 
 
 @patch.object(AwsDevice, "run")
@@ -579,7 +623,7 @@ CIRCUIT_6 = QuantumScript(
             .rx(0, FreeParameter("p_0"))
             .ry(0, FreeParameter("p_1"))
             .adjoint_gradient(
-                observable=(2 * observables.X(0) @ observables.Y(1)),
+                observable=(2.0 * observables.X(0) @ observables.Y(1)),
                 parameters=["p_0", "p_1"],
             ),
             2,
@@ -614,7 +658,7 @@ CIRCUIT_6 = QuantumScript(
             .ry(0, FreeParameter("p_1"))
             .adjoint_gradient(
                 observable=(
-                    2 * observables.X(0) @ observables.Y(1)
+                    2.0 * observables.X(0) @ observables.Y(1)
                     + 0.75 * observables.Y(0) @ observables.Z(1)
                 ),
                 parameters=["p_0", "p_1"],
@@ -644,6 +688,7 @@ CIRCUIT_6 = QuantumScript(
         ),
     ],
 )
+@AWS_RUN_KWARGS
 def test_execute_with_gradient(
     mock_run,
     pl_circ,
@@ -652,13 +697,14 @@ def test_execute_with_gradient(
     expected_inputs,
     result_types,
     expected_pl_result,
+    run_kwargs,
 ):
     task = Mock()
     type(task).id = PropertyMock(return_value="task_arn")
     task.state.return_value = "COMPLETED"
     task.result.return_value = get_test_result_object(rts=result_types)
     mock_run.return_value = task
-    dev = _aws_device(wires=wires, foo="bar", shots=0, device_type=AwsDeviceType.SIMULATOR)
+    dev = _aws_device(wires=wires, **run_kwargs, shots=0, device_type=AwsDeviceType.SIMULATOR)
 
     results, jacs = dev.execute_and_compute_derivatives(
         (pl_circ,), ExecutionConfig(gradient_method="device")
@@ -667,12 +713,12 @@ def test_execute_with_gradient(
     assert dev.task == task
 
     mock_run.assert_called_with(
-        expected_braket_circ,
+        as_submitted(expected_braket_circ, run_kwargs),
         s3_destination_folder=("foo", "bar"),
         shots=0,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        foo="bar",
+        **run_kwargs,
         inputs=expected_inputs,
     )
     assert (results[0] == expected_pl_result[0][0]).all()
@@ -691,7 +737,7 @@ def test_execute_with_gradient(
             .rx(0, FreeParameter("p_0"))
             .ry(0, FreeParameter("p_1"))
             .adjoint_gradient(
-                observable=(2 * observables.X(0) @ observables.Y(1)),
+                observable=(2.0 * observables.X(0) @ observables.Y(1)),
                 parameters=["p_0", "p_1"],
             ),
             2,
@@ -907,23 +953,24 @@ def test_pl_to_braket_circuit_compute_gradient_hamiltonian_tensor_product_terms(
     assert braket_circuit_true == braket_circuit
 
 
-def test_pl_to_braket_circuit_gradient_fails_with_multiple_observables():
-    """Tests that a PennyLane circuit is correctly converted into a Braket circuit
-    with a gradient and unique parameters when compute_gradient is True"""
-    dev = _aws_device(wires=2, foo="bar")
+@AWS_RUN_KWARGS
+@pytest.mark.parametrize("observable_count", [0, 2])
+def test_execute_gradient_fails_with_invalid_observable_count(run_kwargs, observable_count):
+    """Reject gradient tapes with zero or multiple observables on both translation paths."""
+    dev = _aws_device(wires=2, **run_kwargs)
 
     with QuantumTape() as tape:
         qp.RX(0.2, wires=0)
         qp.RX(0.3, wires=1)
         qp.CNOT(wires=[0, 1])
-        qp.expval(qp.PauliZ(0))
-        qp.expval(qp.PauliZ(0))
+        for _ in range(observable_count):
+            qp.expval(qp.PauliZ(0))
     with pytest.raises(
         ValueError,
         match="Braket can only compute gradients for circuits with a single expectation"
         " observable, not ",
     ):
-        dev._pl_to_braket_circuit(tape, compute_gradient=True)
+        dev._execute_circuit(tape, compute_gradient=True)
 
 
 def test_pl_to_braket_circuit_gradient_fails_with_invalid_observable():
@@ -1194,17 +1241,18 @@ def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
 
 
 @patch.object(AwsDevice, "run")
-def test_batch_execution_program_set_parametrize_differentiable(mock_run):
-    """Test that batch execution uses program sets with trainable parameters."""
+@AWS_RUN_KWARGS
+def test_batch_execution_program_set_parametrize_differentiable(mock_run, run_kwargs):
+    """Program sets bind trainable circuits and leave circuits without inputs unbound."""
     task = Mock()
     task.result.return_value = PROGRAM_SET_RESULT
     mock_run.return_value = task
     dev = _aws_device(
         wires=4,
-        foo="bar",
         parallel=False,
         parametrize_differentiable=True,
         supports_program_sets=True,
+        **run_kwargs,
     )
 
     with QuantumTape() as circuit1:
@@ -1214,7 +1262,6 @@ def test_batch_execution_program_set_parametrize_differentiable(mock_run):
 
     with QuantumTape() as circuit2:
         qp.Hadamard(wires=0)
-        qp.RX(0.123, wires=0)
         qp.CNOT(wires=[0, 1])
         qp.sample(qp.PauliZ(0))
 
@@ -1225,18 +1272,21 @@ def test_batch_execution_program_set_parametrize_differentiable(mock_run):
     braket_circuit1 = (
         Circuit().h(0).cnot(0, 1).ry(0, FreeParameter("p_0")).rx(1, FreeParameter("p_1")).i(2).i(3)
     )
-    braket_circuit2 = Circuit().h(0).rx(0, FreeParameter("p_0")).cnot(0, 1).i(2).i(3)
+    braket_circuit2 = Circuit().h(0).cnot(0, 1).i(2).i(3)
+    expected = ProgramSet(
+        [
+            CircuitBinding(braket_circuit1, [{"p_0": -anp.pi / 2, "p_1": anp.pi / 2}]),
+            braket_circuit2,
+        ],
+        shots_per_executable=SHOTS,
+    )
     mock_run.assert_called_with(
-        ProgramSet.zip(
-            [braket_circuit1, braket_circuit2],
-            input_sets=[{"p_0": -anp.pi / 2, "p_1": anp.pi / 2}, {"p_0": 0.123}],
-            shots_per_executable=SHOTS,
-        ),
+        as_submitted(expected, run_kwargs),
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS * 2,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        foo="bar",
+        **run_kwargs,
     )
     assert len(result) == 2
     assert result[0] == 0.6
@@ -1568,7 +1618,7 @@ def test_local_sim_batch_execution_parallel(mock_run_batch):
         )
 
     mock_run_batch.assert_called_with(
-        [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED],
+        as_openqasm([CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED]),
         shots=SHOTS,
         max_parallel=None,
         inputs=[],
@@ -2234,7 +2284,7 @@ def test_local_qubit_execute(mock_run, shots, backend):
     circuit = circuit.copy(shots=dev.shots)
     dev.execute(circuit)
     mock_run.assert_called_with(
-        expected,
+        as_openqasm(expected),
         shots=shots,
         foo="bar",
         inputs={"p_0": -np.pi / 2, "p_1": np.pi / 2},
@@ -2582,7 +2632,7 @@ def test_qnode_sum_adjoint_gradient_uses_one_task(
     expected = Circuit().adjoint_gradient(
         observable=braket_observable, target=targets, parameters=["p_0"]
     )
-    assert submitted.result_types == expected.result_types
+    assert result_pragmas(submitted) == result_pragmas(expected)
     assert np.isclose(gradient, -0.5)
 
 
@@ -2852,7 +2902,7 @@ def test_execute_and_compute_derivatives_falls_back_per_circuit(monkeypatch):
     simulator = BraketLocalQubitDevice(wires=1)
 
     def run_task(circuit, inputs=None, shots=0):
-        if any(isinstance(rt, result_types.AdjointGradient) for rt in circuit.result_types):
+        if "adjoint_gradient" in openqasm_source(circuit):
             return adjoint_task
         return simulator._run_task(circuit, inputs=inputs, shots=shots)
 
@@ -2989,6 +3039,7 @@ def _aws_device(
     native_gate_set=None,
     parametrize_differentiable=False,
     supports_program_sets=False,
+    device_class=BraketAwsQubitDevice,
     **kwargs,
 ):
     properties_mock.action = {DeviceActionType.OPENQASM: action_properties}
@@ -3000,7 +3051,7 @@ def _aws_device(
     type_mock.return_value = device_type
     aws_session_mock = Mock()
     aws_session_mock.get_device.return_value = {"deviceName": f"{device_arn}-name"}
-    dev = BraketAwsQubitDevice(
+    dev = device_class(
         wires=wires,
         s3_destination_folder=("foo", "bar"),
         device_arn=device_arn,
@@ -3336,6 +3387,17 @@ class TestPulseValidation:
         program((tape,))
         spy.assert_called_once_with(op)
 
+        dev._device._frames = {"q0_drive": Frame("drive", Port("port", dt=1e-9), frequency=5e9)}
+        with patch(
+            "braket.pennylane_plugin.braket_device.translate_operation",
+            wraps=braket.pennylane_plugin.braket_device.translate_operation,
+        ) as translate:
+            circuit = dev._translate_circuit(tape)
+        translate.assert_called_once()
+        assert isinstance(circuit, Circuit)
+        assert isinstance(circuit.instructions[0].operator, Gate.PulseGate)
+        assert "waveform" in circuit.to_ir().source
+
     def test_callable_phase_raises_error(self):
         """Test that a callable phase (other than qp.pulse.constant) raises an error"""
         dev = get_oqc_device()
@@ -3520,13 +3582,57 @@ def test_native(mock_run, mock_properties, device_type):
         .expectation(observable=observables.Z(1))
     )
     mock_run.assert_called_with(
-        expected_circuit,
+        as_openqasm(expected_circuit),
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
         inputs={},
     )
+
+
+@patch.object(AwsDevice, "run", side_effect=RuntimeError("submitted"))
+@AWS_RUN_KWARGS
+def test_verbatim_program_set_rotations_follow_verbatim_box(mock_run, run_kwargs):
+    """Rotations for observables that are not diagonalized beforehand, such as scaled Pauli
+    words in Hamiltonians, are not native gates, so they are compiled after the box."""
+    dev = _aws_device(
+        wires=2,
+        verbatim=True,
+        action_properties=ACTION_PROPERTIES_NATIVE,
+        native_gate_set=["GPI", "GPI2", "MS"],
+        parallel=False,
+        supports_program_sets=True,
+        **run_kwargs,
+    )
+    tape = QuantumScript(
+        [GPi(0.1, wires=0)], [qp.expval(qp.Hamiltonian([0.5], [qp.X(0)]))], shots=10
+    )
+    with pytest.raises(RuntimeError, match="submitted"):
+        dev.execute([tape])
+    [entry] = mock_run.call_args.args[0].entries
+    expected = Circuit().add_verbatim_box(Circuit().gpi(0, 0.1).i(1)).ry(0, -np.pi / 2)
+    assert openqasm_source(entry) == openqasm_source(expected)
+
+
+def test_verbatim_classical_shadow_snapshots_are_not_verbatim():
+    """Snapshot outcomes are read in qubit order, which verbatim measurements do not follow."""
+    dev = _aws_device(
+        wires=2,
+        verbatim=True,
+        action_properties=ACTION_PROPERTIES_NATIVE,
+        native_gate_set=["GPI", "GPI2", "MS"],
+    )
+    tape = QuantumScript(
+        [GPi(0.1, wires=1), MS(0.1, 0.2, wires=[1, 0])],
+        [qp.classical_shadow(wires=[0, 1], seed=1)],
+        shots=1,
+    )
+    with patch.object(dev, "_run_snapshots", return_value=np.zeros((1, 2))) as run_snapshots:
+        dev.classical_shadow(tape.measurements[0], tape)
+    [snapshot] = run_snapshots.call_args.args[0]
+    assert "verbatim" not in openqasm_source(snapshot)
+    assert openqasm_source(snapshot).endswith("b[0] = measure q[0];\nb[1] = measure q[1];")
 
 
 def test_counts_returns_dict_for_local_qubit_device():

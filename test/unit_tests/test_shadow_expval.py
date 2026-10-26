@@ -19,6 +19,7 @@ from unittest.mock import Mock, PropertyMock, patch
 import braket.ir as ir
 import pennylane as qp
 import pytest
+from openqasm_helpers import as_openqasm
 from braket.aws import AwsDevice, AwsDeviceType, AwsQuantumTask
 from braket.circuits import Circuit
 from braket.device_schema import DeviceActionType
@@ -453,7 +454,7 @@ def test_shadow_expval_local(
     # assert results are right
     assert res == expected_pl_result[0]
     mock_run.assert_called_with(
-        expected_braket_circ,
+        as_openqasm(expected_braket_circ),
         shots=1,
         foo="bar",
     )

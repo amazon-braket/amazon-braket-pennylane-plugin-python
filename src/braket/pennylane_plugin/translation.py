@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 from collections import Counter
+from collections.abc import Callable, Collection, Hashable, Iterable, Mapping, Sequence
 from functools import partial, reduce, singledispatch
 from typing import Any
 
@@ -21,9 +22,19 @@ from pennylane import numpy as np
 from pennylane.measurements import MeasurementProcess
 from pennylane.operation import Operation, Operator
 from pennylane.pulse import ParametrizedEvolution
+from sympy import Expr
 
 from braket.aws import AwsDevice
-from braket.circuits import FreeParameter, Gate, ResultType, gates, noises, observables
+from braket.circuits import (
+    FreeParameter,
+    FreeParameterExpression,
+    Gate,
+    ResultType,
+    gates,
+    noises,
+    observables,
+)
+from braket.circuits.gates import format_complex
 from braket.circuits.result_types import (
     AdjointGradient,
     DensityMatrix,
@@ -33,8 +44,13 @@ from braket.circuits.result_types import (
     StateVector,
     Variance,
 )
+from braket.circuits.serialization import (
+    OpenQASMSerializationProperties,
+    QubitReferenceType,
+)
 from braket.device_schema import DeviceActionType
 from braket.devices import Device
+from braket.ir.openqasm import Program
 from braket.pennylane_plugin.ops import (
     AAMS,
     MS,
@@ -148,6 +164,371 @@ def supported_operations(device: Device, verbatim: bool = False) -> frozenset[st
     ):
         translated |= {"ParametrizedEvolution"}
     return translated
+
+
+_PENNYLANE_TO_OPENQASM_OPERATIONS = {
+    pennylane: braket for braket, pennylane in _BRAKET_TO_PENNYLANE_OPERATIONS.items()
+} | {"MS": "ms"}
+
+
+def to_openqasm(
+    operations: Iterable[tuple[Operation, Sequence[str | None]]],
+    measurements: Sequence[MeasurementProcess] = (),
+    *,
+    wire_map: Mapping[Hashable, int],
+    supported_result_types: Collection[str] = frozenset(),
+    gradient_parameters: Sequence[str] | None = None,
+    rotations: Iterable[tuple[Operation, Sequence[str | None]]] = (),
+    verbatim: bool = False,
+    inputs: Iterable[str] = (),
+) -> Program:
+    """Serialize PennyLane operations directly into an OpenQASM program, matching the program
+    that the SDK serializes for the equivalent circuit.
+
+    Pulse gates and noise models are handled by the device's SDK circuit path.
+
+    Args:
+        operations (Iterable[tuple[Operation, Sequence[str | None]]]): PennyLane operations,
+            each with the free parameter name of each of its parameters, or None for
+            parameters that keep their values.
+        measurements (Sequence[MeasurementProcess]): Measurements to request as the result
+            types that ``translate_result_type`` translates them to. Defaults to an empty
+            sequence, in which case all used qubits are measured.
+        wire_map (Mapping[Hashable, int]): The device qubit of each wire. Device qubits that
+            operations do not act on receive identities, so that results include them.
+        supported_result_types (Collection[str]): Braket result types supported by the device.
+            Defaults to an empty collection.
+        gradient_parameters (Sequence[str] | None): If given, the adjoint gradient of the
+            single expectation in ``measurements`` with respect to these free parameters is
+            requested instead. Defaults to None.
+        rotations (Iterable[tuple[Operation, Sequence[str | None]]]): Operations in the same
+            form, applied after operations and outside any verbatim box.
+            Defaults to an empty iterable.
+        verbatim (bool): Whether to enclose operations in a verbatim box and use physical
+            qubit references. Defaults to False.
+        inputs (Iterable[str]): Names of free parameters that will be bound when the program
+            is submitted. Defaults to an empty iterable.
+
+    Returns:
+        Program: The serialized OpenQASM program with an empty inputs dictionary.
+
+    Raises:
+        NotImplementedError: If an operation or measurement is not supported.
+        ValueError: If no qubits are used, or a free parameter is absent from inputs.
+    """
+    properties = OpenQASMSerializationProperties(
+        qubit_reference_type=(
+            QubitReferenceType.PHYSICAL if verbatim else QubitReferenceType.VIRTUAL
+        )
+    )
+    qubits = {}
+    parameters = set()
+    statements = ["#pragma braket verbatim", "box{"] if verbatim else []
+    statements.extend(_operation_statements(operations, wire_map, properties, qubits, parameters))
+    for qubit in sorted(set(wire_map.values()).difference(qubits)):
+        statements.append(f"i {properties.format_target(qubit)};")
+        qubits[qubit] = None
+    if verbatim:
+        statements.append("}")
+    statements.extend(_operation_statements(rotations, wire_map, properties, qubits, parameters))
+    if not qubits:
+        raise ValueError("Circuit must have at least one non-zero-qubit gate to run on a device")
+    if unbound := parameters - set(inputs):
+        raise ValueError(f"Cannot execute circuit with unbound parameters: {unbound}")
+
+    if gradient_parameters is not None:
+        results = [
+            _adjoint_gradient_to_openqasm(
+                measurements, gradient_parameters, supported_result_types, wire_map, properties
+            )
+        ]
+    else:
+        # Match Circuit.add_result_type's ordered deduplication. Result types target device
+        # qubits, which operations or identities already use.
+        results = dict.fromkeys(
+            result
+            for measurement in measurements
+            for result in _result_types_to_openqasm(
+                # Mapped first, as when results are read with translate_result
+                measurement.map_wires(wire_map),
+                supported_result_types,
+                properties,
+            )
+        )
+    declarations = ["OPENQASM 3.0;"]
+    declarations.extend(f"input float {parameter};" for parameter in sorted(parameters))
+    if not results:
+        declarations.append(f"bit[{len(qubits)}] b;")
+    if not verbatim:
+        declarations.append(f"qubit[{max(qubits) + 1}] q;")
+    if results:
+        statements.extend(results)
+    else:
+        measured_qubits = qubits if verbatim else sorted(qubits)
+        statements.extend(
+            f"b[{index}] = measure {properties.format_target(qubit)};"
+            for index, qubit in enumerate(measured_qubits)
+        )
+    return Program.construct(source="\n".join(declarations + statements), inputs={})
+
+
+def _result_types_to_openqasm(
+    measurement: MeasurementProcess,
+    supported_result_types: Collection[str],
+    properties: OpenQASMSerializationProperties,
+) -> list[str]:
+    """Serializes the result types that ``translate_result_type`` translates a measurement on
+    device qubits to."""
+    qubits = [int(wire) for wire in measurement.wires]
+    targets = ", ".join(properties.format_target(qubit) for qubit in qubits) or "all"
+    observable = measurement.obs
+
+    if isinstance(measurement, qp.measurements.ProbabilityMP):
+        return [f"#pragma braket result probability {targets}"]
+
+    if isinstance(measurement, qp.measurements.DensityMatrixMP):
+        if "DensityMatrix" in supported_result_types:
+            return [f"#pragma braket result density_matrix {targets}"]
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
+
+    if isinstance(measurement, qp.measurements.StateMP):
+        if "StateVector" in supported_result_types:
+            return ["#pragma braket result state_vector"]
+        elif "DensityMatrix" in supported_result_types:
+            return [f"#pragma braket result density_matrix {targets}"]
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
+
+    if observable is None:
+        if isinstance(measurement, qp.measurements.CountsMP) and not measurement.all_outcomes:
+            return [
+                f"#pragma braket result sample z({properties.format_target(qubit)})"
+                for qubit in qubits
+            ]
+        raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
+
+    observable = flatten_observable(observable)
+
+    if isinstance(observable, qp.ops.LinearCombination):
+        if isinstance(measurement, qp.measurements.ExpectationMP):
+            return [
+                f"#pragma braket result expectation {_observable_to_openqasm(op, int, properties)}"
+                for op in observable.terms()[1]
+            ]
+        raise NotImplementedError(
+            f"Return type {type(measurement)} unsupported for LinearCombination"
+        )
+
+    braket_observable = _observable_to_openqasm(observable, int, properties)
+    if isinstance(measurement, qp.measurements.ExpectationMP):
+        return [f"#pragma braket result expectation {braket_observable}"]
+    if isinstance(measurement, qp.measurements.VarianceMP):
+        return [f"#pragma braket result variance {braket_observable}"]
+    if isinstance(measurement, qp.measurements.CountsMP) and not measurement.all_outcomes:
+        return [f"#pragma braket result sample {braket_observable}"]
+    if isinstance(measurement, qp.measurements.SampleMP):
+        return [f"#pragma braket result sample {braket_observable}"]
+    raise NotImplementedError(f"Unsupported return type: {type(measurement)}")
+
+
+def _adjoint_gradient_to_openqasm(
+    measurements: Sequence[MeasurementProcess],
+    parameters: Sequence[str],
+    supported_result_types: Collection[str],
+    wire_map: Mapping[Hashable, int],
+    properties: OpenQASMSerializationProperties,
+) -> str:
+    """Serializes the adjoint gradient result type that ``get_adjoint_gradient_result_type``
+    creates for a circuit's measurements."""
+    if len(measurements) != 1:
+        raise ValueError(
+            f"Braket can only compute gradients for circuits with a single expectation"
+            f" observable, not {len(measurements)} observables."
+        )
+    measurement = measurements[0]
+    observable = flatten_observable(measurement.obs)
+    if not isinstance(measurement, qp.measurements.ExpectationMP):
+        raise TypeError(
+            f"Braket can only compute gradients for circuits with a single expectation"
+            f" observable, not a {type(measurement)} measurement."
+        )
+    if "AdjointGradient" not in supported_result_types:
+        raise NotImplementedError("Unsupported return type: AdjointGradient")
+    braket_observable = _observable_to_openqasm(observable, wire_map.__getitem__, properties)
+    return (
+        "#pragma braket result adjoint_gradient "
+        f"expectation({braket_observable}) {', '.join(parameters) or 'all'}"
+    )
+
+
+def _observable_to_openqasm(
+    observable: Operator,
+    qubit: Callable[[Hashable], int],
+    properties: OpenQASMSerializationProperties,
+) -> str:
+    """Serializes an observable as the observable that ``_translate_observable`` translates it
+    to, where ``qubit`` gives the device qubit of each of its wires."""
+    terms = _observable_terms(observable, qubit, properties)
+    serialized = " + ".join(
+        f"{coefficient} * {' @ '.join(factors)}" if coefficient != 1 else " @ ".join(factors)
+        for coefficient, factors in terms
+    )
+    return serialized.replace("+ -", "- ") if len(terms) > 1 else serialized
+
+
+def _observable_terms(
+    observable: Operator,
+    qubit: Callable[[Hashable], int],
+    properties: OpenQASMSerializationProperties,
+) -> list[tuple[Any, list[str]]]:
+    """Returns the coefficient and the tensor product factors of each term of an observable.
+    Observables other than sums have a single term."""
+    match observable:
+        case qp.Identity(wires=wires):
+            return [(1, [f"i({properties.format_target(qubit(wire))})" for wire in wires])]
+        case qp.PauliX(wires=wires):
+            return [(1, [f"x({properties.format_target(qubit(wires[0]))})"])]
+        case qp.PauliY(wires=wires):
+            return [(1, [f"y({properties.format_target(qubit(wires[0]))})"])]
+        case qp.PauliZ(wires=wires):
+            return [(1, [f"z({properties.format_target(qubit(wires[0]))})"])]
+        case qp.Hadamard(wires=wires):
+            return [(1, [f"h({properties.format_target(qubit(wires[0]))})"])]
+        case qp.Hermitian(wires=wires):
+            return [(1, [_hermitian_to_openqasm(qp.matrix(observable), wires, qubit, properties)])]
+        case qp.Projector(parameters=parameters, wires=wires):
+            state = parameters[0]
+            if len(state) == len(wires):  # state is a basis state
+                return [
+                    (
+                        1,
+                        [
+                            _hermitian_to_openqasm(_one if b else _zero, [w], qubit, properties)
+                            for b, w in zip(state, wires)
+                        ],
+                    )
+                ]
+            # state is a state vector
+            return [(1, [_hermitian_to_openqasm(observable.matrix(), wires, qubit, properties)])]
+        case qp.ops.Prod(operands=operands):
+            # Braket tensor products multiply their factors' coefficients
+            coefficient, factors = 1, []
+            for operand in operands:
+                # Flattened observables do not have sums in products
+                [(operand_coefficient, operand_factors)] = _observable_terms(
+                    operand, qubit, properties
+                )
+                coefficient *= operand_coefficient
+                factors.extend(operand_factors)
+            return [(coefficient, factors)]
+        case qp.ops.SProd(base=base, scalar=scalar):
+            return [
+                (coefficient * scalar, factors)
+                for coefficient, factors in _observable_terms(base, qubit, properties)
+            ]
+        case qp.ops.Sum(operands=operands):
+            return [
+                term
+                for operand in operands
+                for term in _observable_terms(operand, qubit, properties)
+            ]
+        case _:
+            raise qp.exceptions.DeviceError(f"Unsupported observable: {type(observable)}")
+
+
+def _hermitian_to_openqasm(
+    matrix,
+    wires: Sequence[Hashable],
+    qubit: Callable[[Hashable], int],
+    properties: OpenQASMSerializationProperties,
+) -> str:
+    rows = onp.asarray(matrix, dtype=complex).tolist()
+    serialized = str([[f"{complex(element)}" for element in row] for row in rows])
+    for old, new in (("(", ""), (")", ""), ("'", ""), ("j", "im")):
+        serialized = serialized.replace(old, new)
+    targets = ", ".join(properties.format_target(qubit(wire)) for wire in wires)
+    return f"hermitian({serialized}) {targets}"
+
+
+def _operation_statements(
+    operations: Iterable[tuple[Operation, Sequence[str | None]]],
+    wire_map: Mapping[Hashable, int],
+    properties: OpenQASMSerializationProperties,
+    qubits: dict[int, None],
+    parameters: set[str],
+):
+    """Yields the statement of each operation, adding the qubits and free parameters that it
+    uses to ``qubits`` and ``parameters``."""
+    for operation, param_names in operations:
+        targets = [wire_map[wire] for wire in operation.wires]
+        qubits.update(dict.fromkeys(targets))
+        parameters.update(_free_parameters(operation, param_names))
+        yield _operation_to_openqasm(operation, param_names, targets, properties)
+
+
+def _operation_to_openqasm(
+    operation: Operation,
+    param_names: Sequence[str | None],
+    targets: Sequence[int],
+    properties: OpenQASMSerializationProperties,
+) -> str:
+    try:
+        name = _PENNYLANE_TO_OPENQASM_OPERATIONS[operation.name]
+    except KeyError:
+        raise NotImplementedError(
+            f"Braket PennyLane plugin does not support operation {operation.name}."
+        ) from None
+    parameters = _parameters(operation, param_names)
+    qubits = ", ".join(properties.format_target(int(target)) for target in targets)
+    match operation:
+        case qp.QubitUnitary():
+            return f"#pragma braket unitary({_format_matrix(parameters[0])}) {qubits}"
+        case qp.QubitChannel():
+            matrices = ", ".join(_format_matrix(matrix) for matrix in parameters)
+            return f"#pragma braket noise kraus({matrices}) {qubits}"
+        case qp.GeneralizedAmplitudeDamping():
+            # Braket takes the probability of the excited state
+            parameters = [parameters[0], 1 - parameters[1]]
+        case MS():
+            # Braket's MS gate takes the AAMS rotation angle, which is pi / 2 for MS
+            parameters = [*parameters, np.pi / 2]
+    # Noise parameters are serialized as given rather than as angles
+    if isinstance(operation, qp.operation.Channel):
+        return f"#pragma braket noise {name}({', '.join(map(str, parameters))}) {qubits}"
+    if parameters:
+        return f"{name}({', '.join(map(_format_angle, parameters))}) {qubits};"
+    return f"{name} {qubits};"
+
+
+def _parameters(operation: Operation, param_names: Sequence[str | None]) -> list:
+    return [
+        name if name is not None else value.numpy() if isinstance(value, np.tensor) else value
+        for name, value in zip(param_names, operation.parameters, strict=True)
+    ]
+
+
+def _free_parameters(operation: Operation, param_names: Sequence[str | None]):
+    """Yields the names of the free parameters that an operation's parameters use."""
+    for name, value in zip(param_names, operation.parameters, strict=True):
+        if name is not None:
+            yield name
+        elif isinstance(value, FreeParameterExpression) and isinstance(value.expression, Expr):
+            yield from (symbol.name for symbol in value.expression.free_symbols)
+
+
+def _format_angle(angle: str | FreeParameterExpression | float) -> str:
+    if isinstance(angle, str):
+        return angle
+    # Braket gates cast numeric angles to floats
+    return str(angle) if isinstance(angle, FreeParameterExpression) else str(float(angle))
+
+
+def _format_matrix(matrix) -> str:
+    return onp.array2string(
+        onp.asarray(matrix, dtype=complex),
+        separator=", ",
+        formatter={"all": format_complex},
+        threshold=float("inf"),
+    ).replace("\n", "")
 
 
 def translate_operation(
