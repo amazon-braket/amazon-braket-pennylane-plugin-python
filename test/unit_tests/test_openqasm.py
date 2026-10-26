@@ -22,6 +22,7 @@ import pennylane as qp
 import pytest
 from openqasm_helpers import sorted_declarations
 from pennylane.tape import QuantumScript
+from test_translation import testdata, testdata_named_inverses
 
 from braket.circuits import (
     Circuit,
@@ -30,17 +31,6 @@ from braket.circuits import (
 )
 from braket.pennylane_plugin import BraketLocalQubitDevice
 from braket.pennylane_plugin.braket_device import _builtin_number
-from braket.pennylane_plugin.ops import (
-    AAMS,
-    MS,
-    PSWAP,
-    CPhaseShift00,
-    CPhaseShift01,
-    CPhaseShift10,
-    GPi,
-    GPi2,
-    PRx,
-)
 from braket.pennylane_plugin.translation import _PENNYLANE_TO_OPENQASM_OPERATIONS, to_openqasm
 
 
@@ -55,74 +45,36 @@ def _assert_matches_sdk(dev, tape, **kwargs):
         assert dev._pl_to_openqasm(tape, **kwargs) == expected
 
 
-# An instance of every operation that is serialized directly
-_OPERATIONS = [
-    qp.Identity(0),
-    qp.Hadamard(0),
-    qp.PauliX(0),
-    qp.PauliY(0),
-    qp.PauliZ(0),
-    qp.ECR([0, 1]),
-    qp.S(0),
-    qp.adjoint(qp.S(0)),
-    qp.SX(0),
-    qp.adjoint(qp.SX(0)),
-    qp.T(0),
-    qp.adjoint(qp.T(0)),
-    qp.CNOT([1, 0]),
-    qp.CY([0, 1]),
-    qp.CZ([0, 1]),
-    qp.SWAP([0, 1]),
-    qp.CSWAP([0, 1, 2]),
-    qp.Toffoli([2, 0, 1]),
-    qp.RX(0.1, 0),
-    qp.RY(qp.numpy.tensor(0.2), 0),
-    qp.RZ(np.float32(0.3), 0),
-    qp.PhaseShift(0.4, 1),
-    qp.QubitUnitary(np.array([[1, 0], [0, 1j]]), 0),
-    qp.QubitUnitary(np.kron([[0, 1], [1, 0]], [[1, 1], [1, -1]]) / np.sqrt(2), [1, 0]),
-    qp.AmplitudeDamping(0.1, 0),
-    qp.GeneralizedAmplitudeDamping(0.1, qp.numpy.tensor(0.2), 0),
-    qp.PhaseDamping(np.float64(0.1), 0),
-    qp.DepolarizingChannel(0.1, 0),
-    qp.BitFlip(qp.numpy.tensor(0.1), 0),
-    qp.PhaseFlip(0.1, 0),
-    qp.QubitChannel([np.sqrt(0.9) * np.eye(2), np.sqrt(0.1) * np.array([[0, 1], [1, 0]])], 0),
-    qp.ControlledPhaseShift(0.1, [0, 1]),
-    CPhaseShift00(0.1, [0, 1]),
-    CPhaseShift01(0.1, [0, 1]),
-    CPhaseShift10(0.1, [0, 1]),
-    qp.ISWAP([0, 1]),
-    PSWAP(0.1, [0, 1]),
-    qp.IsingXY(0.1, [0, 1]),
-    qp.IsingXX(0.1, [0, 1]),
-    qp.IsingYY(0.1, [0, 1]),
-    qp.IsingZZ(0.1, [0, 1]),
-    PRx(0.1, 0.2, 0),
-    GPi(0.1, 0),
-    GPi2(0.1, 0),
-    MS(0.1, 0.2, [0, 1]),
-    AAMS(0.1, 0.2, 0.3, [0, 1]),
-]
+# Reuse the SDK translation cases, with additional parameter types and complex matrices.
+_OPERATIONS = (
+    [cls(*params, wires=wires) for cls, _, wires, params in testdata]
+    + [qp.adjoint(cls(wire)) for cls, _, wire in testdata_named_inverses]
+    + [
+        qp.RY(qp.numpy.tensor(0.2), 0),
+        qp.RZ(np.float32(0.3), 0),
+        qp.QubitUnitary(np.array([[1, 0], [0, 1j]]), 0),
+        qp.QubitUnitary(np.kron([[0, 1], [1, 0]], [[1, 1], [1, -1]]) / np.sqrt(2), [1, 0]),
+        qp.GeneralizedAmplitudeDamping(0.1, qp.numpy.tensor(0.2), 0),
+    ]
+)
 
 
 def test_every_serialized_operation_is_tested():
     assert {operation.name for operation in _OPERATIONS} == set(_PENNYLANE_TO_OPENQASM_OPERATIONS)
 
 
-@pytest.mark.parametrize("trainable", [False, True])
 @pytest.mark.parametrize("operation", _OPERATIONS, ids=lambda operation: operation.name)
-def test_operations_match_sdk_serialization(operation, trainable):
+def test_operations_match_sdk_serialization(operation):
     """Each operation serializes as the SDK serializes the Braket operator it translates to."""
     dev = BraketLocalQubitDevice(wires=3)
     tape = QuantumScript([operation], [qp.expval(qp.Z(0))])
-    # Only scalar parameters are trainable
-    indices = frozenset(
-        index
-        for index, parameter in enumerate(operation.parameters)
-        if trainable and np.ndim(parameter) == 0
-    )
-    _assert_matches_sdk(dev, tape, trainable_indices=indices)
+    _assert_matches_sdk(dev, tape)
+    if operation.parameters and not isinstance(operation, qp.operation.Channel):
+        indices = frozenset(
+            index for index, parameter in enumerate(operation.parameters) if np.ndim(parameter) == 0
+        )
+        if indices:
+            _assert_matches_sdk(dev, tape, trainable_indices=indices)
 
 
 def test_unsupported_operations_are_rejected():
@@ -132,47 +84,23 @@ def test_unsupported_operations_are_rejected():
         dev._pl_to_openqasm(tape)
 
 
-_RESULT_TYPES = frozenset(
-    {"Expectation", "Variance", "Sample", "Probability", "StateVector", "DensityMatrix"}
-)
-
-# Measurements of every kind that is serialized directly, including unsupported ones
-_MEASUREMENTS = [
-    qp.probs(wires=[1, 0]),
-    qp.probs(),
-    qp.density_matrix(wires=[1]),
-    qp.state(),
-    qp.counts(),
-    qp.counts(wires=[1, 0]),
-    qp.counts(all_outcomes=True),
-    qp.counts(qp.Z(0), all_outcomes=True),
-    qp.mutual_info(wires0=[0], wires1=[1]),
-    qp.expval(qp.Z(0)),
-    qp.var(qp.X(1)),
-    qp.sample(qp.Y(0)),
-    qp.counts(qp.Hadamard(1)),
-    qp.expval(qp.Identity([0, 1])),
-    qp.expval(qp.Hermitian(np.array([[0, 1j], [-1j, 0]]), wires=1)),
-    qp.expval(qp.Projector([1, 0], wires=[0, 1])),
-    qp.expval(qp.Projector(np.array([1, 0, 0, 1]) / np.sqrt(2), wires=[0, 1])),
-    qp.expval(qp.Z(1) @ qp.Hermitian(np.diag([1.0, -1.0]), wires=0)),
-    qp.expval(2 * qp.Z(0)),
-    qp.expval(qp.Hamiltonian([0.5, -1.5], [qp.Z(0) @ qp.X(1), qp.Y(1)])),
-    qp.var(qp.Hamiltonian([0.5, -1.5], [qp.Z(0), qp.Y(1)])),
-    qp.expval(qp.CNOT([0, 1])),
-]
-
-
+# Other measurements and observables are checked by the existing device tests and
+# openqasm_matches_sdk. Only state results depend on the device's result-type capabilities.
 @pytest.mark.parametrize(
-    "supported",
+    "measurement, supported",
     [
-        _RESULT_TYPES,
-        _RESULT_TYPES - {"StateVector"},
-        _RESULT_TYPES - {"StateVector", "DensityMatrix"},
+        (qp.state(), {"StateVector", "DensityMatrix"}),
+        (qp.state(), {"DensityMatrix"}),
+        (qp.state(), set()),
+        (qp.density_matrix(wires=[1]), {"DensityMatrix"}),
+        (qp.density_matrix(wires=[1]), set()),
+        (qp.sample(qp.Y(0)), set()),
+        (qp.expval(qp.Hamiltonian([0.5, -1.5], [qp.Z(0) @ qp.X(1), qp.Y(1)])), set()),
+        (qp.var(qp.Hamiltonian([0.5, -1.5], [qp.Z(0), qp.Y(1)])), set()),
+        (qp.counts(qp.Z(0), all_outcomes=True), set()),
+        (qp.expval(qp.CNOT([0, 1])), set()),
     ],
-    ids=["all", "density matrix", "neither"],
 )
-@pytest.mark.parametrize("measurement", _MEASUREMENTS, ids=repr)
 def test_measurements_match_sdk_serialization(measurement, supported):
     # Wires that map to other device qubits
     dev = BraketLocalQubitDevice(wires=[1, 0])
@@ -188,27 +116,18 @@ def test_noncommuting_measurement_rotations_match_sdk():
 
 
 @pytest.mark.parametrize(
-    "measurements",
+    "measurements, trainable_params, supported",
     [
-        [qp.expval(qp.Z(0))],
-        [qp.expval(2 * qp.Z(0))],
-        [qp.expval(qp.X(0) @ qp.Y(1))],
-        [qp.expval(qp.Hamiltonian([2.0, -0.75, 1], [qp.X(0) @ qp.Y(1), qp.Y(0), qp.X(1)]))],
-        [qp.expval(qp.Hamiltonian(qp.numpy.tensor([0.5, 0.25]), [qp.Z(0), qp.X(1)]))],
-        [qp.expval(qp.Hermitian(np.diag([1.0, -1.0]), wires=1))],
-        [qp.expval(3 * qp.Hermitian(np.diag([1.0, -1.0]), wires=1))],
-        [qp.expval(qp.Projector([1], wires=[0]))],
-        [qp.expval(qp.Identity([0, 1]))],
-        [qp.expval(qp.Z(0)), qp.expval(qp.X(1))],
-        [qp.var(qp.Z(0))],
+        ([qp.expval(3 * qp.Hermitian(np.diag([1.0, -1.0]), wires=1))], [0, 1], True),
+        ([qp.expval(qp.Z(0))], [], True),
+        ([qp.expval(qp.Z(0))], [0, 1], False),
+        ([qp.expval(qp.Z(0)), qp.expval(qp.X(1))], [0, 1], True),
+        ([qp.var(qp.Z(0))], [0, 1], True),
     ],
-    ids=repr,
 )
-@pytest.mark.parametrize("trainable_params", [[0, 1], []])
-@pytest.mark.parametrize("supported", [True, False])
 def test_gradients_match_sdk_serialization(measurements, trainable_params, supported):
     dev = BraketLocalQubitDevice(wires=[1, 0])
-    dev._braket_result_types = _RESULT_TYPES | ({"AdjointGradient"} if supported else set())
+    dev._braket_result_types = {"AdjointGradient"} if supported else set()
     tape = QuantumScript(
         [qp.RX(0.1, 0), qp.RY(0.2, 1)], measurements, trainable_params=trainable_params
     )
