@@ -128,7 +128,7 @@ _PROGRAM_SAFE_AWS_RUN_OPTIONS = frozenset(
 )
 
 
-def _builtin_number(value: numbers.Number) -> numbers.Number:
+def _resolve_numerical_literal(value: numbers.Number) -> numbers.Number:
     """Braket validates inputs as built-in numbers, and truncates other numeric types to ints"""
     if isinstance(value, numbers.Integral):
         return int(value)
@@ -454,7 +454,9 @@ class BraketQubitDevice(PennyLaneDevice):
         *,
         add_observables: bool = True,
     ) -> Program:
-        measurements, rotations, gradient_parameters = (), (), None
+        measurements = ()
+        rotations = ()
+        gradient_parameters = None
         if compute_gradient:
             measurements = circuit.measurements
             gradient_parameters = [f"p_{param_index}" for param_index in circuit.trainable_params]
@@ -772,7 +774,6 @@ class BraketQubitDevice(PennyLaneDevice):
         rotations: Sequence[Operation] | None = None,
         use_unique_params: bool = False,
     ) -> Program:
-        """Serializes operations into an OpenQASM program, as ``apply`` builds a circuit."""
         return to_openqasm(
             self._parametrized_operations(operations, rotations, use_unique_params),
             wire_map=self._wire_map,
@@ -838,11 +839,11 @@ class BraketQubitDevice(PennyLaneDevice):
         for i in range(len(trainable_indices)):
             param = params[i]
             if isinstance(param, numbers.Number):
-                trainable[trainable_indices[i]] = _builtin_number(param)
+                trainable[trainable_indices[i]] = _resolve_numerical_literal(param)
             elif isinstance(param, np.tensor):
                 param_np = param.numpy()
                 if isinstance(param_np, numbers.Number):
-                    trainable[trainable_indices[i]] = _builtin_number(param_np)
+                    trainable[trainable_indices[i]] = _resolve_numerical_literal(param_np)
         return trainable
 
 

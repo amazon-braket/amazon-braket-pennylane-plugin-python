@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 
 from collections import Counter
-from collections.abc import Callable, Collection, Hashable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from functools import partial, reduce, singledispatch
 from typing import Any
 
@@ -176,7 +176,7 @@ def to_openqasm(
     measurements: Sequence[MeasurementProcess] = (),
     *,
     wire_map: Mapping[Hashable, int],
-    supported_result_types: Collection[str] = frozenset(),
+    supported_result_types: frozenset[str] = frozenset(),
     gradient_parameters: Sequence[str] | None = None,
     rotations: Iterable[tuple[Operation, Sequence[str | None]]] = (),
     verbatim: bool = False,
@@ -196,7 +196,7 @@ def to_openqasm(
             sequence, in which case all used qubits are measured.
         wire_map (Mapping[Hashable, int]): The device qubit of each wire. Device qubits that
             operations do not act on receive identities, so that results include them.
-        supported_result_types (Collection[str]): Braket result types supported by the device.
+        supported_result_types (frozenset[str]): Braket result types supported by the device.
             Defaults to an empty collection.
         gradient_parameters (Sequence[str] | None): If given, the adjoint gradient of the
             single expectation in ``measurements`` with respect to these free parameters is
@@ -243,16 +243,16 @@ def to_openqasm(
             )
         ]
     else:
-        # Match Circuit.add_result_type's ordered deduplication. Result types target device
-        # qubits, which operations or identities already use.
-        results = dict.fromkeys(
-            result
-            for measurement in measurements
-            for result in _result_types_to_openqasm(
-                # Mapped first, as when results are read with translate_result
-                measurement.map_wires(wire_map),
-                supported_result_types,
-                properties,
+        # Ordered deduplication, as with Circuit.add_result_type
+        results = list(
+            dict.fromkeys(
+                result
+                for measurement in measurements
+                for result in _result_types_to_openqasm(
+                    measurement.map_wires(wire_map),
+                    supported_result_types,
+                    properties,
+                )
             )
         )
     declarations = ["OPENQASM 3.0;"]
@@ -274,7 +274,7 @@ def to_openqasm(
 
 def _result_types_to_openqasm(
     measurement: MeasurementProcess,
-    supported_result_types: Collection[str],
+    supported_result_types: frozenset[str],
     properties: OpenQASMSerializationProperties,
 ) -> list[str]:
     qubits = [int(wire) for wire in measurement.wires]
@@ -331,7 +331,7 @@ def _result_types_to_openqasm(
 def _adjoint_gradient_to_openqasm(
     measurements: Sequence[MeasurementProcess],
     parameters: Sequence[str],
-    supported_result_types: Collection[str],
+    supported_result_types: frozenset[str],
     wire_map: Mapping[Hashable, int],
     properties: OpenQASMSerializationProperties,
 ) -> str:
@@ -402,10 +402,8 @@ def _observable_terms(
             # state is a state vector
             return [(1, [_hermitian_to_openqasm(observable.matrix(), wires, qubit, properties)])]
         case qp.ops.Prod(operands=operands):
-            # Braket tensor products multiply their factors' coefficients
             coefficient, factors = 1, []
             for operand in operands:
-                # Flattened observables do not have sums in products
                 [(operand_coefficient, operand_factors)] = _observable_terms(
                     operand, qubit, properties
                 )

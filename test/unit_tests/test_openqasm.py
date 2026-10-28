@@ -30,7 +30,7 @@ from braket.circuits import (
     observables,
 )
 from braket.pennylane_plugin import BraketLocalQubitDevice
-from braket.pennylane_plugin.braket_device import _builtin_number
+from braket.pennylane_plugin.braket_device import _resolve_numerical_literal
 from braket.pennylane_plugin.translation import _PENNYLANE_TO_OPENQASM_OPERATIONS, to_openqasm
 
 
@@ -148,7 +148,7 @@ def test_numeric_parameters_are_not_truncated():
     [(np.int64(2), 2), (Fraction(1, 2), 0.5), (np.longdouble(0.5), 0.5), (np.complex64(1j), 1j)],
 )
 def test_inputs_are_builtin_numbers(value, expected):
-    converted = _builtin_number(value)
+    converted = _resolve_numerical_literal(value)
     assert type(converted) is type(expected)
     assert converted == expected
 
