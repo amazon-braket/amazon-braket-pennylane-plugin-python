@@ -12,6 +12,7 @@
 # language governing permissions and limitations under the License.
 
 import json
+import logging
 import warnings
 from collections import Counter
 from typing import Any
@@ -41,7 +42,9 @@ from braket.device_schema.pulse.pulse_device_action_properties_v1 import (
 )
 from braket.device_schema.simulators import GateModelSimulatorDeviceCapabilities
 from braket.devices import LocalSimulator
+from braket.ir.openqasm import Program
 from braket.program_sets import ProgramSet
+from braket.pulse import Frame, Port
 from braket.simulator import BraketSimulator
 from braket.task_result import ProgramSetTaskResult
 from braket.tasks import GateModelQuantumTaskResult, ProgramSetQuantumTaskResult
@@ -61,6 +64,7 @@ from pennylane.devices import ExecutionConfig
 from pennylane.exceptions import DeviceError, PennyLaneDeprecationWarning, QuantumFunctionError
 from pennylane.pulse import ParametrizedEvolution
 from pennylane.tape import QuantumScript, QuantumTape
+from openqasm_helpers import as_openqasm, openqasm_source
 
 import braket.pennylane_plugin.braket_device
 from braket.pennylane_plugin import (
@@ -336,6 +340,32 @@ def test_apply_unwrap_tensor():
 
     angles = [op.operator.angle for op in circuit.instructions]
     assert not any([isinstance(angle, np.tensor) for angle in angles])
+
+
+@pytest.mark.parametrize(
+    "run_kwargs, submits_programs",
+    [
+        ({}, True),
+        ({"tags": {"foo": "bar"}}, True),
+        ({"quiet": True}, True),
+        ({"reservation_arn": "arn:aws:braket:us-west-2:123456789012:reservation/foo"}, True),
+        ({"experimental_capabilities": "ALL"}, True),
+        ({"logger": logging.getLogger("braket")}, True),
+        ({"device_parameters": {"errorMitigation": []}}, False),
+        ({"disable_qubit_rewiring": True}, False),
+        ({"disable_qubit_rewiring": False}, False),
+        ({"gate_definitions": {}}, False),
+        ({"foo": "bar"}, False),
+        ({"tags": {"foo": "bar"}, "quiet": True}, True),
+        ({"tags": {"foo": "bar"}, "device_parameters": {"errorMitigation": []}}, False),
+    ],
+)
+def test_aws_run_options_choose_task_type(run_kwargs, submits_programs):
+    """Only run options that the SDK applies to every task type allow OpenQASM programs."""
+    dev = _aws_device(wires=2, **run_kwargs)
+    tape = QuantumScript([qp.Hadamard(0), qp.CNOT([0, 1])], [qp.expval(qp.Z(1))])
+    specification = dev._translate_circuit(tape)
+    assert isinstance(specification, Program if submits_programs else Circuit)
 
 
 @patch.object(AwsDevice, "run")
@@ -1194,17 +1224,22 @@ def test_program_set_multiple_single_qubit_expvals_use_correct_wires():
 
 
 @patch.object(AwsDevice, "run")
-def test_batch_execution_program_set_parametrize_differentiable(mock_run):
+@pytest.mark.parametrize(
+    "run_kwargs, submits_programs", [({"foo": "bar"}, False), ({"tags": {"foo": "bar"}}, True)]
+)
+def test_batch_execution_program_set_parametrize_differentiable(
+    mock_run, run_kwargs, submits_programs
+):
     """Test that batch execution uses program sets with trainable parameters."""
     task = Mock()
     task.result.return_value = PROGRAM_SET_RESULT
     mock_run.return_value = task
     dev = _aws_device(
         wires=4,
-        foo="bar",
         parallel=False,
         parametrize_differentiable=True,
         supports_program_sets=True,
+        **run_kwargs,
     )
 
     with QuantumTape() as circuit1:
@@ -1226,17 +1261,18 @@ def test_batch_execution_program_set_parametrize_differentiable(mock_run):
         Circuit().h(0).cnot(0, 1).ry(0, FreeParameter("p_0")).rx(1, FreeParameter("p_1")).i(2).i(3)
     )
     braket_circuit2 = Circuit().h(0).rx(0, FreeParameter("p_0")).cnot(0, 1).i(2).i(3)
+    expected = ProgramSet.zip(
+        [braket_circuit1, braket_circuit2],
+        input_sets=[{"p_0": -anp.pi / 2, "p_1": anp.pi / 2}, {"p_0": 0.123}],
+        shots_per_executable=SHOTS,
+    )
     mock_run.assert_called_with(
-        ProgramSet.zip(
-            [braket_circuit1, braket_circuit2],
-            input_sets=[{"p_0": -anp.pi / 2, "p_1": anp.pi / 2}, {"p_0": 0.123}],
-            shots_per_executable=SHOTS,
-        ),
+        as_openqasm(expected) if submits_programs else expected,
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS * 2,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,
         poll_interval_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_INTERVAL,
-        foo="bar",
+        **run_kwargs,
     )
     assert len(result) == 2
     assert result[0] == 0.6
@@ -1568,7 +1604,7 @@ def test_local_sim_batch_execution_parallel(mock_run_batch):
         )
 
     mock_run_batch.assert_called_with(
-        [CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED],
+        as_openqasm([CIRCUIT_DIAGONALIZED, CIRCUIT_DIAGONALIZED]),
         shots=SHOTS,
         max_parallel=None,
         inputs=[],
@@ -2234,7 +2270,7 @@ def test_local_qubit_execute(mock_run, shots, backend):
     circuit = circuit.copy(shots=dev.shots)
     dev.execute(circuit)
     mock_run.assert_called_with(
-        expected,
+        as_openqasm(expected),
         shots=shots,
         foo="bar",
         inputs={"p_0": -np.pi / 2, "p_1": np.pi / 2},
@@ -2582,7 +2618,12 @@ def test_qnode_sum_adjoint_gradient_uses_one_task(
     expected = Circuit().adjoint_gradient(
         observable=braket_observable, target=targets, parameters=["p_0"]
     )
-    assert submitted.result_types == expected.result_types
+    submitted_results = [
+        line
+        for line in openqasm_source(submitted).splitlines()
+        if line.startswith("#pragma braket result")
+    ]
+    assert submitted_results == expected.to_ir().source.splitlines()[-1:]
     assert np.isclose(gradient, -0.5)
 
 
@@ -2852,7 +2893,7 @@ def test_execute_and_compute_derivatives_falls_back_per_circuit(monkeypatch):
     simulator = BraketLocalQubitDevice(wires=1)
 
     def run_task(circuit, inputs=None, shots=0):
-        if any(isinstance(rt, result_types.AdjointGradient) for rt in circuit.result_types):
+        if "adjoint_gradient" in openqasm_source(circuit):
             return adjoint_task
         return simulator._run_task(circuit, inputs=inputs, shots=shots)
 
@@ -3336,6 +3377,11 @@ class TestPulseValidation:
         program((tape,))
         spy.assert_called_once_with(op)
 
+        # Pulse gates are only serialized by the SDK's circuit path
+        dev._device._frames = {"q0_drive": Frame("drive", Port("port", dt=1e-9), frequency=5e9)}
+        circuit = dev._translate_circuit(tape)
+        assert isinstance(circuit.instructions[0].operator, Gate.PulseGate)
+
     def test_callable_phase_raises_error(self):
         """Test that a callable phase (other than qp.pulse.constant) raises an error"""
         dev = get_oqc_device()
@@ -3520,7 +3566,7 @@ def test_native(mock_run, mock_properties, device_type):
         .expectation(observable=observables.Z(1))
     )
     mock_run.assert_called_with(
-        expected_circuit,
+        as_openqasm(expected_circuit),
         s3_destination_folder=("foo", "bar"),
         shots=SHOTS,
         poll_timeout_seconds=AwsQuantumTask.DEFAULT_RESULTS_POLL_TIMEOUT,

@@ -81,16 +81,18 @@ from braket.circuits.noise_model import NoiseModel
 from braket.device_schema import DeviceActionType
 from braket.devices import Device as BraketDevice
 from braket.devices import LocalSimulator
+from braket.ir.openqasm import Program
 from braket.pennylane_plugin.translation import (
     flatten_observable,
     get_adjoint_gradient_result_type,
     supported_observables,
     supported_operations,
+    to_openqasm,
     translate_operation,
     translate_result,
     translate_result_type,
 )
-from braket.program_sets import ProgramSet
+from braket.program_sets import CircuitBinding, ProgramSet
 from braket.simulator import BraketSimulator
 from braket.tasks import (
     GateModelQuantumTaskResult,
@@ -117,6 +119,22 @@ _PARAM_SHIFT_FALLBACK_WARNING = (
 )
 OBS_LIST = (qp.PauliX, qp.PauliY, qp.PauliZ)
 PAULI_AND_HADAMARD_OBS = (qp.PauliX, qp.PauliY, qp.PauliZ, qp.Hadamard, qp.Identity)
+
+# Run options that the SDK applies the same way to circuits, OpenQASM programs and program sets.
+# Other options, such as device_parameters, disable_qubit_rewiring and gate_definitions, are
+# applied differently or not at all to programs, so they keep the SDK's circuit path.
+_PROGRAM_SAFE_AWS_RUN_OPTIONS = frozenset(
+    {"tags", "quiet", "reservation_arn", "experimental_capabilities", "logger"}
+)
+
+
+def _resolve_numerical_literal(value: numbers.Number) -> numbers.Number:
+    """Braket validates inputs as built-in numbers, and truncates other numeric types to ints"""
+    if isinstance(value, numbers.Integral):
+        return int(value)
+    if isinstance(value, numbers.Complex) and not isinstance(value, numbers.Real):
+        return complex(value)
+    return float(value)
 
 
 class Shots(Enum):
@@ -270,8 +288,8 @@ class BraketQubitDevice(PennyLaneDevice):
         return Wires(wires).map(self._wire_map)
 
     @property
-    def circuit(self) -> Circuit:
-        """Circuit: The last circuit run on this device."""
+    def circuit(self) -> Circuit | Program:
+        """Circuit | Program: The last Braket circuit or OpenQASM program run on this device."""
         return self._circuit
 
     @property
@@ -343,7 +361,7 @@ class BraketQubitDevice(PennyLaneDevice):
             all_trainable.append(trainable)
             use_program_set = self._max_program_set_executables is not None and bool(circuit.shots)
             braket_circuits.append(
-                self._pl_to_braket_circuit(
+                self._translate_circuit(
                     circuit,
                     trainable_indices=frozenset(trainable.keys()),
                     add_observables=not use_program_set,
@@ -357,6 +375,28 @@ class BraketQubitDevice(PennyLaneDevice):
             else []
         )
         return self._run_task_batch(braket_circuits, circuits, batch_shots, batch_inputs)
+
+    def _translate_circuit(
+        self,
+        circuit: QuantumTape,
+        compute_gradient: bool = False,
+        trainable_indices: frozenset[int] | None = None,
+        *,
+        add_observables: bool = True,
+    ) -> Circuit | Program:
+        if self._requires_circuit(circuit):
+            return self._pl_to_braket_circuit(
+                circuit, compute_gradient, trainable_indices, add_observables=add_observables
+            )
+        return self._pl_to_openqasm(
+            circuit, compute_gradient, trainable_indices, add_observables=add_observables
+        )
+
+    def _requires_circuit(self, circuit: QuantumScript) -> bool:
+        return self._noise_model is not None or any(
+            isinstance(operation, qp.pulse.ParametrizedEvolution)
+            for operation in circuit.operations
+        )
 
     def _pl_to_braket_circuit(
         self,
@@ -405,6 +445,48 @@ class BraketQubitDevice(PennyLaneDevice):
                 braket_circuit += self.apply(diagonalizing_ops, apply_identities=False)
 
         return braket_circuit
+
+    def _pl_to_openqasm(
+        self,
+        circuit: QuantumTape,
+        compute_gradient: bool = False,
+        trainable_indices: frozenset[int] | None = None,
+        *,
+        add_observables: bool = True,
+    ) -> Program:
+        measurements = ()
+        rotations = ()
+        gradient_parameters = None
+        if compute_gradient:
+            measurements = circuit.measurements
+            gradient_parameters = [f"p_{param_index}" for param_index in circuit.trainable_params]
+        elif not isinstance(circuit.measurements[0], MeasurementTransform):
+            if add_observables:
+                measurements = circuit.measurements
+            else:
+                rotations = self._measurement_rotations(circuit)
+        return to_openqasm(
+            self._parametrized_operations(circuit.operations, trainable_indices=trainable_indices),
+            measurements,
+            wire_map=self._wire_map,
+            supported_result_types=self._braket_result_types,
+            gradient_parameters=gradient_parameters,
+            rotations=self._parametrized_operations(rotations),
+            verbatim=self._verbatim,
+            inputs=(f"p_{index}" for index in trainable_indices or ()),
+        )
+
+    @staticmethod
+    def _measurement_rotations(circuit: QuantumTape) -> list[Operation]:
+        observables = [
+            measurement.obs for measurement in circuit.measurements if measurement.obs is not None
+        ]
+        groups = qp.pauli.group_observables(observables, grouping_type="qwc")
+        if len(groups) > 1:
+            raise ValueError(
+                f"Observables need to mutually commute, but found {len(groups)}: {groups}"
+            )
+        return qp.pauli.diagonalize_qwc_pauli_words(groups[0])[0]
 
     @staticmethod
     def _maybe_diagonalize_measurements(circuit, compute_gradient=False):
@@ -581,8 +663,9 @@ class BraketQubitDevice(PennyLaneDevice):
             for t in range(n_snapshots)
         ]
 
+        translate = self.apply if self._requires_circuit(circuit) else self._operations_to_openqasm
         snapshot_circuits = [
-            self.apply(
+            translate(
                 circuit.operations,
                 rotations=circuit.diagonalizing_gates + snapshot_rotation,
                 use_unique_params=False,
@@ -608,7 +691,7 @@ class BraketQubitDevice(PennyLaneDevice):
             if compute_gradient or self._parametrize_differentiable
             else {}
         )
-        self._circuit = self._pl_to_braket_circuit(
+        self._circuit = self._translate_circuit(
             circuit,
             compute_gradient=compute_gradient,
             trainable_indices=frozenset(trainable.keys()),
@@ -685,6 +768,37 @@ class BraketQubitDevice(PennyLaneDevice):
 
         return circuit
 
+    def _operations_to_openqasm(
+        self,
+        operations: Sequence[Operation],
+        rotations: Sequence[Operation] | None = None,
+        use_unique_params: bool = False,
+    ) -> Program:
+        return to_openqasm(
+            self._parametrized_operations(operations, rotations, use_unique_params),
+            wire_map=self._wire_map,
+        )
+
+    def _parametrized_operations(
+        self, operations, rotations=(), use_unique_params=False, *, trainable_indices=None
+    ):
+        """Yield each operation with the free parameter name of each of its parameters, or None
+        for parameters that keep their values."""
+        param_index = 0
+        indices = trainable_indices or frozenset()
+        for batch in (operations, rotations or ()):
+            for operation in batch:
+                param_names = []
+                for _ in operation.parameters:
+                    if not isinstance(operation, qp.operation.Channel) and (
+                        param_index in indices or use_unique_params
+                    ):
+                        param_names.append(f"p_{param_index}")
+                    else:
+                        param_names.append(None)
+                    param_index += 1
+                yield operation, param_names
+
     def _check_supported_result_types(self):
         supported_result_types = self._device.properties.action[
             "braket.ir.openqasm.program"
@@ -725,11 +839,11 @@ class BraketQubitDevice(PennyLaneDevice):
         for i in range(len(trainable_indices)):
             param = params[i]
             if isinstance(param, numbers.Number):
-                trainable[trainable_indices[i]] = param
+                trainable[trainable_indices[i]] = _resolve_numerical_literal(param)
             elif isinstance(param, np.tensor):
                 param_np = param.numpy()
                 if isinstance(param_np, numbers.Number):
-                    trainable[trainable_indices[i]] = param_np
+                    trainable[trainable_indices[i]] = _resolve_numerical_literal(param_np)
         return trainable
 
 
@@ -818,6 +932,11 @@ class BraketAwsQubitDevice(BraketQubitDevice):
         self._max_connections = max_connections
         self._max_retries = max_retries
 
+    def _requires_circuit(self, circuit: QuantumScript) -> bool:
+        if not self._run_kwargs.keys() <= _PROGRAM_SAFE_AWS_RUN_OPTIONS:
+            return True
+        return super()._requires_circuit(circuit)
+
     def _run_program_set(self, program_set: ProgramSet) -> ProgramSetQuantumTaskResult:
         program_sets, index_map = program_set.split(self._max_program_set_executables)
         results = (
@@ -847,14 +966,14 @@ class BraketAwsQubitDevice(BraketQubitDevice):
 
     def _run_task_batch(self, braket_circuits, pl_circuits, batch_shots: int, inputs):
         if self._max_program_set_executables is not None and batch_shots:
-            result = self._run_program_set(
-                ProgramSet.zip(
-                    braket_circuits,
-                    input_sets=inputs,
-                    shots_per_executable=batch_shots,
+            braket_circuits = [
+                self._bind_program_set_inputs(specification, input_set)
+                for specification, input_set in zip(
+                    braket_circuits, inputs or [{}] * len(braket_circuits), strict=True
                 )
-                if inputs
-                else ProgramSet(braket_circuits, shots_per_executable=batch_shots)
+            ]
+            result = self._run_program_set(
+                ProgramSet(braket_circuits, shots_per_executable=batch_shots)
             )
             if self.tracker.active:
                 self.tracker.update(
@@ -892,6 +1011,17 @@ class BraketAwsQubitDevice(BraketQubitDevice):
             self._braket_to_pl_result(braket_result, circuit)
             for braket_result, circuit in zip(braket_results_batch, pl_circuits)
         ]
+
+    @staticmethod
+    def _bind_program_set_inputs(specification, input_set):
+        if not input_set:
+            return specification
+        if isinstance(specification, Program):
+            return Program(
+                source=specification.source,
+                inputs={name: [value] for name, value in input_set.items()},
+            )
+        return CircuitBinding(specification, [input_set])
 
     def _run_task(self, circuit, inputs=None, shots=0):
         return self._device.run(
