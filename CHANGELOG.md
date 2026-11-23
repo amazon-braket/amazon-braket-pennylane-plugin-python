@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.36.1.post0 (2026-11-23)
+
+### Documentation Changes
+
+ * Python 3.14
+
 ## v1.36.1 (2026-10-22)
 
 ### Bug Fixes and Other Changes
